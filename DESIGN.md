@@ -1,0 +1,72 @@
+# Design
+
+Status: **proposed 2026-10-11, not agreed yet.** These are dos and don'ts drawn from the prior-art survey,
+put up for discussion. Anything the owner hasn't settled is listed under "Open" below.
+
+## The one idea
+
+Count what the app would show. Each number on the site should be "how many quests of type T a StreetComplete
+user standing in city C would see, with default settings, on app version V". Each knob that moves that number
+is recorded alongside it.
+
+## Do
+
+- **Take filters from the app's build, not from reading its source.**
+  - 21 filter strings splice in Kotlin constants, so a regex over the source gets them wrong.
+  - Run SC's own registry, either through a small JVM harness next to `PrintQuestFiltersAsOverpassQL` that
+    prints each resolved `elementFilter` in SC syntax, or by evaluating with SC's Kotlin directly.
+  - Pin the SC release tag (v63.4 today) and store it on every snapshot.
+- **Stamp each snapshot with the three knobs:**
+  - SC version.
+  - Resurvey multiplier: the app's user setting of 0.5, 1 or 2 (proposed default 1).
+  - Whether the 34 default-disabled quests are counted.
+- **Classify every quest from the code, not by hand.**
+  - The 140 `OsmFilterQuestType` start as *supported*.
+  - The 52 custom quests start as *unsupported*.
+  - A custom quest moves up to *approximated* or *supported* only when someone writes its logic and checks it
+    against the app.
+  - Show the class on the site.
+- **Split the aging signal from the mapping signal by using the filter itself.**
+  - The about 50 quests whose filters use `older`/`newer` can reopen with no edit at all.
+  - For those, record the count from the plain tag test and the count that only exists because the element
+    or check_date has aged, separately.
+- **Apply country gating for Canada and Ontario** (`enabledInCountries`, 26 quests). Leaving it out
+  overcounts.
+- **Count by the quest's center point inside the real city polygon.** This matches the app (`OsmQuestController`
+  creates a quest only if its center is inside the downloaded area) and avoids starsep's bounding-box
+  overcount.
+- **Take boundaries from `ontario-farmland`.** Toronto is relation 324211 at admin_level **6**; other cities
+  are at 8. Configure cities by relation id, not by admin level.
+- **Store denominators beside counts:** element count per quest's base selector, road km, land area from
+  `areas.json`.
+- **Reuse the sibling plumbing:**
+  - Download, `meta.json` and lock from `toronto-streets-osm`.
+  - Skip the run when the extract's `Last-Modified` hasn't changed, so reruns change nothing.
+  - One row per day, rewritten if run again the same day.
+  - Static JSON under `docs/` served by Pages, published by `run.py update`.
+- **Rely on extract timestamps.** Checked 2026-10-11: Geofabrik's public Ontario PBF keeps `version` and
+  `timestamp` and strips `uid` and `changeset`. That covers what `older` needs.
+- **Adding a city is a line of config.**
+
+## Don't
+
+- Don't hand-write Overpass queries, and don't take filters from the OSM wiki's Turbo links (#2072). They
+  drift and some are wrong.
+- Don't use ohsome as the engine. Its filter language can't express regex, numbers, dates or element age,
+  and v1 dies 2026-11-30. At most, use it to backfill history for the plain key/value quests.
+- Don't silently approximate. A quest counted with simplified logic says so on the page.
+- Don't compare raw counts across cities on the default view; normalize first.
+- Don't mix runs from different SC versions or settings in one line without marking the break.
+- Don't treat open OSM notes as noise. The app hides a quest whose center sits exactly on an open note. This
+  is minor, but note it as a known difference until we model it.
+- Don't schedule at 12:00 or 12:30; the sibling trackers already use those slots.
+- Don't stall on the 52 custom quests. Ship the filter quests first.
+
+## Open (owner to decide)
+
+- Engine: port the filter grammar to Python, or run SC's Kotlin on the JVM. See the discussion in chat,
+  2026-10-11.
+- Resurvey multiplier default, and whether default-disabled quests count.
+- Hosting and scheduling: the sibling default is Task Scheduler plus `docs/` on Pages; GitHub Actions is the
+  alternative.
+- Whom to contact early: starsep, jmizv, the SC developers.

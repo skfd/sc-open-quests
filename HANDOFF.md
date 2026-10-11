@@ -29,3 +29,9 @@ Toronto only, about 10 common quest types whose filters are simple, a few weeks 
 ## Context
 - Owner is an experienced OSM contributor with existing Toronto/Ontario OSM tooling in sibling folders (e.g. ../toronto-streets-layer, ../toronto-addresses-layer, ../toronto-buildings-3d, ../osm-mayflies). Reuse conventions (Python + .venv, README/DESIGN/PRIOR-ART docs) and boundary data where it makes sense.
 - Open questions for the owner: preferred stack (Python/osmium vs PostGIS vs Java), hosting, and whether to coordinate with jmizv or the StreetComplete developers early.
+
+## Corrections (2026-10-11)
+- "Nothing like it exists" is too strong: **starsep/StreetCompleteStats** publishes solved/all per quest per
+  Polish city daily (25 quests, bounding boxes, no history on the site). See PRIOR-ART.md.
+- jmizv's queries are not tied to one city, and its QUESTS.md has a "Pending" (open) column.
+- Toronto is **admin_level 6** (relation 324211), not 8. Configure cities by relation id.
