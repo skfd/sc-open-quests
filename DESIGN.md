@@ -1,7 +1,6 @@
 # Design
 
-Status: **proposed 2026-10-11, not agreed yet.** These are dos and don'ts drawn from the prior-art survey,
-put up for discussion. Anything the owner hasn't settled is listed under "Open" below.
+Status: dos and don'ts drawn from the prior-art survey, discussed 2026-10-11. Decisions below are agreed.
 
 ## The one idea
 
@@ -62,11 +61,15 @@ is recorded alongside it.
 - Don't schedule at 12:00 or 12:30; the sibling trackers already use those slots.
 - Don't stall on the 52 custom quests. Ship the filter quests first.
 
-## Open (owner to decide)
+## Decisions (agreed 2026-10-11)
 
-- Engine: port the filter grammar to Python, or run SC's Kotlin on the JVM. See the discussion in chat,
-  2026-10-11.
-- Resurvey multiplier default, and whether default-disabled quests count.
-- Hosting and scheduling: the sibling default is Task Scheduler plus `docs/` on Pages; GitHub Actions is the
-  alternative.
-- Whom to contact early: starsep, jmizv, the SC developers.
+- **Engine: Kotlin on the JVM, using SC's own filter code.** No port of the grammar. SC is a pinned
+  dependency (or source checkout at a release tag). The first task is a spike that confirms `commonMain`
+  `ElementFilterExpression` runs on a plain JVM against pyosmium-free PBF reading (e.g. osmosis/osm4j or
+  GeoDesk). Python stays an option for glue only if it earns its place.
+- **Headline counts use app defaults:** resurvey multiplier 1, default-disabled quests excluded from totals
+  but still computed and stored, so the site can offer a toggle.
+- **Hosting:** Windows Task Scheduler on the owner's machine plus static JSON in `docs/` on GitHub Pages,
+  same as toronto-streets-osm. Run slot away from 12:00/12:30, e.g. 13:15.
+- **Outreach: nobody yet.** Build the Toronto milestone, then contact starsep, the SC devs and jmizv with
+  something to show.
