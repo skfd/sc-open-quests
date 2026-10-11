@@ -65,7 +65,7 @@ is recorded alongside it.
 
 - **Engine: Kotlin on the JVM, using SC's own filter code.** No port of the grammar. SC is a pinned
   dependency (or source checkout at a release tag). The first task is a spike that confirms `commonMain`
-  `ElementFilterExpression` runs on a plain JVM against pyosmium-free PBF reading (e.g. osmosis/osm4j or
+  `ElementFilterExpression` runs on a plain JVM, reading the PBF with a JVM library (e.g. osm4j or
   GeoDesk). Python stays an option for glue only if it earns its place.
 - **Headline counts use app defaults:** resurvey multiplier 1, default-disabled quests excluded from totals
   but still computed and stored, so the site can offer a toggle.
