@@ -236,7 +236,11 @@ def count(force: bool = False, extract: tuple[Path, Path] | None = None) -> Path
         clip = notes_clip()
         replicated = datetime.fromisoformat(meta["replication_timestamp"])
         if clip is None or notes_until(clip) < replicated:
-            # the dump of the next morning reaches it; the next scheduled run counts it
+            # the dump of the next morning reaches it; a later scheduled run counts it. The mirror can
+            # lag the dump by more than half a day, so a day's wait is normal; three are not.
+            age = datetime.now(timezone.utc) - replicated
+            if age.days >= 3:
+                raise RuntimeError(f"no notes dump reaches {pbf.name} after {age.days} days; is `fetch notes` working?")
             log(f"no notes dump reaches {pbf.name} ({meta['replication_timestamp']}) yet; not counting it")
             return None
         existing = snapshot_for_sha(sha, DATA_DIR)

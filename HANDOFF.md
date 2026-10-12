@@ -46,15 +46,24 @@ Next, in order:
 1. **Check the first scheduled runs.** A run on 2026-10-12 00:50 committed and pushed "data 2026-10-11"
    (`logs/scheduler.log`). The 13:15 slot fired on its own on 2026-10-12 (no new extract, exit 0); still
    watch the first one that counts a new extract per city (about 4 minutes).
+   **Since notes (2026-10-12), day D is counted only with the notes dump of D+1**, and the S3 mirror
+   the dump redirects to lagged it by more than 14 hours (261012 made ~04:30 UTC, still 404 at 19:10
+   UTC). At 13:15 (17:15 UTC) that dump is probably not there yet, so data for day D lands on D+2. Watch
+   the first runs (`logs/scheduler.log`: "no notes dump reaches ..."); if it is always a day behind, add
+   a second, evening slot. A run raises once an extract has waited 3 days.
 2. **Custom quests are done.** All 51 are counted and checked exactly against SC (engine/README.md,
    "Custom quests" and "Area quests"; the last three use SC's country metadata per position). Left:
    - the note quest. Done 2026-10-12 (DESIGN.md, "Notes"), with the hiding below.
    The area unit is the whole city since 2026-10-12 (DESIGN.md, "Area unit").
-3. **Deeper history.** Geofabrik keeps no old dailies, but `~/Code/.osm-data/planet/history-261005.osm.pbf` is a full
+3. **After merging `notes`, recount history with notes.** The monthly backfill was counted without
+   notes (delete data/backfill/snapshots/, rerun `tools/backfill_history.py months`, ~4 h). 2026-07-16 and
+   2026-10-02 are no longer in the store and have neither notes nor the custom quests, so the series
+   zigzags; slice them from the history file (`slice_at`, as `check` does) and recount.
+4. **Deeper history.** Geofabrik keeps no old dailies, but `~/Code/.osm-data/planet/history-261005.osm.pbf` is a full
    history planet. Clip it to Ontario and time-slice it with `osmium time-filter` to get a monthly backfill. That
    would give years of history, at a one-off cost of hours. ohsome could only cover the plain key/value quests.
-4. **Outreach.** Now that there is something to show, contact starsep (StreetCompleteStats), the SC devs and jmizv.
-5. **Smaller items:**
+5. **Outreach.** Now that there is something to show, contact starsep (StreetCompleteStats), the SC devs and jmizv.
+6. **Smaller items:**
    - ~~Model open OSM notes, since the app hides quests at a note's position.~~ Done 2026-10-12.
    - Write down the routine for SC version bumps (v64: rerun `tools/sc-harness`, `engine/sync-sc.ps1`;
      the note filter is pinned in `PORTED-QUESTS.txt` as helper:OsmNoteQuest).
