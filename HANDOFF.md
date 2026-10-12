@@ -48,13 +48,14 @@ Next, in order:
    watch the first one that counts a new extract per city (about 4 minutes).
 2. **Custom quests are done.** All 51 are counted and checked exactly against SC (engine/README.md,
    "Custom quests" and "Area quests"; the last three use SC's country metadata per position). Left:
-   - the note quest.
+   - the note quest. Done 2026-10-12 (DESIGN.md, "Notes"), with the hiding below.
    The area unit is the whole city since 2026-10-12 (DESIGN.md, "Area unit").
 3. **Deeper history.** Geofabrik keeps no old dailies, but `~/Code/.osm-data/planet/history-261005.osm.pbf` is a full
    history planet. Clip it to Ontario and time-slice it with `osmium time-filter` to get a monthly backfill. That
    would give years of history, at a one-off cost of hours. ohsome could only cover the plain key/value quests.
 4. **Outreach.** Now that there is something to show, contact starsep (StreetCompleteStats), the SC devs and jmizv.
 5. **Smaller items:**
-   - Model open OSM notes, since the app hides quests at a note's position.
-   - Write down the routine for SC version bumps (v64: rerun `tools/sc-harness`, `engine/sync-sc.ps1`).
+   - ~~Model open OSM notes, since the app hides quests at a note's position.~~ Done 2026-10-12.
+   - Write down the routine for SC version bumps (v64: rerun `tools/sc-harness`, `engine/sync-sc.ps1`;
+     the note filter is pinned in `PORTED-QUESTS.txt` as OsmNoteQuest).
    - Heatmap per quest type (stretch goal).

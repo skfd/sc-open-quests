@@ -58,8 +58,8 @@ is recorded alongside it.
 - Don't silently approximate. A quest counted with simplified logic says so on the page.
 - Don't compare raw counts across cities on the default view; normalize first.
 - Don't mix runs from different SC versions or settings in one line without marking the break.
-- Don't treat open OSM notes as noise. The app hides a quest whose center sits exactly on an open note. This
-  is minor, but note it as a known difference until we model it.
+- Don't treat open OSM notes as noise. The app hides a quest whose center sits exactly on an open note.
+  Modelled since 2026-10-12 (see "Notes" below).
 - Don't schedule at 12:00 or 12:30; the sibling trackers already use those slots.
 - Don't stall on the 51 custom quests. Ship the filter quests first.
 
@@ -131,7 +131,7 @@ What changed since the spike (details in `engine/README.md`):
 
 Known gaps:
 
-- Notes are not modelled (the app hides a quest on an open note's position).
+- Notes are not modelled (the app hides a quest on an open note's position). (Since done: see "Notes".)
 - Relation positions assume every member way is present; the app uses what it has downloaded.
 - Country gating is per city, not per position; fine while every city is inside CA-ON.
 - Custom quests (51) are not counted yet. (Since done: see the sections below.)
@@ -230,3 +230,28 @@ Known gaps:
   lacks some relation members across the Ontario border (`complete_ways` cannot complete relations in a
   history file), which does not reach any count.
 - Months are counted into `data/backfill/` (gitignored), reviewed, then merged into `docs/data/snapshots/`.
+
+## Notes (2026-10-12, decided while the owner was away)
+
+- **Source: the planet notes dump, not the Notes API.** The API knows only today. The daily dump
+  (`planet-notes-YYMMDD.osn.bz2`, 410 MB) holds every note with every comment and its timestamp, so the
+  notes open at any asOf can be rebuilt: dailies and the monthly backfill take the same code path.
+  `osm-extracts fetch notes` downloads it into the shared store (newest 2 kept, each dump supersedes the
+  last); `tools/clip_notes.py` cuts the Ontario bounding box into `data/notes/` once per dump (about 3
+  minutes, 88,128 notes, 35 MB).
+- **Two effects, both SC's own logic.** Every open note hides the quests at its position, truncated to
+  6 decimals (`OsmQuestController`); and a note is a note quest by SC's own filter (`OsmNoteQuestController`,
+  ported verbatim and pinned) for a user who wrote none of the notes, with "show all notes" off, the app's
+  default: a question mark in the first comment (SC's list includes `;`) or `#surveyme` in any comment.
+  `OsmNoteQuestType` is now `supported` and in the headline totals.
+- **Size of it.** Ontario 2026-10-10: 3,624 notes open, 763 of them note quests in the 48 cities; 322 of
+  7,588,287 quests hidden (AddWheelchairAccessBusiness 30, AddOpeningHours 26, CheckShopExistence 23...;
+  Toronto 120, Ottawa 95). Checked independently: the run with notes equals the run without minus exactly
+  the matches whose truncated position is an open note's.
+- **A dump must reach the extract.** The dump of day D is made about 05:00 UTC and ends there; Geofabrik's
+  extract of day D is stamped about 20:20 UTC. So day D is counted with the dump of D+1, and `run.py`
+  waits a run rather than count without notes. `update` now goes over every stored extract, so a snapshot
+  made before its dump existed is recounted once it does.
+- **History.** Snapshots record the dump in `notes`; history meta carries `notes: true` and the site marks
+  the date notes start (or stop) as a break. Extracts no longer in the store (2026-07-16, 2026-10-02) keep
+  their counts without notes; the monthly backfill passes the newest clip too.

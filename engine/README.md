@@ -50,7 +50,7 @@ dated file, not `ontario-latest.osm.pbf`. The store keeps 14 days of extracts, p
 1. **Quests**: every `kind: "filter"` entry of the registry dump (`tools/sc-harness`), parsed with SC's
    `toElementFilterExpression()`; plus the 12 custom quests ported in `openquests/custom/` and the 39
    generated into `ported/` (see below; AddHousenumber, AddCycleway and AddRoofShape use SC's country
-   metadata). Only the note quest is `unsupported` and not counted.
+   metadata); and with `--notes`, the note quest (see "Notes").
    At start-up the engine checks that no filter or per-element port matches an untagged element, then
    skips untagged elements in the main pass; the area pass sees them.
 2. **Clock**: SC's age filters (`older today -N`, `< today`) read the wall clock. The `clock` patch
@@ -232,11 +232,36 @@ Every other area quest is equal. The Toronto per-city numbers are the oracle's (
 same data, see above). The verify run (`-Dopenquests.verifyFast=true`, 871 s) found every twin equal to
 its port on all 48 cities.
 
+## Notes
+
+`--notes <clip.jsonl>` models OSM notes, which the app downloads with the map data
+(`notes?bbox=…&closed=0&limit=10000`). The clip is cut from the planet notes dump by
+`tools/clip_notes.py` (`run.py` fetches the dump through osm-extracts and clips it once per dump). The
+dump holds every note with every comment and its timestamp, so the notes open at any past asOf can be
+rebuilt: created by then, and the last of opened/closed/reopened up to then is not a close; comments
+after asOf are dropped, and so are notes without comments (as `NotesDownloader` does, #1338). The run
+refuses a dump whose newest comment is older than asOf.
+
+- **Quests hidden by notes.** `OsmQuestController` hides every OSM quest whose position, truncated to 6
+  decimals (`LatLon.truncateTo6Decimals()`, vendored), equals the truncated position of any open note,
+  quest or not. Notes left from the app sit exactly on the quest they are about. Both passes apply it
+  after a quest matched; the denominators are unaffected.
+- **The note quest** (`OsmNoteQuestType`) is a note SC's own filter shows: `shouldShowAsQuest` in
+  `OsmNoteQuestController.kt`, ported verbatim into `openquests/NoteQuest.kt` and pinned in
+  `PORTED-QUESTS.txt` (it runs on SC's vendored `Note`). It is counted for a user who wrote none of the
+  notes, with "show all notes" off, the app's default: the first comment holds a question mark (SC's list
+  includes `;`, the Greek question mark's look-alike) or any comment holds `#surveyme`. Counted where the
+  note's position is in the city.
+- Snapshots record the dump in `notes`; without `--notes` it is null, nothing is hidden and the note
+  quest is `unsupported`.
+
 ## What still differs from the app
 
 All counted quests are marked `supported`: none of the differences below is specific to a quest.
 
-- **Notes**: the app hides a quest whose position is exactly on an open OSM note. Notes are not modelled.
+- **Notes** (with `--notes`): moderator-hidden notes are not in the dump, so a note hidden after asOf is
+  missing from past counts. The app downloads at most 10,000 notes per download; the engine logs a warning
+  if a city's bounding box holds more open notes than that.
 - **What the app has downloaded**: the app builds relation geometry from whatever member ways it has in its
   local database (`allowIncomplete`). The engine has every member way in the extract, so for a large
   multipolygon or route the app's position can differ, depending on download history. Members outside the

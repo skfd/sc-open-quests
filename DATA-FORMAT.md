@@ -12,6 +12,12 @@ This is the contract between the engine (writes snapshots), the pipeline (keeps 
   (`tools/import_farmland_cities.py` makes both for the ontario-farmland set).
 - An `.osm.pbf` extract with timestamps. Its header `osmosis_replication_timestamp` is the snapshot's
   **as-of** time.
+- A notes clip (`tools/clip_notes.py`, in `data/notes/`, not committed): the notes of the planet notes dump
+  inside `config/ontario.poly`'s bounding box, open or closed, with every comment. JSON lines; the first is
+  a header `{"schema":1,"source":"planet-notes-261011.osn.bz2","sha256":…,"until":"<newest comment in the
+  dump>","bbox":[minLon,minLat,maxLon,maxLat],"poly":"ontario.poly","notes":<count>}`, then one note per
+  line by id: `{"id":…,"lat":"43.6532100","lon":"-79.3832000","created":…,"comments":[{"action":"opened",
+  "timestamp":…,"uid":…,"text":…}]}` (lat/lon as the dump's strings, `uid` absent for anonymous comments).
 
 ## Engine output: one snapshot per extract
 
@@ -37,6 +43,12 @@ time zone (`YYYY-MM-DD`).
               "lastModified": "2026-07-16T23:33:11Z",  // the download's Last-Modified, as ISO; or null
               "sha256": "...",         // always: computed by the engine from the PBF it read
               "file": "ontario-2026-07-16.osm.pbf" },  // the PBF's file name
+  "notes": { "dump": "planet-notes-261011.osn.bz2", "sha256": "...", // the notes dump the clip came from;
+             "until": "2026-10-11T00:02:41Z",   // its newest comment (it must be at or after asOf)
+             "open": 21345,                     // notes open at asOf in the clip's region
+             "showAllNotes": false },           // the app setting the note quest assumes (its default)
+                                       // null: notes not modelled (no quest hidden, no note quest);
+                                       //   absent on snapshots made before 2026-10-12
   "runSeconds": 12.3,
   "cities": {                          // keyed by city id, sorted
     "toronto": {
@@ -48,6 +60,7 @@ time zone (`YYYY-MM-DD`).
           "nodes": 2931, "ways": 132, "relations": 0,
           "agedOnly": 0                 // of `open`, how many match only because of time (0 when !usesAge)
         }
+        // OsmNoteQuestType (with notes): "open" is the note quests in the city, nodes/ways/relations 0
         // every quest with status "counted" for this city in quests.json appears here, zeros included
         // (127 per city for SC 63.4 in Ontario; ~620 KB per snapshot for 48 cities)
       }
@@ -55,6 +68,11 @@ time zone (`YYYY-MM-DD`).
   }
 }
 ```
+
+With notes, a quest whose position truncated to 6 decimals equals an open note's is not counted, as the
+app hides it (`OsmQuestController.getBlacklistedPositions`). The note quest counts the open notes in the
+city that SC's own filter shows to a user who wrote none of them, with "show all notes" off (the app's
+default): a question mark in the first comment, or `#surveyme` in any. See `engine/README.md`, "Notes".
 
 `agedOnly`, per element: of the elements counted in `open`, those that no longer match when the clock is set
 to 1900-01-01, where every `older today -N` test is false. That includes date tags compared with today
@@ -90,7 +108,7 @@ without `area=yes`, whose position is in the city; great-circle length on a 6371
 
 `support`: `supported` for every filter quest (SC's own filter and geometry code; the differences left
 in `engine/README.md` are not quest-specific) and every ported custom quest (checked element for element
-against SC's own class), `unsupported` for the other custom quests and the note quest. A quest that becomes
+against SC's own class) and the note quest when the run had notes, `unsupported` otherwise. A quest that becomes
 counted is absent (`null` in history) from older snapshots, never 0; the site marks the date where the set
 of counted quests changes as a break in totals. `status`:
 `unsupported` if the quest is not supported, else `not-in-region` if its `enabledInCountries` excludes the
@@ -105,8 +123,9 @@ Headline totals on the site exclude `defaultDisabled` quests; the per-quest numb
 ```jsonc
 { "city": "toronto", "name": "Toronto",
   "dates": ["2026-07-16", "..."],                       // asOfDate, ascending, one per extract
-  "meta": [ { "scVersion": "63.4", "resurveyMultiplier": 1, "areaUnit": "city" } ],  // parallel to dates,
-                                                        //   so breaks show; areaUnit only where the snapshot has it
+  "meta": [ { "scVersion": "63.4", "resurveyMultiplier": 1, "areaUnit": "city", "notes": true } ],
+                                                        //   parallel to dates, so breaks show; areaUnit only
+                                                        //   where the snapshot has it, notes only where true
   "quests": { "AddBenchBackrest": { "open": [3063], "agedOnly": [0] } },
   "denominators": { "landAreaKm2": 665.9, "highwayKm": [0.0] } }
 ```

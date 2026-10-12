@@ -8,7 +8,7 @@ Subcommands:
              notes and a notes dump now reaches it). Needs a notes dump that reaches the extract.
   backfill   count every dated Ontario extract still in the shared store
   history    rebuild docs/data/history/<cityId>.json and docs/data/cities.json from all snapshots
-  update     download + count + history, then commit "data <asOfDate>" and push
+  update     download + backfill + history, then commit "data <asOfDate>" and push
 
 Extracts and notes dumps live in the shared store (~/Code/.osm-data, see ~/Code/osm-extracts/README.md);
 this project never downloads them itself. A notes dump is clipped to Ontario once, into data/notes/. The contract between engine, pipeline and site is DATA-FORMAT.md.
@@ -392,7 +392,9 @@ def update(force: bool = False) -> None:
         log("=== download ===")
         download()
         log("=== count ===")
-        count(force=force)
+        # every stored extract, not only the newest: one counted before its notes dump existed is
+        # recounted once a dump reaches it; the rest are skipped
+        backfill(force=force)
         log("=== history ===")
         history()
         log("=== publish ===")
