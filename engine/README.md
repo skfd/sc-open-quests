@@ -1,46 +1,137 @@
 # engine
 
-Counts open StreetComplete quests from an OSM PBF extract by running StreetComplete's own element
-filter code on a plain JVM. Status: **spike** (12 hardcoded filter quests, Toronto, Ontario extract).
+Counts open StreetComplete quests per city from an OSM PBF extract by running StreetComplete's own
+element filter and geometry code on a plain JVM. Status: **milestone 1**: all 138 filter quests of SC
+v63.4, 48 Ontario cities, one pass over the Ontario extract. Output format: [DATA-FORMAT.md](../DATA-FORMAT.md).
 
 ## Licence
 
 `src/main/kotlin/sc/` is StreetComplete source, **GPL-3.0** (licence text copied alongside). Linking it
-into this program makes the engine a GPL-3.0 derivative, so this project needs a GPL-3.0-compatible
-licence before it is published. The SC files carry no per-file headers upstream; they are copied
-byte-for-byte (see the sha256 list in `SC-VERSION.txt`).
+makes the engine a GPL-3.0 derivative; the repository is GPL-3.0. The SC files carry no per-file headers
+upstream; they are copied byte-for-byte except for the one patch below (see the sha256 list in
+`SC-VERSION.txt`).
 
-## Layout
-
-- `sync-sc.ps1 -ScPath <SC checkout> -Tag v63.4` copies the needed SC `commonMain` files into
-  `src/main/kotlin/sc/` (original packages) and writes `SC-VERSION.txt` (tag, commit, file hashes).
-  **Patches: none.** The files compile unchanged because the build uses SC's Kotlin (2.4.0),
-  kotlinx-datetime (0.8.0) and the kotlinx.serialization plugin (for `@Serializable` on `Element`).
-- `src/main/kotlin/openquests/`
-  - `Pbf.kt`: PBF blob reading and decoding on `org.openstreetmap.pbf:osmpbf` (protobuf bindings only).
-  - `Polygon.kt`: city polygon from ontario-farmland's `cache/boundaries.json`, even-odd test.
-  - `Quests.kt`: the spike's quest filters, pasted verbatim from SC v63.4 including their string
-    templates.
-  - `Spike.kt`: one pass over the file, staged nodes, then ways, then relations, each stage parallel.
-- `run-spike.ps1`: runs the installed app and samples peak working set.
-- `crosscheck_bench.py`: an independent pyosmium count for two quests, plus a version/timestamp check.
-
-## Build and run
+## Build, run, test
 
 ```powershell
 $env:JAVA_HOME = 'C:\Program Files\Android\Android Studio\jbr'   # JDK 21
-./gradlew.bat installDist
-./run-spike.ps1                       # writes out/spike-run.log and out/spike-matches.tsv
-python crosscheck_bench.py            # needs out/spike-matches.tsv
+cd engine; ./gradlew.bat installDist; cd ..
+
+# from the repo root; paths are relative to the working directory
+engine/build/install/sc-open-quests-engine/bin/sc-open-quests-engine.bat count `
+    --pbf C:\Users\kk\Code\.osm-data\ontario\ontario-2026-07-16.osm.pbf `
+    --quests data/quests/v63.4.json --cities config/cities.json --out docs/data `
+    --source-meta C:\Users\kk\Code\.osm-data\ontario\ontario-2026-07-16.meta.json
 ```
 
-## Spike approximations (to fix before the numbers go public)
+- Writes `docs/data/snapshots/<asOfDate>.json` and `docs/data/quests.json`. Exit code 1 on any error.
+- `--source-meta`: the extract's metadata. Both the osm-extracts `<file>.meta.json` (`sha256`) and the
+  toronto-streets-osm `meta.json` (`pbf_sha256`) work. The engine hashes the PBF while reading it and
+  fails if the meta describes a different file. Without it, `source.url`/`lastModified` are null.
+- `--today <instant or date>`: evaluate age filters at this time instead of the extract's
+  `osmosis_replication_timestamp` (tests and what-ifs; a bare date means noon in the cities' zone).
+  `asOf`/`asOfDate` follow it; `extractTimestamp` keeps the header's.
+- `--dump-matches <tsv> --dump-quests A,B`: every counted match of those quests with id, version,
+  timestamp, city, quest position and agedOnly, for cross-checks.
+- `engine/measure.ps1 count ...` runs the installed engine from the repo root and reports wall time and
+  peak working set.
+- `./gradlew.bat test` (from `engine/`): unit tests plus a Toronto regression on the 2026-07-16 extract.
+  `-Ppbf=<file>` points it elsewhere; it is skipped if the file is missing. One country-gating test reads
+  SC's `boundaries.ser` from the SC checkout (`-PscBoundaries=<file>`), skipped if absent.
 
-- Element centre is the plain average of the way's nodes. For relations it is the average of member
-  nodes and member-way centres; sub-relations are ignored. SC uses polygon centroids and line midpoints.
-- `Way.nodeIds` and `Relation.members` are passed empty; no element filter reads them.
-- Untagged elements are skipped. At start-up the app checks that no filter matches an untagged element.
-- Filters are hardcoded. The real pipeline should take resolved filter strings from SC's quest registry,
-  with `enabledInCountries`, default-disabled flags and custom quests.
-- The time zone is pinned to `America/Toronto` (`-Duser.timezone`). `older`/`newer` and `RelativeDate`
-  use the system zone.
+Extracts live in the shared store `~/Code/.osm-data/ontario/` (managed by `~/Code/osm-extracts`). Open the
+dated file, not `ontario-latest.osm.pbf`. The store keeps the newest two extracts plus pinned ones.
+
+## How a count is made
+
+1. **Quests**: every `kind: "filter"` entry of the registry dump (`tools/sc-harness`), parsed with SC's
+   `toElementFilterExpression()`. Custom (51) and note (1) quests are `unsupported` and not counted.
+   At start-up the engine checks that no filter matches an untagged element, then skips untagged
+   elements.
+2. **Clock**: SC's age filters (`older today -N`, `< today`) read the wall clock. The `clock` patch
+   makes that clock settable; the engine sets it to the extract's replication timestamp. Dates are
+   computed in the JVM's default zone, pinned to `America/Toronto` by the launcher
+   (`-Duser.timezone`); the engine refuses to run if a city's `timeZone` differs.
+3. **agedOnly**: each match of a `usesAge` quest is re-evaluated on the same thread with the clock at
+   1900-01-01, where every `older today -N` and `x < today` test is false. Matches that disappear are
+   `agedOnly`. Besides `older`, this catches four date-tag comparisons with today: `opening_date < today`
+   (MarkCompletedBuildingConstruction, MarkCompletedHighwayConstruction) and `smoothness:date < today -4
+   years` (AddRoadSmoothness, AddPathSmoothness). All of them reopen without an edit.
+4. **Country gating** per city from `countryCodes` (`["CA","CA-ON"]`), as SC's `CountryBoundariesImpl.
+   isInAny`: `NoCountriesExcept(codes)` is on if a code equals one of the city's ids,
+   `AllCountriesExcept(codes)` if none does. SC's countryboundaries data gives an Ontario position the
+   ids `CA-ON` and `CA` (checked by a test against SC's `boundaries.ser` for 47 of the 48 cities), so
+   a quest listing only `CA-ON` is on and one excluding `CA` is off. 11 filter quests are off in every
+   city. SC also skips a quest type when the download bbox does not intersect its countries; that is
+   redundant for cities wholly inside CA-ON.
+5. **Quest position** from SC's own `ElementGeometryCreator` (vendored): a node is its position; a way
+   with fewer than 2 distinct positions or a missing node has no geometry (no quest); a closed way that
+   `isArea()` (SC's `IS_AREA_EXPRESSION`) gets the polygon centroid, any other way the point at half its
+   length; a `type=multipolygon` relation gets the centroid of its first outer ring after SC joins the
+   member ways into rings; any other relation gets the half-length point of its first joined polyline.
+   Relation geometry uses member **ways** only, skipping missing ones (`allowIncomplete = true`, as in
+   `MapDataControllerImpl`); node and sub-relation members are ignored, as in SC.
+6. **Cities**: bbox prefilter, then even-odd point-in-polygon on the boundary from `config/cities.json`
+   (Overpass `out geom` relation). An element whose bounding box misses every city's is skipped before its
+   geometry is built (its centroid or midpoint cannot be inside). A quest counts in a city if its position
+   is inside the city polygon and the quest is enabled there.
+7. **Denominators**: `taggedNodes` and `taggedWays` are tagged elements whose quest position is in the
+   city. `highwayKm` sums the length of ways tagged `highway` = motorway, trunk, primary, secondary,
+   tertiary, unclassified, residential, service, living_street or one of motorway_link, trunk_link,
+   primary_link, secondary_link, tertiary_link, not `area=yes`, whose position is in the city. Length is
+   SC's `measuredLength()` (great circle on a sphere of radius 6371 km), summed in whole millimetres so the
+   total does not depend on thread order, and written in km with 3 decimals.
+
+Pass structure (file sorted Type_then_ID): relation blocks are read first to collect the member way ids of
+tagged relations; then nodes (an id -> position index), ways (member ways of tagged relations keep their
+node positions), relations. Each stage decodes blocks in parallel.
+
+## SC patches and stubs
+
+- **`clock`** (`util/ktx/Instant.kt`): `fun systemTimeNow(): Instant = Clock.System.now()` becomes
+  `fun systemTimeNow(): Instant = systemClock.now()` plus `var systemClock: Clock = Clock.System`.
+  `LocalDate.now()`, `LocalDateTime.now()`, `RelativeDate.date` and `nowAsCheckDateString()` all go through
+  `systemTimeNow()`. `sync-sc.ps1` applies it by exact line match after the copy (and fails if the
+  upstream line changed) and records both hashes in `SC-VERSION.txt`. The engine installs a clock that
+  reads a thread-local override first (`EngineClock`), which is how agedOnly runs in the same pass.
+- **Stub** `src/main/kotlin/stubs/de/westnordost/osmfeatures/GeometryType.kt`: osmfeatures 8.0.0 has no
+  plain-JVM artifact, and the vendored `util/ktx/Element.kt` imports its `GeometryType`. The stub enum lets
+  that file compile unchanged; the engine never uses it.
+
+Everything else under `src/main/kotlin/sc/` is byte-identical to SC v63.4. To move to a new SC tag:
+`./sync-sc.ps1 -ScPath <checkout> -Tag vX`, regenerate `data/quests/vX.json` with `tools/sc-harness`, build.
+
+## What still differs from the app
+
+All filter quests are marked `supported`: none of the differences below is specific to a quest.
+
+- **Notes**: the app hides a quest whose position is exactly on an open OSM note. Notes are not modelled.
+- **What the app has downloaded**: the app builds relation geometry from whatever member ways it has in its
+  local database (`allowIncomplete`). The engine has every member way in the extract, so for a large
+  multipolygon or route the app's position can differ, depending on download history. Members outside the
+  extract (relations crossing the Ontario border) are missing for the engine as well.
+- **Relations without geometry**: 1,360 tagged Ontario relations have no usable member way (node-only
+  relations such as `public_transport=stop_area`, relations of sub-relations). SC gives them no geometry
+  either, so they get no quest in the app; this is not an engine gap.
+- **Country gating** is evaluated per city, not per element position. Exact while every city lies inside
+  CA-ON.
+- **Default-disabled quests** (30 filter quests) are counted like the others; the site leaves them out of
+  headline totals (`defaultDisabled` in quests.json). The resurvey multiplier is the app default, 1.
+
+## Timings and memory (Ontario 2026-07-16, 967 MB, 24 threads)
+
+| stage | time |
+| --- | --- |
+| read blobs + sha256 | 1.2–2.0 s |
+| relation member scan | 0.7 s (1.03M member ways) |
+| nodes (132.6M indexed, 4.6M tagged) | 6.7–9.8 s |
+| ways (4.6M tagged near a city) | 7.2–7.9 s |
+| relations | 1.3–2.4 s |
+| **total in-process** | **17–23 s**; process wall 19–27 s |
+
+Peak heap 10.4–10.7 GB (sum of pool peaks), peak working set 11.6–12.1 GB, with `-Xmx16g`. Most of it is
+the node index (16 bytes per node, ~2.1 GB), the blobs held in memory (~1 GB), the positions of the
+0.97M member ways of tagged relations, and garbage from building SC elements in parallel. A bigger region needs a bigger heap; the 92 GB host has room.
+
+Rerunning on the same extract gives the same bytes apart from `runSeconds` and `engineCommit` (checked
+by diffing two runs).

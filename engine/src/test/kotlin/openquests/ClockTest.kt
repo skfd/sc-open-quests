@@ -41,6 +41,11 @@ class ClockTest {
         assertEquals(Instant.parse("2026-10-11T03:00:00Z"), parseToday("2026-10-11T03:00:00Z"))
     }
 
+    @Test fun `source lastModified becomes ISO`() {
+        assertEquals("2026-07-16T23:33:11Z", httpDateToIso("Thu, 16 Jul 2026 23:33:11 GMT"))
+        assertEquals("2026-07-16T23:33:11Z", httpDateToIso("2026-07-16T23:33:11Z"))
+    }
+
     @Test fun `a thread can evaluate at LONG_AGO without moving asOf`() {
         EngineClock.install(parseToday("2027-01-01"))
         assertTrue(filter.matches(shop))

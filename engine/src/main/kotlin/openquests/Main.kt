@@ -156,7 +156,14 @@ private fun readSourceMeta(file: File?, pbf: File, sha256: String): SourceMeta {
     require(metaSha == null || metaSha.equals(sha256, ignoreCase = true)) {
         "${file.path} describes a file with sha256 $metaSha, but ${pbf.path} has $sha256"
     }
-    return SourceMeta(o.str("source_url"), o.str("source_last_modified"), sha256, o.str("file") ?: pbf.name)
+    return SourceMeta(o.str("source_url"), o.str("source_last_modified")?.let(::httpDateToIso), sha256, o.str("file") ?: pbf.name)
+}
+
+/** "Thu, 16 Jul 2026 23:33:11 GMT" (HTTP Last-Modified) -> "2026-07-16T23:33:11Z"; ISO input is kept. */
+fun httpDateToIso(s: String): String = try {
+    java.time.ZonedDateTime.parse(s, java.time.format.DateTimeFormatter.RFC_1123_DATE_TIME).toInstant().toString()
+} catch (_: java.time.format.DateTimeParseException) {
+    Instant.parse(s).toString()
 }
 
 private fun gitHead(dir: File): String? = try {
