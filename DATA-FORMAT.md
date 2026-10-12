@@ -78,8 +78,9 @@ without `area=yes`, whose position is in the city; great-circle length on a 6371
                                                        //   "codes":[...]}; the note quest has none in SC
                                                        //   and gets {"type":"AllCountries"}
     "wikiLink": "Key:backrest",                        // may be null
-    "elementTypes": ["nodes", "ways"],                 // what the filter selects, or what a ported custom
-                                                       //   quest can return; [] for other custom and note
+    "elementTypes": ["nodes", "ways"],                 // what the filter selects, or what a per-element
+                                                       //   custom port can return; [] for area quests
+                                                       //   (engine/README.md), other custom and note
     "status": { "toronto": "counted|not-in-region|unsupported" }   // per city, keyed by id, sorted
 } ] }
 ```

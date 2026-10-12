@@ -156,3 +156,19 @@ Known gaps:
 - **New quests show as a break, not a jump.** Only the newest snapshot (2026-10-11) was recounted; older
   ones keep `null` for the new quests. The site marks where the set of counted quests changes on the
   totals chart, and the "since last snapshot" tile compares the same quest types on both dates.
+
+## Area quests (2026-10-12, decided while the owner was away)
+
+- **36 more custom quests**, the ones that need the surrounding map data, are counted. Only AddHousenumber,
+  AddCycleway and AddRoofShape remain: they need SC's country metadata (`CountryInfo` from the
+  `country_metadata` files plus the boundaries), the next step.
+- **Generated ports.** `engine/port_area_quests.py` copies each quest file and drops only the UI and answer
+  members; output and pins as for the hand ports. Generated, so a version bump is a rerun, not a rewrite.
+- **The unit is the app's download tile (z16), not the city.** The app runs `getApplicableElements` on the
+  data of one download; a whole city as one map data is a model of nobody's phone, and SC's quests are not
+  written for it (AddMaxHeight is quadratic in roads x bridges and took over ten minutes on Toronto). Per
+  tile, the counts match the app's behaviour after a one-tile download, and Toronto's per-tile and
+  per-city counts differ by one quest in four quests checked.
+- **Oracle again**: city mode on Guelph, Kingston and Barrie (29,786 quests) gives identical sets with SC's
+  own classes. It found one real bug: a quest returning an element twice was counted twice.
+- Cost: the run goes from about 25 s to about 2 minutes and needs a 24 GB heap. Fine for a daily job.
