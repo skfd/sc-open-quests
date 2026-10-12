@@ -86,7 +86,13 @@ is recorded alongside it.
 - **Filters come from the build:** `tools/sc-harness` dumps all 190 quests to `data/quests/v63.4.json`, and
   all 138 filter strings re-parse.
 - **Semantics to remember:**
-  - Date filters use the system time zone. Pin `-Duser.timezone=America/Toronto` and record "today".
+  - Date filters use the system time zone. Pin `-Duser.timezone=America/Toronto`.
+  - **"Today" must be the extract's replication timestamp, not the wall clock.** The spike used the
+    wall-clock date, 2026-10-11, against a 2026-07-16 extract. That miscounts the 48 `older` quests, and a
+    rerun of the same extract on another day would change the counts.
+    - The vendored `util/ktx/Instant.kt` calls `Clock.System.now()` directly. That's the one place vendoring
+      has to deviate: add a settable clock, and have `sync-sc.ps1` apply it as a recorded patch.
+    - The same lesson as toronto-streets-osm: "date a row by its extract".
   - `tag older X` is also true when the *element* hasn't been edited since X, so element age counts as well
     as check dates.
 - **Known approximations** still to replace:
