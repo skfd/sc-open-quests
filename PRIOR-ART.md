@@ -104,3 +104,7 @@ ported its filter language elsewhere.
   - Census land areas for denominators (`areas.json`).
 - `osm-mayflies/DESIGN.md`: pyosmium pitfalls (use `FileProcessor`; check before reading a deleted node's
   location).
+
+Counts above are from SC master (2026-10-10). At the pinned release v63.4 the build-time dump
+(`data/quests/v63.4.json`) gives 138 filter / 51 custom / 1 note quest, 27 country-gated, 34 default-disabled,
+48 using `older`.

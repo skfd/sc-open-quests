@@ -1,0 +1,24 @@
+// Append to StreetComplete's app/build.gradle.kts (tested at tag v63.4).
+//
+// v63.x and older: unit tests live in app/src/androidUnitTest and the test task is "testDebugUnitTest".
+// Newer master:    they live in app/src/androidHostTest and the test task is "testAndroidHostTest"
+//                  (see master's printQuestFiltersAsOverpassQL task, which this is modelled on).
+// Change the task name below (and the source folder you drop DumpQuestFilters.kt into) accordingly.
+
+// sc-open-quests harness: dump every quest type with its resolved element filter as JSON.
+// Usage: ./gradlew :app:dumpQuestFilters -PdumpOut=/path/to/v63.4.json
+tasks.register<JavaExec>("dumpQuestFilters") {
+    group = "utils"
+
+    val testTask = tasks.named<Test>("testDebugUnitTest")
+    // no dependsOn(testTask...): that would run the unit tests too; the classpath carries its own build deps
+    classpath = testTask.get().classpath
+
+    mainClass.set("de.westnordost.streetcomplete.DumpQuestFiltersKt")
+
+    systemProperty("sc.version", appVersionName)
+    systemProperty("sc.commit", providers.exec {
+        commandLine("git", "rev-parse", "HEAD")
+    }.standardOutput.asText.get().trim())
+    (findProperty("dumpOut") as String?)?.let { systemProperty("sc.out", it) }
+}

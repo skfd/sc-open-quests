@@ -20,16 +20,16 @@ is recorded alongside it.
   - Resurvey multiplier: the app's user setting of 0.5, 1 or 2 (proposed default 1).
   - Whether the 34 default-disabled quests are counted.
 - **Classify every quest from the code, not by hand.**
-  - The 140 `OsmFilterQuestType` start as *supported*.
-  - The 52 custom quests start as *unsupported*.
+  - The 138 `OsmFilterQuestType` (v63.4) start as *supported*.
+  - The 51 custom quests start as *unsupported*.
   - A custom quest moves up to *approximated* or *supported* only when someone writes its logic and checks it
     against the app.
   - Show the class on the site.
 - **Split the aging signal from the mapping signal by using the filter itself.**
-  - The about 50 quests whose filters use `older`/`newer` can reopen with no edit at all.
+  - The 48 quests whose filters use `older` can reopen with no edit at all.
   - For those, record the count from the plain tag test and the count that only exists because the element
     or check_date has aged, separately.
-- **Apply country gating for Canada and Ontario** (`enabledInCountries`, 26 quests). Leaving it out
+- **Apply country gating for Canada and Ontario** (`enabledInCountries`, 27 quests; codes include subdivisions such as CA-ON). Leaving it out
   overcounts.
 - **Count by the quest's center point inside the real city polygon.** This matches the app (`OsmQuestController`
   creates a quest only if its center is inside the downloaded area) and avoids starsep's bounding-box
@@ -59,7 +59,7 @@ is recorded alongside it.
 - Don't treat open OSM notes as noise. The app hides a quest whose center sits exactly on an open note. This
   is minor, but note it as a known difference until we model it.
 - Don't schedule at 12:00 or 12:30; the sibling trackers already use those slots.
-- Don't stall on the 52 custom quests. Ship the filter quests first.
+- Don't stall on the 51 custom quests. Ship the filter quests first.
 
 ## Decisions (agreed 2026-10-11)
 
