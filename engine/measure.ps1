@@ -4,7 +4,7 @@
   the java process's peak working set, sampled every 0.5 s. Arguments are passed to the engine.
 
 .EXAMPLE
-  ./engine/measure.ps1 count --pbf C:\Users\kk\Code\.osm-data\ontario\ontario-2026-07-16.osm.pbf `
+  ./engine/measure.ps1 count --pbf C:\Users\kk\Code\.osm-data\ontario\ontario-2026-10-10.osm.pbf `
       --quests data/quests/v63.4.json --cities config/cities.json --out docs/data
 #>
 $ErrorActionPreference = 'Stop'

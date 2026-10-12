@@ -19,9 +19,9 @@ cd engine; ./gradlew.bat installDist; cd ..
 
 # from the repo root; paths are relative to the working directory
 engine/build/install/sc-open-quests-engine/bin/sc-open-quests-engine.bat count `
-    --pbf C:\Users\kk\Code\.osm-data\ontario\ontario-2026-07-16.osm.pbf `
+    --pbf C:\Users\kk\Code\.osm-data\ontario\ontario-2026-10-10.osm.pbf `
     --quests data/quests/v63.4.json --cities config/cities.json --out docs/data `
-    --source-meta C:\Users\kk\Code\.osm-data\ontario\ontario-2026-07-16.meta.json
+    --source-meta C:\Users\kk\Code\.osm-data\ontario\ontario-2026-10-10.meta.json
 ```
 
 - Writes `docs/data/snapshots/<asOfDate>.json` and `docs/data/quests.json`. Exit code 1 on any error.
@@ -35,7 +35,7 @@ engine/build/install/sc-open-quests-engine/bin/sc-open-quests-engine.bat count `
   timestamp, city, quest position and agedOnly, for cross-checks.
 - `engine/measure.ps1 count ...` runs the installed engine from the repo root and reports wall time and
   peak working set.
-- `./gradlew.bat test` (from `engine/`): unit tests plus a Toronto regression on the 2026-07-16 extract.
+- `./gradlew.bat test` (from `engine/`): unit tests; a check that recounting the newest stored extract reproduces its committed snapshot; and the spike regression on the 2026-07-16 extract (skipped since that extract was pruned from the shared store).
   `-Ppbf=<file>` points it elsewhere; it is skipped if the file is missing. One country-gating test reads
   SC's `boundaries.ser` from the SC checkout (`-PscBoundaries=<file>`), skipped if absent.
 

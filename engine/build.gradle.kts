@@ -52,6 +52,11 @@ tasks.test {
         "openquests.pbf",
         providers.gradleProperty("pbf").getOrElse("C:/Users/kk/Code/.osm-data/ontario/ontario-2026-07-16.osm.pbf"),
     )
+    // the shared extract store (~/Code/osm-extracts); SnapshotReproductionTest recounts from it
+    systemProperty(
+        "openquests.osmData",
+        providers.gradleProperty("osmData").getOrElse("C:/Users/kk/Code/.osm-data"),
+    )
     // SC's country boundaries data (in an SC checkout); the test using it is skipped without it
     systemProperty(
         "openquests.scBoundaries",
