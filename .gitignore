@@ -4,3 +4,4 @@ data/osm/
 logs/
 __pycache__/
 .claude/
+data/backfill/
