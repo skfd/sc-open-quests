@@ -54,7 +54,7 @@ function humanize(name) {
 
 function signed(n) { return n > 0 ? "+" + nf.format(n) : n < 0 ? "−" + nf.format(-n) : "±0"; }
 // Rates: one decimal from 10 up, two significant digits below (0.012, 0.35, 4.7).
-const sig2 = new Intl.NumberFormat("en-CA", { maximumSignificantDigits: 2 });
+const sig2 = new Intl.NumberFormat("en-CA", { minimumSignificantDigits: 2, maximumSignificantDigits: 2 });
 const nf0 = new Intl.NumberFormat("en-CA", { maximumFractionDigits: 0 });
 function rate(v) { return v == null || !isFinite(v) ? "—" : (v >= 100 ? nf0 : v >= 10 ? nf1 : sig2).format(v); }
 function ratio(n, d) { return n != null && d ? rate(n / d) : "—"; }

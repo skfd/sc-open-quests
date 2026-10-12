@@ -7,9 +7,9 @@
   "scVersion": "63.4",
   "scCommit": "244c6873330de8de1829ff287bbfdef4cb5c96b5",
   "resurveyMultiplier": 1,
-  "engineCommit": "a9deacb1147bcb0a2eeb7373facd0d1bcdaf0b1f",
+  "engineCommit": "d6dc4f0d65393b8f31db3605c4d1d2d654b0e6c2",
   "source": { "url": "https://download.geofabrik.de/north-america/canada/ontario-latest.osm.pbf", "lastModified": "2026-10-11T21:43:54Z", "sha256": "521f7b4b463b514aaea1c87c1954f2f193ccaae7756952d9c80c86bb657184e1", "file": "ontario-2026-10-10.osm.pbf" },
-  "runSeconds": 16.4,
+  "runSeconds": 18.9,
   "cities": {
     "ajax": {
       "denominators": { "landAreaKm2": 75.3, "population": 119677, "taggedNodes": 16552, "taggedWays": 20404, "highwayKm": 744.575 },
@@ -1200,7 +1200,7 @@
       }
     },
     "cornwall": {
-      "denominators": { "landAreaKm2": 76.64, "population": null, "taggedNodes": 10902, "taggedWays": 31643, "highwayKm": 526.855 },
+      "denominators": { "landAreaKm2": 76.64, "population": 47845, "taggedNodes": 10902, "taggedWays": 31643, "highwayKm": 526.855 },
       "quests": {
         "AddAcceptsCards": { "open": 92, "nodes": 68, "ways": 24, "relations": 0, "agedOnly": 0 },
         "AddAccessPointRef": { "open": 0, "nodes": 0, "ways": 0, "relations": 0, "agedOnly": 0 },
@@ -3576,7 +3576,7 @@
       }
     },
     "ottawa": {
-      "denominators": { "landAreaKm2": 2889.86, "population": 1000000, "taggedNodes": 471772, "taggedWays": 559032, "highwayKm": 10883.975 },
+      "denominators": { "landAreaKm2": 2889.86, "population": 1017449, "taggedNodes": 471772, "taggedWays": 559032, "highwayKm": 10883.975 },
       "quests": {
         "AddAcceptsCards": { "open": 5910, "nodes": 3352, "ways": 2558, "relations": 0, "agedOnly": 0 },
         "AddAccessPointRef": { "open": 0, "nodes": 0, "ways": 0, "relations": 0, "agedOnly": 0 },
@@ -5424,7 +5424,7 @@
       }
     },
     "toronto": {
-      "denominators": { "landAreaKm2": 665.93, "population": null, "taggedNodes": 809338, "taggedWays": 786958, "highwayKm": 10857.991 },
+      "denominators": { "landAreaKm2": 665.93, "population": 2794356, "taggedNodes": 809338, "taggedWays": 786958, "highwayKm": 10857.991 },
       "quests": {
         "AddAcceptsCards": { "open": 16496, "nodes": 15893, "ways": 603, "relations": 0, "agedOnly": 0 },
         "AddAccessPointRef": { "open": 0, "nodes": 0, "ways": 0, "relations": 0, "agedOnly": 0 },

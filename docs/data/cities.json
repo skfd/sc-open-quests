@@ -127,7 +127,7 @@
    "name": "Cornwall",
    "open": 7001,
    "openAll": 31816,
-   "population": null,
+   "population": 47845,
    "questsCounted": 127,
    "scVersion": "63.4"
   },
@@ -361,7 +361,7 @@
    "name": "Ottawa",
    "open": 71727,
    "openAll": 681987,
-   "population": 1000000,
+   "population": 1017449,
    "questsCounted": 127,
    "scVersion": "63.4"
   },
@@ -543,7 +543,7 @@
    "name": "Toronto",
    "open": 167149,
    "openAll": 943666,
-   "population": null,
+   "population": 2794356,
    "questsCounted": 127,
    "scVersion": "63.4"
   },

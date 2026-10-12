@@ -136,9 +136,10 @@
         "CA-ON"
       ],
       "timeZone": "America/Toronto",
-      "population": null,
+      "population": 47845,
       "landAreaKm2": 76.64479534317198,
-      "boundary": "data/boundaries/4136858.json"
+      "boundary": "data/boundaries/4136858.json",
+      "populationSource": "Statistics Canada 2021 census"
     },
     {
       "id": "greater-sudbury",
@@ -388,9 +389,10 @@
         "CA-ON"
       ],
       "timeZone": "America/Toronto",
-      "population": 1000000,
+      "population": 1017449,
       "landAreaKm2": 2889.8616760531586,
-      "boundary": "data/boundaries/4136816.json"
+      "boundary": "data/boundaries/4136816.json",
+      "populationSource": "Statistics Canada 2021 census"
     },
     {
       "id": "owen-sound",
@@ -584,9 +586,10 @@
         "CA-ON"
       ],
       "timeZone": "America/Toronto",
-      "population": null,
+      "population": 2794356,
       "landAreaKm2": 665.9315424307558,
-      "boundary": "data/boundaries/324211.json"
+      "boundary": "data/boundaries/324211.json",
+      "populationSource": "Statistics Canada 2021 census"
     },
     {
       "id": "vaughan",
