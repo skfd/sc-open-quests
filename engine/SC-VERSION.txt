@@ -2,8 +2,9 @@
 # rerun the script instead. StreetComplete is GPL-3.0 (see src/main/kotlin/sc/LICENSE).
 tag=v63.4
 commit=244c6873330de8de1829ff287bbfdef4cb5c96b5
-patches=none
-files (sha256 of the copied file):
+patches=clock
+  clock: util/ktx/Instant.kt: systemTimeNow() reads a settable `var systemClock: Clock` (default Clock.System)
+files (sha256 of the copied file; patched files also give the upstream sha256):
   b5dc8154ec673f1522c129131ace62d6ea6913e8f8afb8e8242fac1549b0d1ed  de/westnordost/streetcomplete/data/elementfilter/BooleanExpression.kt
   af9ee66cfc6e286bbf6c4bf76ff43f7fde01bd04454fe529528db13d8fceecac  de/westnordost/streetcomplete/data/elementfilter/BooleanExpressionBuilder.kt
   6d15276119ff080031968b463cf3194bb604a58287566a55817f1a7c5899fb24  de/westnordost/streetcomplete/data/elementfilter/ElementFilterExpression.kt
@@ -21,7 +22,7 @@ files (sha256 of the copied file):
   274794b0421b88f4f7af5b4d4f6d828e82b01ee7da0cd749f379bf4641870610  de/westnordost/streetcomplete/data/osm/edits/update_tags/StringMapChanges.kt
   2b18d4d8ace7d2d61b8ee04bff6e643cf3b6142f38431ed9ccf3d80d4800e40a  de/westnordost/streetcomplete/data/osm/edits/update_tags/StringMapEntryChange.kt
   e04e27b381a282577a1cfd5cfdd1a359616648334b97ffd6183eece1fa91132d  de/westnordost/streetcomplete/util/StringWithCursor.kt
-  aea8dffdaa3d46a483e65d15173365da77485d9b5436d454a36c9f778265d6a6  de/westnordost/streetcomplete/util/ktx/Instant.kt
+  5f0f2ea173719b0c7ebe4f7751be7de13f6bf3068dce180161e9b41c8f1ac084  de/westnordost/streetcomplete/util/ktx/Instant.kt  (patch clock; upstream aea8dffdaa3d46a483e65d15173365da77485d9b5436d454a36c9f778265d6a6)
   4ab2aac0ac54f91ceda9ddc13dc9533a3643ae9fbb307525b52298ca4f3a2d78  de/westnordost/streetcomplete/util/ktx/LocalDate.kt
   8e433722974a585474623498902b82d426c8a0160701a64b8d382b1c288ed815  de/westnordost/streetcomplete/util/ktx/LocalDateTime.kt
   b7ad0e12e905e82d3b56a9f4d10fae7aa3a07aef8a2b9c887bf5a71240237e06  de/westnordost/streetcomplete/osm/BuildingLevelsUtils.kt
@@ -30,3 +31,16 @@ files (sha256 of the copied file):
   67bdac0294c91bc6cee133bf5a36a5b1e6bfcbfa2c497e99606394b9e48fce0b  de/westnordost/streetcomplete/osm/surface/Surface.kt
   54ae0fa4b0b9afb31bf8dd33e73cf739bb0197eed749d0abdabaab7ba3e0a595  de/westnordost/streetcomplete/osm/surface/SurfaceCreator.kt
   81cc0208116a5df3bc084e15147aba6b9808e46d1d8760ef88f904cf8942f32f  de/westnordost/streetcomplete/osm/surface/SurfaceCategory.kt
+  b409c704e5dc870bbeac48e7e218ec13bf42232f645208fcbcca7e264d0c5609  de/westnordost/streetcomplete/data/osm/geometry/ElementGeometryCreator.kt
+  783d3c0276896a07fea110f72aff94d6a841eb61d14a94c71fd92c1a01527d1d  de/westnordost/streetcomplete/data/osm/geometry/ElementGeometry.kt
+  5936c3d28e80a96234f15509a8ebc4b8c29a94edeb04e366d1308ef61438a044  de/westnordost/streetcomplete/data/osm/geometry/NodeWayMap.kt
+  d6db6ff46fa8a7f90a386738f089cbc9fb00c0a98cb24ef865e0b118044a9bbd  de/westnordost/streetcomplete/data/osm/mapdata/MapData.kt
+  f2ffc8b1165cfecd705f737446041a9b65fb84222798b4e1a63cabb721fce386  de/westnordost/streetcomplete/data/osm/mapdata/BoundingBox.kt
+  014aa3281b79c45abb0d07411d9662cf471543058143f8ae1db55447255377a6  de/westnordost/streetcomplete/util/math/SphericalEarthMath.kt
+  1faf17ca19bcf032fe528ad2772d996d69f88fc9ef64b7766997b6fe2414e8ac  de/westnordost/streetcomplete/util/math/SphericalEarthMathVector3d.kt
+  6269b305df088170db654ff2d17c9948182f9e6f2011b47be0a5f9c39013400e  de/westnordost/streetcomplete/util/math/Vector3d.kt
+  1426d63608e4bc6b67e924db9e52abc11a7d9dabdc1ca72ca0ad3d9781392544  de/westnordost/streetcomplete/util/math/AngleMath.kt
+  76ecb9fbb329d15c0d64b5920efb8b752f64e542d6b27f3f43d90ee02413fc5e  de/westnordost/streetcomplete/util/ktx/Collections.kt
+  ff0c3cebdecdaeb6ec6774c2f9506e12afaaba23eceb8c1f117b03f5ae341d25  de/westnordost/streetcomplete/util/ktx/Double.kt
+  4ce449023108b8d2b968831577a979d2138f82e58ff1041ea93b1698afd13447  de/westnordost/streetcomplete/util/ktx/Element.kt
+  a5e600b1f90363cc872779eca6100001f92ca05c6391b39065e120db25478fd1  de/westnordost/streetcomplete/osm/AreaUtils.kt
