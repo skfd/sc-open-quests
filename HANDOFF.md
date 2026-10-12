@@ -35,3 +35,24 @@ Toronto only, about 10 common quest types whose filters are simple, a few weeks 
   Polish city daily (25 quests, bounding boxes, no history on the site). See PRIOR-ART.md.
 - jmizv's queries are not tied to one city, and its QUESTS.md has a "Pending" (open) column.
 - Toronto is **admin_level 6** (relation 324211), not 8. Configure cities by relation id.
+
+## Status and next steps (2026-10-12)
+
+Milestone 1 is done and the site is live at https://skfd.github.io/sc-open-quests/. It covers 48 Ontario cities and
+the 138 filter quests from SC v63.4. There are 4 snapshots, from 2026-07-16 to 2026-10-10. `kk-SCOpenQuests` runs daily
+at 13:15. Design and known gaps are in DESIGN.md.
+
+Next, in order:
+1. **Check the first scheduled runs.** Look at `logs/scheduler.log` and confirm a "data <date>" commit landed and the
+   site updated.
+2. **Count the custom quests.** 51 are unsupported today and they are the biggest coverage gap. Start with the ~8 that
+   are tag-only Kotlin logic (AddOpeningHours, AddSidewalk, AddRoadWidth…). Then do the high-volume ones that need
+   surroundings (AddHousenumber, AddCrossing). Vendor SC's code where it compiles, as the engine already does.
+3. **Deeper history.** Geofabrik keeps no old dailies, but `~/Code/.osm-data/planet/history-261005.osm.pbf` is a full
+   history planet. Clip it to Ontario and time-slice it with `osmium time-filter` to get a monthly backfill. That
+   would give years of history, at a one-off cost of hours. ohsome could only cover the plain key/value quests.
+4. **Outreach.** Now that there is something to show, contact starsep (StreetCompleteStats), the SC devs and jmizv.
+5. **Smaller items:**
+   - Model open OSM notes, since the app hides quests at a note's position.
+   - Write down the routine for SC version bumps (v64: rerun `tools/sc-harness`, `engine/sync-sc.ps1`).
+   - Heatmap per quest type (stretch goal).
