@@ -8,7 +8,8 @@ answer "what would this SC version have shown then", not "what did the app of th
   clip     planet history -> .osm-data/ontario-history/ontario-history-<YYMMDD>.osh.pbf (hours, once)
   check    slice at an existing daily extract's replication time, count both, print the differences
   months   slice and count the 1st of each month (12:00Z) into data/backfill/snapshots/, deleting each slice
-  merge    copy the staged snapshots into docs/data/snapshots/ (then run `run.py history`)
+  recount  recount the published snapshots (all but the newest) with today's engine into data/backfill/recount/
+  merge    copy the staged and recounted snapshots into docs/data/snapshots/ (then run `run.py history`)
 
 Slices and staged snapshots live in data/backfill/ (gitignored). The daily pipeline never sees them until merge.
 osmium runs in the name-ru-repair-osmium image (osmium-tool 1.18, built by ../name-ru-repair/tools).
@@ -16,6 +17,7 @@ osmium runs in the name-ru-repair-osmium image (osmium-tool 1.18, built by ../na
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import os
 import shutil
@@ -89,10 +91,24 @@ def wait_for_quiet() -> None:
         time.sleep(300)
 
 
+@contextlib.contextmanager
+def locked():
+    """run.pipeline_lock, waiting while another process (say, a second backfill) holds it."""
+    while True:
+        try:
+            with run.pipeline_lock():
+                yield
+            return
+        except RuntimeError as e:
+            if "another run holds" not in str(e):
+                raise
+            time.sleep(20)
+
+
 def count(pbf: Path, meta: Path, out: Path) -> Path:
     """Run the engine on one extract into out/snapshots/. Returns the snapshot written."""
     wait_for_quiet()
-    with run.pipeline_lock():
+    with locked():
         if run.engine_is_stale():
             run.build_engine()
         before = set((out / "snapshots").glob("*.json"))
@@ -172,12 +188,44 @@ def months(first: str, last: str, step: int, keep: bool) -> None:
         run.log(f"{snap.name} in {time.monotonic() - t0:.0f} s")
 
 
+RECOUNT = BACKFILL / "recount"
+
+
+def recount() -> None:
+    """Recount the published snapshots counted by an older engine, so the series has no seam where the
+    history months meet them: from their Geofabrik extract if the store still has it, otherwise from a
+    history slice at their replication time (equal to the extract, see DESIGN.md)."""
+    history_end = datetime.fromisoformat(run.read_json(HISTORY.with_name(HISTORY.name + ".meta.json"))
+                                         ["replication_timestamp"])
+    by_sha = {run.read_json(m).get("sha256"): (p, m) for p, m in run.dated_extracts()}
+    snaps = sorted((run.DATA_DIR / "snapshots").glob("*.json"))
+    newest = snaps[-1].name
+    for p in snaps:
+        s = run.read_json(p)
+        if p.name == newest or (RECOUNT / "snapshots" / p.name).exists():
+            continue
+        extract = by_sha.get(s["source"]["sha256"])
+        t = datetime.fromisoformat(s["asOf"].replace("Z", "+00:00"))
+        if extract:
+            count(*extract, RECOUNT)
+        elif t <= history_end:
+            pbf, meta = slice_at(t)
+            count(pbf, meta, RECOUNT)
+            pbf.unlink()
+        else:
+            run.log(f"{p.name}: extract gone and after the history file; left as is")
+
+
 def merge() -> None:
+    """Staged months that are not published yet, and every recount (replacing the published one)."""
     dst = run.DATA_DIR / "snapshots"
     for p in sorted(STAGED.glob("*.json")):
         if not (dst / p.name).exists():
             shutil.copy2(p, dst / p.name)
             run.log(f"merged {p.name}")
+    for p in sorted((RECOUNT / "snapshots").glob("*.json")):
+        shutil.copy2(p, dst / p.name)
+        run.log(f"replaced {p.name} with its recount")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -191,10 +239,13 @@ def main(argv: list[str] | None = None) -> int:
     m.add_argument("--to", dest="last", default="2026-10")  # the planet history ends 2026-10-05
     m.add_argument("--step", type=int, default=1, help="months between slices (12 = a yearly spine)")
     m.add_argument("--keep", action="store_true", help="keep the slices")
+    sub.add_parser("recount")
     sub.add_parser("merge")
     a = ap.parse_args(argv)
     if a.cmd == "clip":
         clip()
+    elif a.cmd == "recount":
+        recount()
     elif a.cmd == "check":
         check(a.extract)
     elif a.cmd == "months":
