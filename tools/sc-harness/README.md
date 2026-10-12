@@ -102,27 +102,49 @@ Input is JSON lines, one element per line:
 
 ```json
 {"type":"way","id":123,"version":4,"timestamp":1690000000000,"tags":{"highway":"residential"},
- "lat":43.6,"lon":-79.4,"nodes":[1,2,3]}
+ "lat":43.6,"lon":-79.4,"nodes":[1,2,3],"inCity":true}
+{"type":"relation","id":7,"tags":{"type":"multipolygon","building":"retail"},
+ "members":[{"type":"way","ref":123,"role":"outer"}]}
+{"type":"node","id":1,"tags":{},"lat":43.6,"lon":-79.4}
 ```
 
 - `timestamp` is epoch milliseconds (SC's `timestampEdited`). Leave it out and the element counts as
   edited in 1970, so every `older today -N years` rule matches; the tool warns with a count.
-- `lat`/`lon` is the quest position. Every element gets an `ElementPointGeometry` there, and the map
-  data's bounding box covers them all.
-- `nodes` (ways) and `members` (relations, `{"type":"way","ref":1,"role":"outer"}`) are optional. Without
-  `nodes` a way has no node ids, so `isClosed` is false.
+- Nodes need `lat`/`lon`. Untagged nodes (`"tags":{}`) belong in the input whenever a quest looks at
+  the map around an element: way nodes for `AddCrossing`, `AddKerbHeight`, `AddEntrance`,
+  `AddBarrierOnPath`, ...
+- `nodes` (ways) and `members` (relations) list the element's parts. Without `nodes` a way has no node
+  ids, so `isClosed` is false.
+- `lat`/`lon` on ways and relations is optional, and only a fallback (below).
+- `inCity` (optional, `true`/`false`): `false` marks context, an element outside the counted area. It is
+  in the map data the quests see, but it is never listed. A line without the field counts as `true`, so
+  inputs without it behave as before.
 - Bad lines are skipped and counted.
 
+Geometry is built the way the app builds its map data on download (`MapDataControllerImpl`): all
+elements go in first, then a node gets a point at its position, and ways and relations get SC's own
+`ElementGeometryCreator().create(element, mapData, allowIncomplete = true)`: a polyline or polygon from
+their nodes, a relation from whichever member ways are complete. If that gives nothing (nodes missing
+from the input, no `nodes`/`members`, too few positions) the element's own `lat`/`lon` becomes a point;
+without those it has no geometry. stderr says how many were built, fell back, or have none.
+
+Then each quest's applicable elements are filtered as `OsmQuestController.createQuestsForBBox` does:
+an element without geometry is dropped (`getGeometry(...) ?: continue`), and with a bounding box given,
+one whose geometry centre lies outside it is dropped (`mayCreateQuest`). Then the `inCity:false` ones.
+stderr gives the drops per quest and reason.
+
 ```sh
-./gradlew --console=plain :app:checkCustomQuests \
-  -PcheckIn=C:/path/elements.jsonl \
-  -PcheckQuests=AddSidewalk,AddOpeningHours \
-  -PcheckOut=C:/path/applicable.tsv
+./gradlew --console=plain :app:checkCustomQuests   -PcheckIn=C:/path/elements.jsonl   -PcheckQuests=AddSidewalk,AddOpeningHours   -PcheckBbox=43.58,-79.64,43.86,-79.11   -PcheckOut=C:/path/applicable.tsv
 ```
 
+- `-PcheckBbox=south,west,north,east` (optional) is the downloaded area. It becomes the map data's
+  `boundingBox` and the centre rule above applies. Without it the box covers every `lat`/`lon` in the
+  input and nothing is dropped for position.
+
 Output is a sorted TSV with columns `quest`, `type`, `id` (header row included), type `node`/`way`/`relation`. Counts per quest go to
-stderr. Unknown quest names fail before the input is read. 2 million elements (500 MB) take about 20 s
-in the 12 GB heap the task sets.
+stderr. Unknown quest names fail before the input is read. 6.9 million lines (1.1 GB, Toronto with every
+way node) take about 27 s for 13 quests: 12 s to read, 2 s for geometry, 3.4 GB of heap in use (the task
+sets 20 GB).
 
 Caveats:
 
@@ -130,14 +152,20 @@ Caveats:
 - Country gating is not applied. The app also drops quests outside `enabledInCountries`
   (`OsmQuestController.mayCreateQuest`), e.g. `AddPostboxCollectionTimes` is `NoCountriesExcept(..., "CA", ...)`.
   Default-disabled quests (`AddRoadWidth`, and `AddMaxPhysicalHeight` without AR) are listed anyway.
-- The registry is built with mocks for `ArSupportChecker`, `getCountryInfoByLocation`,
-  `getCountryOrSubdivisionCode` and `getFeature`. A quest that calls one inside `getApplicableElements` would
-  throw or return junk; the tool reports a quest that throws and exits non-zero. Checked at v63.4 for
-  `AddSidewalk`, `AddOpeningHours`, `AddPostboxCollectionTimes`, `AddRecyclingContainerMaterials`,
-  `CheckShopType`, `AddClothingBinOperator`, `AddOnewayAerialway`, `AddRoadWidth`, `AddMaxPhysicalHeight`:
-  none does. Only `AddRoadWidth` and `AddMaxPhysicalHeight` take one (the AR checker), and they use it
-  only for `defaultDisabledMessage`. Quests built with `getFeature` (`AddPlaceName`, `CheckExistence`,
-  `AddIsAmenityIndoor`, ...) or `getCountryInfoByLocation` (`AddHousenumber`, `AddCycleway`, ...) need a
-  look before you trust them here.
+- The registry is built with mocks for `ArSupportChecker`, `getCountryInfoByLocation` and
+  `getCountryOrSubdivisionCode`; `getFeature` is the app's own (SC's feature dictionary over the checkout's
+  presets, in en-CA). A quest that calls a mock inside `getApplicableElements` would throw or return junk;
+  the tool reports a quest that throws and exits non-zero. At v63.4 only the AR checker (AddRoadWidth,
+  AddMaxPhysicalHeight, AddBarrierOpening; used for `defaultDisabledMessage` only) is taken by a quest the
+  engine counts; the country-info quests (AddHousenumber, AddCycleway, AddRoofShape) need a real one first.
 - The test fixture at v63.4 (45 elements covering those nine quests, hits and near misses) matched the
-  expected list exactly.
+  expected list exactly, before and after real geometry came in.
+- A second hand-built fixture (67 lines) covers the quests that need the surrounding map: a road crossed
+  by a footway at a shared untagged node (`AddCrossing`), a `barrier=kerb` node on a footway and a
+  `barrier=kerb` way crossing one (`AddKerbHeight`), a footway ending on an apartments outline and on a
+  multipolygon building relation (`AddEntrance`), a fence crossed by a path (`AddBarrierOnPath`), each
+  with a near miss; plus an `inCity:false` copy of the crossing, and ways with no / missing nodes for the
+  geometry rules (`AddSidewalk`). It matched with and without a bounding box.
+- `ElementGeometryCreator` can throw on a degenerate shape (a sliver polygon whose centroid falls off the
+  globe). The app does not guard that; here the element counts as having no built geometry, and stderr
+  names the first ten.

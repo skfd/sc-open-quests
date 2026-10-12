@@ -26,6 +26,7 @@ tasks.register<JavaExec>("dumpQuestFilters") {
 // sc-open-quests harness: oracle for ported custom quests. Runs the real getApplicableElements() of the
 // given quest types over a JSON-lines element file and writes the applicable elements as TSV.
 // Usage: ./gradlew :app:checkCustomQuests -PcheckIn=elements.jsonl -PcheckQuests=AddSidewalk,AddOpeningHours -PcheckOut=out.tsv
+//        [-PcheckBbox=south,west,north,east]
 tasks.register<JavaExec>("checkCustomQuests") {
     group = "utils"
 
@@ -34,12 +35,13 @@ tasks.register<JavaExec>("checkCustomQuests") {
     classpath = testTask.get().classpath
 
     mainClass.set("de.westnordost.streetcomplete.CheckCustomQuestsKt")
-    maxHeapSize = "12g"
+    maxHeapSize = "20g"
 
     (findProperty("checkIn") as String?)?.let { systemProperty("sc.in", it) }
     (findProperty("checkQuests") as String?)?.let { systemProperty("sc.quests", it) }
     (findProperty("checkOut") as String?)?.let { systemProperty("sc.out", it) }
     (findProperty("checkPresets") as String?)?.let { systemProperty("sc.presets", it) }
+    (findProperty("checkBbox") as String?)?.let { systemProperty("sc.bbox", it) }
     // getFeature() reads osmfeatures in the default locale; the engine pins en-CA too
     systemProperty("user.language", "en")
     systemProperty("user.country", "CA")
