@@ -20,10 +20,12 @@ dependencies {
     implementation("de.westnordost:osmfeatures:8.0.0")
     // opening hours parser, same version as StreetComplete v63.4 (AddOpeningHours, AddPostboxCollectionTimes)
     implementation("de.westnordost:osm-opening-hours:0.4.0")
+    // country metadata and boundaries (getCountryInfoByLocation), same versions as StreetComplete v63.4
+    implementation("com.charleskorn.kaml:kaml:0.104.0")
+    implementation("de.westnordost:countryboundaries:3.0.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0") // runBlocking in CountryInfos.kt
 
     testImplementation(kotlin("test"))
-    // only to check our reading of SC's country gating against the library and data SC ships
-    testImplementation("de.westnordost:countryboundaries:3.0.0")
     testImplementation("org.junit.jupiter:junit-jupiter:5.12.2")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }

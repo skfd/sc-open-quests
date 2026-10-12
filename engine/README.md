@@ -101,6 +101,9 @@ node positions), relations. Each stage decodes blocks in parallel.
   reads a thread-local override first (`EngineClock`), which is how agedOnly runs in the same pass.
 - **Stub** `src/main/kotlin/stubs/de/westnordost/streetcomplete/ui/common/street_side_select/Side.kt`: SC
   declares `enum class Side { LEFT, RIGHT }` in a Compose UI file; the vendored `osm/Sides.kt` imports it.
+- **Stubs** `resources/Res.kt` and `ui/ktx/Res.kt` (`Res.readBytesOrNull`): SC reads its
+  composeResources through Compose Multiplatform. The stub reads the files the engine bundles under
+  `src/main/resources/sc/` instead, so that the vendored `data/meta/CountryInfos.kt` compiles unchanged.
 - osmfeatures (`Feature`, `GeometryType`) is the real library, `de.westnordost:osmfeatures:8.0.0`, which
   publishes an `osmfeatures-jvm` variant (an earlier version of this README wrongly said it had none and
   stubbed `GeometryType`). The opening-hours parser is `de.westnordost:osm-opening-hours:0.4.0`, as in SC.
@@ -143,13 +146,14 @@ vendored `commonMain` helpers they use (`osm/Places.kt`, `osm/sidewalk/*`, `osm/
 
 ## Area quests
 
-36 custom quests decide where they apply from the map data around an element (crossings of roads and
+39 custom quests decide where they apply from the map data around an element (crossings of roads and
 footways, kerbs, entrances on building outlines, ways below bridges, nodes of ferry routes...). They are
 **generated**, not hand-transcribed: `engine/port_area_quests.py --sc <checkout> <Name>...` copies the
 quest's androidMain file, keeps the imports, everything outside the class, every non-override member and
 `getApplicableElements()` verbatim (plus `isApplicableTo()` where `getApplicableElements()` calls it), and
 writes `object <Name> : AreaQuest` into SC's own package under `src/main/kotlin/ported/`, so same-package
-helpers resolve unchanged. A `getFeature` constructor parameter becomes `ScFeatures`. Four androidMain helper
+helpers resolve unchanged. A `getFeature` constructor parameter becomes `ScFeatures`, and a
+`getCountryInfoByLocation` one becomes `ScCountryInfos` (see "Country metadata" below). Four androidMain helper
 files (FerryUtils, LevelUtils, SummitMarkingsUtil, MaxHeightUtils) are copied whole. Every file is pinned in
 `PORTED-QUESTS.txt` (helpers as `helper:<File>`); on a new SC tag, rerun the script for whatever
 `sync-sc.ps1` reports as changed, build, and recheck with the oracle. `ported/AreaQuests.kt` lists them.
@@ -174,9 +178,28 @@ download:
   that is the oracle's exact input. Not for snapshots: AddMaxHeight compares every road with every bridge
   and takes many minutes on all of Toronto.
 
+**Country metadata** (AddHousenumber, AddCycleway, AddRoofShape). The app hands these quests
+`{ countryInfos.get(countryBoundaries, it) }`. `ScCountryInfos` is that call, built from SC's own parts:
+- the region ids that SC's countryboundaries data (`boundaries.ser`, library `de.westnordost:countryboundaries:3.0.0`)
+  gives for the position, smallest region first: `CA-ON`, `CA` in Ontario;
+- SC's `CountryInfos` and `CountryInfo`, vendored unchanged. They merge `CA-ON.yml`, `CA.yml` and
+  `default.yml` with kaml 0.104.0, as SC does.
+
+`sync-sc.ps1` bundles `boundaries.ser` and those three yml files. A position outside Ontario (Gatineau,
+Michigan) reads `default.yml` only, but no quest is counted there. The values the three quests read are:
+- `roofsAreUsuallyFlat`: false (default.yml), so AddRoofShape asks for every building with levels;
+- the cycleway-ambiguity fields;
+- `countryCode`, which AddHousenumber only uses in the answer.
+
 **Checked against SC itself** with `tools/sc-harness` CheckCustomQuests in city mode (same map data, SC's
 own classes and geometry, `-PcheckBbox` = the engine's area bbox), Ontario 2026-10-11, all 36 quests:
-Guelph 13,027, Kingston 10,245, Barrie 6,514 quests, identical sets. Toronto (7.9M nodes, 1.07M ways): 118,170 quests,
+Guelph 13,027, Kingston 10,245, Barrie 6,514 quests, identical sets. For the three country-metadata quests the
+oracle's registry gets the app's real `getCountryInfoByLocation`: SC's boundaries.ser and country_metadata from the
+checkout, loaded the way `CountryInfos.load` does. The sets are identical again:
+- Guelph 15,437 quests;
+- Kingston 63,391;
+- Barrie 19,422;
+- Toronto 404,665: AddHousenumber 12,541, AddCycleway 26,811, AddRoofShape 365,313. Toronto (7.9M nodes, 1.07M ways): 118,170 quests,
 identical sets for every quest (the oracle also lists 28 AddEntranceReference, a quest that is off in
 Canada; it does not apply country gating).
 
@@ -185,7 +208,11 @@ after a one-tile download: a mall's or building's outline with no node inside th
 tile's map data. Toronto per tile vs. one map data for the whole city, 2026-10-11: AddIsAmenityIndoor 243
 vs 345, AddLevel 448 vs 534, AddLevelThing 64 vs 71, AddMaxHeight 1,968 vs 2,045 (the per-tile count is
 deduplicated, the per-city one too), AddOneway 3 vs 5, AddCrossing 914 vs 913, AddCrossingIsland 14,642 vs
-14,639; every other area quest is equal. What the app shows depends on how much its user downloaded at
+14,639, **AddHousenumber 11,658 vs 12,541 (-7.0%)**. AddHousenumber drops buildings that are not
+completely inside the padded download bbox, and areas with an address around a building only count if
+they reach into the tile. AddCycleway 26,704 vs 26,811 and AddRoofShape 365,311 vs 365,313 are not like
+for like: the city-mode numbers were taken with the clock at run time, not at the extract. Every other
+area quest is equal. What the app shows depends on how much its user downloaded at
 once; the tile is the smallest download, the whole city an upper bound. A bigger unit (z15, or a tile
 with its neighbours) is an open choice for the owner.
 

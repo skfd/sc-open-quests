@@ -121,6 +121,11 @@ $files = @(
     "$pkg/osm/kerb/KerbUtil.kt" # findAllKerbNodes(), couldBeAKerb()
     "$pkg/data/download/tiles/TilesRect.kt" # z16 download tiles (AreaPass)
     "$pkg/data/meta/CountryInfo.kt" # used by osm/cycleway/Cycleway.kt
+    # country metadata for getCountryInfoByLocation (AddHousenumber, AddCycleway, AddRoofShape), as the
+    # app wires it: countryInfos.get(countryBoundaries, position) (openquests/custom/CountryInfos.kt)
+    "$pkg/data/meta/CountryInfos.kt" # needs Res.readBytesOrNull, stubbed in src/main/kotlin/stubs/
+    "$pkg/util/countryboundaries/CountryBoundaries.kt"
+    "$pkg/util/countryboundaries/Countries.kt"
     "$pkg/osm/cycleway/Cycleway.kt"
     "$pkg/osm/cycleway/CyclewayParser.kt"
     "$pkg/osm/street_parking/StreetParking.kt"
@@ -151,6 +156,12 @@ $resources = @(
     'osmfeatures/default/presets.json'
     'osmfeatures/default/en.json'
     'osmfeatures/default/en-CA.json'
+    # SC's country boundaries and the country metadata an Ontario position reads (CA-ON, CA, default).
+    # Positions elsewhere (Quebec, US) get only default.yml here; quests there are not counted.
+    'boundaries.ser'
+    'country_metadata/default.yml'
+    'country_metadata/CA.yml'
+    'country_metadata/CA-ON.yml'
 )
 
 # Custom quests live in SC's androidMain next to their Android forms, so they are not vendored: their

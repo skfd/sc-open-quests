@@ -57,3 +57,6 @@ helper:LevelUtils               quests/level/LevelUtils.kt                      
 helper:SummitMarkingsUtil       quests/summit/SummitMarkingsUtil.kt                                      41d377bff5b8e46f2eca2befacfa7d072c9b238fc516333940a413bb71b99712
 helper:MaxHeightUtils           quests/max_height/MaxHeightUtils.kt                                      f2b1d8bfcce485fd9fce7325643116c54691042c3f1c1b0adcd19a5ec0252f7f
 helper:ignoreRelation           cm:ApplicationConstants.kt                                               3c54a210e1d7b4315f12e78af1bdd444331dbcab68ef472f31aa926026d524c2
+AddHousenumber                  quests/address/AddHousenumber.kt                                         eab24777688cd718836969465a089a03c72f4c452898395f5cecb2603c8eb015
+AddCycleway                     quests/cycleway/AddCycleway.kt                                           48a0903ba1a7dfc8f500beb45bc487c3a3f8bf071c59ac14f362c47511575742
+AddRoofShape                    quests/roof_shape/AddRoofShape.kt                                        0d61a25ae9963b681a585f204b0fecb95ebe013fd9100bc0f02decdef00c5649

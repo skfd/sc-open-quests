@@ -68,6 +68,9 @@ files (sha256 of the copied file; patched files also give the upstream sha256):
   fb7436d26dec2fdc52a9dcab9bb30bbea4321c1d315deae76e06d3f21d7704b8  de/westnordost/streetcomplete/osm/kerb/KerbUtil.kt
   2e35ee591e1a4a51411e30b79452bf9a927544a5376b6c99840a144069f437c6  de/westnordost/streetcomplete/data/download/tiles/TilesRect.kt
   0933c47823a86233287182aad38a175be4753c8ef4e95585a00f4fb5056ec178  de/westnordost/streetcomplete/data/meta/CountryInfo.kt
+  c5f5d886189bf0e91e893469b36cbaa25761abd515699a16d2a522ea2875b44f  de/westnordost/streetcomplete/data/meta/CountryInfos.kt
+  bac278fd55e79da8acf69074061a70be4d77f7ed8bb6a5e72d95d0ce64edab8f  de/westnordost/streetcomplete/util/countryboundaries/CountryBoundaries.kt
+  218edeedc1282faef308f68be1685deb1f2d9acd11a8814d3d1efe3eccc43934  de/westnordost/streetcomplete/util/countryboundaries/Countries.kt
   64d1175529a2abd056ed47acf25c3f08098da640a5959cc4574236fe22b89a2d  de/westnordost/streetcomplete/osm/cycleway/Cycleway.kt
   656dbaced00cd63fb4edc90d05ad8bd730cccce0587d8ce838fb8647dc6f6b95  de/westnordost/streetcomplete/osm/cycleway/CyclewayParser.kt
   ccbb30e1dce7948f70b7f155e00a4f9480c44d20995c8404dc492e871669cf48  de/westnordost/streetcomplete/osm/street_parking/StreetParking.kt
@@ -90,6 +93,10 @@ data files (from app/src/commonMain/composeResources/files/ into src/main/resour
   4e360e909fcdbf5021d9952771af4c0638168564d871ae14b9ce3f289c33add2  osmfeatures/default/presets.json
   109fca6ea2866cf054f48edb6d8fd050d7b017ae32e92caa9c0302543a6551e9  osmfeatures/default/en.json
   c90163eacb41d869dbda41d3e6109a8435bba5de42a3adaaf213171ac92b5641  osmfeatures/default/en-CA.json
+  88d288319075f7dd5796d330c184ffce94681831c56b0236fa0f5f11740d9cf9  boundaries.ser
+  1f8c09404038ef2a570529dee899dc43c853cfa27b8c20d2dd05a1c83f359368  country_metadata/default.yml
+  deab3d5fec2537634c5067aed554fe6d5783f81ff78b5f03ad509cd2d0d15fa9  country_metadata/CA.yml
+  85bfedebfd7997a6ccd8b24fb3969d0819f7db34263a8e1830aad36935501883  country_metadata/CA-ON.yml
 ported custom quests (sha256 of the androidMain file with LF line endings; logic in src/main/kotlin/openquests/custom/):
   9e5733e39e8547bba62a503d4d82e02a07b66361a2a09008d646b9c3307798c8  quests/sidewalk/AddSidewalk.kt  (AddSidewalk)
   f7576cee96a9046906076986ddf95804d040efe73f971192431154fbf793c5d8  quests/opening_hours/AddOpeningHours.kt  (AddOpeningHours)
@@ -144,3 +151,6 @@ ported custom quests (sha256 of the androidMain file with LF line endings; logic
   41d377bff5b8e46f2eca2befacfa7d072c9b238fc516333940a413bb71b99712  quests/summit/SummitMarkingsUtil.kt  (helper:SummitMarkingsUtil)
   f2b1d8bfcce485fd9fce7325643116c54691042c3f1c1b0adcd19a5ec0252f7f  quests/max_height/MaxHeightUtils.kt  (helper:MaxHeightUtils)
   3c54a210e1d7b4315f12e78af1bdd444331dbcab68ef472f31aa926026d524c2  cm:ApplicationConstants.kt  (helper:ignoreRelation)
+  eab24777688cd718836969465a089a03c72f4c452898395f5cecb2603c8eb015  quests/address/AddHousenumber.kt  (AddHousenumber)
+  48a0903ba1a7dfc8f500beb45bc487c3a3f8bf071c59ac14f362c47511575742  quests/cycleway/AddCycleway.kt  (AddCycleway)
+  0d61a25ae9963b681a585f204b0fecb95ebe013fd9100bc0f02decdef00c5649  quests/roof_shape/AddRoofShape.kt  (AddRoofShape)

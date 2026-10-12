@@ -10,7 +10,8 @@ they are. This script copies a quest's source and keeps only what decides where 
 
 The class becomes `object <Name> : AreaQuest` in SC's own package, so references to helpers in the
 same package resolve unchanged. A `getFeature` constructor parameter becomes SC's feature dictionary
-as the app wires it (`openquests.custom.ScFeatures`). Any other constructor parameter used by the kept
+as the app wires it (`openquests.custom.ScFeatures`), a `getCountryInfoByLocation` one SC's country
+metadata for the position (`openquests.custom.ScCountryInfos`). Any other constructor parameter used by the kept
 code is an error.
 
 The output goes to src/main/kotlin/ported/<package path>/<Name>.kt and the quest's upstream file is
@@ -219,14 +220,20 @@ def port(sc: Path, name: str) -> tuple[Path, str, str]:
         if not re.search(rf"\b{p}\b", kept_text):
             continue
         if p == "getFeature":
-            feature_line = ("    private val getFeature: (Element) -> Feature? = ScFeatures::getFeature\n\n")
+            feature_line += ("    private val getFeature: (Element) -> Feature? = ScFeatures::getFeature\n\n")
             imports += ["import de.westnordost.osmfeatures.Feature",
-                        "import de.westnordost.streetcomplete.data.osm.mapdata.Element"]
+                        "import de.westnordost.streetcomplete.data.osm.mapdata.Element",
+                        "import openquests.custom.ScFeatures"]
+        elif p == "getCountryInfoByLocation":
+            # as the app wires it (AndroidModule2): { countryInfos.get(countryBoundaries, it) }
+            feature_line += ("    private val getCountryInfoByLocation: (LatLon) -> CountryInfo =\n"
+                             "        ScCountryInfos::getCountryInfoByLocation\n\n")
+            imports += ["import de.westnordost.streetcomplete.data.meta.CountryInfo",
+                        "import de.westnordost.streetcomplete.data.osm.mapdata.LatLon",
+                        "import openquests.custom.ScCountryInfos"]
         else:
             sys.exit(f"{name}: kept code uses constructor parameter {p}")
     imports += ["import openquests.custom.AreaQuest"]
-    if feature_line:
-        imports += ["import openquests.custom.ScFeatures"]
     imports = sorted(set(imports))
 
     sha = hashlib.sha256(text.encode("utf-8")).hexdigest()
