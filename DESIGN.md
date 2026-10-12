@@ -38,9 +38,11 @@ is recorded alongside it.
   are at 8. Configure cities by relation id, not by admin level.
 - **Store denominators beside counts:** element count per quest's base selector, road km, land area from
   `areas.json`.
+- **Read the extract from the shared store, don't download it.** `../osm-extracts` owns the Geofabrik
+  download into `~/Code/.osm-data` (`OSM_DATA_DIR`). The run calls `osm_extracts.py fetch ontario`, then
+  opens the dated file named by `ontario/latest.json` and records its name and sha256 with the snapshot.
 - **Reuse the sibling plumbing:**
-  - Download, `meta.json` and lock from `toronto-streets-osm`.
-  - Skip the run when the extract's `Last-Modified` hasn't changed, so reruns change nothing.
+  - Skip the run when `latest.json`'s `source_last_modified` hasn't changed, so reruns change nothing.
   - One row per day, rewritten if run again the same day.
   - Static JSON under `docs/` served by Pages, published by `run.py update`.
 - **Rely on extract timestamps.** Checked 2026-10-11: Geofabrik's public Ontario PBF keeps `version` and

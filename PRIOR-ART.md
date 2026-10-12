@@ -92,8 +92,9 @@ ported its filter language elsewhere.
 
 ## Sibling projects to borrow from (~/Code)
 
+- `osm-extracts`: the shared Geofabrik Ontario store (`~/Code/.osm-data`), with `.partial` downloads,
+  sha256, a PID lock and dated files. Every project reads from it; none downloads its own copy.
 - `toronto-streets-osm`:
-  - Geofabrik Ontario download to `.partial` with sha256, `meta.json`, PID lock (`src/osm_refresh.py`).
   - Daily `docs/history.jsonl` row, rewritten if run again the same day, plus chart (`src/history.py`).
   - `run.py update`, which commits "data YYYY-MM-DD" and pushes `docs/` to Pages.
   - Task Scheduler at 12:30.
