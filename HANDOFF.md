@@ -45,10 +45,11 @@ at 13:15. Design and known gaps are in DESIGN.md.
 Next, in order:
 1. **Check the first scheduled runs.** A run on 2026-10-12 00:50 committed and pushed "data 2026-10-11"
    (`logs/scheduler.log`); still confirm the 13:15 Task Scheduler slot fires on its own.
-2. **Finish the custom quests.** 48 of 51 are counted and checked exactly against SC (engine/README.md,
-   "Custom quests" and "Area quests"). Left: AddHousenumber (high volume), AddCycleway and AddRoofShape,
-   which take `getCountryInfoByLocation`: vendor `data/meta/CountryInfo(s)` and SC's `country_metadata`
-   files, and resolve a position's country as the app does. Then the note quest.
+2. **Custom quests are done.** All 51 are counted and checked exactly against SC (engine/README.md,
+   "Custom quests" and "Area quests"; the last three use SC's country metadata per position). Left:
+   - the note quest;
+   - the owner's decision on the area unit. A z16 tile undercounts AddIsAmenityIndoor, AddLevel,
+     AddLevelThing and AddHousenumber (-7% in Toronto) against a whole-city map data.
 3. **Deeper history.** Geofabrik keeps no old dailies, but `~/Code/.osm-data/planet/history-261005.osm.pbf` is a full
    history planet. Clip it to Ontario and time-slice it with `osmium time-filter` to get a monthly backfill. That
    would give years of history, at a one-off cost of hours. ohsome could only cover the plain key/value quests.
