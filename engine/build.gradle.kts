@@ -16,6 +16,10 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
     // OSM PBF format bindings (crosby.binary); pulls protobuf-java
     implementation("org.openstreetmap.pbf:osmpbf:1.8.0")
+    // feature presets (Feature, GeometryType), same version as StreetComplete v63.4
+    implementation("de.westnordost:osmfeatures:8.0.0")
+    // opening hours parser, same version as StreetComplete v63.4 (AddOpeningHours, AddPostboxCollectionTimes)
+    implementation("de.westnordost:osm-opening-hours:0.4.0")
 
     testImplementation(kotlin("test"))
     // only to check our reading of SC's country gating against the library and data SC ships

@@ -10,8 +10,12 @@
   The files compile unchanged on a plain JVM because the build applies the kotlinx.serialization
   compiler plugin (for the @Serializable annotations in Element.kt, ElementGeometry.kt, ...) and uses
   the same Kotlin (2.4.0) and kotlinx-datetime (0.8.0) versions as SC v63.4. util/ktx/Element.kt
-  imports de.westnordost.osmfeatures.GeometryType, which has no plain-JVM artifact; the engine
-  provides a stub enum for it in src/main/kotlin/stubs/ (outside sc/, so the SC file stays as is).
+  imports de.westnordost.osmfeatures.GeometryType, from the osmfeatures library (jvm variant). osm/Sides.kt
+  imports SC's Side enum from a Compose file; the engine stubs it in src/main/kotlin/stubs/.
+
+  Custom quests are not vendored (their files hold Android UI code); their logic is transcribed into
+  src/main/kotlin/openquests/custom/ and each upstream file is pinned in PORTED-QUESTS.txt. The script
+  fails before copying anything if a pinned file changed at the requested tag.
 
   Patches applied after the copy (listed in SC-VERSION.txt, both hashes recorded):
     clock  util/ktx/Instant.kt: systemTimeNow() reads a settable `var systemClock: Clock`
@@ -90,7 +94,28 @@ $files = @(
     "$pkg/util/ktx/Double.kt"
     "$pkg/util/ktx/Element.kt" # isArea()
     "$pkg/osm/AreaUtils.kt" # IS_AREA_EXPRESSION
+    # helpers of the custom quests ported in src/main/kotlin/openquests/custom/ (see PORTED-QUESTS.txt)
+    "$pkg/osm/RoadUtils.kt" # ALL_ROADS, MOTORWAYS, ROADS_ASSUMED_TO_BE_PAVED
+    "$pkg/osm/maxspeed/MaxSpeedUtils.kt" # MAX_SPEED_TYPE_KEYS
+    "$pkg/osm/Sides.kt"
+    "$pkg/osm/sidewalk/Sidewalk.kt"
+    "$pkg/osm/sidewalk/SidewalkParser.kt" # parseSidewalkSides()
+    "$pkg/osm/Places.kt" # isPlace(), isDisusedPlace()
+    "$pkg/osm/Feature.kt" # applyTo(), used by Places.kt
+    "$pkg/osm/opening_hours/OpeningHoursValidator.kt" # isSupported()
+    "$pkg/osm/opening_hours/Utils.kt" # getMonths(), getWeekdays(), used by OpeningHoursValidator
+    "$pkg/osm/opening_hours/HierarchicOpeningHours.kt" # used by Utils.kt
+    "$pkg/osm/LifecycleUtils.kt" # asIfItWasnt(), used by Places.kt
+    "$pkg/quests/recycling_material/RecyclingMaterial.kt"
+    "$pkg/util/tree/Node.kt" # buildTree(), used by RecyclingMaterial
 )
+
+# Custom quests live in SC's androidMain next to their Android forms, so they are not vendored: their
+# applicability logic is transcribed into src/main/kotlin/openquests/custom/. PORTED-QUESTS.txt pins
+# the upstream file of each (sha256 of the file with LF line endings, i.e. of the git blob's text).
+# If one changed, the script fails: re-check the port against the new file, then update its hash.
+$androidMain = Join-Path $ScPath 'app/src/androidMain/kotlin'
+$portsFile = Join-Path $PSScriptRoot 'PORTED-QUESTS.txt'
 
 # Patches: file -> (name, upstream line, replacement lines). Applied after the copy; each must match
 # exactly one line verbatim, or the script fails.
@@ -109,6 +134,27 @@ $patches = @(
         Description = 'util/ktx/Instant.kt: systemTimeNow() reads a settable `var systemClock: Clock` (default Clock.System)'
     }
 )
+
+function Get-Sha256Lf([string]$path) {
+    $text = [System.IO.File]::ReadAllText($path) -replace "`r`n", "`n"
+    $bytes = (New-Object System.Text.UTF8Encoding $false).GetBytes($text)
+    -join ([System.Security.Cryptography.SHA256]::Create().ComputeHash($bytes) | ForEach-Object { $_.ToString('x2') })
+}
+
+$portLines = @()
+$changed = @()
+foreach ($l in [System.IO.File]::ReadAllLines($portsFile)) {
+    if ($l -match '^\s*(#|$)') { continue }
+    $name, $path, $sha = -split $l
+    $src = Join-Path $androidMain "$pkg/$path"
+    if (-not (Test-Path $src)) { $changed += "$name ($path is gone)"; continue }
+    $now = Get-Sha256Lf $src
+    if ($now -ne $sha) { $changed += "$name ($path is now $now)" }
+    $portLines += "  $sha  $path  ($name)"
+}
+if ($changed) {
+    throw "Ported custom quests changed upstream in ${Tag}; re-check the ports, then update PORTED-QUESTS.txt:`n  " + ($changed -join "`n  ")
+}
 
 if (Test-Path $dest) { Remove-Item -Recurse -Force $dest }
 
@@ -144,6 +190,8 @@ foreach ($f in $files) {
     }
 }
 Copy-Item (Join-Path $ScPath 'LICENSE') (Join-Path $dest 'LICENSE')
+$lines += "ported custom quests (sha256 of the androidMain file with LF line endings; logic in src/main/kotlin/openquests/custom/):"
+$lines += $portLines
 
 [System.IO.File]::WriteAllLines((Join-Path $PSScriptRoot 'SC-VERSION.txt'), [string[]]$lines)
 Write-Host "Vendored $($files.Count) files from StreetComplete $Tag ($commit) into $dest; patches: $(($patches | ForEach-Object { $_.Name }) -join ', ')"

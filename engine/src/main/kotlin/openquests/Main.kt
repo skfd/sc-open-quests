@@ -19,10 +19,13 @@ import kotlin.time.Instant
 private const val USAGE = """usage: sc-open-quests-engine count --pbf <file.osm.pbf> --quests <data/quests/vX.json>
            --cities <config/cities.json> --out <docs/data> [--source-meta <meta.json>]
            [--today <ISO instant or date>] [--dump-matches <file.tsv> --dump-quests <Name,Name>]
+           [--dump-elements <file.jsonl> --dump-city <cityId>]
 
 Writes <out>/snapshots/<asOfDate>.json and <out>/quests.json (see DATA-FORMAT.md). Age filters are
 evaluated at the extract's osmosis_replication_timestamp; --today overrides that (tests). A bare date
-means noon of that day in the cities' time zone. Paths are relative to the working directory."""
+means noon of that day in the cities' time zone. Paths are relative to the working directory.
+--dump-elements writes every tagged element whose quest position is in that city, as input for
+tools/sc-harness CheckCustomQuests."""
 
 class CountOptions(
     val pbf: File,
@@ -33,6 +36,8 @@ class CountOptions(
     val today: Instant? = null,
     val dumpMatches: File? = null,
     val dumpQuests: Set<String> = emptySet(),
+    val dumpElements: File? = null,
+    val dumpCity: String? = null,
     val baseDir: File = File("."),
 )
 
@@ -60,7 +65,7 @@ fun parseArgs(args: List<String>): CountOptions {
         m[k.removePrefix("--")] = args[i + 1]
         i += 2
     }
-    val known = setOf("pbf", "quests", "cities", "out", "source-meta", "today", "dump-matches", "dump-quests")
+    val known = setOf("pbf", "quests", "cities", "out", "source-meta", "today", "dump-matches", "dump-quests", "dump-elements", "dump-city")
     require(m.keys.all { it in known }) { "unknown option(s) ${m.keys - known}\n$USAGE" }
     fun req(k: String) = File(m[k] ?: throw IllegalArgumentException("--$k is required\n$USAGE"))
     return CountOptions(
@@ -72,7 +77,9 @@ fun parseArgs(args: List<String>): CountOptions {
         today = m["today"]?.let(::parseToday),
         dumpMatches = m["dump-matches"]?.let(::File),
         dumpQuests = m["dump-quests"]?.split(',')?.map { it.trim() }?.filter { it.isNotEmpty() }?.toSet().orEmpty(),
-    )
+        dumpElements = m["dump-elements"]?.let(::File),
+        dumpCity = m["dump-city"],
+    ).also { require((it.dumpElements == null) == (it.dumpCity == null)) { "--dump-elements and --dump-city go together" } }
 }
 
 /** An ISO instant (2026-10-11T16:00:00Z) or a date (2026-10-11, noon in the system time zone). */
@@ -97,7 +104,11 @@ fun count(opts: CountOptions): CountResult {
 
     val engine = Engine(registry, cities)
     engine.dumpQuests = opts.dumpQuests
-    log("${registry.quests.size} quests in ${opts.quests.path} (${engine.quests.size} filter), ${cities.size} cities; " +
+    opts.dumpCity?.let { id ->
+        engine.dumpElementsCity = cities.indexOfFirst { it.id == id }.also { require(it >= 0) { "--dump-city: no city $id" } }
+    }
+    log("${registry.quests.size} quests in ${opts.quests.path} (${engine.quests.size} counted: " +
+        "${registry.filterQuests.size} filter, ${engine.quests.size - registry.filterQuests.size} ported custom), ${cities.size} cities; " +
         "threads=${Runtime.getRuntime().availableProcessors()} maxHeap=${Runtime.getRuntime().maxMemory() shr 20} MB")
 
     var t0 = System.nanoTime()
@@ -143,6 +154,11 @@ fun count(opts: CountOptions): CountResult {
     opts.dumpMatches?.let { f ->
         f.absoluteFile.parentFile.mkdirs()
         f.bufferedWriter().use { engine.writeDump(it) }
+        log("wrote $f")
+    }
+    opts.dumpElements?.let { f ->
+        f.absoluteFile.parentFile.mkdirs()
+        f.bufferedWriter().use { engine.writeElements(it) }
         log("wrote $f")
     }
     return CountResult(engine, meta, registry)

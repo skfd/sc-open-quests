@@ -65,14 +65,15 @@ class PassStats {
 /**
  * One pass over a PBF: every tagged element gets its quest marker position the way the app computes
  * it (SC's ElementGeometryCreator), is assigned to the cities whose polygon contains that position,
- * and is matched against every filter quest enabled in those cities.
+ * and is matched against every counted quest (filter quests and ported custom quests) enabled in those
+ * cities.
  *
  * The file must be sorted Type_then_ID (Geofabrik, osmium). Stages: relations are scanned first for
  * the ids of their member ways; then nodes (kept as an id -> position index); then ways (member ways
  * of tagged relations keep their node positions); then relations.
  */
 class Engine(val registry: Registry, val cities: List<City>) {
-    val quests: List<QuestDef> = registry.filterQuests
+    val quests: List<QuestDef> = registry.countedQuests
     private val cityIndex = CityIndex(cities)
     /** enabled[city][quest] */
     val enabled: Array<BooleanArray> = Array(cities.size) { c ->
@@ -80,7 +81,7 @@ class Engine(val registry: Registry, val cities: List<City>) {
     }
     private val questsByType: Array<IntArray> = Array(3) { t ->
         val type = ElementType.entries[t]
-        quests.indices.filter { quests[it].filter!!.includesElementType(type) }.toIntArray()
+        quests.indices.filter { quests[it].matcher!!.includesElementType(type) }.toIntArray()
     }
     private val geometryCreator = ElementGeometryCreator()
 
@@ -91,12 +92,17 @@ class Engine(val registry: Registry, val cities: List<City>) {
     var dumpQuests: Set<String> = emptySet()
     private val dumpLines = ConcurrentLinkedQueue<String>()
 
+    /** optional: every tagged element whose quest position is in this city (index into [cities]), as
+     *  JSON lines for tools/sc-harness CheckCustomQuests, which runs SC's own quest classes on them */
+    var dumpElementsCity: Int = -1
+    private val elementLines = ConcurrentLinkedQueue<String>()
+
     init {
-        // Untagged elements are skipped below; make sure no filter would match one. SC itself
+        // Untagged elements are skipped below; make sure no quest would match one. SC itself
         // relies on mayEvaluateToTrueWithNoTags, which is conservative (true for `highway ~ ...`).
         val untagged = listOf(Node(1, LatLon(0.0, 0.0)), Way(1, emptyList()), Relation(1, emptyList()))
         for (q in quests) {
-            require(untagged.none { q.filter!!.matches(it) }) { "${q.name} matches untagged elements" }
+            require(untagged.none { q.matcher!!.matches(it) }) { "${q.name} matches untagged elements" }
         }
     }
 
@@ -105,19 +111,31 @@ class Engine(val registry: Registry, val cities: List<City>) {
         dumpLines.sorted().forEach { w.write(it); w.write("\n") }
     }
 
+    /** JSON lines, sorted by type and id */
+    fun writeElements(w: Writer) {
+        elementLines.sortedWith(compareBy({ it.substringBefore(',') }, { it.substringAfter("\"id\":").substringBefore(',').toLong() }))
+            .forEach { w.write(it); w.write("\n") }
+    }
+
+    private fun elementJson(e: Element, type: Int, center: LatLon): String =
+        "{\"type\":\"${TYPE_NAMES[type]}\",\"id\":${e.id},\"version\":${e.version},\"timestamp\":${e.timestampEdited}," +
+            "\"tags\":${e.tags.entries.sortedBy { it.key }.joinToString(",", "{", "}") { "${jsonString(it.key)}:${jsonString(it.value)}" }}," +
+            "\"lat\":${center.latitude},\"lon\":${center.longitude}}"
+
     // ---------------------------------------------------------------------------------------------
     // matching
 
     private fun offer(e: Element, type: Int, cityIdx: IntArray, center: LatLon) {
+        if (dumpElementsCity >= 0 && dumpElementsCity in cityIdx) elementLines += elementJson(e, type, center)
         for (qi in questsByType[type]) {
             var anyEnabled = false
             for (c in cityIdx) if (enabled[c][qi]) { anyEnabled = true; break }
             if (!anyEnabled) continue
             val q = quests[qi]
-            val filter = q.filter!!
-            if (!filter.matches(e)) continue
+            val matcher = q.matcher!!
+            if (!matcher.matches(e)) continue
             // agedOnly: would it still match if no `older today -N` (or `< today`) test could be true?
-            val aged = q.usesAge && !EngineClock.at(EngineClock.LONG_AGO) { filter.matches(e) }
+            val aged = q.usesAge && !EngineClock.at(EngineClock.LONG_AGO) { matcher.matches(e) }
             for (c in cityIdx) {
                 if (!enabled[c][qi]) continue
                 counts.perQuest.incrementAndGet(counts.slot(c, qi, type))

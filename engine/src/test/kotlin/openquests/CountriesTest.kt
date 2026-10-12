@@ -63,11 +63,11 @@ class CountriesTest {
         val cities = loadCities(File("config/cities.json"), File("."))
         val toronto = cities.single { it.id == "toronto" }
         val statuses = registry.quests.groupingBy { questStatus(it, toronto) }.eachCount()
-        val gatedOut = registry.filterQuests.filter { !it.countries.isEnabledIn(toronto.countryCodes) }.map { it.name }
+        val gatedOut = registry.countedQuests.filter { !it.countries.isEnabledIn(toronto.countryCodes) }.map { it.name }
         println("Toronto: $statuses; filter quests not in region: $gatedOut")
         assertEquals(registry.quests.size, statuses.values.sum())
-        assertEquals(registry.quests.count { !it.isFilter }, statuses["unsupported"])
+        assertEquals(registry.quests.count { !it.isCounted }, statuses["unsupported"])
         // every city has the same codes today, so the same quests are gated out everywhere
-        for (c in cities) assertEquals(gatedOut, registry.filterQuests.filter { questStatus(it, c) == "not-in-region" }.map { it.name })
+        for (c in cities) assertEquals(gatedOut, registry.countedQuests.filter { questStatus(it, c) == "not-in-region" }.map { it.name })
     }
 }

@@ -25,14 +25,15 @@ class SourceMeta(val url: String?, val lastModified: String?, val sha256: String
 
 /** Status of a quest in a city, as in DATA-FORMAT.md. */
 fun questStatus(q: QuestDef, city: City): String = when {
-    !q.isFilter -> "unsupported"
+    !q.isCounted -> "unsupported"
     !q.countries.isEnabledIn(city.countryCodes) -> "not-in-region"
     else -> "counted"
 }
 
-/** Every filter quest is computed with SC's own filter and geometry code; see README for the
- *  remaining differences, none of which is specific to a quest. */
-fun questSupport(q: QuestDef): String = if (q.isFilter) "supported" else "unsupported"
+/** Every filter quest is computed with SC's own filter and geometry code, every ported custom quest
+ *  with a port checked element by element against SC's own class (tools/sc-harness
+ *  CheckCustomQuests); see README for the remaining differences, none of which is specific to a quest. */
+fun questSupport(q: QuestDef): String = if (q.isCounted) "supported" else "unsupported"
 
 // ---- JSON text, written by hand so that key order and number format are fixed --------------------
 

@@ -1,7 +1,8 @@
 # engine
 
 Counts open StreetComplete quests per city from an OSM PBF extract by running StreetComplete's own
-element filter and geometry code on a plain JVM. Status: **milestone 1**: all 138 filter quests of SC
+element filter and geometry code on a plain JVM. Status: **milestone 1** plus 9 ported custom quests (see
+"Custom quests" below): all 138 filter quests of SC
 v63.4, 48 Ontario cities, one pass over the Ontario extract. Output format: [DATA-FORMAT.md](../DATA-FORMAT.md).
 
 ## Licence
@@ -45,7 +46,8 @@ dated file, not `ontario-latest.osm.pbf`. The store keeps 14 days of extracts, p
 ## How a count is made
 
 1. **Quests**: every `kind: "filter"` entry of the registry dump (`tools/sc-harness`), parsed with SC's
-   `toElementFilterExpression()`. Custom (51) and note (1) quests are `unsupported` and not counted.
+   `toElementFilterExpression()`; plus the custom quests ported in `openquests/custom/` (9 of 51, see
+   below). The other 42 custom quests and the note quest are `unsupported` and not counted.
    At start-up the engine checks that no filter matches an untagged element, then skips untagged
    elements.
 2. **Clock**: SC's age filters (`older today -N`, `< today`) read the wall clock. The `clock` patch
@@ -94,16 +96,46 @@ node positions), relations. Each stage decodes blocks in parallel.
   `systemTimeNow()`. `sync-sc.ps1` applies it by exact line match after the copy (and fails if the
   upstream line changed) and records both hashes in `SC-VERSION.txt`. The engine installs a clock that
   reads a thread-local override first (`EngineClock`), which is how agedOnly runs in the same pass.
-- **Stub** `src/main/kotlin/stubs/de/westnordost/osmfeatures/GeometryType.kt`: osmfeatures 8.0.0 has no
-  plain-JVM artifact, and the vendored `util/ktx/Element.kt` imports its `GeometryType`. The stub enum lets
-  that file compile unchanged; the engine never uses it.
+- **Stub** `src/main/kotlin/stubs/de/westnordost/streetcomplete/ui/common/street_side_select/Side.kt`: SC
+  declares `enum class Side { LEFT, RIGHT }` in a Compose UI file; the vendored `osm/Sides.kt` imports it.
+- osmfeatures (`Feature`, `GeometryType`) is the real library, `de.westnordost:osmfeatures:8.0.0`, which
+  publishes an `osmfeatures-jvm` variant (an earlier version of this README wrongly said it had none and
+  stubbed `GeometryType`). The opening-hours parser is `de.westnordost:osm-opening-hours:0.4.0`, as in SC.
 
 Everything else under `src/main/kotlin/sc/` is byte-identical to SC v63.4. To move to a new SC tag:
 `./sync-sc.ps1 -ScPath <checkout> -Tag vX`, regenerate `data/quests/vX.json` with `tools/sc-harness`, build.
 
+## Custom quests
+
+SC's 51 custom quests (`OsmElementQuestType` but not `OsmFilterQuestType`) live in `androidMain` next to
+their Android forms, so they cannot be vendored. For those whose `getApplicableElements()` looks at one
+element at a time, the filter strings and `isApplicableTo()` are **transcribed** into
+`src/main/kotlin/openquests/custom/<Name>.kt` (one object per quest, implementing `CustomQuest`), calling the
+vendored `commonMain` helpers they use (`osm/Places.kt`, `osm/sidewalk/*`, `osm/opening_hours/*`, ...).
+
+- `engine/PORTED-QUESTS.txt` pins each upstream file by the sha256 of its LF text (= the git blob's text).
+  `sync-sc.ps1` fails if one changed at the new tag: re-check the port, then update the hash.
+- A port's `isApplicable()` is what `getApplicableElements()` keeps (some quests only take nodes there).
+  Its date logic (`older`, `TagOlderThan`) goes through the patched clock, so agedOnly works as for filters.
+- **Checked against SC itself**, element for element: `tools/sc-harness` `CheckCustomQuests` runs SC's
+  own quest classes on SC's unit-test classpath. The engine writes its input with
+  `--dump-elements <file.jsonl> --dump-city <id>` (every tagged element whose quest position is in the
+  city); run both with the same "today" (`--today <now>` for the engine, since the oracle reads the wall
+  clock) and diff the oracle's TSV with `--dump-matches` for that city. Ontario 2026-10-11, Toronto,
+  1,601,992 tagged elements: **40,594 quests, identical sets** for all nine.
+- Ported (v63.4): AddSidewalk, AddOpeningHours, AddPostboxCollectionTimes, AddRecyclingContainerMaterials,
+  CheckShopType, AddClothingBinOperator, AddOnewayAerialway, AddRoadWidth, AddMaxPhysicalHeight.
+  AddRoadWidth is off by default on every phone; AddMaxPhysicalHeight only on phones without AR (the dump
+  records it as default-disabled because the harness mocks the AR check).
+- Not ported yet: CheckShopExistence, CheckOpeningHoursSigned, AddPlaceName, AddAmenityCover,
+  CheckExistence, AddIsAmenityIndoor need SC's feature dictionary (`getFeature`); the rest need the
+  surrounding map data (`isApplicableTo` returns null: crossings, kerbs, barriers on paths/roads,
+  housenumbers, entrances, levels, ...). For those, running SC's real `getApplicableElements()` on tiled
+  `MapDataWithGeometry` is the honest route; it also means revisiting the skip-untagged-elements shortcut.
+
 ## What still differs from the app
 
-All filter quests are marked `supported`: none of the differences below is specific to a quest.
+All counted quests are marked `supported`: none of the differences below is specific to a quest.
 
 - **Notes**: the app hides a quest whose position is exactly on an open OSM note. Notes are not modelled.
 - **What the app has downloaded**: the app builds relation geometry from whatever member ways it has in its

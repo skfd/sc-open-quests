@@ -44,3 +44,26 @@ files (sha256 of the copied file; patched files also give the upstream sha256):
   ff0c3cebdecdaeb6ec6774c2f9506e12afaaba23eceb8c1f117b03f5ae341d25  de/westnordost/streetcomplete/util/ktx/Double.kt
   4ce449023108b8d2b968831577a979d2138f82e58ff1041ea93b1698afd13447  de/westnordost/streetcomplete/util/ktx/Element.kt
   a5e600b1f90363cc872779eca6100001f92ca05c6391b39065e120db25478fd1  de/westnordost/streetcomplete/osm/AreaUtils.kt
+  81dba6e7fdd280c5492b1a9c5c802be33b63df6e97df4f1688a0de139001fcbc  de/westnordost/streetcomplete/osm/RoadUtils.kt
+  ecd1f7368c2128638961599a181d67545681283a82be978ff19e0d3a0d936c9c  de/westnordost/streetcomplete/osm/maxspeed/MaxSpeedUtils.kt
+  a35a9c51665680355a87404dc3f351f51e3af6fe8b76f605910f8883f1af9e1a  de/westnordost/streetcomplete/osm/Sides.kt
+  1a746d52b4fbe22d10fb1de5692a9164c8bbc5035b3e461dc22b8e8cfad60012  de/westnordost/streetcomplete/osm/sidewalk/Sidewalk.kt
+  e3f490bd8d93d4d13952623fe2746a85c79deb38b4fb05ecccaabac03e37f939  de/westnordost/streetcomplete/osm/sidewalk/SidewalkParser.kt
+  08ce8e5f5c5bb267abdcca06352d77c161d5d8925f0fe1004e4f10fbdb30b0cd  de/westnordost/streetcomplete/osm/Places.kt
+  f18ce246b7fa4ed2e4d5c0fafdda8c7ea0ea26c6fa16c18338c151fe0aeb4c6d  de/westnordost/streetcomplete/osm/Feature.kt
+  7ed665722002b39d7750a5a4fca5988566bdde9c3e184d95106e3c5e3e85871e  de/westnordost/streetcomplete/osm/opening_hours/OpeningHoursValidator.kt
+  5c5571565a8032e7f715c007c8a127c5c21c2718ecc7e8757d8201593303c3a2  de/westnordost/streetcomplete/osm/opening_hours/Utils.kt
+  b741fa271817b99d052450c7e53a6a7682cfd75850a2f0fb622347323feb0ef0  de/westnordost/streetcomplete/osm/opening_hours/HierarchicOpeningHours.kt
+  334d8438204c61020d261810ada339c8c5d13b0896818630b905181b91d28840  de/westnordost/streetcomplete/osm/LifecycleUtils.kt
+  16b730279e7ba0e918d8605a7b4772c56c860df0274a2bee3a3d34f8cf3ee5b2  de/westnordost/streetcomplete/quests/recycling_material/RecyclingMaterial.kt
+  59a1a69412b4a24ea7d94716b9d38972ea162c52bea4f3e1599bba86871ca1f6  de/westnordost/streetcomplete/util/tree/Node.kt
+ported custom quests (sha256 of the androidMain file with LF line endings; logic in src/main/kotlin/openquests/custom/):
+  9e5733e39e8547bba62a503d4d82e02a07b66361a2a09008d646b9c3307798c8  quests/sidewalk/AddSidewalk.kt  (AddSidewalk)
+  f7576cee96a9046906076986ddf95804d040efe73f971192431154fbf793c5d8  quests/opening_hours/AddOpeningHours.kt  (AddOpeningHours)
+  372961313440a7aac4a37a389d49b1b8f88209fefb8e1672202e0a08c2d1b961  quests/postbox_collection_times/AddPostboxCollectionTimes.kt  (AddPostboxCollectionTimes)
+  929c730c1f4a5dd2dc2168b40414c87c53d4050db79804f7788990e274939df1  quests/recycling_material/AddRecyclingContainerMaterials.kt  (AddRecyclingContainerMaterials)
+  17e0069178a075e45f67027fe3e3625c1d8a61afded7755e8c0e424bd2d1755a  quests/shop_type/CheckShopType.kt  (CheckShopType)
+  0fbc924ca69f3c078d6ee61aac323785b1cabaca616ae43d6790cb5497190f35  quests/clothing_bin_operator/AddClothingBinOperator.kt  (AddClothingBinOperator)
+  891f42c7b772b88c181e9bbf8c64b98a9022c8b8e498948edf49acaba6372f12  quests/oneway/AddOnewayAerialway.kt  (AddOnewayAerialway)
+  71108be58b0108b137a610cae7014ff5cafd88f43e15dcd8b457edf9befd3e61  quests/width/AddRoadWidth.kt  (AddRoadWidth)
+  2e73c94eee4a353c25dc63babf3116839f44b9fc1be1dae80671b9fadfd85335  quests/max_height/AddMaxPhysicalHeight.kt  (AddMaxPhysicalHeight)

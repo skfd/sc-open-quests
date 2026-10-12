@@ -1,0 +1,13 @@
+# Custom quests whose applicability logic is transcribed (not vendored) into src/main/kotlin/openquests/custom/.
+# Their SC files sit in androidMain next to Android UI code, so they cannot be copied as they are.
+# One line per quest: name, path under app/src/androidMain/kotlin/de/westnordost/streetcomplete/, and the
+# sha256 of that file with LF line endings at the pinned tag. sync-sc.ps1 fails if a file changed.
+AddSidewalk                     quests/sidewalk/AddSidewalk.kt                                           9e5733e39e8547bba62a503d4d82e02a07b66361a2a09008d646b9c3307798c8
+AddOpeningHours                 quests/opening_hours/AddOpeningHours.kt                                  f7576cee96a9046906076986ddf95804d040efe73f971192431154fbf793c5d8
+AddPostboxCollectionTimes       quests/postbox_collection_times/AddPostboxCollectionTimes.kt             372961313440a7aac4a37a389d49b1b8f88209fefb8e1672202e0a08c2d1b961
+AddRecyclingContainerMaterials  quests/recycling_material/AddRecyclingContainerMaterials.kt              929c730c1f4a5dd2dc2168b40414c87c53d4050db79804f7788990e274939df1
+CheckShopType                   quests/shop_type/CheckShopType.kt                                        17e0069178a075e45f67027fe3e3625c1d8a61afded7755e8c0e424bd2d1755a
+AddClothingBinOperator          quests/clothing_bin_operator/AddClothingBinOperator.kt                   0fbc924ca69f3c078d6ee61aac323785b1cabaca616ae43d6790cb5497190f35
+AddOnewayAerialway              quests/oneway/AddOnewayAerialway.kt                                      891f42c7b772b88c181e9bbf8c64b98a9022c8b8e498948edf49acaba6372f12
+AddRoadWidth                    quests/width/AddRoadWidth.kt                                             71108be58b0108b137a610cae7014ff5cafd88f43e15dcd8b457edf9befd3e61
+AddMaxPhysicalHeight            quests/max_height/AddMaxPhysicalHeight.kt                                2e73c94eee4a353c25dc63babf3116839f44b9fc1be1dae80671b9fadfd85335
