@@ -48,9 +48,9 @@ dated file, not `ontario-latest.osm.pbf`. The store keeps 14 days of extracts, p
 ## How a count is made
 
 1. **Quests**: every `kind: "filter"` entry of the registry dump (`tools/sc-harness`), parsed with SC's
-   `toElementFilterExpression()`; plus the 12 custom quests ported in `openquests/custom/` and the 36
-   generated into `ported/` (see below). AddHousenumber, AddCycleway, AddRoofShape (they need SC's country
-   metadata) and the note quest are `unsupported` and not counted.
+   `toElementFilterExpression()`; plus the 12 custom quests ported in `openquests/custom/` and the 39
+   generated into `ported/` (see below; AddHousenumber, AddCycleway and AddRoofShape use SC's country
+   metadata). Only the note quest is `unsupported` and not counted.
    At start-up the engine checks that no filter or per-element port matches an untagged element, then
    skips untagged elements in the main pass; the area pass sees them.
 2. **Clock**: SC's age filters (`older today -N`, `< today`) read the wall clock. The `clock` patch

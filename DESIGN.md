@@ -134,7 +134,7 @@ Known gaps:
 - Notes are not modelled (the app hides a quest on an open note's position).
 - Relation positions assume every member way is present; the app uses what it has downloaded.
 - Country gating is per city, not per position; fine while every city is inside CA-ON.
-- Custom quests (51) are not counted yet.
+- Custom quests (51) are not counted yet. (Since done: see the sections below.)
 
 ## Custom quests, first batch (2026-10-12)
 
