@@ -40,7 +40,7 @@ engine/build/install/sc-open-quests-engine/bin/sc-open-quests-engine.bat count `
   SC's `boundaries.ser` from the SC checkout (`-PscBoundaries=<file>`), skipped if absent.
 
 Extracts live in the shared store `~/Code/.osm-data/ontario/` (managed by `~/Code/osm-extracts`). Open the
-dated file, not `ontario-latest.osm.pbf`. The store keeps the newest two extracts plus pinned ones.
+dated file, not `ontario-latest.osm.pbf`. The store keeps 14 days of extracts, plus the newest two and pinned ones.
 
 ## How a count is made
 
