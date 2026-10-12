@@ -3,3 +3,4 @@ data/osm/
 *.partial
 logs/
 __pycache__/
+.claude/
