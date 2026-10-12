@@ -352,7 +352,7 @@ def git(*args: str, check: bool = True) -> subprocess.CompletedProcess:
 
 def publish(data_dir: Path = DATA_DIR) -> bool:
     """Commit docs/data as "data <asOfDate>" and push. Returns True if a commit was made."""
-    rel = str(data_dir.relative_to(ROOT))
+    rel = data_dir.relative_to(ROOT).as_posix()
     git("add", "--", rel)
     if git("diff", "--cached", "--quiet", "--", rel, check=False).returncode == 0:
         log("docs/data unchanged; nothing to commit")

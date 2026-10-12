@@ -112,10 +112,16 @@ function breaks(h) {
   const out = [];
   for (let i = 1; i < h.meta.length; i++) {
     const a = h.meta[i - 1], b = h.meta[i];
-    const what = [];
-    if (a.scVersion !== b.scVersion) what.push(`StreetComplete ${a.scVersion} → ${b.scVersion}`);
-    if (a.resurveyMultiplier !== b.resurveyMultiplier) what.push(`resurvey ×${a.resurveyMultiplier} → ×${b.resurveyMultiplier}`);
-    if (what.length) out.push({ i, date: h.dates[i], label: what.join(", ") });
+    const what = [], short = [];
+    if (a.scVersion !== b.scVersion) {
+      what.push(`StreetComplete ${a.scVersion} → ${b.scVersion}`);
+      short.push(b.scVersion);
+    }
+    if (a.resurveyMultiplier !== b.resurveyMultiplier) {
+      what.push(`resurvey ×${a.resurveyMultiplier} → ×${b.resurveyMultiplier}`);
+      short.push(`×${b.resurveyMultiplier}`);
+    }
+    if (what.length) out.push({ i, date: h.dates[i], label: what.join(", "), short: short.join(" ") });
   }
   return out;
 }
@@ -174,7 +180,7 @@ function lineChart(target, h, series, { height = 260, showAged = true } = {}) {
         for (const b of brk) {
           const x = Math.round(u.valToPos(xs[b.i] - 43200, "x", true));   // half a day before the new run
           ctx.beginPath(); ctx.moveTo(x, top); ctx.lineTo(x, top + ph); ctx.stroke();
-          ctx.fillText(" " + h.meta[b.i].scVersion, x + 2, top + 12 * devicePixelRatio);
+          ctx.fillText(" " + b.short, x + 2, top + 12 * devicePixelRatio);
         }
         ctx.restore();
       }],
@@ -220,6 +226,7 @@ function renderTiles(h, tot) {
 }
 
 function renderCityCharts(h) {
+  for (const { u } of charts) u.destroy();
   charts.length = 0;
   const tot = totalSeries(h);
   renderTiles(h, tot);
