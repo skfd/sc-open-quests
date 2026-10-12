@@ -34,7 +34,9 @@ kotlin {
 
 // SC's date filters use the system time zone; pin it so a run does not depend on the host.
 // The engine refuses to run if a city's timeZone differs from it.
-val engineJvmArgs = listOf("-Duser.timezone=America/Toronto")
+// SC's getFeature() asks osmfeatures in the default locale, as the app does in the phone's; pin it to
+// en-CA, the locale whose preset files are bundled (openquests.custom.ScFeatures).
+val engineJvmArgs = listOf("-Duser.timezone=America/Toronto", "-Duser.language=en", "-Duser.country=CA")
 
 application {
     mainClass.set("openquests.MainKt")

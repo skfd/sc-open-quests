@@ -4,6 +4,7 @@ import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import de.westnordost.streetcomplete.data.osm.mapdata.Node
 import de.westnordost.streetcomplete.data.osm.mapdata.Way
 import openquests.custom.CUSTOM_QUESTS
+import openquests.custom.ScFeatures
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -25,6 +26,15 @@ class CustomQuestsTest {
         assertEquals(listOf("ways"), sidewalk.elementTypes)
         assertTrue(registry.quests.single { it.name == "AddOpeningHours" }.usesAge)
         assertEquals(138 + CUSTOM_QUESTS.size, registry.countedQuests.size)
+    }
+
+    @Test fun `SC's feature dictionary resolves from the bundled en-CA presets`() {
+        assertEquals("en-CA", java.util.Locale.getDefault().toLanguageTag())
+        assertEquals("Bakery", ScFeatures.getFeature(Node(1, LatLon(0.0, 0.0), mapOf("shop" to "bakery")))?.name)
+        assertEquals(null, ScFeatures.getFeature(Node(1, LatLon(0.0, 0.0), mapOf("fixme" to "x"))))
+        val placeName = CUSTOM_QUESTS.getValue("AddPlaceName")
+        assertTrue(placeName.isApplicable(Node(1, LatLon(0.0, 0.0), mapOf("shop" to "bakery"))))
+        assertFalse(placeName.isApplicable(Node(1, LatLon(0.0, 0.0), mapOf("shop" to "bakery", "name" to "Bread"))))
     }
 
     @Test fun `a port keeps only what getApplicableElements returns`() {

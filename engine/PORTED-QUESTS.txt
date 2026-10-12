@@ -11,3 +11,6 @@ AddClothingBinOperator          quests/clothing_bin_operator/AddClothingBinOpera
 AddOnewayAerialway              quests/oneway/AddOnewayAerialway.kt                                      891f42c7b772b88c181e9bbf8c64b98a9022c8b8e498948edf49acaba6372f12
 AddRoadWidth                    quests/width/AddRoadWidth.kt                                             71108be58b0108b137a610cae7014ff5cafd88f43e15dcd8b457edf9befd3e61
 AddMaxPhysicalHeight            quests/max_height/AddMaxPhysicalHeight.kt                                2e73c94eee4a353c25dc63babf3116839f44b9fc1be1dae80671b9fadfd85335
+CheckShopExistence              quests/shop_type/CheckShopExistence.kt                                   3118fd837ebc2b26eee6fb418273b3b31e1ea7228a898ec796992e95140af1dc
+CheckOpeningHoursSigned         quests/opening_hours_signed/CheckOpeningHoursSigned.kt                   79c4deef8e248b8ba0289b5e0f8cb613b4ce8b2aaa144bfb41580dfc7fa6c6d0
+AddPlaceName                    quests/place_name/AddPlaceName.kt                                        6d0d9ef59b8501eda24bec5cbc269d7ce6788b9cfc76372e6e9a7ec31b25a755

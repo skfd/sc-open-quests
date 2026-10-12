@@ -13,8 +13,9 @@ import de.westnordost.streetcomplete.data.osm.mapdata.ElementType
  * what the app runs on downloaded data (`OsmQuestController`). The upstream file of each port is pinned
  * in `engine/PORTED-QUESTS.txt`; `sync-sc.ps1` fails when one changed.
  *
- * Only quests whose `getApplicableElements()` looks at one element at a time belong here. Quests that
- * need the surrounding map data (crossings, kerbs, housenumbers...) do not.
+ * Only quests whose `getApplicableElements()` looks at one element at a time belong here (some also
+ * ask SC's feature dictionary, see [ScFeatures]). Quests that need the surrounding map data
+ * (crossings, kerbs, housenumbers...) do not.
  */
 interface CustomQuest {
     /** SC's quest type name, as in the registry dump */
@@ -37,4 +38,8 @@ val CUSTOM_QUESTS: Map<String, CustomQuest> = listOf(
     AddOnewayAerialway,
     AddRoadWidth,
     AddMaxPhysicalHeight,
+    // these also ask SC's feature dictionary (ScFeatures)
+    CheckShopExistence,
+    CheckOpeningHoursSigned,
+    AddPlaceName,
 ).associateBy { it.name }

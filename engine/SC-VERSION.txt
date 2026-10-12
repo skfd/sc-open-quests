@@ -57,6 +57,11 @@ files (sha256 of the copied file; patched files also give the upstream sha256):
   334d8438204c61020d261810ada339c8c5d13b0896818630b905181b91d28840  de/westnordost/streetcomplete/osm/LifecycleUtils.kt
   16b730279e7ba0e918d8605a7b4772c56c860df0274a2bee3a3d34f8cf3ee5b2  de/westnordost/streetcomplete/quests/recycling_material/RecyclingMaterial.kt
   59a1a69412b4a24ea7d94716b9d38972ea162c52bea4f3e1599bba86871ca1f6  de/westnordost/streetcomplete/util/tree/Node.kt
+  84c522641969eb8ac2ebb0d03f66bbaa37ab6683a08b0bf60f6d8d77a2a0773e  de/westnordost/streetcomplete/util/ktx/FeatureDictionary.kt
+data files (from app/src/commonMain/composeResources/files/ into src/main/resources/sc/):
+  4e360e909fcdbf5021d9952771af4c0638168564d871ae14b9ce3f289c33add2  osmfeatures/default/presets.json
+  109fca6ea2866cf054f48edb6d8fd050d7b017ae32e92caa9c0302543a6551e9  osmfeatures/default/en.json
+  c90163eacb41d869dbda41d3e6109a8435bba5de42a3adaaf213171ac92b5641  osmfeatures/default/en-CA.json
 ported custom quests (sha256 of the androidMain file with LF line endings; logic in src/main/kotlin/openquests/custom/):
   9e5733e39e8547bba62a503d4d82e02a07b66361a2a09008d646b9c3307798c8  quests/sidewalk/AddSidewalk.kt  (AddSidewalk)
   f7576cee96a9046906076986ddf95804d040efe73f971192431154fbf793c5d8  quests/opening_hours/AddOpeningHours.kt  (AddOpeningHours)
@@ -67,3 +72,6 @@ ported custom quests (sha256 of the androidMain file with LF line endings; logic
   891f42c7b772b88c181e9bbf8c64b98a9022c8b8e498948edf49acaba6372f12  quests/oneway/AddOnewayAerialway.kt  (AddOnewayAerialway)
   71108be58b0108b137a610cae7014ff5cafd88f43e15dcd8b457edf9befd3e61  quests/width/AddRoadWidth.kt  (AddRoadWidth)
   2e73c94eee4a353c25dc63babf3116839f44b9fc1be1dae80671b9fadfd85335  quests/max_height/AddMaxPhysicalHeight.kt  (AddMaxPhysicalHeight)
+  3118fd837ebc2b26eee6fb418273b3b31e1ea7228a898ec796992e95140af1dc  quests/shop_type/CheckShopExistence.kt  (CheckShopExistence)
+  79c4deef8e248b8ba0289b5e0f8cb613b4ce8b2aaa144bfb41580dfc7fa6c6d0  quests/opening_hours_signed/CheckOpeningHoursSigned.kt  (CheckOpeningHoursSigned)
+  6d0d9ef59b8501eda24bec5cbc269d7ce6788b9cfc76372e6e9a7ec31b25a755  quests/place_name/AddPlaceName.kt  (AddPlaceName)

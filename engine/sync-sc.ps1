@@ -108,6 +108,19 @@ $files = @(
     "$pkg/osm/LifecycleUtils.kt" # asIfItWasnt(), used by Places.kt
     "$pkg/quests/recycling_material/RecyclingMaterial.kt"
     "$pkg/util/tree/Node.kt" # buildTree(), used by RecyclingMaterial
+    "$pkg/util/ktx/FeatureDictionary.kt" # getFeature(), as the app's registry gets it
+)
+
+# Data files copied from app/src/commonMain/composeResources/files/ into src/main/resources/sc/. The
+# feature presets: the base file and the localizations osmfeatures reads for the engine's pinned
+# locale en-CA ("en", then "en-CA"). Brand presets are left out: SC's getFeature() asks for
+# isSuggestion = false, so the brand collection is never read.
+$composeFiles = Join-Path $ScPath 'app/src/commonMain/composeResources/files'
+$resDest = Join-Path $PSScriptRoot 'src/main/resources/sc'
+$resources = @(
+    'osmfeatures/default/presets.json'
+    'osmfeatures/default/en.json'
+    'osmfeatures/default/en-CA.json'
 )
 
 # Custom quests live in SC's androidMain next to their Android forms, so they are not vendored: their
@@ -190,6 +203,18 @@ foreach ($f in $files) {
     }
 }
 Copy-Item (Join-Path $ScPath 'LICENSE') (Join-Path $dest 'LICENSE')
+
+if (Test-Path $resDest) { Remove-Item -Recurse -Force $resDest }
+$lines += "data files (from app/src/commonMain/composeResources/files/ into src/main/resources/sc/):"
+foreach ($f in $resources) {
+    $src = Join-Path $composeFiles $f
+    if (-not (Test-Path $src)) { throw "Missing in SC checkout: $src" }
+    $target = Join-Path $resDest $f
+    New-Item -ItemType Directory -Force (Split-Path $target) | Out-Null
+    Copy-Item $src $target
+    $lines += "  $(Get-Sha256 $target)  $f"
+}
+
 $lines += "ported custom quests (sha256 of the androidMain file with LF line endings; logic in src/main/kotlin/openquests/custom/):"
 $lines += $portLines
 

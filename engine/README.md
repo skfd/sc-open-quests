@@ -1,7 +1,7 @@
 # engine
 
 Counts open StreetComplete quests per city from an OSM PBF extract by running StreetComplete's own
-element filter and geometry code on a plain JVM. Status: **milestone 1** plus 9 ported custom quests (see
+element filter and geometry code on a plain JVM. Status: **milestone 1** plus 12 ported custom quests (see
 "Custom quests" below): all 138 filter quests of SC
 v63.4, 48 Ontario cities, one pass over the Ontario extract. Output format: [DATA-FORMAT.md](../DATA-FORMAT.md).
 
@@ -46,8 +46,8 @@ dated file, not `ontario-latest.osm.pbf`. The store keeps 14 days of extracts, p
 ## How a count is made
 
 1. **Quests**: every `kind: "filter"` entry of the registry dump (`tools/sc-harness`), parsed with SC's
-   `toElementFilterExpression()`; plus the custom quests ported in `openquests/custom/` (9 of 51, see
-   below). The other 42 custom quests and the note quest are `unsupported` and not counted.
+   `toElementFilterExpression()`; plus the custom quests ported in `openquests/custom/` (12 of 51, see
+   below). The other 39 custom quests and the note quest are `unsupported` and not counted.
    At start-up the engine checks that no filter matches an untagged element, then skips untagged
    elements.
 2. **Clock**: SC's age filters (`older today -N`, `< today`) read the wall clock. The `clock` patch
@@ -122,14 +122,22 @@ vendored `commonMain` helpers they use (`osm/Places.kt`, `osm/sidewalk/*`, `osm/
   `--dump-elements <file.jsonl> --dump-city <id>` (every tagged element whose quest position is in the
   city); run both with the same "today" (`--today <now>` for the engine, since the oracle reads the wall
   clock) and diff the oracle's TSV with `--dump-matches` for that city. Ontario 2026-10-11, Toronto,
-  1,601,992 tagged elements: **40,594 quests, identical sets** for all nine.
+  1,601,992 tagged elements: **55,271 quests, identical sets** for all twelve.
 - Ported (v63.4): AddSidewalk, AddOpeningHours, AddPostboxCollectionTimes, AddRecyclingContainerMaterials,
-  CheckShopType, AddClothingBinOperator, AddOnewayAerialway, AddRoadWidth, AddMaxPhysicalHeight.
+  CheckShopType, AddClothingBinOperator, AddOnewayAerialway, AddRoadWidth, AddMaxPhysicalHeight; and,
+  with SC's feature dictionary, CheckShopExistence, CheckOpeningHoursSigned, AddPlaceName.
+- **Feature dictionary** (`ScFeatures`): the app passes the registry
+  `{ featureDictionary.getFeature(it) }`, osmfeatures over SC's own presets, asked with no language, so
+  in the phone's locale. The engine pins the JVM locale to **en-CA** (launcher `-Duser.language=en
+  -Duser.country=CA`; it refuses to run otherwise) and bundles the three preset files that locale reads
+  (`presets.json`, `en.json`, `en-CA.json`; vendored by `sync-sc.ps1` into `src/main/resources/sc/`).
+  The locale matters only for whether a feature has a name; a user with a French phone in Ottawa could
+  see a slightly different set. Calls are serialized: osmfeatures fills its indexes lazily in HashMaps.
+  The oracle uses the same dictionary over the checkout's full preset folder, also in en-CA.
   AddRoadWidth is off by default on every phone; AddMaxPhysicalHeight only on phones without AR (the dump
   records it as default-disabled because the harness mocks the AR check).
-- Not ported yet: CheckShopExistence, CheckOpeningHoursSigned and AddPlaceName also need SC's feature
-  dictionary (`getFeature`); AddAmenityCover, CheckExistence and AddIsAmenityIndoor need it and, for some
-  elements, the surroundings; the rest need the
+- Not ported yet: AddAmenityCover, CheckExistence and AddIsAmenityIndoor need the feature dictionary
+  and, for some elements, the surroundings; the rest need the
   surrounding map data (`isApplicableTo` returns null: crossings, kerbs, barriers on paths/roads,
   housenumbers, entrances, levels, ...). For those, running SC's real `getApplicableElements()` on tiled
   `MapDataWithGeometry` is the honest route; it also means revisiting the skip-untagged-elements shortcut.

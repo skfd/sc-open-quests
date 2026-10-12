@@ -8,6 +8,7 @@ import kotlinx.datetime.atTime
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.json.Json
+import openquests.custom.ScFeatures
 import kotlinx.serialization.json.jsonObject
 import java.io.File
 import java.lang.management.ManagementFactory
@@ -101,6 +102,11 @@ fun count(opts: CountOptions): CountResult {
             "(cities in different zones need separate runs)"
     }
     require(RelativeDate.MULTIPLIER == 1f) { "resurvey multiplier must be the app default 1" }
+    // SC's getFeature() reads osmfeatures in the default locale; only the en-CA presets are bundled
+    val language = java.util.Locale.getDefault().toLanguageTag()
+    require(language == ScFeatures.LANGUAGE) {
+        "the JVM runs in locale $language; start it with -Duser.language=en -Duser.country=CA (feature presets are bundled for ${ScFeatures.LANGUAGE})"
+    }
 
     val engine = Engine(registry, cities)
     engine.dumpQuests = opts.dumpQuests

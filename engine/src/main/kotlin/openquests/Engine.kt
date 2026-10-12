@@ -120,6 +120,8 @@ class Engine(val registry: Registry, val cities: List<City>) {
     private fun elementJson(e: Element, type: Int, center: LatLon): String =
         "{\"type\":\"${TYPE_NAMES[type]}\",\"id\":${e.id},\"version\":${e.version},\"timestamp\":${e.timestampEdited}," +
             "\"tags\":${e.tags.entries.sortedBy { it.key }.joinToString(",", "{", "}") { "${jsonString(it.key)}:${jsonString(it.value)}" }}," +
+            // way node ids: SC's isArea() (and so getFeature()'s geometry type) needs isClosed
+            (if (e is Way) "\"nodes\":${e.nodeIds.joinToString(",", "[", "]")}," else "") +
             "\"lat\":${center.latitude},\"lon\":${center.longitude}}"
 
     // ---------------------------------------------------------------------------------------------
