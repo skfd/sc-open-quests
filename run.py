@@ -231,9 +231,9 @@ def count(force: bool = False) -> Path | None:
         meta = read_meta()
         if not meta or not PBF_PATH.exists():
             raise FileNotFoundError("no extract in data/osm/; run `python run.py download` first")
-        existing = snapshot_for_sha(meta["pbf_sha256"])
+        existing = snapshot_for_sha(meta["pbf_sha256"], DATA_DIR)
         if existing and not force:
-            log(f"{existing.relative_to(ROOT)} already counts this extract; skipping (--force to redo)")
+            log(f"snapshots/{existing.name} already counts this extract; skipping (--force to redo)")
             return None
         if engine_is_stale():
             build_engine()
@@ -246,10 +246,10 @@ def count(force: bool = False) -> Path | None:
                "--source-meta", str(META_PATH.relative_to(ROOT))]
         log("running engine: " + " ".join(cmd[1:]))
         subprocess.run(cmd, cwd=ROOT, env=engine_env(), check=True)
-        snap = snapshot_for_sha(meta["pbf_sha256"])
+        snap = snapshot_for_sha(meta["pbf_sha256"], DATA_DIR)
         if not snap:
             raise RuntimeError("engine finished but no snapshot carries this extract's sha256")
-        log(f"wrote {snap.relative_to(ROOT)}")
+        log(f"wrote snapshots/{snap.name}")
         return snap
 
 
