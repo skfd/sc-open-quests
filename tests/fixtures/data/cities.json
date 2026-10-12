@@ -1,0 +1,111 @@
+{
+ "asOfDate": "2026-07-25",
+ "cities": [
+  {
+   "agedOnly": 6451,
+   "asOfDate": "2026-07-25",
+   "highwayKm": 681.7,
+   "id": "barrie",
+   "landAreaKm2": 109.1,
+   "name": "Barrie",
+   "open": 35013,
+   "openAll": 43425,
+   "population": 141434,
+   "questsCounted": 127,
+   "scVersion": "63.5"
+  },
+  {
+   "agedOnly": 6596,
+   "asOfDate": "2026-07-25",
+   "highwayKm": 704.4,
+   "id": "guelph",
+   "landAreaKm2": 88.9,
+   "name": "Guelph",
+   "open": 33150,
+   "openAll": 41984,
+   "population": 131794,
+   "questsCounted": 127,
+   "scVersion": "63.5"
+  },
+  {
+   "agedOnly": 25175,
+   "asOfDate": "2026-07-25",
+   "highwayKm": 8745.2,
+   "id": "hamilton",
+   "landAreaKm2": 1150.3,
+   "name": "Hamilton",
+   "open": 132037,
+   "openAll": 162238,
+   "population": 519949,
+   "questsCounted": 127,
+   "scVersion": "63.5"
+  },
+  {
+   "agedOnly": 4553,
+   "asOfDate": "2026-07-25",
+   "highwayKm": 3932.7,
+   "id": "kingston",
+   "landAreaKm2": 482.8,
+   "name": "Kingston",
+   "open": 27639,
+   "openAll": 35852,
+   "population": 123798,
+   "questsCounted": 127,
+   "scVersion": "63.5"
+  },
+  {
+   "agedOnly": 19013,
+   "asOfDate": "2026-07-25",
+   "highwayKm": 3003.4,
+   "id": "london",
+   "landAreaKm2": 423.2,
+   "name": "London",
+   "open": 99177,
+   "openAll": 123777,
+   "population": 383822,
+   "questsCounted": 127,
+   "scVersion": "63.5"
+  },
+  {
+   "agedOnly": 33594,
+   "asOfDate": "2026-07-25",
+   "highwayKm": 2263.9,
+   "id": "mississauga",
+   "landAreaKm2": 297.8,
+   "name": "Mississauga",
+   "open": 179489,
+   "openAll": 226892,
+   "population": 721599,
+   "questsCounted": 127,
+   "scVersion": "63.5"
+  },
+  {
+   "agedOnly": 40732,
+   "asOfDate": "2026-07-25",
+   "highwayKm": 25090.8,
+   "id": "ottawa",
+   "landAreaKm2": 2889.9,
+   "name": "Ottawa",
+   "open": 223952,
+   "openAll": 274411,
+   "population": 1000000,
+   "questsCounted": 127,
+   "scVersion": "63.5"
+  },
+  {
+   "agedOnly": 2429,
+   "asOfDate": "2026-07-25",
+   "highwayKm": 5923.9,
+   "id": "toronto",
+   "landAreaKm2": 665.9,
+   "name": "Toronto",
+   "open": 12947,
+   "openAll": 16305,
+   "population": null,
+   "questsCounted": 127,
+   "scVersion": "63.5"
+  }
+ ],
+ "resurveyMultiplier": 1,
+ "scVersion": "63.5"
+}
