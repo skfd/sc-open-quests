@@ -1,36 +1,37 @@
 """Daily pipeline for sc-open-quests. Python standard library only.
 
 Subcommands:
-  download   Geofabrik Ontario PBF -> data/osm/ (skipped when Last-Modified is unchanged)
-  count      run the engine on the PBF -> docs/data/snapshots/<asOfDate>.json + quests.json
-             (skipped when a snapshot of this extract already exists)
+  download   refresh the shared Ontario extract via ~/Code/osm-extracts (it skips unchanged ones)
+  count      run the engine on the newest shared extract -> docs/data/snapshots/<asOfDate>.json
+             + quests.json (skipped when a snapshot of this extract already exists)
+  backfill   count every dated Ontario extract still in the shared store
   history    rebuild docs/data/history/<cityId>.json and docs/data/cities.json from all snapshots
   update     download + count + history, then commit "data <asOfDate>" and push
 
-The contract between engine, pipeline and site is DATA-FORMAT.md.
+Extracts live in the shared store (~/Code/.osm-data, see ~/Code/osm-extracts/README.md); this project
+never downloads a PBF itself. The contract between engine, pipeline and site is DATA-FORMAT.md.
 """
 from __future__ import annotations
 
 import argparse
 import contextlib
 import glob
-import hashlib
 import json
 import os
 import re
 import subprocess
 import sys
-import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 
-PBF_URL = "https://download.geofabrik.de/north-america/canada/ontario-latest.osm.pbf"
-OSM_DIR = ROOT / "data" / "osm"
-PBF_PATH = OSM_DIR / "ontario-latest.osm.pbf"
-META_PATH = OSM_DIR / "meta.json"
-LOCK_PATH = OSM_DIR / "refresh.lock"
+REGION = "ontario"
+OSM_DATA_DIR = Path(os.environ.get("OSM_DATA_DIR") or Path.home() / "Code" / ".osm-data")
+OSM_EXTRACTS_TOOL = Path(os.environ.get("OSM_EXTRACTS_TOOL")
+                         or Path.home() / "Code" / "osm-extracts" / "osm_extracts.py")
+LOCK_DIR = ROOT / "data"
+LOCK_PATH = LOCK_DIR / "pipeline.lock"
 
 QUESTS_DIR = ROOT / "data" / "quests"
 CITIES_CONFIG = ROOT / "config" / "cities.json"
@@ -41,9 +42,6 @@ ENGINE_INSTALL = ENGINE_DIR / "build" / "install" / "sc-open-quests-engine"
 ENGINE_BAT = ENGINE_INSTALL / "bin" / "sc-open-quests-engine.bat"
 JAVA_HOME = r"C:\Program Files\Android\Android Studio\jbr"
 
-CHUNK = 1 << 20
-HTTP_TIMEOUT = 60
-USER_AGENT = "sc-open-quests (+https://github.com/skfd/sc-open-quests)"
 
 
 # --- plumbing -------------------------------------------------------------------------------------
@@ -94,10 +92,10 @@ _lock_depth = 0
 
 @contextlib.contextmanager
 def pipeline_lock():
-    """PID lock in data/osm/refresh.lock. Re-entrant within this process."""
+    """PID lock in data/pipeline.lock. Re-entrant within this process."""
     global _lock_depth
     if _lock_depth == 0:
-        OSM_DIR.mkdir(parents=True, exist_ok=True)
+        LOCK_DIR.mkdir(parents=True, exist_ok=True)
         if LOCK_PATH.exists():
             try:
                 pid = int(LOCK_PATH.read_text(encoding="utf-8").strip())
@@ -116,65 +114,35 @@ def pipeline_lock():
             LOCK_PATH.unlink(missing_ok=True)
 
 
-# --- download -------------------------------------------------------------------------------------
+# --- extracts (shared store) ---------------------------------------------------------------------
 
-def http_head(url: str) -> dict[str, str]:
-    req = urllib.request.Request(url, method="HEAD", headers={"User-Agent": USER_AGENT})
-    with urllib.request.urlopen(req, timeout=HTTP_TIMEOUT) as r:
-        return {k.lower(): v for k, v in r.headers.items()}
-
-
-def http_download(url: str, dest: Path) -> tuple[str, int]:
-    """Stream url to dest via dest.partial, hashing on the way. Returns (sha256, bytes)."""
-    tmp = dest.with_name(dest.name + ".partial")
-    sha, total, next_log = hashlib.sha256(), 0, 100 * CHUNK
-    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
-    with urllib.request.urlopen(req, timeout=HTTP_TIMEOUT) as r, open(tmp, "wb") as f:
-        size = int(r.headers.get("Content-Length") or 0)
-        while chunk := r.read(CHUNK):
-            f.write(chunk)
-            sha.update(chunk)
-            total += len(chunk)
-            if total >= next_log:
-                pct = f" ({100 * total // size}%)" if size else ""
-                log(f"  {total >> 20} MiB{pct}")
-                next_log += 100 * CHUNK
-    if size and total != size:
-        raise IOError(f"short download: {total} of {size} bytes")
-    tmp.replace(dest)
-    return sha.hexdigest(), total
+def download() -> None:
+    """Ask osm-extracts to refresh the shared Ontario extract. It HEAD-checks Geofabrik and holds
+    its own fetch lock, so sibling projects refreshing at the same time don't both download."""
+    log(f"refreshing shared extract: {OSM_EXTRACTS_TOOL} fetch {REGION}")
+    subprocess.run([sys.executable, str(OSM_EXTRACTS_TOOL), "fetch", REGION], check=True)
 
 
-def read_meta() -> dict | None:
-    try:
-        return read_json(META_PATH)
-    except (OSError, ValueError):
-        return None
+def latest_extract() -> tuple[Path, Path]:
+    """(pbf, meta) for the newest extract, by its dated name; never the ontario-latest hardlink."""
+    region_dir = OSM_DATA_DIR / REGION
+    latest = read_json(region_dir / "latest.json")
+    pbf = region_dir / latest["file"]
+    return pbf, extract_meta(pbf)
 
 
-def download(force: bool = False, url: str = PBF_URL) -> bool:
-    """Fetch the extract if Geofabrik has a new one. Returns True if a new file was downloaded."""
-    with pipeline_lock():
-        log(f"HEAD {url}")
-        headers = http_head(url)
-        last_modified = headers.get("last-modified", "")
-        log(f"source Last-Modified: {last_modified or '(none)'}, {headers.get('content-length', '?')} bytes")
-        prior = read_meta() or {}
-        if (not force and last_modified and PBF_PATH.exists()
-                and prior.get("source_last_modified") == last_modified):
-            log("extract unchanged; skipping download")
-            return False
-        log(f"downloading to {PBF_PATH.relative_to(ROOT)}")
-        sha, size = http_download(url, PBF_PATH)
-        write_json(META_PATH, {
-            "source_url": url,
-            "source_last_modified": last_modified,
-            "source_bytes": size,
-            "pbf_sha256": sha,
-            "downloaded_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-        })
-        log(f"downloaded {size:,} bytes, sha256 {sha[:16]}…")
-        return True
+def dated_extracts() -> list[tuple[Path, Path]]:
+    """Every dated extract in the store, oldest first."""
+    region_dir = OSM_DATA_DIR / REGION
+    files = sorted(region_dir.glob(f"{REGION}-????-??-??.osm.pbf"))
+    return [(p, extract_meta(p)) for p in files]
+
+
+def extract_meta(pbf: Path) -> Path:
+    meta = pbf.with_name(pbf.name.removesuffix(".osm.pbf") + ".meta.json")
+    if not pbf.exists() or not meta.exists():
+        raise FileNotFoundError(f"{pbf} or its meta is missing from the shared store")
+    return meta
 
 
 # --- count ----------------------------------------------------------------------------------------
@@ -225,32 +193,38 @@ def build_engine() -> None:
                    env=engine_env(), check=True)
 
 
-def count(force: bool = False) -> Path | None:
-    """Run the engine on the current extract. Returns the snapshot path, or None if skipped."""
+def count(force: bool = False, extract: tuple[Path, Path] | None = None) -> Path | None:
+    """Run the engine on one extract (default: the newest). Returns the snapshot, or None if skipped."""
     with pipeline_lock():
-        meta = read_meta()
-        if not meta or not PBF_PATH.exists():
-            raise FileNotFoundError("no extract in data/osm/; run `python run.py download` first")
-        existing = snapshot_for_sha(meta["pbf_sha256"], DATA_DIR)
+        pbf, meta_path = extract or latest_extract()
+        sha = read_json(meta_path)["sha256"]
+        existing = snapshot_for_sha(sha, DATA_DIR)
         if existing and not force:
-            log(f"snapshots/{existing.name} already counts this extract; skipping (--force to redo)")
+            log(f"snapshots/{existing.name} already counts {pbf.name}; skipping (--force to redo)")
             return None
         if engine_is_stale():
             build_engine()
         quests = newest_quests_file()
         cmd = [str(ENGINE_BAT), "count",
-               "--pbf", str(PBF_PATH.relative_to(ROOT)),
+               "--pbf", str(pbf),
                "--quests", str(quests.relative_to(ROOT)),
                "--cities", str(CITIES_CONFIG.relative_to(ROOT)),
                "--out", str(DATA_DIR.relative_to(ROOT)),
-               "--source-meta", str(META_PATH.relative_to(ROOT))]
+               "--source-meta", str(meta_path)]
         log("running engine: " + " ".join(cmd[1:]))
         subprocess.run(cmd, cwd=ROOT, env=engine_env(), check=True)
-        snap = snapshot_for_sha(meta["pbf_sha256"], DATA_DIR)
+        snap = snapshot_for_sha(sha, DATA_DIR)
         if not snap:
             raise RuntimeError("engine finished but no snapshot carries this extract's sha256")
         log(f"wrote snapshots/{snap.name}")
         return snap
+
+
+def backfill(force: bool = False) -> None:
+    """Count every dated extract still in the shared store (the store prunes old ones on fetch)."""
+    with pipeline_lock():
+        for extract in dated_extracts():
+            count(force=force, extract=extract)
 
 
 # --- history --------------------------------------------------------------------------------------
@@ -370,7 +344,7 @@ def publish(data_dir: Path = DATA_DIR) -> bool:
 def update(force: bool = False) -> None:
     with pipeline_lock():
         log("=== download ===")
-        download()  # never forced here: --force recounts, it does not refetch 1 GB
+        download()
         log("=== count ===")
         count(force=force)
         log("=== history ===")
@@ -386,8 +360,9 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python run.py", description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = parser.add_subparsers(dest="command", required=True)
-    for name, help_ in [("download", "fetch the Geofabrik Ontario extract if it changed"),
-                        ("count", "run the engine on the extract"),
+    sub.add_parser("download", help="refresh the shared Ontario extract (osm-extracts fetch)")
+    for name, help_ in [("count", "run the engine on the newest shared extract"),
+                        ("backfill", "count every dated extract in the shared store"),
                         ("update", "download + count + history + commit + push "
                                    "(--force recounts but does not re-download)")]:
         p = sub.add_parser(name, help=help_)
@@ -398,7 +373,9 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     try:
         if args.command == "download":
-            download(force=args.force)
+            download()
+        elif args.command == "backfill":
+            backfill(force=args.force)
         elif args.command == "count":
             count(force=args.force)
         elif args.command == "history":

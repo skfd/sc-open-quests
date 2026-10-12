@@ -30,19 +30,22 @@ the JSON.
   (`C:\Program Files\Android\Android Studio\jbr`) when it exists, otherwise your `JAVA_HOME`.
   `count` builds the engine (`engine\gradlew.bat installDist`) when it is missing or older than its
   sources.
-- About 10 GB of free RAM for a full Ontario pass, and 1 GB of disk for the extract.
+- About 12 GB of free RAM for a full Ontario pass.
+- Extracts come from the shared store `~/Code/.osm-data`, managed by `~/Code/osm-extracts`
+  (override with `OSM_DATA_DIR` / `OSM_EXTRACTS_TOOL`). This project never downloads a PBF itself.
 
 ## Usage
 
 ```bash
-python run.py download   # Geofabrik Ontario PBF -> data/osm/ (skipped if Last-Modified is unchanged)
-python run.py count      # engine -> docs/data/snapshots/<asOfDate>.json (skipped if this extract is counted)
+python run.py download   # osm-extracts fetch ontario (it skips an unchanged extract)
+python run.py count      # engine on the newest extract -> docs/data/snapshots/<asOfDate>.json (skipped if counted)
+python run.py backfill   # count every dated extract still in the store
 python run.py history    # snapshots -> docs/data/history/<city>.json + docs/data/cities.json
 python run.py update     # all three, then commit "data <asOfDate>" and push
 ```
 
 `update` is the scheduled entry point. A second run on the same extract downloads nothing, counts
-nothing and commits nothing. `count --force` recounts; `download --force` refetches.
+nothing and commits nothing. `count --force` recounts.
 
 Tests: `python -m unittest`.
 
