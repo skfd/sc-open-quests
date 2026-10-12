@@ -45,12 +45,11 @@ at 13:15. Design and known gaps are in DESIGN.md.
 Next, in order:
 1. **Check the first scheduled runs.** A run on 2026-10-12 00:50 committed and pushed "data 2026-10-11"
    (`logs/scheduler.log`); still confirm the 13:15 Task Scheduler slot fires on its own.
-2. **Count the custom quests.** 9 of 51 are ported and checked exactly against SC (see engine/README.md,
-   "Custom quests"). Next: the 3 that only add SC's feature dictionary to tag logic
-   (CheckShopExistence, CheckOpeningHoursSigned, AddPlaceName; osmfeatures is already a dependency).
-   AddAmenityCover, CheckExistence and AddIsAmenityIndoor use it too but can also return null, so re-check
-   them as surroundings quests. Then the
-   high-volume ones that need surroundings (AddHousenumber, AddCrossing...), best by running SC's real
+2. **Count the custom quests.** 12 of 51 are ported and checked exactly against SC (see engine/README.md,
+   "Custom quests"), including the three that use SC's feature dictionary. Left: 39 that need the
+   surrounding map data (AddAmenityCover, CheckExistence and AddIsAmenityIndoor also use the dictionary,
+   already available as `ScFeatures`). Start with the high-volume ones (AddHousenumber,
+   AddCrossing...), best by running SC's real
    `getApplicableElements()` on tiled map data.
 3. **Deeper history.** Geofabrik keeps no old dailies, but `~/Code/.osm-data/planet/history-261005.osm.pbf` is a full
    history planet. Clip it to Ontario and time-slice it with `osmium time-filter` to get a monthly backfill. That
