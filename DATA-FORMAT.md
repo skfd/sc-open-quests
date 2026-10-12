@@ -78,13 +78,17 @@ without `area=yes`, whose position is in the city; great-circle length on a 6371
                                                        //   "codes":[...]}; the note quest has none in SC
                                                        //   and gets {"type":"AllCountries"}
     "wikiLink": "Key:backrest",                        // may be null
-    "elementTypes": ["nodes", "ways"],                 // what the filter selects; [] for custom/note
+    "elementTypes": ["nodes", "ways"],                 // what the filter selects, or what a ported custom
+                                                       //   quest can return; [] for other custom and note
     "status": { "toronto": "counted|not-in-region|unsupported" }   // per city, keyed by id, sorted
 } ] }
 ```
 
 `support`: `supported` for every filter quest (SC's own filter and geometry code; the differences left
-in `engine/README.md` are not quest-specific), `unsupported` for custom and note quests. `status`:
+in `engine/README.md` are not quest-specific) and every ported custom quest (checked element for element
+against SC's own class), `unsupported` for the other custom quests and the note quest. A quest that becomes
+counted is absent (`null` in history) from older snapshots, never 0; the site marks the date where the set
+of counted quests changes as a break in totals. `status`:
 `unsupported` if the quest is not supported, else `not-in-region` if its `enabledInCountries` excludes the
 city's `countryCodes`, else `counted`.
 
