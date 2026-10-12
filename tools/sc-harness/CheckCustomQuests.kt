@@ -11,7 +11,10 @@ import de.westnordost.streetcomplete.data.osm.mapdata.Relation
 import de.westnordost.streetcomplete.data.osm.mapdata.RelationMember
 import de.westnordost.streetcomplete.data.osm.mapdata.Way
 import de.westnordost.streetcomplete.data.osm.osmquests.OsmElementQuestType
+import de.westnordost.osmfeatures.FeatureDictionary
 import de.westnordost.streetcomplete.quests.questTypeRegistry
+import de.westnordost.streetcomplete.util.ktx.getFeature
+import kotlinx.io.files.SystemFileSystem
 import dev.mokkery.mock
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
@@ -34,7 +37,10 @@ import kotlin.system.exitProcess
  *               "tags":{...},"lat":43.6,"lon":-79.4, "nodes":[...], "members":[{"type":"way","ref":1,"role":"outer"}]}
  *              lat/lon is the element's quest position; nodes/members are optional.
  *  - sc.quests comma-separated quest type names, e.g. AddSidewalk,AddOpeningHours
- *  - sc.out    TSV output (quest, type, id), sorted; else stdout */
+ *  - sc.out    TSV output (quest, type, id), sorted; else stdout
+ *  - sc.presets SC's osmfeatures preset directory (default: the checkout's composeResources). The
+ *              quests that take getFeature get the app's own: FeatureDictionary over SC's presets,
+ *              queried in the JVM's default locale (the task pins en-CA, as the engine does). */
 fun main() {
     val inPath = System.getProperty("sc.in")?.takeIf { it.isNotBlank() }
         ?: fail("sc.in (-PcheckIn) is required")
@@ -43,7 +49,15 @@ fun main() {
     if (questNames.isEmpty()) fail("sc.quests (-PcheckQuests) is required")
 
     // resolve quest names before reading a possibly huge input
-    val registry = questTypeRegistry(mock(), mock(), mock(), mock())
+    // getFeature as the app wires it (AndroidModule2): { featureDictionaryLazy.value.getFeature(it) }
+    val presets = System.getProperty("sc.presets")?.takeIf { it.isNotBlank() }
+        ?: "src/commonMain/composeResources/files/osmfeatures/default"
+    val brands = File(presets).resolveSibling("brands").path
+    val featureDictionary by lazy {
+        System.err.println("feature dictionary: $presets (+ $brands), locale ${java.util.Locale.getDefault().toLanguageTag()}")
+        FeatureDictionary.create(SystemFileSystem, presets, brands)
+    }
+    val registry = questTypeRegistry(mock(), mock(), mock(), { featureDictionary.getFeature(it) })
     val byName = registry.associateBy { it.name }
     val unknown = questNames.filter { it !in byName }
     if (unknown.isNotEmpty()) fail("unknown quest types: ${unknown.joinToString()}")
