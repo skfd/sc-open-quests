@@ -1,7 +1,9 @@
-# Custom quests whose applicability logic is transcribed (not vendored) into src/main/kotlin/openquests/custom/.
-# Their SC files sit in androidMain next to Android UI code, so they cannot be copied as they are.
-# One line per quest: name, path under app/src/androidMain/kotlin/de/westnordost/streetcomplete/, and the
-# sha256 of that file with LF line endings at the pinned tag. sync-sc.ps1 fails if a file changed.
+# SC code that is transcribed or generated rather than vendored, because its files also hold Android UI code:
+# custom quests (src/main/kotlin/openquests/custom/, hand-ported; src/main/kotlin/ported/, by port_area_quests.py),
+# androidMain helper files copied whole (helper:<File>), and helper:ignoreRelation (openquests/IgnoreRelation.kt).
+# One line each: name, path under app/src/androidMain/kotlin/de/westnordost/streetcomplete/ ("cm:" = under
+# commonMain instead), and the sha256 of that file with LF line endings at the pinned tag. sync-sc.ps1 fails if a
+# file changed: rerun port_area_quests.py for generated ports, recheck hand ports, then update the hash.
 AddSidewalk                     quests/sidewalk/AddSidewalk.kt                                           9e5733e39e8547bba62a503d4d82e02a07b66361a2a09008d646b9c3307798c8
 AddOpeningHours                 quests/opening_hours/AddOpeningHours.kt                                  f7576cee96a9046906076986ddf95804d040efe73f971192431154fbf793c5d8
 AddPostboxCollectionTimes       quests/postbox_collection_times/AddPostboxCollectionTimes.kt             372961313440a7aac4a37a389d49b1b8f88209fefb8e1672202e0a08c2d1b961
@@ -54,3 +56,4 @@ helper:FerryUtils               quests/ferry/FerryUtils.kt                      
 helper:LevelUtils               quests/level/LevelUtils.kt                                               1b18ef4268be0e52598b75ec23d8f657611f5dab2d70cd6602ddf6945dd36a08
 helper:SummitMarkingsUtil       quests/summit/SummitMarkingsUtil.kt                                      41d377bff5b8e46f2eca2befacfa7d072c9b238fc516333940a413bb71b99712
 helper:MaxHeightUtils           quests/max_height/MaxHeightUtils.kt                                      f2b1d8bfcce485fd9fce7325643116c54691042c3f1c1b0adcd19a5ec0252f7f
+helper:ignoreRelation           cm:ApplicationConstants.kt                                               3c54a210e1d7b4315f12e78af1bdd444331dbcab68ef472f31aa926026d524c2

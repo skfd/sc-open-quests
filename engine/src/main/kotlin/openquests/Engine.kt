@@ -60,6 +60,8 @@ class PassStats {
     val geometryErrors = AtomicLongArray(3)
     /** tagged elements skipped because their bounding box misses every city's */
     val outsideBboxes = AtomicLongArray(3)
+    /** tagged relations the app drops on download (ignoreRelation) */
+    val ignoredRelations = java.util.concurrent.atomic.AtomicLong()
     val timings = LinkedHashMap<String, Double>()
 }
 
@@ -362,6 +364,9 @@ class Engine(val registry: Registry, val cities: List<City>) {
         val ctx = BlockContext(b)
         for (g in b.primitivegroupList) for (r in g.relationsList) {
             if (r.keysCount == 0) continue
+            val tags = tagsOf(r.keysList, r.valsList, ctx.strings)
+            // the app drops these while parsing a download, so no quest is ever on one
+            if (ignoreRelation(tags)) { stats.ignoredRelations.incrementAndGet(); continue }
             val members = ArrayList<RelationMember>(r.memidsCount)
             // SC builds relation geometry from member ways only, skipping missing or incomplete ways
             // (allowIncomplete = true in MapDataControllerImpl); node and relation members are ignored.
@@ -389,7 +394,7 @@ class Engine(val registry: Registry, val cities: List<City>) {
             }
             if (wayGeometries.isEmpty()) { stats.noGeometry.incrementAndGet(RELATION); continue }
             if (!cityIndex.bboxMayHit(south, west, north, east)) { stats.outsideBboxes.incrementAndGet(RELATION); continue }
-            val relation = Relation(r.id, members, tagsOf(r.keysList, r.valsList, ctx.strings),
+            val relation = Relation(r.id, members, tags,
                 if (r.hasInfo()) r.info.version else 1, r.info.timestamp * ctx.dateGranularity)
             val geometry = geometryOf(RELATION) { geometryCreator.create(relation, wayGeometries) } ?: continue
             val center = geometry.center

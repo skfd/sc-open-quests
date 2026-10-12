@@ -189,7 +189,8 @@ $changed = @()
 foreach ($l in [System.IO.File]::ReadAllLines($portsFile)) {
     if ($l -match '^\s*(#|$)') { continue }
     $name, $path, $sha = -split $l
-    $src = Join-Path $androidMain "$pkg/$path"
+    # "cm:<path>" pins a commonMain file whose code is transcribed (e.g. ApplicationConstants.ignoreRelation)
+    $src = if ($path.StartsWith('cm:')) { Join-Path $commonMain "$pkg/$($path.Substring(3))" } else { Join-Path $androidMain "$pkg/$path" }
     if (-not (Test-Path $src)) { $changed += "$name ($path is gone)"; continue }
     $now = Get-Sha256Lf $src
     if ($now -ne $sha) { $changed += "$name ($path is now $now)" }

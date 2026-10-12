@@ -319,6 +319,8 @@ class AreaPass(
         val out = ArrayList<RelRec>()
         for (g in b.primitivegroupList) for (r in g.relationsList) {
             if (r.keysCount == 0) continue
+            val tags = tagsOf(r.keysList, r.valsList, ctx.strings)
+            if (ignoreRelation(tags)) continue // dropped by the app on download
             val members = ArrayList<RelationMember>(r.memidsCount)
             var mask = 0L
             var memId = 0L
@@ -337,7 +339,7 @@ class AreaPass(
                 }
             }
             if (mask == 0L) continue
-            out += RelRec(r.id, members, tagsOf(r.keysList, r.valsList, ctx.strings),
+            out += RelRec(r.id, members, tags,
                 if (r.hasInfo()) r.info.version else 1, r.info.timestamp * ctx.dateGranularity, mask)
         }
         return out

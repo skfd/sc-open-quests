@@ -205,7 +205,7 @@ private fun logStats(engine: Engine, passSeconds: Double, runSeconds: Double) {
     fun arr(a: java.util.concurrent.atomic.AtomicLongArray) = (0..2).map { a[it] }
     log("tagged elements located (n/w/r): ${arr(s.located)}; in some city: ${arr(s.inCity)}")
     log("no SC geometry (n/w/r): ${arr(s.noGeometry)}; geometry errors: ${arr(s.geometryErrors)}; " +
-        "bbox outside all cities: ${arr(s.outsideBboxes)}")
+        "bbox outside all cities: ${arr(s.outsideBboxes)}; relations the app ignores: ${s.ignoredRelations.get()}")
     val peakHeap = ManagementFactory.getMemoryPoolMXBeans()
         .filter { it.type == MemoryType.HEAP }.sumOf { it.peakUsage.used }
     log("pass %.1f s, total %.1f s; peak heap (sum of pool peaks) %d MB".format(passSeconds, runSeconds, peakHeap shr 20))

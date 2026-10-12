@@ -143,3 +143,4 @@ ported custom quests (sha256 of the androidMain file with LF line endings; logic
   1b18ef4268be0e52598b75ec23d8f657611f5dab2d70cd6602ddf6945dd36a08  quests/level/LevelUtils.kt  (helper:LevelUtils)
   41d377bff5b8e46f2eca2befacfa7d072c9b238fc516333940a413bb71b99712  quests/summit/SummitMarkingsUtil.kt  (helper:SummitMarkingsUtil)
   f2b1d8bfcce485fd9fce7325643116c54691042c3f1c1b0adcd19a5ec0252f7f  quests/max_height/MaxHeightUtils.kt  (helper:MaxHeightUtils)
+  3c54a210e1d7b4315f12e78af1bdd444331dbcab68ef472f31aa926026d524c2  cm:ApplicationConstants.kt  (helper:ignoreRelation)
