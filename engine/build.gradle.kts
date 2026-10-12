@@ -16,17 +16,51 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
     // OSM PBF format bindings (crosby.binary); pulls protobuf-java
     implementation("org.openstreetmap.pbf:osmpbf:1.8.0")
+
+    testImplementation(kotlin("test"))
+    // only to check our reading of SC's country gating against the library and data SC ships
+    testImplementation("de.westnordost:countryboundaries:3.0.0")
+    testImplementation("org.junit.jupiter:junit-jupiter:5.12.2")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 kotlin {
     jvmToolchain(21)
 }
 
+// SC's date filters use the system time zone; pin it so a run does not depend on the host.
+// The engine refuses to run if a city's timeZone differs from it.
+val engineJvmArgs = listOf("-Duser.timezone=America/Toronto")
+
 application {
-    mainClass.set("openquests.SpikeKt")
+    mainClass.set("openquests.MainKt")
+    applicationName = "sc-open-quests-engine"
     applicationDefaultJvmArgs = listOf(
-        "-Xmx12g", // peak heap was ~7.2 GB for Ontario; a 32 GB heap only made GC lazier (18 GB RSS, slower)
-        // SC's date filters use the system time zone; pin it so a run does not depend on the host
-        "-Duser.timezone=America/Toronto",
+        "-Xmx16g", // see README "Memory" for the measured peak on Ontario
+    ) + engineJvmArgs
+}
+
+tasks.test {
+    useJUnitPlatform()
+    jvmArgs(engineJvmArgs)
+    // the Ontario regression test runs the whole engine in-process
+    maxHeapSize = "16g"
+    // repo root, so that config/ and data/ paths resolve as they do for the CLI
+    workingDir = rootProject.projectDir.parentFile
+    // -Ppbf=<path> points the Ontario regression test elsewhere; it is skipped if the file is missing
+    systemProperty(
+        "openquests.pbf",
+        providers.gradleProperty("pbf").getOrElse("C:/Users/kk/Code/.osm-data/ontario/ontario-2026-07-16.osm.pbf"),
     )
+    // SC's country boundaries data (in an SC checkout); the test using it is skipped without it
+    systemProperty(
+        "openquests.scBoundaries",
+        providers.gradleProperty("scBoundaries").getOrElse(
+            "C:/Users/kk/AppData/Local/Temp/sc-v63.4/app/src/commonMain/composeResources/files/boundaries.ser"),
+    )
+    testLogging {
+        events("passed", "skipped", "failed")
+        showStandardStreams = true
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+    }
 }

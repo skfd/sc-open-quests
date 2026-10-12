@@ -15,7 +15,11 @@ fun Instant.toLocalDate(): LocalDate = toLocalDateTime().date
 fun Instant.toLocalDateTime(): LocalDateTime = toLocalDateTime(TimeZone.currentSystemDefault())
 
 /** Shortcut for Clock.System.now() */
-fun systemTimeNow(): Instant = Clock.System.now()
+fun systemTimeNow(): Instant = systemClock.now()
+
+/** sc-open-quests patch: the clock behind [systemTimeNow], settable so that age filters can be
+ *  evaluated at an extract's timestamp instead of the wall clock. */
+var systemClock: Clock = Clock.System
 
 /** Current system time in epoch milliseconds */
 fun nowAsEpochMilliseconds(): Long = systemTimeNow().toEpochMilliseconds()

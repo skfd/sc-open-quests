@@ -7,10 +7,18 @@
   original package names and licence headers, and records the SC tag and commit in SC-VERSION.txt.
   The checkout must be at exactly the requested tag.
 
-  Patches applied to vendored files: none. They compile unchanged on a plain JVM because the
-  build applies the kotlinx.serialization compiler plugin (for the @Serializable annotations in
-  Element.kt and StringMapChanges*.kt) and uses the same Kotlin (2.4.0) and kotlinx-datetime (0.8.0)
-  versions as SC v63.4. If a future tag needs a patch, apply it here, after the copy, and list it.
+  The files compile unchanged on a plain JVM because the build applies the kotlinx.serialization
+  compiler plugin (for the @Serializable annotations in Element.kt, ElementGeometry.kt, ...) and uses
+  the same Kotlin (2.4.0) and kotlinx-datetime (0.8.0) versions as SC v63.4. util/ktx/Element.kt
+  imports de.westnordost.osmfeatures.GeometryType, which has no plain-JVM artifact; the engine
+  provides a stub enum for it in src/main/kotlin/stubs/ (outside sc/, so the SC file stays as is).
+
+  Patches applied after the copy (listed in SC-VERSION.txt, both hashes recorded):
+    clock  util/ktx/Instant.kt: systemTimeNow() reads a settable `var systemClock: Clock`
+           (default Clock.System) instead of Clock.System. Every wall-clock read in the vendored
+           code (LocalDate.now(), LocalDateTime.now(), RelativeDate, nowAsCheckDateString()) goes
+           through systemTimeNow(), so this one line lets the engine evaluate `older today -N` at
+           the extract's timestamp. The script fails if the upstream line is not found verbatim.
 
 .EXAMPLE
   ./sync-sc.ps1 -ScPath C:\Users\kk\AppData\Local\Temp\sc-v63.4 -Tag v63.4
@@ -29,6 +37,11 @@ if ($actualTags -notcontains $Tag) {
     throw "SC checkout at $ScPath is not at tag $Tag (HEAD tags: $($actualTags -join ', '))"
 }
 $commit = (git -C $ScPath rev-parse HEAD).Trim()
+
+function Get-Sha256([string]$path) {
+    $bytes = [System.IO.File]::ReadAllBytes($path)
+    -join ([System.Security.Cryptography.SHA256]::Create().ComputeHash($bytes) | ForEach-Object { $_.ToString('x2') })
+}
 
 $pkg = 'de/westnordost/streetcomplete'
 $files = @(
@@ -63,6 +76,38 @@ $files = @(
     "$pkg/osm/surface/Surface.kt"
     "$pkg/osm/surface/SurfaceCreator.kt" # applyTo(), used by SurfaceUtils
     "$pkg/osm/surface/SurfaceCategory.kt" # used by SurfaceCreator
+    # quest position: how the app builds an element's geometry and its centre
+    "$pkg/data/osm/geometry/ElementGeometryCreator.kt"
+    "$pkg/data/osm/geometry/ElementGeometry.kt"
+    "$pkg/data/osm/geometry/NodeWayMap.kt"
+    "$pkg/data/osm/mapdata/MapData.kt"
+    "$pkg/data/osm/mapdata/BoundingBox.kt"
+    "$pkg/util/math/SphericalEarthMath.kt"
+    "$pkg/util/math/SphericalEarthMathVector3d.kt"
+    "$pkg/util/math/Vector3d.kt"
+    "$pkg/util/math/AngleMath.kt" # normalizeDegrees/normalizeRadians
+    "$pkg/util/ktx/Collections.kt"
+    "$pkg/util/ktx/Double.kt"
+    "$pkg/util/ktx/Element.kt" # isArea()
+    "$pkg/osm/AreaUtils.kt" # IS_AREA_EXPRESSION
+)
+
+# Patches: file -> (name, upstream line, replacement lines). Applied after the copy; each must match
+# exactly one line verbatim, or the script fails.
+$patches = @(
+    @{
+        Name = 'clock'
+        File = "$pkg/util/ktx/Instant.kt"
+        Find = 'fun systemTimeNow(): Instant = Clock.System.now()'
+        Replace = @(
+            'fun systemTimeNow(): Instant = systemClock.now()'
+            ''
+            '/** sc-open-quests patch: the clock behind [systemTimeNow], settable so that age filters can be'
+            ' *  evaluated at an extract''s timestamp instead of the wall clock. */'
+            'var systemClock: Clock = Clock.System'
+        )
+        Description = 'util/ktx/Instant.kt: systemTimeNow() reads a settable `var systemClock: Clock` (default Clock.System)'
+    }
 )
 
 if (Test-Path $dest) { Remove-Item -Recurse -Force $dest }
@@ -72,20 +117,33 @@ $lines = @(
     "# rerun the script instead. StreetComplete is GPL-3.0 (see src/main/kotlin/sc/LICENSE)."
     "tag=$Tag"
     "commit=$commit"
-    "patches=none"
-    "files (sha256 of the copied file):"
+    "patches=$(($patches | ForEach-Object { $_.Name }) -join ',')"
 )
+foreach ($p in $patches) { $lines += "  $($p.Name): $($p.Description)" }
+$lines += "files (sha256 of the copied file; patched files also give the upstream sha256):"
+
 foreach ($f in $files) {
     $src = Join-Path $commonMain $f
     if (-not (Test-Path $src)) { throw "Missing in SC checkout: $src" }
     $target = Join-Path $dest $f
     New-Item -ItemType Directory -Force (Split-Path $target) | Out-Null
     Copy-Item $src $target
-    $bytes = [System.IO.File]::ReadAllBytes($target)
-    $hash = -join ([System.Security.Cryptography.SHA256]::Create().ComputeHash($bytes) | ForEach-Object { $_.ToString('x2') })
-    $lines += "  $hash  $f"
+    $upstream = Get-Sha256 $target
+    $patch = $patches | Where-Object { $_.File -eq $f }
+    if ($patch) {
+        $text = [System.IO.File]::ReadAllText($target)
+        $nl = if ($text.Contains("`r`n")) { "`r`n" } else { "`n" }
+        $fileLines = [regex]::Split($text, '\r?\n')
+        $hits = @($fileLines | Where-Object { $_ -ceq $patch.Find }).Count
+        if ($hits -ne 1) { throw "patch $($patch.Name): expected the line '$($patch.Find)' once in $f, found $hits" }
+        $out = foreach ($l in $fileLines) { if ($l -ceq $patch.Find) { $patch.Replace } else { $l } }
+        [System.IO.File]::WriteAllText($target, ($out -join $nl), (New-Object System.Text.UTF8Encoding $false))
+        $lines += "  $(Get-Sha256 $target)  $f  (patch $($patch.Name); upstream $upstream)"
+    } else {
+        $lines += "  $upstream  $f"
+    }
 }
 Copy-Item (Join-Path $ScPath 'LICENSE') (Join-Path $dest 'LICENSE')
 
 [System.IO.File]::WriteAllLines((Join-Path $PSScriptRoot 'SC-VERSION.txt'), [string[]]$lines)
-Write-Host "Vendored $($files.Count) files from StreetComplete $Tag ($commit) into $dest"
+Write-Host "Vendored $($files.Count) files from StreetComplete $Tag ($commit) into $dest; patches: $(($patches | ForEach-Object { $_.Name }) -join ', ')"

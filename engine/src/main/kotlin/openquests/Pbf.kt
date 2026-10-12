@@ -6,16 +6,20 @@ import java.io.BufferedInputStream
 import java.io.DataInputStream
 import java.io.EOFException
 import java.io.FileInputStream
+import java.security.DigestInputStream
+import java.security.MessageDigest
 import java.util.zip.Inflater
 
 /** Minimal OSM PBF reading on top of the protobuf classes in org.openstreetmap.pbf:osmpbf.
  *  Blobs are read sequentially (cheap), then inflated and decoded in parallel by the caller. */
-class PbfFile(val header: Osmformat.HeaderBlock, val dataBlobs: List<ByteArray>)
+class PbfFile(val header: Osmformat.HeaderBlock, val dataBlobs: List<ByteArray>, val sha256: String)
 
+/** Reads all blobs into memory, hashing the file (sha256, lowercase hex) on the way. */
 fun readPbf(path: String): PbfFile {
     var header: Osmformat.HeaderBlock? = null
     val blobs = ArrayList<ByteArray>()
-    DataInputStream(BufferedInputStream(FileInputStream(path), 1 shl 22)).use { inp ->
+    val digest = MessageDigest.getInstance("SHA-256")
+    DataInputStream(BufferedInputStream(DigestInputStream(FileInputStream(path), digest), 1 shl 22)).use { inp ->
         while (true) {
             val headerLen = try { inp.readInt() } catch (_: EOFException) { break }
             val hb = ByteArray(headerLen).also { inp.readFully(it) }
@@ -27,7 +31,8 @@ fun readPbf(path: String): PbfFile {
             }
         }
     }
-    return PbfFile(header ?: error("no OSMHeader"), blobs)
+    val sha = digest.digest().joinToString("") { "%02x".format(it) }
+    return PbfFile(header ?: error("no OSMHeader"), blobs, sha)
 }
 
 fun inflate(blobBytes: ByteArray): ByteArray {

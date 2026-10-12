@@ -21,49 +21,72 @@ time zone (`YYYY-MM-DD`).
 ```jsonc
 {
   "schema": 1,
-  "asOf": "2026-07-16T20:21:30Z",     // extract replication timestamp; the "today" used by age filters
+  "asOf": "2026-07-16T20:21:30Z",     // the "today" used by age filters: the extract replication timestamp
   "asOfDate": "2026-07-16",            // asOf in timeZone
   "timeZone": "America/Toronto",
+  "extractTimestamp": "2026-07-16T20:21:30Z", // the PBF header's timestamp; differs from asOf only
+                                       //   when the engine ran with --today (tests, what-ifs)
   "scVersion": "63.4",
   "scCommit": "244c6873…",
   "resurveyMultiplier": 1,
-  "engineCommit": "<git sha of this repo>",
-  "source": { "url": "...", "lastModified": "...", "sha256": "..." },
+  "engineCommit": "<git sha of this repo>",   // null if git is unavailable
+  "source": { "url": "...",            // null when the engine got no --source-meta
+              "lastModified": "2026-07-16T23:33:11Z",  // the download's Last-Modified, as ISO; or null
+              "sha256": "...",         // always: computed by the engine from the PBF it read
+              "file": "ontario-2026-07-16.osm.pbf" },  // the PBF's file name
   "runSeconds": 12.3,
-  "cities": {
+  "cities": {                          // keyed by city id, sorted
     "toronto": {
-      "denominators": { "landAreaKm2": 665.9, "population": null,
-                        "taggedNodes": 0, "taggedWays": 0, "highwayKm": 0.0 },
-      "quests": {
+      "denominators": { "landAreaKm2": 665.93, "population": null,
+                        "taggedNodes": 808328, "taggedWays": 782590, "highwayKm": 10808.696 },
+      "quests": {                      // keyed by quest name, sorted; one quest per line
         "AddBenchBackrest": {
           "open": 3063,                 // what the app would show at asOf (centre inside the city polygon)
           "nodes": 2931, "ways": 132, "relations": 0,
-          "agedOnly": 0                 // of `open`, how many match only because of `older` (0 when !usesAge)
+          "agedOnly": 0                 // of `open`, how many match only because of time (0 when !usesAge)
         }
-        // only quests with status "counted" in quests.json appear here
+        // every quest with status "counted" for this city in quests.json appears here, zeros included
+        // (127 per city for SC 63.4 in Ontario; ~620 KB per snapshot for 48 cities)
       }
     }
   }
 }
 ```
 
-`agedOnly` = matches at `asOf`, minus matches with the clock set so every `older today -N` test is false.
-Those elements need a resurvey, not new mapping.
+`agedOnly`, per element: of the elements counted in `open`, those that no longer match when the clock is set
+to 1900-01-01, where every `older today -N` test is false. That includes date tags compared with today
+(`opening_date < today`, `smoothness:date < today -4 years`). Those elements need a resurvey or a re-check,
+not new mapping.
+
+Denominators: `landAreaKm2` and `population` come from the city config (area rounded to 2 decimals).
+`taggedNodes` and `taggedWays` count tagged elements whose quest position is in the city. `highwayKm` is
+the length of ways tagged `highway` = motorway, trunk, primary, secondary, tertiary, unclassified,
+residential, service, living_street, or a `_link` of motorway, trunk, primary, secondary or tertiary,
+without `area=yes`, whose position is in the city; great-circle length on a 6371 km sphere (SC's
+`measuredLength()`), 3 decimals. See `engine/README.md` for how positions are computed.
 
 ## Quest metadata for the site
 
 `docs/data/quests.json`, rewritten each run from the registry dump:
 
 ```jsonc
-{ "scVersion": "63.4", "quests": [ {
+{ "scVersion": "63.4", "scCommit": "244c6873…", "quests": [ {   // registry order, one quest per line
     "name": "AddBenchBackrest", "order": 12, "kind": "filter|custom|note",
     "support": "supported|approximated|unsupported",
     "defaultDisabled": false, "usesAge": false,
-    "enabledInCountries": { "type": "AllCountries" },
-    "wikiLink": "Key:backrest",
-    "status": { "toronto": "counted|not-in-region|unsupported" }   // per city
+    "enabledInCountries": { "type": "AllCountries" },  // or {"type":"AllCountriesExcept"|"NoCountriesExcept",
+                                                       //   "codes":[...]}; the note quest has none in SC
+                                                       //   and gets {"type":"AllCountries"}
+    "wikiLink": "Key:backrest",                        // may be null
+    "elementTypes": ["nodes", "ways"],                 // what the filter selects; [] for custom/note
+    "status": { "toronto": "counted|not-in-region|unsupported" }   // per city, keyed by id, sorted
 } ] }
 ```
+
+`support`: `supported` for every filter quest (SC's own filter and geometry code; the differences left
+in `engine/README.md` are not quest-specific), `unsupported` for custom and note quests. `status`:
+`unsupported` if the quest is not supported, else `not-in-region` if its `enabledInCountries` excludes the
+city's `countryCodes`, else `counted`.
 
 Headline totals on the site exclude `defaultDisabled` quests; the per-quest numbers are still there.
 
