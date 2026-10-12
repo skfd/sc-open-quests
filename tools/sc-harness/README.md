@@ -8,11 +8,13 @@ Files:
 
 - `DumpQuestFilters.kt` — the tool. Drop it into SC's JVM unit-test source set, package
   `de.westnordost.streetcomplete`.
-- `build.gradle.kts.snippet` — the `dumpQuestFilters` JavaExec task to append to SC's `app/build.gradle.kts`.
+- `CheckCustomQuests.kt` — oracle for ported custom quests, see [below](#checkcustomquests-an-oracle-for-ported-custom-quests).
+  Same source set and package.
+- `build.gradle.kts.snippet` — the `dumpQuestFilters` and `checkCustomQuests` JavaExec tasks to append to SC's `app/build.gradle.kts`.
   It borrows the unit-test task's classpath, the same way SC's own `printQuestFiltersAsOverpassQL` does on
   master.
 
-Nothing in SC is changed other than adding these two things. The SC checkout is scratch.
+Nothing in SC is changed other than adding these files and tasks. The SC checkout is scratch.
 
 ## What it emits
 
@@ -85,3 +87,57 @@ Notes:
 - First build (`:app:compileDebugUnitTestKotlinAndroid`, cold Gradle 8.14 and caches): 6 min 55 s,
   including the automatic install of Android SDK Platform 36. The dump itself then takes about 10 s.
 - 190 registry entries: 138 `filter`, 51 `custom`, 1 `note`. All 138 filter strings re-parse.
+
+## CheckCustomQuests: an oracle for ported custom quests
+
+Custom quests have Kotlin logic on top of their filters, so a hand port can drift. `CheckCustomQuests.kt`
+runs SC's real `getApplicableElements(mapData)` (what `OsmQuestController` calls for a downloaded area) of
+the named quest types over a set of elements, and lists what each one applies to. Diff that against the
+port's output for the same elements.
+
+Install it like the dump: `CheckCustomQuests.kt` next to `DumpQuestFilters.kt`, and the `checkCustomQuests`
+task from the snippet into `app/build.gradle.kts`.
+
+Input is JSON lines, one element per line:
+
+```json
+{"type":"way","id":123,"version":4,"timestamp":1690000000000,"tags":{"highway":"residential"},
+ "lat":43.6,"lon":-79.4,"nodes":[1,2,3]}
+```
+
+- `timestamp` is epoch milliseconds (SC's `timestampEdited`). Leave it out and the element counts as
+  edited in 1970, so every `older today -N years` rule matches; the tool warns with a count.
+- `lat`/`lon` is the quest position. Every element gets an `ElementPointGeometry` there, and the map
+  data's bounding box covers them all.
+- `nodes` (ways) and `members` (relations, `{"type":"way","ref":1,"role":"outer"}`) are optional. Without
+  `nodes` a way has no node ids, so `isClosed` is false.
+- Bad lines are skipped and counted.
+
+```sh
+./gradlew --console=plain :app:checkCustomQuests \
+  -PcheckIn=C:/path/elements.jsonl \
+  -PcheckQuests=AddSidewalk,AddOpeningHours \
+  -PcheckOut=C:/path/applicable.tsv
+```
+
+Output is a sorted TSV with columns `quest`, `type`, `id` (header row included), type `node`/`way`/`relation`. Counts per quest go to
+stderr. Unknown quest names fail before the input is read. 2 million elements (500 MB) take about 20 s
+in the 12 GB heap the task sets.
+
+Caveats:
+
+- Date filters use the wall clock, as the app does. Run the port against the same day.
+- Country gating is not applied. The app also drops quests outside `enabledInCountries`
+  (`OsmQuestController.mayCreateQuest`), e.g. `AddPostboxCollectionTimes` is `NoCountriesExcept(..., "CA", ...)`.
+  Default-disabled quests (`AddRoadWidth`, and `AddMaxPhysicalHeight` without AR) are listed anyway.
+- The registry is built with mocks for `ArSupportChecker`, `getCountryInfoByLocation`,
+  `getCountryOrSubdivisionCode` and `getFeature`. A quest that calls one inside `getApplicableElements` would
+  throw or return junk; the tool reports a quest that throws and exits non-zero. Checked at v63.4 for
+  `AddSidewalk`, `AddOpeningHours`, `AddPostboxCollectionTimes`, `AddRecyclingContainerMaterials`,
+  `CheckShopType`, `AddClothingBinOperator`, `AddOnewayAerialway`, `AddRoadWidth`, `AddMaxPhysicalHeight`:
+  none does. Only `AddRoadWidth` and `AddMaxPhysicalHeight` take one (the AR checker), and they use it
+  only for `defaultDisabledMessage`. Quests built with `getFeature` (`AddPlaceName`, `CheckExistence`,
+  `AddIsAmenityIndoor`, ...) or `getCountryInfoByLocation` (`AddHousenumber`, `AddCycleway`, ...) need a
+  look before you trust them here.
+- The test fixture at v63.4 (45 elements covering those nine quests, hits and near misses) matched the
+  expected list exactly.
