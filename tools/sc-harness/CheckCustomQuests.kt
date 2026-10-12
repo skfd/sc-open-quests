@@ -17,6 +17,13 @@ import de.westnordost.streetcomplete.quests.questTypeRegistry
 import de.westnordost.streetcomplete.util.ktx.getFeature
 import de.westnordost.streetcomplete.util.math.contains
 import kotlinx.io.files.SystemFileSystem
+import kotlinx.io.buffered
+import com.charleskorn.kaml.Yaml
+import com.charleskorn.kaml.YamlConfiguration
+import de.westnordost.streetcomplete.data.meta.CountryInfo
+import de.westnordost.streetcomplete.data.meta.IncompleteCountryInfo
+import de.westnordost.streetcomplete.util.countryboundaries.CountryBoundariesImpl
+import kotlinx.serialization.decodeFromString
 import dev.mokkery.mock
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
@@ -76,7 +83,32 @@ fun main() {
         System.err.println("feature dictionary: $presets (+ $brands), locale ${java.util.Locale.getDefault().toLanguageTag()}")
         FeatureDictionary.create(SystemFileSystem, presets, brands)
     }
-    val registry = questTypeRegistry(mock(), mock(), mock(), { featureDictionary.getFeature(it) })
+    // getCountryInfoByLocation and getCountryOrSubdivisionCode as the app wires them (AndroidModule2):
+    // { countryInfos.get(countryBoundaries, it) } and { countryBoundaries.getIds(it).firstOrNull() },
+    // over the checkout's boundaries.ser and country_metadata/ (CountryInfos reads them through
+    // Compose resources, which do not load here, so its load() is mirrored below with SC's kaml setup)
+    val files = File(System.getProperty("sc.files")?.takeIf { it.isNotBlank() } ?: "src/commonMain/composeResources/files")
+    val countryBoundaries by lazy {
+        SystemFileSystem.source(kotlinx.io.files.Path(File(files, "boundaries.ser").path)).buffered().use {
+            CountryBoundariesImpl(de.westnordost.countryboundaries.CountryBoundaries.deserializeFrom(it))
+        }
+    }
+    val yaml = Yaml(configuration = YamlConfiguration(strictMode = false))
+    val incompleteInfos = java.util.concurrent.ConcurrentHashMap<String, java.util.Optional<IncompleteCountryInfo>>()
+    fun loadInfo(regionCode: String): IncompleteCountryInfo? = incompleteInfos.getOrPut(regionCode) {
+        val f = File(files, "country_metadata/$regionCode.yml")
+        java.util.Optional.ofNullable(if (!f.isFile) null else
+            yaml.decodeFromString<IncompleteCountryInfo>("countryCode: ${regionCode.split("-").first()}\n" + f.readText()))
+    }.orElse(null)
+    val getCountryInfoByLocation: (LatLon) -> CountryInfo = { pos ->
+        CountryInfo(countryBoundaries.getIds(pos).mapNotNull { loadInfo(it) } + loadInfo("default")!!)
+    }
+    val registry = questTypeRegistry(
+        mock(),
+        getCountryInfoByLocation,
+        { countryBoundaries.getIds(it).firstOrNull() },
+        { featureDictionary.getFeature(it) },
+    )
     val byName = registry.associateBy { it.name }
     val unknown = questNames.filter { it !in byName }
     if (unknown.isNotEmpty()) fail("unknown quest types: ${unknown.joinToString()}")

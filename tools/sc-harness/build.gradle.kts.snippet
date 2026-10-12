@@ -42,6 +42,8 @@ tasks.register<JavaExec>("checkCustomQuests") {
     (findProperty("checkOut") as String?)?.let { systemProperty("sc.out", it) }
     (findProperty("checkPresets") as String?)?.let { systemProperty("sc.presets", it) }
     (findProperty("checkBbox") as String?)?.let { systemProperty("sc.bbox", it) }
+    // composeResources/files of the checkout: boundaries.ser and country_metadata/ (default: the app's)
+    (findProperty("checkFiles") as String?)?.let { systemProperty("sc.files", it) }
     // getFeature() reads osmfeatures in the default locale; the engine pins en-CA too
     systemProperty("user.language", "en")
     systemProperty("user.country", "CA")

@@ -152,12 +152,18 @@ Caveats:
 - Country gating is not applied. The app also drops quests outside `enabledInCountries`
   (`OsmQuestController.mayCreateQuest`), e.g. `AddPostboxCollectionTimes` is `NoCountriesExcept(..., "CA", ...)`.
   Default-disabled quests (`AddRoadWidth`, and `AddMaxPhysicalHeight` without AR) are listed anyway.
-- The registry is built with mocks for `ArSupportChecker`, `getCountryInfoByLocation` and
-  `getCountryOrSubdivisionCode`; `getFeature` is the app's own (SC's feature dictionary over the checkout's
-  presets, in en-CA). A quest that calls a mock inside `getApplicableElements` would throw or return junk;
-  the tool reports a quest that throws and exits non-zero. At v63.4 only the AR checker (AddRoadWidth,
-  AddMaxPhysicalHeight, AddBarrierOpening; used for `defaultDisabledMessage` only) is taken by a quest the
-  engine counts; the country-info quests (AddHousenumber, AddCycleway, AddRoofShape) need a real one first.
+- The registry is built as the app builds it, except for the AR checker, which is a mock.
+  - `getFeature` is SC's feature dictionary over the checkout's presets, in en-CA.
+  - `getCountryInfoByLocation` and `getCountryOrSubdivisionCode` read the checkout's `boundaries.ser` with SC's
+    `CountryBoundariesImpl`, as `AndroidModule2` wires them. For the metadata, CountryInfos reads
+    `country_metadata/*.yml` through Compose resources, which do not load on the unit-test classpath, so its
+    `load()` is mirrored: kaml with `strictMode = false`, with `countryCode: XX` prepended, region files
+    smallest region first, then `default.yml`. `-PcheckFiles=<dir>` points it at another composeResources
+    `files` folder.
+
+  A quest that calls the AR mock inside `getApplicableElements` would throw or return junk; the tool reports a
+  quest that throws and exits non-zero. AddRoadWidth, AddMaxPhysicalHeight and AddBarrierOpening use the AR
+  checker for `defaultDisabledMessage` only.
 - The test fixture at v63.4 (45 elements covering those nine quests, hits and near misses) matched the
   expected list exactly, before and after real geometry came in.
 - A second hand-built fixture (67 lines) covers the quests that need the surrounding map: a road crossed
