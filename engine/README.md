@@ -168,15 +168,26 @@ download:
 - **agedOnly**: each tile is run again with the clock at 1900; results that disappear are agedOnly.
 - Tiles run in parallel: 184,811 non-empty tiles for the 48 cities, about 60 s for 33 quests (3 are off in
   every Ontario city: AddEntranceReference, AddSummitCross, AddSummitRegister).
-- Edge effects of the tile unit are small: Toronto per tile vs. the whole city as one map data gave
-  AddCrossing 914 vs 913 and the same AddKerbHeight, AddEntrance and AddBarrierOnPath counts.
+- Edge effects of the tile unit are small for most quests, not for quests about large containing
+  polygons; see below.
 - `--area-unit city` uses one map data per city (bbox padded by 1 km) instead, only for the dumped city:
   that is the oracle's exact input. Not for snapshots: AddMaxHeight compares every road with every bridge
   and takes many minutes on all of Toronto.
 
 **Checked against SC itself** with `tools/sc-harness` CheckCustomQuests in city mode (same map data, SC's
 own classes and geometry, `-PcheckBbox` = the engine's area bbox), Ontario 2026-10-11, all 36 quests:
-Guelph 13,027, Kingston 10,245, Barrie 6,514 quests, identical sets. @@TORONTO@@
+Guelph 13,027, Kingston 10,245, Barrie 6,514 quests, identical sets. Toronto (7.9M nodes, 1.07M ways): 118,170 quests,
+identical sets for every quest (the oracle also lists 28 AddEntranceReference, a quest that is off in
+Canada; it does not apply country gating).
+
+**The tile unit undercounts quests that look for a large containing polygon**, exactly as the app does
+after a one-tile download: a mall's or building's outline with no node inside the tile is not in that
+tile's map data. Toronto per tile vs. one map data for the whole city, 2026-10-11: AddIsAmenityIndoor 243
+vs 345, AddLevel 448 vs 534, AddLevelThing 64 vs 71, AddMaxHeight 1,968 vs 2,045 (the per-tile count is
+deduplicated, the per-city one too), AddOneway 3 vs 5, AddCrossing 914 vs 913, AddCrossingIsland 14,642 vs
+14,639; every other area quest is equal. What the app shows depends on how much its user downloaded at
+once; the tile is the smallest download, the whole city an upper bound. A bigger unit (z15, or a tile
+with its neighbours) is an open choice for the owner.
 
 ## What still differs from the app
 
