@@ -127,8 +127,9 @@ vendored `commonMain` helpers they use (`osm/Places.kt`, `osm/sidewalk/*`, `osm/
   CheckShopType, AddClothingBinOperator, AddOnewayAerialway, AddRoadWidth, AddMaxPhysicalHeight.
   AddRoadWidth is off by default on every phone; AddMaxPhysicalHeight only on phones without AR (the dump
   records it as default-disabled because the harness mocks the AR check).
-- Not ported yet: CheckShopExistence, CheckOpeningHoursSigned, AddPlaceName, AddAmenityCover,
-  CheckExistence, AddIsAmenityIndoor need SC's feature dictionary (`getFeature`); the rest need the
+- Not ported yet: CheckShopExistence, CheckOpeningHoursSigned and AddPlaceName also need SC's feature
+  dictionary (`getFeature`); AddAmenityCover, CheckExistence and AddIsAmenityIndoor need it and, for some
+  elements, the surroundings; the rest need the
   surrounding map data (`isApplicableTo` returns null: crossings, kerbs, barriers on paths/roads,
   housenumbers, entrances, levels, ...). For those, running SC's real `getApplicableElements()` on tiled
   `MapDataWithGeometry` is the honest route; it also means revisiting the skip-untagged-elements shortcut.
