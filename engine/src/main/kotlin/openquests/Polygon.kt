@@ -48,13 +48,16 @@ class Polygon(private val segs: DoubleArray /* lat1, lon1, lat2, lon2 repeated *
     }
 
     companion object {
-        /** Reads relation [relationId] from an Overpass `out geom` JSON file (ontario-farmland's
-         *  cache/boundaries.json). Fails if its member ways do not form closed rings. */
+        /** Reads relation [relationId] from an Overpass `out geom` JSON file: either a bare
+         *  relation element (data/boundaries/<id>.json) or a whole response with `elements`
+         *  (ontario-farmland's cache/boundaries.json). Fails if its member ways do not form closed
+         *  rings. */
         fun fromOverpassJson(file: File, relationId: Long): Polygon {
             val root = Json.parseToJsonElement(file.readText()).jsonObject
-            val rel = root["elements"]!!.jsonArray.map { it.jsonObject }.first {
+            val candidates = root["elements"]?.jsonArray?.map { it.jsonObject } ?: listOf(root)
+            val rel = candidates.firstOrNull {
                 it["type"]!!.jsonPrimitive.content == "relation" && it["id"]!!.jsonPrimitive.long == relationId
-            }
+            } ?: error("${file.path}: no relation $relationId")
             val segs = ArrayList<Double>()
             val endpointDegree = HashMap<Pair<Double, Double>, Int>()
             for (m in rel["members"]!!.jsonArray.map { it.jsonObject }) {
