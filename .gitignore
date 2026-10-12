@@ -1,0 +1,4 @@
+data/osm/
+*.osm.pbf
+*.partial
+logs/

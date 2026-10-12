@@ -1,0 +1,676 @@
+{
+  "cities": [
+    {
+      "id": "ajax",
+      "name": "Ajax",
+      "relation": 2408837,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-ON"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 119677,
+      "landAreaKm2": 75.2961139285999,
+      "boundary": "data/boundaries/2408837.json"
+    },
+    {
+      "id": "barrie",
+      "name": "Barrie",
+      "relation": 6609999,
+      "adminLevel": 6,
+      "countryCodes": [
+        "CA",
+        "CA-ON"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 141434,
+      "landAreaKm2": 109.1022187520018,
+      "boundary": "data/boundaries/6609999.json"
+    },
+    {
+      "id": "belleville",
+      "name": "Belleville",
+      "relation": 4662919,
+      "adminLevel": 6,
+      "countryCodes": [
+        "CA",
+        "CA-ON"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 50716,
+      "landAreaKm2": 269.1061168154913,
+      "boundary": "data/boundaries/4662919.json"
+    },
+    {
+      "id": "brampton",
+      "name": "Brampton",
+      "relation": 2407358,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-ON"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 593638,
+      "landAreaKm2": 269.6043761357652,
+      "boundary": "data/boundaries/2407358.json"
+    },
+    {
+      "id": "brantford",
+      "name": "Brantford",
+      "relation": 10268812,
+      "adminLevel": 6,
+      "countryCodes": [
+        "CA",
+        "CA-ON"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 97496,
+      "landAreaKm2": 102.53732242402691,
+      "boundary": "data/boundaries/10268812.json"
+    },
+    {
+      "id": "brockville",
+      "name": "Brockville",
+      "relation": 7434058,
+      "adminLevel": 6,
+      "countryCodes": [
+        "CA",
+        "CA-ON"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 21346,
+      "landAreaKm2": 24.08628197526888,
+      "boundary": "data/boundaries/7434058.json"
+    },
+    {
+      "id": "burlington",
+      "name": "Burlington",
+      "relation": 2407513,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-ON"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 183314,
+      "landAreaKm2": 199.99408546640615,
+      "boundary": "data/boundaries/2407513.json"
+    },
+    {
+      "id": "cambridge",
+      "name": "Cambridge",
+      "relation": 2062152,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-ON"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 138479,
+      "landAreaKm2": 115.82443197889586,
+      "boundary": "data/boundaries/2062152.json"
+    },
+    {
+      "id": "chatham-kent",
+      "name": "Chatham-Kent",
+      "relation": 4010050,
+      "adminLevel": 6,
+      "countryCodes": [
+        "CA",
+        "CA-ON"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 102042,
+      "landAreaKm2": 2910.885204580692,
+      "boundary": "data/boundaries/4010050.json"
+    },
+    {
+      "id": "cornwall",
+      "name": "Cornwall",
+      "relation": 4136858,
+      "adminLevel": 6,
+      "countryCodes": [
+        "CA",
+        "CA-ON"
+      ],
+      "timeZone": "America/Toronto",
+      "population": null,
+      "landAreaKm2": 76.64479534317198,
+      "boundary": "data/boundaries/4136858.json"
+    },
+    {
+      "id": "greater-sudbury",
+      "name": "Greater Sudbury",
+      "relation": 7568929,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-ON"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 161531,
+      "landAreaKm2": 3631.4629738242347,
+      "boundary": "data/boundaries/7568929.json"
+    },
+    {
+      "id": "guelph",
+      "name": "Guelph",
+      "relation": 7486148,
+      "adminLevel": 6,
+      "countryCodes": [
+        "CA",
+        "CA-ON"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 131794,
+      "landAreaKm2": 88.91308054852823,
+      "boundary": "data/boundaries/7486148.json"
+    },
+    {
+      "id": "hamilton",
+      "name": "Hamilton",
+      "relation": 7034910,
+      "adminLevel": 6,
+      "countryCodes": [
+        "CA",
+        "CA-ON"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 519949,
+      "landAreaKm2": 1150.2785882668877,
+      "boundary": "data/boundaries/7034910.json"
+    },
+    {
+      "id": "kawartha-lakes",
+      "name": "Kawartha Lakes",
+      "relation": 7473857,
+      "adminLevel": 6,
+      "countryCodes": [
+        "CA",
+        "CA-ON"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 75423,
+      "landAreaKm2": 3335.930119934308,
+      "boundary": "data/boundaries/7473857.json"
+    },
+    {
+      "id": "kingston",
+      "name": "Kingston",
+      "relation": 4145881,
+      "adminLevel": 6,
+      "countryCodes": [
+        "CA",
+        "CA-ON"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 123798,
+      "landAreaKm2": 482.8423153012286,
+      "boundary": "data/boundaries/4145881.json"
+    },
+    {
+      "id": "kitchener",
+      "name": "Kitchener",
+      "relation": 2062153,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-ON"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 256855,
+      "landAreaKm2": 138.4125011321696,
+      "boundary": "data/boundaries/2062153.json"
+    },
+    {
+      "id": "london",
+      "name": "London",
+      "relation": 7485368,
+      "adminLevel": 6,
+      "countryCodes": [
+        "CA",
+        "CA-ON"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 383822,
+      "landAreaKm2": 423.23087453351434,
+      "boundary": "data/boundaries/7485368.json"
+    },
+    {
+      "id": "markham",
+      "name": "Markham",
+      "relation": 324213,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-ON"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 338503,
+      "landAreaKm2": 212.40624940547258,
+      "boundary": "data/boundaries/324213.json"
+    },
+    {
+      "id": "milton",
+      "name": "Milton",
+      "relation": 2414122,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-ON"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 110128,
+      "landAreaKm2": 364.8489909033077,
+      "boundary": "data/boundaries/2414122.json"
+    },
+    {
+      "id": "mississauga",
+      "name": "Mississauga",
+      "relation": 1954127,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-ON"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 721599,
+      "landAreaKm2": 297.7585765779934,
+      "boundary": "data/boundaries/1954127.json"
+    },
+    {
+      "id": "newmarket",
+      "name": "Newmarket",
+      "relation": 2407406,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-ON"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 87942,
+      "landAreaKm2": 38.38041238025196,
+      "boundary": "data/boundaries/2407406.json"
+    },
+    {
+      "id": "niagara-falls",
+      "name": "Niagara Falls",
+      "relation": 2388057,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-ON"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 93000,
+      "landAreaKm2": 227.30681136513584,
+      "boundary": "data/boundaries/2388057.json"
+    },
+    {
+      "id": "north-bay",
+      "name": "North Bay",
+      "relation": 7129502,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-ON"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 51553,
+      "landAreaKm2": 329.4768253313934,
+      "boundary": "data/boundaries/7129502.json"
+    },
+    {
+      "id": "oakville",
+      "name": "Oakville",
+      "relation": 2407500,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-ON"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 193832,
+      "landAreaKm2": 154.43068852040122,
+      "boundary": "data/boundaries/2407500.json"
+    },
+    {
+      "id": "orangeville",
+      "name": "Orangeville",
+      "relation": 7480376,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-ON"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 28900,
+      "landAreaKm2": 15.426833646597142,
+      "boundary": "data/boundaries/7480376.json"
+    },
+    {
+      "id": "orillia",
+      "name": "Orillia",
+      "relation": 7106000,
+      "adminLevel": 6,
+      "countryCodes": [
+        "CA",
+        "CA-ON"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 31166,
+      "landAreaKm2": 42.24223215681945,
+      "boundary": "data/boundaries/7106000.json"
+    },
+    {
+      "id": "oshawa",
+      "name": "Oshawa",
+      "relation": 333748,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-ON"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 159458,
+      "landAreaKm2": 162.5973119841054,
+      "boundary": "data/boundaries/333748.json"
+    },
+    {
+      "id": "ottawa",
+      "name": "Ottawa",
+      "relation": 4136816,
+      "adminLevel": 6,
+      "countryCodes": [
+        "CA",
+        "CA-ON"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 1000000,
+      "landAreaKm2": 2889.8616760531586,
+      "boundary": "data/boundaries/4136816.json"
+    },
+    {
+      "id": "owen-sound",
+      "name": "Owen Sound",
+      "relation": 7478456,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-ON"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 21341,
+      "landAreaKm2": 26.526490966226632,
+      "boundary": "data/boundaries/7478456.json"
+    },
+    {
+      "id": "pembroke",
+      "name": "Pembroke",
+      "relation": 7352019,
+      "adminLevel": 6,
+      "countryCodes": [
+        "CA",
+        "CA-ON"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 13882,
+      "landAreaKm2": 21.075864682620562,
+      "boundary": "data/boundaries/7352019.json"
+    },
+    {
+      "id": "peterborough",
+      "name": "Peterborough",
+      "relation": 7473849,
+      "adminLevel": 6,
+      "countryCodes": [
+        "CA",
+        "CA-ON"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 81032,
+      "landAreaKm2": 67.35684159508573,
+      "boundary": "data/boundaries/7473849.json"
+    },
+    {
+      "id": "pickering",
+      "name": "Pickering",
+      "relation": 2408836,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-ON"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 91771,
+      "landAreaKm2": 240.63920676251257,
+      "boundary": "data/boundaries/2408836.json"
+    },
+    {
+      "id": "quinte-west",
+      "name": "Quinte West",
+      "relation": 7443054,
+      "adminLevel": 6,
+      "countryCodes": [
+        "CA",
+        "CA-ON"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 43577,
+      "landAreaKm2": 535.7114476571364,
+      "boundary": "data/boundaries/7443054.json"
+    },
+    {
+      "id": "richmond-hill",
+      "name": "Richmond Hill",
+      "relation": 2407259,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-ON"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 202022,
+      "landAreaKm2": 102.59479981841528,
+      "boundary": "data/boundaries/2407259.json"
+    },
+    {
+      "id": "sarnia",
+      "name": "Sarnia",
+      "relation": 3642177,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-ON"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 71594,
+      "landAreaKm2": 170.0401425367517,
+      "boundary": "data/boundaries/3642177.json"
+    },
+    {
+      "id": "sault-ste-marie",
+      "name": "Sault Ste. Marie",
+      "relation": 7590370,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-ON"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 73368,
+      "landAreaKm2": 276.15069804114637,
+      "boundary": "data/boundaries/7590370.json"
+    },
+    {
+      "id": "st-catharines",
+      "name": "St. Catharines",
+      "relation": 2387995,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-ON"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 144829,
+      "landAreaKm2": 143.62424125742993,
+      "boundary": "data/boundaries/2387995.json"
+    },
+    {
+      "id": "st-thomas",
+      "name": "St. Thomas",
+      "relation": 2911978,
+      "adminLevel": 6,
+      "countryCodes": [
+        "CA",
+        "CA-ON"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 38909,
+      "landAreaKm2": 43.114189568345864,
+      "boundary": "data/boundaries/2911978.json"
+    },
+    {
+      "id": "stratford",
+      "name": "Stratford",
+      "relation": 7486330,
+      "adminLevel": 6,
+      "countryCodes": [
+        "CA",
+        "CA-ON"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 31465,
+      "landAreaKm2": 28.69660603752779,
+      "boundary": "data/boundaries/7486330.json"
+    },
+    {
+      "id": "thunder-bay",
+      "name": "Thunder Bay",
+      "relation": 7596931,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-ON"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 107909,
+      "landAreaKm2": 466.67273944246085,
+      "boundary": "data/boundaries/7596931.json"
+    },
+    {
+      "id": "timmins",
+      "name": "Timmins",
+      "relation": 7588071,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-ON"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 41788,
+      "landAreaKm2": 3178.809838542929,
+      "boundary": "data/boundaries/7588071.json"
+    },
+    {
+      "id": "toronto",
+      "name": "Toronto",
+      "relation": 324211,
+      "adminLevel": 6,
+      "countryCodes": [
+        "CA",
+        "CA-ON"
+      ],
+      "timeZone": "America/Toronto",
+      "population": null,
+      "landAreaKm2": 665.9315424307558,
+      "boundary": "data/boundaries/324211.json"
+    },
+    {
+      "id": "vaughan",
+      "name": "Vaughan",
+      "relation": 324212,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-ON"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 323103,
+      "landAreaKm2": 274.11438074537523,
+      "boundary": "data/boundaries/324212.json"
+    },
+    {
+      "id": "waterloo",
+      "name": "Waterloo",
+      "relation": 2062154,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-ON"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 121436,
+      "landAreaKm2": 65.305254232661,
+      "boundary": "data/boundaries/2062154.json"
+    },
+    {
+      "id": "welland",
+      "name": "Welland",
+      "relation": 2387988,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-ON"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 52293,
+      "landAreaKm2": 84.94065543748995,
+      "boundary": "data/boundaries/2387988.json"
+    },
+    {
+      "id": "whitby",
+      "name": "Whitby",
+      "relation": 2408838,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-ON"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 128377,
+      "landAreaKm2": 168.05831872724175,
+      "boundary": "data/boundaries/2408838.json"
+    },
+    {
+      "id": "windsor",
+      "name": "Windsor",
+      "relation": 7025718,
+      "adminLevel": 6,
+      "countryCodes": [
+        "CA",
+        "CA-ON"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 217188,
+      "landAreaKm2": 158.9492868913867,
+      "boundary": "data/boundaries/7025718.json"
+    },
+    {
+      "id": "woodstock",
+      "name": "Woodstock",
+      "relation": 7496363,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-ON"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 40902,
+      "landAreaKm2": 57.14368666221945,
+      "boundary": "data/boundaries/7496363.json"
+    }
+  ]
+}
