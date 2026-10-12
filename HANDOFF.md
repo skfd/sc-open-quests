@@ -50,9 +50,14 @@ Next, in order:
    "Custom quests" and "Area quests"; the last three use SC's country metadata per position). Left:
    - the note quest.
    The area unit is the whole city since 2026-10-12 (DESIGN.md, "Area unit").
-3. **Deeper history.** Geofabrik keeps no old dailies, but `~/Code/.osm-data/planet/history-261005.osm.pbf` is a full
-   history planet. Clip it to Ontario and time-slice it with `osmium time-filter` to get a monthly backfill. That
-   would give years of history, at a one-off cost of hours. ohsome could only cover the plain key/value quests.
+3. **Deeper history: counted, staged, not published.** `tools/backfill_history.py` (DESIGN.md, "Monthly
+   history") clipped the planet history to Ontario (`~/Code/.osm-data/ontario-history/`) and counts the 1st
+   of every month, 2017-01 to 2026-10, into `data/backfill/snapshots/` (log: `logs/backfill.log`). A slice
+   equals the Geofabrik extract at the same instant. `data/backfill/recount/` holds the four dailies before
+   2026-10-11 recounted with all 51 quests (07-16 and 10-02 from slices, their extracts are pruned); their
+   old quests are unchanged. To publish: `python tools/backfill_history.py merge`, `python run.py history`,
+   commit "data ...". Decide first whether to merge the `notes` branch and recount with notes (delete
+   `data/backfill/snapshots` and `recount`, rerun `months` and `recount`, about 4 hours).
 4. **Outreach.** Now that there is something to show, contact starsep (StreetCompleteStats), the SC devs and jmizv.
 5. **Smaller items:**
    - Model open OSM notes, since the app hides quests at a note's position.
