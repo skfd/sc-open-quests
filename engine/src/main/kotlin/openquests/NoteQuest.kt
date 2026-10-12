@@ -5,7 +5,7 @@ import de.westnordost.streetcomplete.data.osmnotes.NoteComment
 
 /*
  * Port of the private note filter in SC's commonMain `data/osmnotes/notequests/OsmNoteQuestController.kt`
- * (pinned in engine/PORTED-QUESTS.txt as OsmNoteQuest; the controller itself cannot be vendored, it
+ * (pinned in engine/PORTED-QUESTS.txt as helper:OsmNoteQuest; the controller itself cannot be vendored, it
  * needs the app's database, settings and login). Everything below `shouldShowAsQuest` is copied
  * verbatim; only `private` became `internal` on the entry point and `ApplicationConstants.NAME` is
  * spelled out (ApplicationConstants.kt refers to BuildConfig).

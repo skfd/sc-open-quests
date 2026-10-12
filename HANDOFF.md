@@ -57,5 +57,5 @@ Next, in order:
 5. **Smaller items:**
    - ~~Model open OSM notes, since the app hides quests at a note's position.~~ Done 2026-10-12.
    - Write down the routine for SC version bumps (v64: rerun `tools/sc-harness`, `engine/sync-sc.ps1`;
-     the note filter is pinned in `PORTED-QUESTS.txt` as OsmNoteQuest).
+     the note filter is pinned in `PORTED-QUESTS.txt` as helper:OsmNoteQuest).
    - Heatmap per quest type (stretch goal).
