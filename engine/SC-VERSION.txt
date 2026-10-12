@@ -1,0 +1,32 @@
+# StreetComplete source vendored by sync-sc.ps1. Do not edit the files under src/main/kotlin/sc/;
+# rerun the script instead. StreetComplete is GPL-3.0 (see src/main/kotlin/sc/LICENSE).
+tag=v63.4
+commit=244c6873330de8de1829ff287bbfdef4cb5c96b5
+patches=none
+files (sha256 of the copied file):
+  b5dc8154ec673f1522c129131ace62d6ea6913e8f8afb8e8242fac1549b0d1ed  de/westnordost/streetcomplete/data/elementfilter/BooleanExpression.kt
+  af9ee66cfc6e286bbf6c4bf76ff43f7fde01bd04454fe529528db13d8fceecac  de/westnordost/streetcomplete/data/elementfilter/BooleanExpressionBuilder.kt
+  6d15276119ff080031968b463cf3194bb604a58287566a55817f1a7c5899fb24  de/westnordost/streetcomplete/data/elementfilter/ElementFilterExpression.kt
+  9b5d5afc93bd38ced47569d5142d37a0e0f6ed5fec9f42ae44f1564623311ecf  de/westnordost/streetcomplete/data/elementfilter/ElementFiltersParser.kt
+  9ffabd5d1c8cb6cb1a2018021d257f6be7da39779e919c0d308bcedbbb30da84  de/westnordost/streetcomplete/data/elementfilter/NumberWithUnitParser.kt
+  ad55e63ce728924b0174cfd2f82a724bc25c9dd8cb3f1285326bfa26a65120bb  de/westnordost/streetcomplete/data/elementfilter/OverpassQueryCreator.kt
+  a9baa599c3fbd98567eb6053bb69307f07208b248c7be87fd59932326ccafb2a  de/westnordost/streetcomplete/data/elementfilter/filters/ElementFilter.kt
+  f746e0a417dc7e7502a171c13fe3ecf7a4a6242edf14801e7e335aa990a3c69a  de/westnordost/streetcomplete/data/elementfilter/filters/ElementFilterOverpass.kt
+  58e34a334b19a281128b8965f060aeb4f330d283d3930db027554296912a1b7e  de/westnordost/streetcomplete/data/elementfilter/filters/RegexOrSet.kt
+  f6da2f00099378edf1cfd31c48dff80de7c7a517a83b5e1c6dd608b07f17ef09  de/westnordost/streetcomplete/data/elementfilter/filters/RelativeDate.kt
+  ec55048ad97258992c99a3618dcafb097b63052b1597d2b6c5f71b45e65ebe12  de/westnordost/streetcomplete/data/osm/mapdata/Element.kt
+  1fd01cd36bb3ed130b1bb7c80577d887122ea26d15a8638b6196de7c159cb5bf  de/westnordost/streetcomplete/osm/ResurveyUtils.kt
+  0d2c60bd8166e130b9fb5bb4f589779ccd649918fd4198045ab2e61f4f1a1042  de/westnordost/streetcomplete/osm/TagsUtils.kt
+  cada8081fdb8801dcb15cc0bd88d3b7cac97b454ad22188c94afd9b2df495a51  de/westnordost/streetcomplete/data/osm/edits/update_tags/StringMapChangesBuilder.kt
+  274794b0421b88f4f7af5b4d4f6d828e82b01ee7da0cd749f379bf4641870610  de/westnordost/streetcomplete/data/osm/edits/update_tags/StringMapChanges.kt
+  2b18d4d8ace7d2d61b8ee04bff6e643cf3b6142f38431ed9ccf3d80d4800e40a  de/westnordost/streetcomplete/data/osm/edits/update_tags/StringMapEntryChange.kt
+  e04e27b381a282577a1cfd5cfdd1a359616648334b97ffd6183eece1fa91132d  de/westnordost/streetcomplete/util/StringWithCursor.kt
+  aea8dffdaa3d46a483e65d15173365da77485d9b5436d454a36c9f778265d6a6  de/westnordost/streetcomplete/util/ktx/Instant.kt
+  4ab2aac0ac54f91ceda9ddc13dc9533a3643ae9fbb307525b52298ca4f3a2d78  de/westnordost/streetcomplete/util/ktx/LocalDate.kt
+  8e433722974a585474623498902b82d426c8a0160701a64b8d382b1c288ed815  de/westnordost/streetcomplete/util/ktx/LocalDateTime.kt
+  b7ad0e12e905e82d3b56a9f4d10fae7aa3a07aef8a2b9c887bf5a71240237e06  de/westnordost/streetcomplete/osm/BuildingLevelsUtils.kt
+  f9f13e9ab032647c7e051e9212258e90edf4ef1f88672dca2e1195475a142c26  de/westnordost/streetcomplete/osm/surface/SurfaceUtils.kt
+  9e091cfd65e5d7cbfd4d1485c8ec3c8045d3f3f8efeedc36d98092313c129a5f  de/westnordost/streetcomplete/osm/surface/SurfaceParser.kt
+  67bdac0294c91bc6cee133bf5a36a5b1e6bfcbfa2c497e99606394b9e48fce0b  de/westnordost/streetcomplete/osm/surface/Surface.kt
+  54ae0fa4b0b9afb31bf8dd33e73cf739bb0197eed749d0abdabaab7ba3e0a595  de/westnordost/streetcomplete/osm/surface/SurfaceCreator.kt
+  81cc0208116a5df3bc084e15147aba6b9808e46d1d8760ef88f904cf8942f32f  de/westnordost/streetcomplete/osm/surface/SurfaceCategory.kt
