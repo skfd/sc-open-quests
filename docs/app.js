@@ -166,6 +166,9 @@ function lineChart(target, h, series, { height = 260, showAged = true, questSetB
   const mapping = series.open.map((v, i) => (v == null ? null : v - (series.aged[i] || 0)));
   const brk = breaks(h, { questSet: questSetBreaks });
   const few = xs.length <= 60;
+  // Over a year or more, label months with their year and leave days out.
+  const long = xs.length > 1 && xs[xs.length - 1] - xs[0] > 300 * 86400;
+  const tickFmt = long ? { month: "short", year: "numeric", timeZone: "UTC" } : { month: "short", day: "numeric", timeZone: "UTC" };
   const surface = css("--surface");
   const mk = (label, color, data) => ({
     label, stroke: color, width: 2, value: (u, v) => (v == null ? "—" : nf.format(v)),
@@ -189,7 +192,7 @@ function lineChart(target, h, series, { height = 260, showAged = true, questSetB
     axes: [
       { ...axis, values: (u, ticks) => ticks.map((t) => {
           const d = new Date(t * 1e3);
-          return d.getUTCHours() ? "" : d.toLocaleDateString("en-CA", { month: "short", day: "numeric", timeZone: "UTC" });
+          return d.getUTCHours() || (long && d.getUTCDate() !== 1) ? "" : d.toLocaleDateString("en-CA", tickFmt);
         }) },
       { ...axis, size: 60, values: (u, ticks) => ticks.map((t) => nf.format(t)) },
     ],
@@ -266,7 +269,7 @@ function renderCityCharts(h) {
   $("#chart-title").textContent = `Open quests over time in ${name}`;
   $("#chart-sub").textContent =
     (state.includeDisabled ? "All counted quests, including those off by default. " : "All counted quests that are on by default. ") +
-    (h.dates.length === 1 ? "One snapshot so far; the line starts here." : `${h.dates.length} daily snapshots.`);
+    (h.dates.length === 1 ? "One snapshot so far; the line starts here." : `${h.dates.length} snapshots since ${h.dates[0]}.`);
   lineChart($("#chart-total"), h, tot, { height: 280, questSetBreaks: true });
   $("#breaks").replaceChildren(...breaks(h, { questSet: true }).map((b) => el("li", {}, `│ ${b.date}: ${b.label}. Totals on either side are not directly comparable.`)));
 
