@@ -20,10 +20,15 @@ class SnapshotMeta(
     val areaUnit: String,
     val engineCommit: String?,
     val source: SourceMeta,
+    /** the notes clip the run used; null when notes were not modelled */
+    val notes: NotesMeta?,
     val runSeconds: Double,
 )
 
 class SourceMeta(val url: String?, val lastModified: String?, val sha256: String, val file: String)
+
+/** [open]: notes open at asOf in the clip's region; [showAllNotes]: the app setting the note quest assumes */
+class NotesMeta(val source: NotesSource, val open: Int, val showAllNotes: Boolean)
 
 /** Status of a quest in a city, as in DATA-FORMAT.md. */
 fun questStatus(q: QuestDef, city: City): String = when {
@@ -34,7 +39,8 @@ fun questStatus(q: QuestDef, city: City): String = when {
 
 /** Every filter quest is computed with SC's own filter and geometry code, every ported custom quest
  *  with a port checked element by element against SC's own class (tools/sc-harness
- *  CheckCustomQuests); see README for the remaining differences, none of which is specific to a quest. */
+ *  CheckCustomQuests), the note quest with SC's own note filter on the notes open at asOf; see README
+ *  for the remaining differences, none of which is specific to a quest. */
 fun questSupport(q: QuestDef): String = if (q.isCounted) "supported" else "unsupported"
 
 // ---- JSON text, written by hand so that key order and number format are fixed --------------------
@@ -72,6 +78,12 @@ fun snapshotJson(meta: SnapshotMeta, engine: Engine): String {
     sb.append("  \"engineCommit\": ${jsonString(meta.engineCommit)},\n")
     sb.append("  \"source\": { \"url\": ${jsonString(meta.source.url)}, \"lastModified\": ${jsonString(meta.source.lastModified)}, ")
     sb.append("\"sha256\": ${jsonString(meta.source.sha256)}, \"file\": ${jsonString(meta.source.file)} },\n")
+    sb.append("  \"notes\": ")
+    sb.append(meta.notes?.let { n ->
+        "{ \"dump\": ${jsonString(n.source.source)}, \"sha256\": ${jsonString(n.source.sha256)}, " +
+            "\"until\": ${jsonString(n.source.until.toString())}, \"open\": ${n.open}, \"showAllNotes\": ${n.showAllNotes} }"
+    } ?: "null")
+    sb.append(",\n")
     sb.append("  \"runSeconds\": ${decimal(meta.runSeconds, 1)},\n")
     sb.append("  \"cities\": {\n")
     val counts = engine.counts

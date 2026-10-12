@@ -21,6 +21,7 @@ private const val USAGE = """usage: sc-open-quests-engine count --pbf <file.osm.
            --cities <config/cities.json> --out <docs/data> [--source-meta <meta.json>]
            [--today <ISO instant or date>] [--dump-matches <file.tsv> --dump-quests <Name,Name>]
            [--dump-elements <file.jsonl> --dump-city <cityId>] [--area-unit tiles|city]
+           [--notes <clip.jsonl>]
 
 Writes <out>/snapshots/<asOfDate>.json and <out>/quests.json (see DATA-FORMAT.md). Age filters are
 evaluated at the extract's osmosis_replication_timestamp; --today overrides that (tests). A bare date
@@ -28,7 +29,9 @@ means noon of that day in the cities' time zone. Paths are relative to the worki
 --dump-elements writes every tagged element whose quest position is in that city, as input for
 tools/sc-harness CheckCustomQuests. The area quests run on one map data per city (the app after
 downloading the whole city; also the oracle's exact input); --area-unit tiles runs them per z16 tile,
-the app's smallest download."""
+the app's smallest download.
+--notes: a clip of the planet notes dump (tools/clip_notes.py) that reaches asOf. The notes open at asOf
+hide the quests at their positions, and the note quest is counted. Without it, neither."""
 
 class CountOptions(
     val pbf: File,
@@ -42,6 +45,7 @@ class CountOptions(
     val dumpElements: File? = null,
     val dumpCity: String? = null,
     val areaUnit: AreaUnit = AreaUnit.CITY,
+    val notes: File? = null,
     val baseDir: File = File("."),
 )
 
@@ -69,7 +73,7 @@ fun parseArgs(args: List<String>): CountOptions {
         m[k.removePrefix("--")] = args[i + 1]
         i += 2
     }
-    val known = setOf("pbf", "quests", "cities", "out", "source-meta", "today", "dump-matches", "dump-quests", "dump-elements", "dump-city", "area-unit")
+    val known = setOf("pbf", "quests", "cities", "out", "source-meta", "today", "dump-matches", "dump-quests", "dump-elements", "dump-city", "area-unit", "notes")
     require(m.keys.all { it in known }) { "unknown option(s) ${m.keys - known}\n$USAGE" }
     fun req(k: String) = File(m[k] ?: throw IllegalArgumentException("--$k is required\n$USAGE"))
     return CountOptions(
@@ -84,6 +88,7 @@ fun parseArgs(args: List<String>): CountOptions {
         dumpElements = m["dump-elements"]?.let(::File),
         dumpCity = m["dump-city"],
         areaUnit = m["area-unit"]?.let { AreaUnit.valueOf(it.uppercase()) } ?: AreaUnit.CITY,
+        notes = m["notes"]?.let(::File),
     ).also { require((it.dumpElements == null) == (it.dumpCity == null)) { "--dump-elements and --dump-city go together" } }
 }
 
@@ -94,7 +99,7 @@ fun parseToday(s: String): Instant =
 
 fun count(opts: CountOptions): CountResult {
     val tStart = System.nanoTime()
-    val registry = Registry.load(opts.quests)
+    val registry = Registry.load(opts.quests, withNotes = opts.notes != null)
     val cities = loadCities(opts.cities, opts.baseDir)
     require(cities.isNotEmpty()) { "no cities in ${opts.cities}" }
 
@@ -119,7 +124,8 @@ fun count(opts: CountOptions): CountResult {
         engine.dumpElementsCity = cities.indexOfFirst { it.id == id }.also { require(it >= 0) { "--dump-city: no city $id" } }
     }
     log("${registry.quests.size} quests in ${opts.quests.path} (${engine.quests.size} counted: " +
-        "${registry.filterQuests.size} filter, ${engine.quests.size - registry.filterQuests.size} ported custom), ${cities.size} cities; " +
+        "${registry.filterQuests.size} filter, ${engine.quests.count { it.custom != null || it.area != null }} ported custom" +
+        "${if (opts.notes != null) ", the note quest" else ""}), ${cities.size} cities; " +
         "threads=${Runtime.getRuntime().availableProcessors()} maxHeap=${Runtime.getRuntime().maxMemory() shr 20} MB")
 
     var t0 = System.nanoTime()
@@ -136,6 +142,15 @@ fun count(opts: CountOptions): CountResult {
     EngineClock.install(asOf)
     val asOfDate = asOf.toLocalDateTime(zone).date.toString()
     log("asOf $asOf ($asOfDate ${zone.id})${if (opts.today != null) " [--today override]" else ""}")
+
+    engine.notes = opts.notes?.let { f ->
+        t0 = System.nanoTime()
+        val clip = NotesClip.load(f)
+        OpenNotes(clip.source, clip.openAt(asOf)).also {
+            log("notes: ${clip.notes.size} in ${f.path} (from ${clip.source.source}, until ${clip.source.until}); " +
+                "${it.open.size} open at asOf, ${it.quests.size} note quests; %.1f s".format((System.nanoTime() - t0) / 1e9))
+        }
+    }
 
     t0 = System.nanoTime()
     engine.run(pbf.dataBlobs)
@@ -154,6 +169,7 @@ fun count(opts: CountOptions): CountResult {
         areaUnit = opts.areaUnit.name.lowercase(),
         engineCommit = gitHead(opts.baseDir),
         source = source,
+        notes = engine.notes?.let { NotesMeta(it.source, it.open.size, it.showAllNotes) },
         runSeconds = runSeconds,
     )
     opts.out?.let { out ->

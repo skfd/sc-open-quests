@@ -144,6 +144,10 @@ $files = @(
     "$pkg/osm/Things.kt" # isThing()
     "$pkg/osm/CrossingUtils.kt" # isCrossing()
     "$pkg/data/osm/mapdata/ElementKey.kt"
+    # notes: the note quest (openquests/NoteQuest.kt) and the hiding of quests at open notes
+    "$pkg/data/osmnotes/Note.kt"
+    "$pkg/data/user/User.kt" # NoteComment.user
+    "$pkg/util/ktx/LatLon.kt" # truncateTo6Decimals()
 )
 
 # Data files copied from app/src/commonMain/composeResources/files/ into src/main/resources/sc/. The

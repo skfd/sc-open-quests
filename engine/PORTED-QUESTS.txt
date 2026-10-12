@@ -1,6 +1,7 @@
 # SC code that is transcribed or generated rather than vendored, because its files also hold Android UI code:
 # custom quests (src/main/kotlin/openquests/custom/, hand-ported; src/main/kotlin/ported/, by port_area_quests.py),
-# androidMain helper files copied whole (helper:<File>), and helper:ignoreRelation (openquests/IgnoreRelation.kt).
+# androidMain helper files copied whole (helper:<File>), helper:ignoreRelation (openquests/IgnoreRelation.kt), and
+# OsmNoteQuest (shouldShowAsQuest, openquests/NoteQuest.kt).
 # One line each: name, path under app/src/androidMain/kotlin/de/westnordost/streetcomplete/ ("cm:" = under
 # commonMain instead), and the sha256 of that file with LF line endings at the pinned tag. sync-sc.ps1 fails if a
 # file changed: rerun port_area_quests.py for generated ports, recheck hand ports, then update the hash.
@@ -60,3 +61,4 @@ helper:ignoreRelation           cm:ApplicationConstants.kt                      
 AddHousenumber                  quests/address/AddHousenumber.kt                                         eab24777688cd718836969465a089a03c72f4c452898395f5cecb2603c8eb015
 AddCycleway                     quests/cycleway/AddCycleway.kt                                           48a0903ba1a7dfc8f500beb45bc487c3a3f8bf071c59ac14f362c47511575742
 AddRoofShape                    quests/roof_shape/AddRoofShape.kt                                        0d61a25ae9963b681a585f204b0fecb95ebe013fd9100bc0f02decdef00c5649
+OsmNoteQuest                    cm:data/osmnotes/notequests/OsmNoteQuestController.kt                    51cd47d14ef18dff1b39cde6e58ba1e43d19cfec1d3d60e706aca28c1b635d5e

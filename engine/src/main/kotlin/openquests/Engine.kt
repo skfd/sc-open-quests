@@ -21,6 +21,9 @@ import kotlin.math.roundToLong
 const val NODE = 0
 const val WAY = 1
 const val RELATION = 2
+/** Counts slot of the note quest's notes (the per-quest slots are nodes, ways, relations, agedOnly, notes) */
+const val NOTE = 4
+private const val SLOTS = 5
 private val TYPE_NAMES = listOf("node", "way", "relation")
 
 /** Ways that count towards the `highwayKm` denominator: the road network a car or bike quest
@@ -33,17 +36,18 @@ val HIGHWAY_KM_VALUES: Set<String> = listOf(
 
 /** Counts of one engine pass, indexed by city, quest (index into [Engine.quests]) and type. */
 class Counts(val cityCount: Int, val questCount: Int) {
-    /** per (city, quest): nodes, ways, relations, agedOnly */
-    val perQuest = AtomicLongArray(cityCount * questCount * 4)
+    /** per (city, quest): nodes, ways, relations, agedOnly, notes */
+    val perQuest = AtomicLongArray(cityCount * questCount * SLOTS)
     val taggedNodes = AtomicLongArray(cityCount)
     val taggedWays = AtomicLongArray(cityCount)
     /** sum over ways of their length rounded to whole millimetres, so the total is exact and
      *  independent of the order in which threads add */
     val highwayMm = AtomicLongArray(cityCount)
 
-    fun slot(city: Int, quest: Int, kind: Int) = (city * questCount + quest) * 4 + kind
+    fun slot(city: Int, quest: Int, kind: Int) = (city * questCount + quest) * SLOTS + kind
     fun get(city: Int, quest: Int, kind: Int) = perQuest[slot(city, quest, kind)]
-    fun open(city: Int, quest: Int) = get(city, quest, NODE) + get(city, quest, WAY) + get(city, quest, RELATION)
+    fun open(city: Int, quest: Int) =
+        get(city, quest, NODE) + get(city, quest, WAY) + get(city, quest, RELATION) + get(city, quest, NOTE)
     fun agedOnly(city: Int, quest: Int) = get(city, quest, 3)
 }
 
@@ -62,6 +66,8 @@ class PassStats {
     val outsideBboxes = AtomicLongArray(3)
     /** tagged relations the app drops on download (ignoreRelation) */
     val ignoredRelations = java.util.concurrent.atomic.AtomicLong()
+    /** matches (element, quest) not counted because an open note sits on their position */
+    val hiddenByNotes = java.util.concurrent.atomic.AtomicLong()
     val timings = LinkedHashMap<String, Double>()
 }
 
@@ -90,6 +96,9 @@ class Engine(val registry: Registry, val cities: List<City>) {
 
     val counts = Counts(cities.size, quests.size)
     val stats = PassStats()
+
+    /** the open notes at asOf; null when the run has no notes clip (nothing hidden, note quest not counted) */
+    var notes: OpenNotes? = null
 
     /** optional: lines "quest type id version timestampMs city lat lon agedOnly" for these quests */
     var dumpQuests: Set<String> = emptySet()
@@ -147,6 +156,7 @@ class Engine(val registry: Registry, val cities: List<City>) {
 
     /** AreaPass: one counted quest of area quest [qi] in city [c] */
     fun countArea(c: Int, qi: Int, e: Element, center: LatLon, aged: Boolean) {
+        if (notes?.hides(center) == true) { stats.hiddenByNotes.incrementAndGet(); return }
         val type = e.type.ordinal
         counts.perQuest.incrementAndGet(counts.slot(c, qi, type))
         if (aged) counts.perQuest.incrementAndGet(counts.slot(c, qi, 3))
@@ -178,6 +188,7 @@ class Engine(val registry: Registry, val cities: List<City>) {
             val q = quests[qi]
             val matcher = q.matcher!!
             if (!matcher.matches(e)) continue
+            if (notes?.hides(center) == true) { stats.hiddenByNotes.incrementAndGet(); continue }
             // agedOnly: would it still match if no `older today -N` (or `< today`) test could be true?
             val aged = q.usesAge && !EngineClock.at(EngineClock.LONG_AGO) { matcher.matches(e) }
             for (c in cityIdx) {
@@ -238,6 +249,31 @@ class Engine(val registry: Registry, val cities: List<City>) {
         timing("relations", t0, "")
 
         AreaPass(this, blobs, wayStart, relStart, nodes, memberWays, areaUnit).run()
+        notes?.let { countNotes(it) }
+    }
+
+    /** The note quest: one quest per note quest whose position is in the city (OsmNoteQuest's position
+     *  is the note's). Notes are not hidden by other notes. */
+    private fun countNotes(notes: OpenNotes) {
+        val t0 = System.nanoTime()
+        val qi = quests.indexOfFirst { it.countsNotes }
+        require(qi >= 0) { "notes given but the registry has no note quest" }
+        for (note in notes.quests) {
+            val p = note.position
+            for (c in cityIndex.citiesAt(p.latitude, p.longitude)) {
+                if (enabled[c][qi]) counts.perQuest.incrementAndGet(counts.slot(c, qi, NOTE))
+            }
+        }
+        // NotesDownloader asks for at most 10,000 notes per download; more in a city's bbox and the
+        // app would miss some after downloading the whole city at once
+        val (busiest, inBbox) = cities.map { city ->
+            val pg = city.polygon
+            city to notes.open.count { val p = it.position
+                p.latitude in pg.minLat..pg.maxLat && p.longitude in pg.minLon..pg.maxLon }
+        }.maxBy { it.second }
+        if (inBbox > 10_000) log("warning: ${busiest.id} has $inBbox open notes in its bbox, over the app's download limit of 10,000")
+        timing("notes", t0, "${notes.open.size} open, ${notes.quests.size} note quests; most open notes in a city bbox: " +
+            "$inBbox (${busiest.id}); quests hidden by a note: ${stats.hiddenByNotes.get()}")
     }
 
     private fun timing(stage: String, t0: Long, note: String) {
