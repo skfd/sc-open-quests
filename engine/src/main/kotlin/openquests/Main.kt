@@ -26,8 +26,9 @@ Writes <out>/snapshots/<asOfDate>.json and <out>/quests.json (see DATA-FORMAT.md
 evaluated at the extract's osmosis_replication_timestamp; --today overrides that (tests). A bare date
 means noon of that day in the cities' time zone. Paths are relative to the working directory.
 --dump-elements writes every tagged element whose quest position is in that city, as input for
-tools/sc-harness CheckCustomQuests. --area-unit city runs the area quests on one map data per city
-instead of per z16 tile (the app's unit), so that the dump is the oracle's exact input; not for snapshots."""
+tools/sc-harness CheckCustomQuests. The area quests run on one map data per city (the app after
+downloading the whole city; also the oracle's exact input); --area-unit tiles runs them per z16 tile,
+the app's smallest download."""
 
 class CountOptions(
     val pbf: File,
@@ -40,7 +41,7 @@ class CountOptions(
     val dumpQuests: Set<String> = emptySet(),
     val dumpElements: File? = null,
     val dumpCity: String? = null,
-    val areaUnit: AreaUnit = AreaUnit.TILES,
+    val areaUnit: AreaUnit = AreaUnit.CITY,
     val baseDir: File = File("."),
 )
 
@@ -82,7 +83,7 @@ fun parseArgs(args: List<String>): CountOptions {
         dumpQuests = m["dump-quests"]?.split(',')?.map { it.trim() }?.filter { it.isNotEmpty() }?.toSet().orEmpty(),
         dumpElements = m["dump-elements"]?.let(::File),
         dumpCity = m["dump-city"],
-        areaUnit = m["area-unit"]?.let { AreaUnit.valueOf(it.uppercase()) } ?: AreaUnit.TILES,
+        areaUnit = m["area-unit"]?.let { AreaUnit.valueOf(it.uppercase()) } ?: AreaUnit.CITY,
     ).also { require((it.dumpElements == null) == (it.dumpCity == null)) { "--dump-elements and --dump-city go together" } }
 }
 
@@ -150,6 +151,7 @@ fun count(opts: CountOptions): CountResult {
         scVersion = registry.scVersion,
         scCommit = registry.scCommit,
         resurveyMultiplier = RelativeDate.MULTIPLIER.toDouble(),
+        areaUnit = opts.areaUnit.name.lowercase(),
         engineCommit = gitHead(opts.baseDir),
         source = source,
         runSeconds = runSeconds,

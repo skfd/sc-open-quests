@@ -5,6 +5,7 @@ import de.westnordost.streetcomplete.data.osm.mapdata.Node
 import de.westnordost.streetcomplete.data.osm.mapdata.Way
 import openquests.custom.CUSTOM_QUESTS
 import openquests.custom.ScFeatures
+import openquests.fast.FAST_TWINS
 import openquests.ported.AREA_QUESTS
 import java.io.File
 import kotlin.test.Test
@@ -19,6 +20,16 @@ class CustomQuestsTest {
             .map { it.trim().split(Regex("\\s+"))[0] }
             .filter { !it.startsWith("helper:") } // androidMain helper files copied for the area quests
         assertEquals(pinned.sorted(), (CUSTOM_QUESTS.keys + AREA_QUESTS.keys).sorted())
+    }
+
+    @Test fun `every fast twin copies the pinned version of its SC file`() {
+        val sha = File("engine/PORTED-QUESTS.txt").readLines()
+            .filter { it.isNotBlank() && !it.trimStart().startsWith("#") }
+            .associate { it.trim().split(Regex("\\s+")).let { f -> f[0] to f.last() } }
+        for (twin in FAST_TWINS.values) {
+            assertTrue(twin.name in AREA_QUESTS, "${twin.name} has a twin but no port")
+            assertEquals(sha[twin.name], twin.sourceSha256, "SC's ${twin.name} moved on: redo its fast twin")
+        }
     }
 
     @Test fun `ported quests are counted with the port's age flag and element types`() {

@@ -161,22 +161,28 @@ files (FerryUtils, LevelUtils, SummitMarkingsUtil, MaxHeightUtils) are copied wh
 `AreaPass` runs after the main pass and does what `OsmQuestController.createQuestsForBBox` does after a
 download:
 
-- **Unit: one z16 tile** (`DOWNLOAD_TILE_ZOOM`, about 600 x 440 m here; SC's own `TilesRect` math). The
-  app's first download is one tile and later ones a few, sized by data density. The tile's map data is the
-  API map call's answer for its bbox: every way with a node in the tile, with all its nodes (untagged ones
-  too, with their tags, version and timestamp), the tagged nodes in it, and the tagged relations with such
-  a member. Geometry is SC's `ElementGeometryCreator` (relations from the main pass's member ways).
-- A result counts if it has geometry and its position is **inside the tile** (`mayCreateQuest`), so each
-  quest is counted once; then in the cities whose polygon holds it, where the quest is enabled. A quest
-  that returns an element twice (AddMaxHeight) gives one quest, as the app keys quests by element.
-- **agedOnly**: each tile is run again with the clock at 1900; results that disappear are agedOnly.
-- Tiles run in parallel: 184,811 non-empty tiles for the 48 cities, about 60 s for 33 quests (3 are off in
-  every Ontario city: AddEntranceReference, AddSummitCross, AddSummitRegister).
-- Edge effects of the tile unit are small for most quests, not for quests about large containing
-  polygons; see below.
-- `--area-unit city` uses one map data per city (bbox padded by 1 km) instead, only for the dumped city:
-  that is the oracle's exact input. Not for snapshots: AddMaxHeight compares every road with every bridge
-  and takes many minutes on all of Toronto.
+- **Unit: one city** (since 2026-10-12). The map data is the API map call's answer for the city's
+  bounding box padded by 1 km: every way with a node in it, with all its nodes (untagged ones too, with
+  their tags, version and timestamp), the tagged nodes in it, and the tagged relations with such a member.
+  That is the app after downloading the whole city, and exactly the oracle's input. Geometry is SC's
+  `ElementGeometryCreator` (relations from the main pass's member ways).
+- A result counts if it has geometry, its position is inside the padded bbox (`mayCreateQuest`) and in the
+  city's polygon, and the quest is enabled there. A quest that returns an element twice (AddMaxHeight)
+  gives one quest, as the app keys quests by element.
+- **agedOnly**: each map data is run again with the clock at 1900; results that disappear are agedOnly.
+- Cities run one after the other, the quests of a city in parallel.
+- **Fast twins** (`openquests/fast/`). Three quests compare everything with everything in SC's code, which
+  is fine on the app's small downloads and not on a whole city: AddMaxHeight (every road with every
+  bridge; Mississauga 231 s; all cities did not finish in 30 minutes), AddIsAmenityIndoor (every node with every
+  building; Ottawa 306 s) and AddHousenumber (every candidate building for every area with an address,
+  and a sort that recomputes polygon areas). Each twin is a copy of SC's code with one change that only
+  skips work SC's code throws away (a bounds grid where SC's own check fails on disjoint bounds; skipping
+  a `removeAll` of nothing; computing a sort key once in a stable sort). AreaPass uses the twin in place
+  of the port. A test ties each twin to the pinned sha256 of the SC file it copies, so a version bump
+  that changes the file fails until the twin is redone. `-Dopenquests.verifyFast=true` runs the port
+  next to its twin on every map data and fails on any difference.
+- `--area-unit tiles` runs each z16 tile alone instead (`DOWNLOAD_TILE_ZOOM`, about 600 x 440 m here;
+  SC's own `TilesRect` math), the app's smallest download; results count if inside the tile.
 
 **Country metadata** (AddHousenumber, AddCycleway, AddRoofShape). The app hands these quests
 `{ countryInfos.get(countryBoundaries, it) }`. `ScCountryInfos` is that call, built from SC's own parts:
@@ -203,18 +209,28 @@ checkout, loaded the way `CountryInfos.load` does. The sets are identical again:
 identical sets for every quest (the oracle also lists 28 AddEntranceReference, a quest that is off in
 Canada; it does not apply country gating).
 
-**The tile unit undercounts quests that look for a large containing polygon**, exactly as the app does
-after a one-tile download: a mall's or building's outline with no node inside the tile is not in that
-tile's map data. Toronto per tile vs. one map data for the whole city, 2026-10-11: AddIsAmenityIndoor 243
-vs 345, AddLevel 448 vs 534, AddLevelThing 64 vs 71, AddMaxHeight 1,968 vs 2,045 (the per-tile count is
-deduplicated, the per-city one too), AddOneway 3 vs 5, AddCrossing 914 vs 913, AddCrossingIsland 14,642 vs
-14,639, **AddHousenumber 11,658 vs 12,541 (-7.0%)**. AddHousenumber drops buildings that are not
-completely inside the padded download bbox, and areas with an address around a building only count if
-they reach into the tile. AddCycleway 26,704 vs 26,811 and AddRoofShape 365,311 vs 365,313 are not like
-for like: the city-mode numbers were taken with the clock at run time, not at the extract. Every other
-area quest is equal. What the app shows depends on how much its user downloaded at
-once; the tile is the smallest download, the whole city an upper bound. A bigger unit (z15, or a tile
-with its neighbours) is an open choice for the owner.
+**Why per city.** A tile's map data misses what lies outside it: a mall's or building's outline with no
+node inside the tile, a bridge over a road whose crossing is in the next tile, an area with an address
+around a building. The tile is the smallest download, so it gives the lowest counts. The whole city is
+what a user sees after downloading it all, and the counts don't depend on where tile edges fall.
+All 48 cities, 2026-10-11, per tile → per city (Toronto in brackets):
+
+| quest | per tile | per city | |
+|---|---:|---:|---:|
+| AddHousenumber | 336,938 | 369,422 | +9.6% (11,658 → 12,541) |
+| AddCycleway | 203,787 | 205,869 | +1.0% (26,704 → 26,811) |
+| AddMaxHeight | 7,557 | 8,180 | +8.2% (1,968 → 2,045) |
+| AddIsAmenityIndoor | 745 | 1,184 | +58.9% (243 → 345) |
+| AddLevel | 1,126 | 1,235 | +9.7% (448 → 534) |
+| AddLevelThing | 696 | 736 | +5.7% (64 → 71) |
+| AddForestLeafType | 14,060 | 14,108 | +0.3% |
+| AddMaxWeight | 3,813 | 3,823 | +0.3% |
+| AddOneway | 19 | 25 | (3 → 5) |
+| AddRoofShape, AddCrossingIsland, AddCrossing | | | within ±21 |
+
+Every other area quest is equal. The Toronto per-city numbers are the oracle's (SC's own classes on the
+same data, see above). The verify run (`-Dopenquests.verifyFast=true`, 871 s) found every twin equal to
+its port on all 48 cities.
 
 ## What still differs from the app
 
@@ -235,10 +251,10 @@ All counted quests are marked `supported`: none of the differences below is spec
 
 ## Timings and memory
 
-Ontario 2026-10-11, 24 threads, with the area pass: main pass about 17 s, area pass about 75 s (ways
-5.4 s: 4.85M ways near a city, 35.8M of their nodes; nodes 3.7 s; tiles 3.2 s; quests 61 s), process
-wall about 115 s. Peak heap about 22 GB (sum of pool peaks) with `-Xmx24g`: the area pass holds the ways
-and nodes near the cities on top of the main pass's node index.
+Ontario 2026-10-11, 24 threads, area pass per city: total about 216 s (ways 6.4 s: 4.85M ways near a
+city, 37.4M nodes; then the cities one by one, Toronto 43 s with map data 5.8 s for 7.9M nodes and 1.07M
+ways, Mississauga 17 s, Ottawa 13 s). Peak heap 30-33 GB (sum of pool peaks; 33 GB
+under `-Xmx32g`, so close to the cap); the launcher's default is `-Xmx40g`. Per z16 tile (`--area-unit tiles`) it was about 115 s and 22 GB.
 
 Main pass alone (Ontario 2026-07-16, 967 MB):
 

@@ -29,6 +29,9 @@ time zone (`YYYY-MM-DD`).
   "scVersion": "63.4",
   "scCommit": "244c6873…",
   "resurveyMultiplier": 1,
+  "areaUnit": "city",                  // what the area quests ran on: "city" (one map data per city) or
+                                       //   "tiles" (per z16 tile); absent before 2026-10-12, when
+                                       //   the snapshots held no area quests
   "engineCommit": "<git sha of this repo>",   // null if git is unavailable
   "source": { "url": "...",            // null when the engine got no --source-meta
               "lastModified": "2026-07-16T23:33:11Z",  // the download's Last-Modified, as ISO; or null
@@ -102,7 +105,8 @@ Headline totals on the site exclude `defaultDisabled` quests; the per-quest numb
 ```jsonc
 { "city": "toronto", "name": "Toronto",
   "dates": ["2026-07-16", "..."],                       // asOfDate, ascending, one per extract
-  "meta": [ { "scVersion": "63.4", "resurveyMultiplier": 1 } ],  // parallel to dates, so breaks show
+  "meta": [ { "scVersion": "63.4", "resurveyMultiplier": 1, "areaUnit": "city" } ],  // parallel to dates,
+                                                        //   so breaks show; areaUnit only where the snapshot has it
   "quests": { "AddBenchBackrest": { "open": [3063], "agedOnly": [0] } },
   "denominators": { "landAreaKm2": 665.9, "highwayKm": [0.0] } }
 ```

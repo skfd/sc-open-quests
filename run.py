@@ -266,7 +266,8 @@ def build_history(snapshots: list[dict], city_config: list[dict], disabled: set[
             "city": cid,
             "name": names.get(cid, cid),
             "dates": [s["asOfDate"] for s, _ in rows],
-            "meta": [{"scVersion": s["scVersion"], "resurveyMultiplier": s["resurveyMultiplier"]}
+            "meta": [{"scVersion": s["scVersion"], "resurveyMultiplier": s["resurveyMultiplier"],
+                      **({"areaUnit": s["areaUnit"]} if "areaUnit" in s else {})}
                      for s, _ in rows],
             "quests": quests,
             "denominators": {

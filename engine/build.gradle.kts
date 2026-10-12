@@ -44,7 +44,7 @@ application {
     mainClass.set("openquests.MainKt")
     applicationName = "sc-open-quests-engine"
     applicationDefaultJvmArgs = listOf(
-        "-Xmx24g", // see README "Memory" for the measured peak on Ontario (the area pass needs more)
+        "-Xmx40g", // see README "Timings and memory": about 30-33 GB peak on Ontario with the per-city area pass
     ) + engineJvmArgs
 }
 

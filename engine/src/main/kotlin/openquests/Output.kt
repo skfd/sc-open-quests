@@ -16,6 +16,8 @@ class SnapshotMeta(
     val scVersion: String,
     val scCommit: String,
     val resurveyMultiplier: Double,
+    /** what the area quests run on: "city" (one map data per city) or "tiles" (per z16 tile) */
+    val areaUnit: String,
     val engineCommit: String?,
     val source: SourceMeta,
     val runSeconds: Double,
@@ -66,6 +68,7 @@ fun snapshotJson(meta: SnapshotMeta, engine: Engine): String {
     sb.append("  \"scVersion\": ${jsonString(meta.scVersion)},\n")
     sb.append("  \"scCommit\": ${jsonString(meta.scCommit)},\n")
     sb.append("  \"resurveyMultiplier\": ${decimal(meta.resurveyMultiplier, 2)},\n")
+    sb.append("  \"areaUnit\": ${jsonString(meta.areaUnit)},\n")
     sb.append("  \"engineCommit\": ${jsonString(meta.engineCommit)},\n")
     sb.append("  \"source\": { \"url\": ${jsonString(meta.source.url)}, \"lastModified\": ${jsonString(meta.source.lastModified)}, ")
     sb.append("\"sha256\": ${jsonString(meta.source.sha256)}, \"file\": ${jsonString(meta.source.file)} },\n")

@@ -18,6 +18,8 @@ import de.westnordost.streetcomplete.data.download.tiles.enclosingTilePos
 import de.westnordost.streetcomplete.data.download.tiles.enclosingTilesRect
 import de.westnordost.streetcomplete.data.osm.mapdata.MapDataWithGeometry
 import de.westnordost.streetcomplete.util.math.contains
+import openquests.custom.AreaQuest
+import openquests.fast.FAST_TWINS
 import java.util.concurrent.ConcurrentLinkedQueue
 import kotlin.math.cos
 
@@ -26,12 +28,17 @@ import kotlin.math.cos
  *  far past the city's bounding box). */
 const val AREA_PADDING_M = 1000.0
 
+/** `-Dopenquests.verifyFast=true`: run every port that has a [FAST_TWINS] entry next to its twin and
+ *  fail on any difference (slow on whole cities: the ports' quadratic parts run too). */
+val VERIFY_FAST = System.getProperty("openquests.verifyFast") == "true"
+
 /** The app's download unit (ApplicationConstants.DOWNLOAD_TILE_ZOOM). */
 const val AREA_TILE_ZOOM = 16
 
-/** How AreaPass cuts the map data. [TILES] is what the app does and what snapshots use; [CITY] puts a
- *  whole city into one map data, so that tools/sc-harness CheckCustomQuests can be run on exactly the
- *  same data (--area-unit city, with --dump-elements). */
+/** How AreaPass cuts the map data. [CITY], what snapshots use, puts a whole city into one map data:
+ *  the app after downloading the whole city, and exactly what tools/sc-harness CheckCustomQuests runs
+ *  on (with --dump-elements). [TILES] runs each z16 tile alone, the app's smallest download; quests
+ *  about a large containing polygon then see less of it (--area-unit tiles). */
 enum class AreaUnit { TILES, CITY }
 
 /**
@@ -41,14 +48,14 @@ enum class AreaUnit { TILES, CITY }
  * map call returns for the area, every quest's `getApplicableElements()` on it, and `mayCreateQuest`:
  * a result counts only if it has geometry and its position is inside the downloaded bounding box.
  *
- * The area is one z16 tile, the app's download unit (a first download is a single tile; later ones a
- * few tiles, sized by data density). Its map data is what the API's map call returns for the tile's
- * bounding box: every way with a node in it (with all its nodes, also those outside), every node in it
- * that has tags (untagged nodes not on such a way play no part), every tagged relation with such a way
- * or node as a member. A result counts if its position is inside the tile, as mayCreateQuest demands,
- * so each quest is counted once; then in the cities whose polygon holds it and where it is enabled.
- * Tiles are independent and run in parallel. Quests near a tile edge can see less of their
- * surroundings than after a bigger download; that is the app's behaviour for a one-tile download.
+ * The area is a city's bounding box padded by [AREA_PADDING_M] ([AreaUnit.CITY]), or one z16 tile
+ * ([AreaUnit.TILES]). Its map data is what the API's map call returns for that box: every way with a
+ * node in it (with all its nodes, also those outside), every node in it that has tags (untagged nodes
+ * not on such a way play no part), every tagged relation with such a way or node as a member. A result
+ * counts if its position is inside the box, as mayCreateQuest demands, and in the city's polygon (per
+ * tile: in the cities whose polygon holds it), where the quest is enabled. Cities run one after the
+ * other with the quests in parallel; tiles run in parallel. The quests whose SC code compares
+ * everything with everything run as [FAST_TWINS] on a whole city.
  *
  * Stages over the PBF blobs already in memory: ways (which ways come within [AREA_PADDING_M] of a
  * city's bounding box, as a bit mask), nodes (those ways' nodes and the tagged nodes nearby, with
@@ -128,7 +135,7 @@ class AreaPass(
 
         if (unit == AreaUnit.TILES) { runTiles(); return }
         for (c in cities) {
-            // city mode is for oracle checks: only the dumped city, if there is one
+            // with --dump-elements, only the dumped city
             if (engine.dumpElementsCity >= 0 && c.index != engine.dumpElementsCity) continue
             t0 = System.nanoTime()
             val enabledQuests = areaQuests.filter { engine.enabled[c.index][it] }
@@ -140,6 +147,7 @@ class AreaPass(
             log("area: %-18s %6.1f s  (map data %.1f s: %d nodes, %d ways, %d relations)".format(
                 c.id, (System.nanoTime() - t0) / 1e9, built, mapData.nodes.size, mapData.ways.size, mapData.relations.size))
         }
+        if (VERIFY_FAST) log("area: fast twins matched their ports on ${verifiedTwins.get()} map data runs")
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -217,10 +225,12 @@ class AreaPass(
      *  result whose position is in [box] in the cities whose polygon holds it, where [qi] is enabled;
      *  [cityIndexes]: only these cities (city mode). */
     private fun countIn(mapData: MapDataWithGeometry, box: BoundingBox, qi: Int, cityIndexes: List<Int>?) {
-        val quest = engine.quests[qi].area!!
+        val port = engine.quests[qi].area!!
+        val quest = FAST_TWINS[port.name] ?: port
         // a quest may return an element twice (AddMaxHeight: a tunnel that is also below a bridge);
         // the app keys quests by element, so it is one quest
         val now = quest.getApplicableElements(mapData).distinctBy { it.type to it.id }
+        if (VERIFY_FAST && quest !== port) verifyTwin(port, mapData, now.mapTo(HashSet()) { it.type to it.id })
         if (now.isEmpty()) return
         val then = EngineClock.at(EngineClock.LONG_AGO) {
             quest.getApplicableElements(mapData).mapTo(HashSet()) { it.type to it.id }
@@ -236,6 +246,16 @@ class AreaPass(
             for (c in inCities) if (engine.enabled[c][qi]) engine.countArea(c, qi, e, pos, aged)
         }
     }
+
+    private fun verifyTwin(port: AreaQuest, mapData: MapDataWithGeometry, twin: Set<Pair<ElementType, Long>>) {
+        val original = port.getApplicableElements(mapData).mapTo(HashSet()) { it.type to it.id }
+        check(original == twin) {
+            "fast twin of ${port.name} differs from the port in ${mapData.boundingBox}: " +
+                "only port ${(original - twin).take(5)}, only twin ${(twin - original).take(5)}"
+        }
+        verifiedTwins.incrementAndGet()
+    }
+    val verifiedTwins = java.util.concurrent.atomic.AtomicLong()
 
     private fun timing(stage: String, t0: Long, note: String) {
         val s = (System.nanoTime() - t0) / 1e9
@@ -411,7 +431,15 @@ class AreaPass(
     private fun countCity(city: City, mapData: MutableMapDataWithGeometry, questIndices: List<Int>) {
         val box = mapData.boundingBox!!
         engine.dumpAreaElements(city, mapData)
-        parallelMap(0, questIndices.size) { k -> countIn(mapData, box, questIndices[k], listOf(city.index)) }
+        val seconds = parallelMap(0, questIndices.size) { k ->
+            val t0 = System.nanoTime()
+            countIn(mapData, box, questIndices[k], listOf(city.index))
+            questIndices[k] to (System.nanoTime() - t0) / 1e9
+        }
+        for ((qi, s) in seconds.sortedByDescending { it.second }.take(3)) if (s >= 1.0) {
+            log("  %-30s %6.1f s".format(engine.quests[qi].name, s))
+            engine.stats.timings["area: ${city.id} ${engine.quests[qi].name}"] = s
+        }
     }
 }
 
