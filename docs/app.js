@@ -107,12 +107,38 @@ function questSeries(h, name) {
   return { open: s.open, aged: s.agedOnly };
 }
 
-// Indices where the SC version or resurvey multiplier differs from the previous date.
-function breaks(h) {
+// Names of the headline quests that have a value at date index i.
+function headlineQuestsAt(h, i) {
+  return new Set(Object.entries(h.quests)
+    .filter(([name, s]) => s.open[i] != null && headlineQuest(questByName.get(name))).map(([name]) => name));
+}
+
+// Change in the headline total from date i-1 to i, over the quests counted on both dates only.
+function likeForLikeDelta(h, i) {
+  let d = 0, any = false;
+  for (const [name, s] of Object.entries(h.quests)) {
+    if (!headlineQuest(questByName.get(name)) || s.open[i] == null || s.open[i - 1] == null) continue;
+    d += s.open[i] - s.open[i - 1];
+    any = true;
+  }
+  return any ? d : null;
+}
+
+// Indices where the SC version or resurvey multiplier differs from the previous date. With
+// questSet, also where the set of headline quests changes (a quest type counted for the first
+// time, e.g. a newly ported custom quest), which moves a total but not a single quest's line.
+function breaks(h, { questSet = false } = {}) {
   const out = [];
   for (let i = 1; i < h.meta.length; i++) {
     const a = h.meta[i - 1], b = h.meta[i];
     const what = [], short = [];
+    if (questSet) {
+      const before = headlineQuestsAt(h, i - 1), now = headlineQuestsAt(h, i);
+      const added = [...now].filter((q) => !before.has(q)).length;
+      const dropped = [...before].filter((q) => !now.has(q)).length;
+      if (added) { what.push(`${added} more quest type${added > 1 ? "s" : ""} counted`); short.push(`+${added} types`); }
+      if (dropped) { what.push(`${dropped} quest type${dropped > 1 ? "s" : ""} no longer counted`); short.push(`−${dropped} types`); }
+    }
     if (a.scVersion !== b.scVersion) {
       what.push(`StreetComplete ${a.scVersion} → ${b.scVersion}`);
       short.push(b.scVersion);
@@ -130,10 +156,10 @@ function breaks(h) {
 
 function dayTs(d) { return Date.UTC(+d.slice(0, 4), +d.slice(5, 7) - 1, +d.slice(8, 10)) / 1000; }
 
-function lineChart(target, h, series, { height = 260, showAged = true } = {}) {
+function lineChart(target, h, series, { height = 260, showAged = true, questSetBreaks = false } = {}) {
   const xs = h.dates.map(dayTs);
   const mapping = series.open.map((v, i) => (v == null ? null : v - (series.aged[i] || 0)));
-  const brk = breaks(h);
+  const brk = breaks(h, { questSet: questSetBreaks });
   const few = xs.length <= 60;
   const surface = css("--surface");
   const mk = (label, color, data) => ({
@@ -207,11 +233,12 @@ function tile(label, value, extra, hero = false) {
 function renderTiles(h, tot) {
   const n = h.dates.length, i = n - 1;
   const open = tot.open[i], aged = tot.aged[i] || 0;
-  const prev = n > 1 ? tot.open[i - 1] : null;
+  const change = n > 1 ? likeForLikeDelta(h, i) : null;
+  const sameSet = n > 1 && !breaks(h, { questSet: true }).some((b) => b.i === i && /types/.test(b.short));
   const km = last(h.denominators.highwayKm);
   const area = h.denominators.landAreaKm2;
-  const delta = prev != null && open != null
-    ? el("div", { class: "delta" }, `${signed(open - prev)} since ${h.dates[i - 1]}`)
+  const delta = change != null && open != null
+    ? el("div", { class: "delta" }, `${signed(change)} since ${h.dates[i - 1]}${sameSet ? "" : ", same quest types"}`)
     : el("div", { class: "note" }, "First snapshot, no change yet");
   $("#tiles").replaceChildren(
     tile("Open quests", open == null ? "—" : nf.format(open), delta, true),
@@ -235,8 +262,8 @@ function renderCityCharts(h) {
   $("#chart-sub").textContent =
     (state.includeDisabled ? "All counted quests, including those off by default. " : "All counted quests that are on by default. ") +
     (h.dates.length === 1 ? "One snapshot so far; the line starts here." : `${h.dates.length} daily snapshots.`);
-  lineChart($("#chart-total"), h, tot, { height: 280 });
-  $("#breaks").replaceChildren(...breaks(h).map((b) => el("li", {}, `│ ${b.date}: ${b.label}. Counts on either side are not directly comparable.`)));
+  lineChart($("#chart-total"), h, tot, { height: 280, questSetBreaks: true });
+  $("#breaks").replaceChildren(...breaks(h, { questSet: true }).map((b) => el("li", {}, `│ ${b.date}: ${b.label}. Totals on either side are not directly comparable.`)));
 
   const box = $("#multiples");
   box.replaceChildren();
