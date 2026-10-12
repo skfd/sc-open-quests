@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "asOf": "2026-07-16T20:21:30Z",
+  "asOfDate": "2026-07-16",
+  "timeZone": "America/Toronto",
+  "scVersion": "63.4",
+  "scCommit": "244c6873330de8de1829ff287bbfdef4cb5c96b5",
+  "resurveyMultiplier": 1,
+  "engineCommit": "0000000",
+  "source": { "url": "https://download.geofabrik.de/north-america/canada/ontario-latest.osm.pbf",
+              "lastModified": "Thu, 16 Jul 2026 23:33:11 GMT", "sha256": "sha-2026-07-16" },
+  "runSeconds": 12.3,
+  "cities": {
+    "toronto": {
+      "denominators": { "landAreaKm2": 665.9, "population": 2794356,
+                        "taggedNodes": 1000, "taggedWays": 500, "highwayKm": 100.0 },
+      "quests": {
+        "AddA": { "open": 10, "nodes": 10, "ways": 0, "relations": 0, "agedOnly": 0 },
+        "AddB": { "open": 5, "nodes": 5, "ways": 0, "relations": 0, "agedOnly": 2 },
+        "AddD": { "open": 7, "nodes": 7, "ways": 0, "relations": 0, "agedOnly": 0 }
+      }
+    }
+  }
+}

@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Open StreetComplete quests in Ontario</title>
+<meta name="description" content="How many StreetComplete quests are open in each Ontario city, by quest type, over time.">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/uplot@1.6.31/dist/uPlot.min.css"
+      integrity="sha384-IfV0B7MIOYuO95kO9G5ySKPz/85zqFNOAs8iy4tkK5zd9izhJAB8b7lHrwYqqmYE" crossorigin="anonymous">
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/uplot@1.6.31/dist/uPlot.iife.min.js"
+        integrity="sha384-XMP23k7YSCFr13Xrkxh4IO0v1W+8fB6AP+3Vycxphp2Z0V2vocAZHyuGaFCysrtM" crossorigin="anonymous"></script>
+<script src="app.js" defer></script>
+</head>
+<body>
+<header class="page-head">
+  <h1>Open StreetComplete quests in Ontario</h1>
+  <p class="lede">What a <a href="https://streetcomplete.app/">StreetComplete</a> user would see in each city,
+    with the app's default settings, counted daily from OpenStreetMap.</p>
+  <nav class="tabs" aria-label="View">
+    <a href="#" data-view="city" class="tab">One city</a>
+    <a href="#" data-view="compare" class="tab">Compare cities</a>
+  </nav>
+</header>
+
+<main>
+  <div class="filters" role="group" aria-label="Filters">
+    <label class="field">City
+      <select id="city"></select>
+    </label>
+    <label class="field check">
+      <input type="checkbox" id="include-disabled"> Include quests that are off by default
+    </label>
+  </div>
+
+  <p id="status" class="notice" hidden></p>
+
+  <section id="view-city" hidden>
+    <div class="tiles" id="tiles"></div>
+
+    <article class="card">
+      <h2 id="chart-title">Open quests over time</h2>
+      <p class="sub" id="chart-sub"></p>
+      <div class="chart" id="chart-total"></div>
+      <ul class="breaks" id="breaks"></ul>
+    </article>
+
+    <div class="multiples" id="multiples"></div>
+
+    <article class="card">
+      <div class="card-head">
+        <h2>Quests in <span id="table-city"></span></h2>
+        <label class="field search">
+          <span class="visually-hidden">Filter quest types</span>
+          <input type="search" id="quest-filter" placeholder="Filter quest types" autocomplete="off">
+        </label>
+      </div>
+      <p class="sub">Tick a quest to chart it. Quests the app can show but this site can't count yet are
+        listed greyed, so the gaps are visible.</p>
+      <div class="table-wrap">
+        <table class="data" id="quest-table">
+          <thead><tr>
+            <th scope="col" class="c-pick"><span class="visually-hidden">Chart</span></th>
+            <th scope="col" data-sort="name">Quest</th>
+            <th scope="col" data-sort="open" class="num">Open</th>
+            <th scope="col" data-sort="delta" class="num">Change</th>
+            <th scope="col" data-sort="aged" class="num" title="Share of open quests that exist only because a check date or the element has aged">Aged</th>
+            <th scope="col" data-sort="support">Support</th>
+            <th scope="col" data-sort="status">Status</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </article>
+  </section>
+
+  <section id="view-compare" hidden>
+    <article class="card">
+      <div class="card-head">
+        <h2>Cities compared</h2>
+        <label class="field">Quest type
+          <select id="compare-quest"></select>
+        </label>
+      </div>
+      <p class="sub" id="compare-sub">Raw counts follow city size, so the table ranks by density. Click a
+        column to rank by it.</p>
+      <div class="table-wrap">
+        <table class="data" id="compare-table">
+          <thead><tr>
+            <th scope="col" class="num">#</th>
+            <th scope="col" data-sort="name">City</th>
+            <th scope="col" data-sort="open" class="num">Open</th>
+            <th scope="col" data-sort="perKm2" class="num">Per km²</th>
+            <th scope="col" data-sort="perRoadKm" class="num">Per road km</th>
+            <th scope="col" data-sort="per1k" class="num">Per 1,000 people</th>
+            <th scope="col" class="bar-col"><span class="visually-hidden">Bar</span></th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </article>
+  </section>
+</main>
+
+<footer class="page-foot" id="foot">
+  <p id="foot-data"></p>
+  <p>
+    <a href="https://github.com/skfd/sc-open-quests">Source</a> ·
+    <a href="https://github.com/skfd/sc-open-quests/blob/main/DESIGN.md">How it's counted</a> ·
+    <a href="https://github.com/skfd/sc-open-quests/blob/main/DATA-FORMAT.md">Data format</a> ·
+    Code under <a href="https://www.gnu.org/licenses/gpl-3.0.html">GPL-3.0</a>, built on StreetComplete's own quest code.
+  </p>
+  <p>Map data © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>, ODbL.
+    Extract by <a href="https://download.geofabrik.de/">Geofabrik</a>.</p>
+</footer>
+</body>
+</html>

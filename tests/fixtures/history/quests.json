@@ -1,0 +1,14 @@
+{ "scVersion": "63.5", "quests": [
+  { "name": "AddA", "order": 1, "kind": "filter", "support": "supported", "defaultDisabled": false,
+    "usesAge": false, "enabledInCountries": { "type": "AllCountries" }, "wikiLink": "Key:a",
+    "status": { "toronto": "counted", "ottawa": "counted" } },
+  { "name": "AddB", "order": 2, "kind": "filter", "support": "supported", "defaultDisabled": false,
+    "usesAge": true, "enabledInCountries": { "type": "AllCountries" }, "wikiLink": "Key:b",
+    "status": { "toronto": "counted", "ottawa": "counted" } },
+  { "name": "AddC", "order": 3, "kind": "filter", "support": "supported", "defaultDisabled": false,
+    "usesAge": false, "enabledInCountries": { "type": "AllCountries" }, "wikiLink": "Key:c",
+    "status": { "toronto": "counted", "ottawa": "counted" } },
+  { "name": "AddD", "order": 4, "kind": "filter", "support": "supported", "defaultDisabled": true,
+    "usesAge": false, "enabledInCountries": { "type": "AllCountries" }, "wikiLink": "Key:d",
+    "status": { "toronto": "counted", "ottawa": "counted" } }
+] }

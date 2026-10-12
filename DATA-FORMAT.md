@@ -79,7 +79,25 @@ Headline totals on the site exclude `defaultDisabled` quests; the per-quest numb
   "denominators": { "landAreaKm2": 665.9, "highwayKm": [0.0] } }
 ```
 
-`docs/data/cities.json` lists cities with their latest totals, for the selector and comparisons.
+A city's `dates` holds only the snapshots that contain it. A quest absent from one of them (not counted
+under that SC version, or new in a later one) is `null` at that index, never 0. Both files are written by
+`run.py history` with sorted keys, so a rerun on the same snapshots changes no bytes.
+
+`docs/data/cities.json` lists cities with their latest totals, for the selector and comparisons:
+
+```jsonc
+{ "asOfDate": "2026-07-16", "scVersion": "63.4", "resurveyMultiplier": 1,   // newest snapshot
+  "cities": [ {                                                             // sorted by name
+    "id": "toronto", "name": "Toronto", "asOfDate": "2026-07-16", "scVersion": "63.4",
+    "landAreaKm2": 665.9, "population": null, "highwayKm": 0.0,
+    "open": 0,          // headline: counted quests, default-disabled excluded
+    "agedOnly": 0,      // of `open`
+    "openAll": 0,       // default-disabled included
+    "questsCounted": 0
+} ] }
+```
+
+Per-quest comparisons across cities read the newest snapshot directly.
 
 Rerunning on the same extract rewrites the same snapshot file byte for byte, apart from `runSeconds` and
 `engineCommit`.

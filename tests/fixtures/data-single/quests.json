@@ -1,0 +1,4663 @@
+{
+ "quests": [
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "note",
+   "name": "OsmNoteQuestType",
+   "order": 0,
+   "status": {
+    "barrie": "unsupported",
+    "guelph": "unsupported",
+    "hamilton": "unsupported",
+    "kingston": "unsupported",
+    "london": "unsupported",
+    "mississauga": "unsupported",
+    "ottawa": "unsupported",
+    "toronto": "unsupported"
+   },
+   "support": "unsupported",
+   "usesAge": false,
+   "wikiLink": "Notes"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddBusStopShelter",
+   "order": 1,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": true,
+   "wikiLink": "Key:shelter"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddBenchStatusOnBusStop",
+   "order": 2,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": true,
+   "wikiLink": "Key:bench"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddBinStatusOnBusStop",
+   "order": 3,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": true,
+   "wikiLink": "Key:bin"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "codes": [
+     "NO",
+     "SE",
+     "DK",
+     "SI",
+     "IS",
+     "GB",
+     "IE",
+     "NL",
+     "BE",
+     "FR",
+     "ES",
+     "IT",
+     "SM",
+     "VA",
+     "MC",
+     "AD",
+     "DE",
+     "PL",
+     "CZ",
+     "SK",
+     "HU",
+     "AT",
+     "CH",
+     "LI",
+     "LV",
+     "LT",
+     "EE",
+     "LU",
+     "RU",
+     "HR",
+     "PT",
+     "US",
+     "CA",
+     "AR",
+     "CO",
+     "HK",
+     "SG",
+     "KR",
+     "JP",
+     "AU",
+     "NZ"
+    ],
+    "type": "NoCountriesExcept"
+   },
+   "kind": "filter",
+   "name": "AddTactilePavingBusStop",
+   "order": 4,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": true,
+   "wikiLink": "Key:tactile_paving"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "codes": [
+     "US",
+     "CA",
+     "SE"
+    ],
+    "type": "AllCountriesExcept"
+   },
+   "kind": "filter",
+   "name": "AddBusStopName",
+   "order": 5,
+   "status": {
+    "barrie": "not-in-region",
+    "guelph": "not-in-region",
+    "hamilton": "not-in-region",
+    "kingston": "not-in-region",
+    "london": "not-in-region",
+    "mississauga": "not-in-region",
+    "ottawa": "not-in-region",
+    "toronto": "not-in-region"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Tag:public_transport=platform"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "codes": [
+     "AU",
+     "CA",
+     "CO",
+     "IE",
+     "IR",
+     "IL",
+     "JE",
+     "KR",
+     "NZ",
+     "PT",
+     "SG",
+     "TR",
+     "US"
+    ],
+    "type": "NoCountriesExcept"
+   },
+   "kind": "filter",
+   "name": "AddBusStopRef",
+   "order": 6,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Tag:public_transport=platform"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddBusStopLit",
+   "order": 7,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": true,
+   "wikiLink": "Key:lit"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "custom",
+   "name": "AddRailwayCrossingBarrier",
+   "order": 8,
+   "status": {
+    "barrie": "unsupported",
+    "guelph": "unsupported",
+    "hamilton": "unsupported",
+    "kingston": "unsupported",
+    "london": "unsupported",
+    "mississauga": "unsupported",
+    "ottawa": "unsupported",
+    "toronto": "unsupported"
+   },
+   "support": "unsupported",
+   "usesAge": false,
+   "wikiLink": "Key:crossing:barrier"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddCarWashType",
+   "order": 9,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Tag:amenity=car_wash"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddBenchBackrest",
+   "order": 10,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Tag:amenity=bench"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "custom",
+   "name": "AddAmenityCover",
+   "order": 11,
+   "status": {
+    "barrie": "unsupported",
+    "guelph": "unsupported",
+    "hamilton": "unsupported",
+    "kingston": "unsupported",
+    "london": "unsupported",
+    "mississauga": "unsupported",
+    "ottawa": "unsupported",
+    "toronto": "unsupported"
+   },
+   "support": "unsupported",
+   "usesAge": false,
+   "wikiLink": "Key:covered"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddBridgeStructure",
+   "order": 12,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Key:bridge:structure"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "MarkCompletedBuildingConstruction",
+   "order": 13,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": true,
+   "wikiLink": "Tag:building=construction"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddSport",
+   "order": 14,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Key:sport"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddPitchSurface",
+   "order": 15,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": true,
+   "wikiLink": "Key:surface"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddPitchLit",
+   "order": 16,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": true,
+   "wikiLink": "Key:lit"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddParkingType",
+   "order": 17,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Tag:amenity=parking"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddParkingAccess",
+   "order": 18,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Tag:amenity=parking"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddParkingFee",
+   "order": 19,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": true,
+   "wikiLink": "Tag:amenity=parking"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddTrafficCalmingType",
+   "order": 20,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Key:traffic_calming"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddHandrail",
+   "order": 21,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": true,
+   "wikiLink": "Key:handrail"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddStepsRamp",
+   "order": 22,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": true,
+   "wikiLink": "Key:ramp"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddStepsIncline",
+   "order": 23,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Key:incline"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "codes": [
+     "NO",
+     "SE",
+     "DK",
+     "SI",
+     "IS",
+     "GB",
+     "IE",
+     "NL",
+     "BE",
+     "FR",
+     "ES",
+     "IT",
+     "SM",
+     "VA",
+     "MC",
+     "AD",
+     "DE",
+     "PL",
+     "CZ",
+     "SK",
+     "HU",
+     "AT",
+     "CH",
+     "LI",
+     "LV",
+     "LT",
+     "EE",
+     "LU",
+     "RU",
+     "HR",
+     "PT",
+     "US",
+     "CA",
+     "AR",
+     "CO",
+     "HK",
+     "SG",
+     "KR",
+     "JP",
+     "AU",
+     "NZ"
+    ],
+    "type": "NoCountriesExcept"
+   },
+   "kind": "filter",
+   "name": "AddTactilePavingSteps",
+   "order": 24,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": true,
+   "wikiLink": "Key:tactile_paving"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "custom",
+   "name": "AddBicycleIncline",
+   "order": 25,
+   "status": {
+    "barrie": "unsupported",
+    "guelph": "unsupported",
+    "hamilton": "unsupported",
+    "kingston": "unsupported",
+    "london": "unsupported",
+    "mississauga": "unsupported",
+    "ottawa": "unsupported",
+    "toronto": "unsupported"
+   },
+   "support": "unsupported",
+   "usesAge": false,
+   "wikiLink": "Key:incline"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddMemorialType",
+   "order": 26,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Key:memorial"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddReligionToPlaceOfWorship",
+   "order": 27,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Key:religion"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddReligionToWaysideShrine",
+   "order": 28,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Key:religion"
+  },
+  {
+   "defaultDisabled": true,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddPowerAttachment",
+   "order": 29,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Key:line_attachment"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddPowerPolesMaterial",
+   "order": 30,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Tag:power=pole"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddIsBuildingUnderground",
+   "order": 31,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Key:location"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddMotorcycleParkingCover",
+   "order": 32,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Tag:amenity=motorcycle_parking"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddMotorcycleParkingCapacity",
+   "order": 33,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": true,
+   "wikiLink": "Tag:amenity=motorcycle_parking"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddMotorcycleParkingFee",
+   "order": 34,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": true,
+   "wikiLink": "Tag:amenity=motorcycle_parking"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddAirCompressor",
+   "order": 35,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": true,
+   "wikiLink": "Key:compressed_air"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddRecyclingType",
+   "order": 36,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Key:recycling_type"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "codes": [
+     "CZ"
+    ],
+    "type": "AllCountriesExcept"
+   },
+   "kind": "filter",
+   "name": "DetermineRecyclingGlass",
+   "order": 37,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Key:recycling"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "custom",
+   "name": "AddRecyclingContainerMaterials",
+   "order": 38,
+   "status": {
+    "barrie": "unsupported",
+    "guelph": "unsupported",
+    "hamilton": "unsupported",
+    "kingston": "unsupported",
+    "london": "unsupported",
+    "mississauga": "unsupported",
+    "ottawa": "unsupported",
+    "toronto": "unsupported"
+   },
+   "support": "unsupported",
+   "usesAge": false,
+   "wikiLink": "Key:recycling"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "custom",
+   "name": "AddKerbHeight",
+   "order": 39,
+   "status": {
+    "barrie": "unsupported",
+    "guelph": "unsupported",
+    "hamilton": "unsupported",
+    "kingston": "unsupported",
+    "london": "unsupported",
+    "mississauga": "unsupported",
+    "ottawa": "unsupported",
+    "toronto": "unsupported"
+   },
+   "support": "unsupported",
+   "usesAge": false,
+   "wikiLink": "Key:kerb"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "codes": [
+     "NO",
+     "SE",
+     "DK",
+     "SI",
+     "IS",
+     "GB",
+     "IE",
+     "NL",
+     "BE",
+     "FR",
+     "ES",
+     "IT",
+     "SM",
+     "VA",
+     "MC",
+     "AD",
+     "DE",
+     "PL",
+     "CZ",
+     "SK",
+     "HU",
+     "AT",
+     "CH",
+     "LI",
+     "LV",
+     "LT",
+     "EE",
+     "LU",
+     "RU",
+     "HR",
+     "PT",
+     "US",
+     "CA",
+     "AR",
+     "CO",
+     "HK",
+     "SG",
+     "KR",
+     "JP",
+     "AU",
+     "NZ"
+    ],
+    "type": "NoCountriesExcept"
+   },
+   "kind": "custom",
+   "name": "AddTactilePavingKerb",
+   "order": 40,
+   "status": {
+    "barrie": "unsupported",
+    "guelph": "unsupported",
+    "hamilton": "unsupported",
+    "kingston": "unsupported",
+    "london": "unsupported",
+    "mississauga": "unsupported",
+    "ottawa": "unsupported",
+    "toronto": "unsupported"
+   },
+   "support": "unsupported",
+   "usesAge": false,
+   "wikiLink": "Key:tactile_paving"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "custom",
+   "name": "AddCrossing",
+   "order": 41,
+   "status": {
+    "barrie": "unsupported",
+    "guelph": "unsupported",
+    "hamilton": "unsupported",
+    "kingston": "unsupported",
+    "london": "unsupported",
+    "mississauga": "unsupported",
+    "ottawa": "unsupported",
+    "toronto": "unsupported"
+   },
+   "support": "unsupported",
+   "usesAge": false,
+   "wikiLink": "Tag:highway=crossing"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "custom",
+   "name": "AddCrossingSignals",
+   "order": 42,
+   "status": {
+    "barrie": "unsupported",
+    "guelph": "unsupported",
+    "hamilton": "unsupported",
+    "kingston": "unsupported",
+    "london": "unsupported",
+    "mississauga": "unsupported",
+    "ottawa": "unsupported",
+    "toronto": "unsupported"
+   },
+   "support": "unsupported",
+   "usesAge": false,
+   "wikiLink": "Key:crossing:signals"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "custom",
+   "name": "AddCrossingIsland",
+   "order": 43,
+   "status": {
+    "barrie": "unsupported",
+    "guelph": "unsupported",
+    "hamilton": "unsupported",
+    "kingston": "unsupported",
+    "london": "unsupported",
+    "mississauga": "unsupported",
+    "ottawa": "unsupported",
+    "toronto": "unsupported"
+   },
+   "support": "unsupported",
+   "usesAge": false,
+   "wikiLink": "Key:crossing:island"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "custom",
+   "name": "AddCrossingMarkings",
+   "order": 44,
+   "status": {
+    "barrie": "unsupported",
+    "guelph": "unsupported",
+    "hamilton": "unsupported",
+    "kingston": "unsupported",
+    "london": "unsupported",
+    "mississauga": "unsupported",
+    "ottawa": "unsupported",
+    "toronto": "unsupported"
+   },
+   "support": "unsupported",
+   "usesAge": false,
+   "wikiLink": "Key:crossing:markings"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "codes": [
+     "NO",
+     "SE",
+     "DK",
+     "SI",
+     "IS",
+     "GB",
+     "IE",
+     "NL",
+     "BE",
+     "FR",
+     "ES",
+     "IT",
+     "SM",
+     "VA",
+     "MC",
+     "AD",
+     "DE",
+     "PL",
+     "CZ",
+     "SK",
+     "HU",
+     "AT",
+     "CH",
+     "LI",
+     "LV",
+     "LT",
+     "EE",
+     "LU",
+     "RU",
+     "HR",
+     "PT",
+     "US",
+     "CA",
+     "AR",
+     "CO",
+     "HK",
+     "SG",
+     "KR",
+     "JP",
+     "AU",
+     "NZ"
+    ],
+    "type": "NoCountriesExcept"
+   },
+   "kind": "custom",
+   "name": "AddTactilePavingCrosswalk",
+   "order": 45,
+   "status": {
+    "barrie": "unsupported",
+    "guelph": "unsupported",
+    "hamilton": "unsupported",
+    "kingston": "unsupported",
+    "london": "unsupported",
+    "mississauga": "unsupported",
+    "ottawa": "unsupported",
+    "toronto": "unsupported"
+   },
+   "support": "unsupported",
+   "usesAge": false,
+   "wikiLink": "Key:tactile_paving"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "custom",
+   "name": "AddCrossingKerbHeight",
+   "order": 46,
+   "status": {
+    "barrie": "unsupported",
+    "guelph": "unsupported",
+    "hamilton": "unsupported",
+    "kingston": "unsupported",
+    "london": "unsupported",
+    "mississauga": "unsupported",
+    "ottawa": "unsupported",
+    "toronto": "unsupported"
+   },
+   "support": "unsupported",
+   "usesAge": false,
+   "wikiLink": "Key:kerb"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "codes": [
+     "BG",
+     "FI",
+     "RU",
+     "CZ"
+    ],
+    "type": "AllCountriesExcept"
+   },
+   "kind": "custom",
+   "name": "AddTrafficSignalsVibration",
+   "order": 47,
+   "status": {
+    "barrie": "unsupported",
+    "guelph": "unsupported",
+    "hamilton": "unsupported",
+    "kingston": "unsupported",
+    "london": "unsupported",
+    "mississauga": "unsupported",
+    "ottawa": "unsupported",
+    "toronto": "unsupported"
+   },
+   "support": "unsupported",
+   "usesAge": false,
+   "wikiLink": "Key:traffic_signals:vibration"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddTrafficSignalsButton",
+   "order": 48,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Tag:highway=traffic_signals"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "custom",
+   "name": "AddTrafficSignalsSound",
+   "order": 49,
+   "status": {
+    "barrie": "unsupported",
+    "guelph": "unsupported",
+    "hamilton": "unsupported",
+    "kingston": "unsupported",
+    "london": "unsupported",
+    "mississauga": "unsupported",
+    "ottawa": "unsupported",
+    "toronto": "unsupported"
+   },
+   "support": "unsupported",
+   "usesAge": false,
+   "wikiLink": "Key:traffic_signals:sound"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddInformationToTourism",
+   "order": 50,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Tag:tourism=information"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "codes": [
+     "IT"
+    ],
+    "type": "NoCountriesExcept"
+   },
+   "kind": "filter",
+   "name": "AddPoliceType",
+   "order": 51,
+   "status": {
+    "barrie": "not-in-region",
+    "guelph": "not-in-region",
+    "hamilton": "not-in-region",
+    "kingston": "not-in-region",
+    "london": "not-in-region",
+    "mississauga": "not-in-region",
+    "ottawa": "not-in-region",
+    "toronto": "not-in-region"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Tag:amenity=police"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddPlaygroundAccess",
+   "order": 52,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Tag:leisure=playground"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddBeachSurface",
+   "order": 53,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Key:surface"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "codes": [
+     "AU",
+     "NZ",
+     "VU",
+     "MY",
+     "SG",
+     "TH",
+     "VN",
+     "LA",
+     "MM",
+     "IN",
+     "BD",
+     "NP",
+     "LK",
+     "BT",
+     "PK",
+     "TW",
+     "HK",
+     "MO",
+     "CN",
+     "KR",
+     "JP",
+     "RU",
+     "BY",
+     "LT",
+     "LV",
+     "FI",
+     "SE",
+     "NO",
+     "GB",
+     "IE",
+     "IS",
+     "NL",
+     "BE",
+     "FR",
+     "AD",
+     "ES",
+     "PT",
+     "CH",
+     "LI",
+     "AT",
+     "DE",
+     "LU",
+     "MC",
+     "IT",
+     "SM",
+     "MT",
+     "PL",
+     "EE",
+     "CA",
+     "US",
+     "UA",
+     "SK",
+     "CZ",
+     "HU",
+     "RO",
+     "MD",
+     "BG",
+     "SI",
+     "HR",
+     "IL",
+     "ZA",
+     "GR",
+     "UZ",
+     "ME",
+     "CY",
+     "TR",
+     "LB",
+     "BN",
+     "KH",
+     "ID",
+     "TL",
+     "PG",
+     "KP",
+     "PH",
+     "RS",
+     "RS-KM",
+     "BA",
+     "MK",
+     "AL",
+     "TJ",
+     "KG",
+     "KZ",
+     "MN",
+     "GE"
+    ],
+    "type": "NoCountriesExcept"
+   },
+   "kind": "custom",
+   "name": "AddPostboxCollectionTimes",
+   "order": 54,
+   "status": {
+    "barrie": "unsupported",
+    "guelph": "unsupported",
+    "hamilton": "unsupported",
+    "kingston": "unsupported",
+    "london": "unsupported",
+    "mississauga": "unsupported",
+    "ottawa": "unsupported",
+    "toronto": "unsupported"
+   },
+   "support": "unsupported",
+   "usesAge": false,
+   "wikiLink": "Key:collection_times"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "custom",
+   "name": "CheckExistence",
+   "order": 55,
+   "status": {
+    "barrie": "unsupported",
+    "guelph": "unsupported",
+    "hamilton": "unsupported",
+    "kingston": "unsupported",
+    "london": "unsupported",
+    "mississauga": "unsupported",
+    "ottawa": "unsupported",
+    "toronto": "unsupported"
+   },
+   "support": "unsupported",
+   "usesAge": false,
+   "wikiLink": null
+  },
+  {
+   "defaultDisabled": true,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddGritBinSeasonal",
+   "order": 56,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Key:seasonal"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddArtworkType",
+   "order": 57,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Key:artwork_type"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddBoardType",
+   "order": 58,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Key:board_type"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddBoardName",
+   "order": 59,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Tag:information=board"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddBarrierType",
+   "order": 60,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Key:barrier"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "custom",
+   "name": "AddBarrierOnPath",
+   "order": 61,
+   "status": {
+    "barrie": "unsupported",
+    "guelph": "unsupported",
+    "hamilton": "unsupported",
+    "kingston": "unsupported",
+    "london": "unsupported",
+    "mississauga": "unsupported",
+    "ottawa": "unsupported",
+    "toronto": "unsupported"
+   },
+   "support": "unsupported",
+   "usesAge": false,
+   "wikiLink": "Key:barrier"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "custom",
+   "name": "AddBarrierOnRoad",
+   "order": 62,
+   "status": {
+    "barrie": "unsupported",
+    "guelph": "unsupported",
+    "hamilton": "unsupported",
+    "kingston": "unsupported",
+    "london": "unsupported",
+    "mississauga": "unsupported",
+    "ottawa": "unsupported",
+    "toronto": "unsupported"
+   },
+   "support": "unsupported",
+   "usesAge": false,
+   "wikiLink": "Key:barrier"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddBicycleBarrierType",
+   "order": 63,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Key:cycle_barrier"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddBicycleBarrierInstallation",
+   "order": 64,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Key:cycle_barrier:installation"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "custom",
+   "name": "AddStileType",
+   "order": 65,
+   "status": {
+    "barrie": "unsupported",
+    "guelph": "unsupported",
+    "hamilton": "unsupported",
+    "kingston": "unsupported",
+    "london": "unsupported",
+    "mississauga": "unsupported",
+    "ottawa": "unsupported",
+    "toronto": "unsupported"
+   },
+   "support": "unsupported",
+   "usesAge": false,
+   "wikiLink": "Key:stile"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "custom",
+   "name": "AddStepCountStile",
+   "order": 66,
+   "status": {
+    "barrie": "unsupported",
+    "guelph": "unsupported",
+    "hamilton": "unsupported",
+    "kingston": "unsupported",
+    "london": "unsupported",
+    "mississauga": "unsupported",
+    "ottawa": "unsupported",
+    "toronto": "unsupported"
+   },
+   "support": "unsupported",
+   "usesAge": false,
+   "wikiLink": "Key:step_count"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "custom",
+   "name": "AddBollardType",
+   "order": 67,
+   "status": {
+    "barrie": "unsupported",
+    "guelph": "unsupported",
+    "hamilton": "unsupported",
+    "kingston": "unsupported",
+    "london": "unsupported",
+    "mississauga": "unsupported",
+    "ottawa": "unsupported",
+    "toronto": "unsupported"
+   },
+   "support": "unsupported",
+   "usesAge": false,
+   "wikiLink": "Key:bollard"
+  },
+  {
+   "defaultDisabled": true,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddSeating",
+   "order": 68,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Key:outdoor_seating"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddSelfServiceLaundry",
+   "order": 69,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Tag:shop=laundry"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddGeneralFee",
+   "order": 70,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Key:fee"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddDrinkingWater",
+   "order": 71,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Key:drinking_water"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddDrinkingWaterType",
+   "order": 72,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": true,
+   "wikiLink": "Tag:amenity=drinking_water"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddCameraType",
+   "order": 73,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Tag:surveillance:type"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddFireHydrantType",
+   "order": 74,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Tag:emergency=fire_hydrant"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddFireHydrantPosition",
+   "order": 75,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Tag:emergency=fire_hydrant"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "codes": [
+     "DE",
+     "BE",
+     "LU",
+     "GB",
+     "IE",
+     "HU",
+     "PL",
+     "FI",
+     "NL",
+     "UA"
+    ],
+    "type": "NoCountriesExcept"
+   },
+   "kind": "filter",
+   "name": "AddFireHydrantDiameter",
+   "order": 76,
+   "status": {
+    "barrie": "not-in-region",
+    "guelph": "not-in-region",
+    "hamilton": "not-in-region",
+    "kingston": "not-in-region",
+    "london": "not-in-region",
+    "mississauga": "not-in-region",
+    "ottawa": "not-in-region",
+    "toronto": "not-in-region"
+   },
+   "support": "supported",
+   "usesAge": true,
+   "wikiLink": "Tag:emergency=fire_hydrant"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "codes": [
+     "CH",
+     "FR",
+     "LI"
+    ],
+    "type": "NoCountriesExcept"
+   },
+   "kind": "filter",
+   "name": "AddFireHydrantRef",
+   "order": 77,
+   "status": {
+    "barrie": "not-in-region",
+    "guelph": "not-in-region",
+    "hamilton": "not-in-region",
+    "kingston": "not-in-region",
+    "london": "not-in-region",
+    "mississauga": "not-in-region",
+    "ottawa": "not-in-region",
+    "toronto": "not-in-region"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Key:ref"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddBbqFuel",
+   "order": 78,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Key:amenity=bbq"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddTowerAccess",
+   "order": 79,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Tag:man_made=tower"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "codes": [
+     "SE",
+     "DK",
+     "FI",
+     "NO",
+     "CH"
+    ],
+    "type": "NoCountriesExcept"
+   },
+   "kind": "filter",
+   "name": "AddFirewood",
+   "order": 80,
+   "status": {
+    "barrie": "not-in-region",
+    "guelph": "not-in-region",
+    "hamilton": "not-in-region",
+    "kingston": "not-in-region",
+    "london": "not-in-region",
+    "mississauga": "not-in-region",
+    "ottawa": "not-in-region",
+    "toronto": "not-in-region"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Tag:leisure=firepit"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddBikeParkingCover",
+   "order": 81,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Tag:amenity=bicycle_parking"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddBikeRentalType",
+   "order": 82,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Key:bicycle_rental"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddBikeParkingType",
+   "order": 83,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Key:bicycle_parking"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddBikeParkingAccess",
+   "order": 84,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Tag:amenity=bicycle_parking"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddBikeParkingFee",
+   "order": 85,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": true,
+   "wikiLink": "Tag:amenity=bicycle_parking"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddBikeRentalCapacity",
+   "order": 86,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": true,
+   "wikiLink": "Tag:amenity=bicycle_rental"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddBikeParkingCapacity",
+   "order": 87,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": true,
+   "wikiLink": "Tag:amenity=bicycle_parking"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddBicycleRepairStationServices",
+   "order": 88,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": true,
+   "wikiLink": "Tag:amenity=bicycle_repair_station"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddParcelLockerBrand",
+   "order": 89,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Tag:amenity=parcel_locker"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "codes": [
+     "LU",
+     "LV",
+     "NL",
+     "DK",
+     "NO",
+     "CZ",
+     "IT",
+     "FR"
+    ],
+    "type": "AllCountriesExcept"
+   },
+   "kind": "custom",
+   "name": "AddHousenumber",
+   "order": 90,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "approximated",
+   "usesAge": false,
+   "wikiLink": "Key:addr"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "codes": [
+     "JP"
+    ],
+    "type": "AllCountriesExcept"
+   },
+   "kind": "custom",
+   "name": "AddAddressStreet",
+   "order": 91,
+   "status": {
+    "barrie": "unsupported",
+    "guelph": "unsupported",
+    "hamilton": "unsupported",
+    "kingston": "unsupported",
+    "london": "unsupported",
+    "mississauga": "unsupported",
+    "ottawa": "unsupported",
+    "toronto": "unsupported"
+   },
+   "support": "unsupported",
+   "usesAge": false,
+   "wikiLink": "Key:addr"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddHairdresserCustomers",
+   "order": 92,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Tag:shop=hairdresser"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "SpecifyShopType",
+   "order": 93,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Key:shop"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "custom",
+   "name": "CheckShopType",
+   "order": 94,
+   "status": {
+    "barrie": "unsupported",
+    "guelph": "unsupported",
+    "hamilton": "unsupported",
+    "kingston": "unsupported",
+    "london": "unsupported",
+    "mississauga": "unsupported",
+    "ottawa": "unsupported",
+    "toronto": "unsupported"
+   },
+   "support": "unsupported",
+   "usesAge": false,
+   "wikiLink": "Key:disused:"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "custom",
+   "name": "AddPlaceName",
+   "order": 95,
+   "status": {
+    "barrie": "unsupported",
+    "guelph": "unsupported",
+    "hamilton": "unsupported",
+    "kingston": "unsupported",
+    "london": "unsupported",
+    "mississauga": "unsupported",
+    "ottawa": "unsupported",
+    "toronto": "unsupported"
+   },
+   "support": "unsupported",
+   "usesAge": false,
+   "wikiLink": "Key:name"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "custom",
+   "name": "CheckOpeningHoursSigned",
+   "order": 96,
+   "status": {
+    "barrie": "unsupported",
+    "guelph": "unsupported",
+    "hamilton": "unsupported",
+    "kingston": "unsupported",
+    "london": "unsupported",
+    "mississauga": "unsupported",
+    "ottawa": "unsupported",
+    "toronto": "unsupported"
+   },
+   "support": "unsupported",
+   "usesAge": false,
+   "wikiLink": "Key:opening_hours:signed"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "custom",
+   "name": "AddOpeningHours",
+   "order": 97,
+   "status": {
+    "barrie": "unsupported",
+    "guelph": "unsupported",
+    "hamilton": "unsupported",
+    "kingston": "unsupported",
+    "london": "unsupported",
+    "mississauga": "unsupported",
+    "ottawa": "unsupported",
+    "toronto": "unsupported"
+   },
+   "support": "unsupported",
+   "usesAge": false,
+   "wikiLink": "Key:opening_hours"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddBicyclePump",
+   "order": 98,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": true,
+   "wikiLink": "Key:service:bicycle:pump"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddAtmOperator",
+   "order": 99,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Tag:amenity=atm"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddAtmCashIn",
+   "order": 100,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Key:cash_in"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "custom",
+   "name": "AddClothingBinOperator",
+   "order": 101,
+   "status": {
+    "barrie": "unsupported",
+    "guelph": "unsupported",
+    "hamilton": "unsupported",
+    "kingston": "unsupported",
+    "london": "unsupported",
+    "mississauga": "unsupported",
+    "ottawa": "unsupported",
+    "toronto": "unsupported"
+   },
+   "support": "unsupported",
+   "usesAge": false,
+   "wikiLink": "Tag:amenity=recycling"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddChargingStationBicycles",
+   "order": 102,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Tag:amenity=charging_station"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddChargingStationCapacity",
+   "order": 103,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Tag:amenity=charging_station"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddChargingStationBicycleCapacity",
+   "order": 104,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Tag:amenity=charging_station"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddChargingStationOperator",
+   "order": 105,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Tag:amenity=charging_station"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "codes": [
+     "GB",
+     "GI",
+     "CY",
+     "HK",
+     "MT"
+    ],
+    "type": "NoCountriesExcept"
+   },
+   "kind": "filter",
+   "name": "AddPostboxRoyalCypher",
+   "order": 106,
+   "status": {
+    "barrie": "not-in-region",
+    "guelph": "not-in-region",
+    "hamilton": "not-in-region",
+    "kingston": "not-in-region",
+    "london": "not-in-region",
+    "mississauga": "not-in-region",
+    "ottawa": "not-in-region",
+    "toronto": "not-in-region"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Key:royal_cypher"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "codes": [
+     "FR",
+     "GB",
+     "GG",
+     "IM",
+     "JE",
+     "MT",
+     "IE",
+     "SG",
+     "CZ",
+     "SK",
+     "CH",
+     "US",
+     "JP"
+    ],
+    "type": "NoCountriesExcept"
+   },
+   "kind": "filter",
+   "name": "AddPostboxRef",
+   "order": 107,
+   "status": {
+    "barrie": "not-in-region",
+    "guelph": "not-in-region",
+    "hamilton": "not-in-region",
+    "kingston": "not-in-region",
+    "london": "not-in-region",
+    "mississauga": "not-in-region",
+    "ottawa": "not-in-region",
+    "toronto": "not-in-region"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Tag:amenity=post_box"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddAccessPointRef",
+   "order": 108,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Key:ref"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddWheelchairAccessOutside",
+   "order": 109,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": true,
+   "wikiLink": "Key:wheelchair"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "custom",
+   "name": "AddMaxWeight",
+   "order": 110,
+   "status": {
+    "barrie": "unsupported",
+    "guelph": "unsupported",
+    "hamilton": "unsupported",
+    "kingston": "unsupported",
+    "london": "unsupported",
+    "mississauga": "unsupported",
+    "ottawa": "unsupported",
+    "toronto": "unsupported"
+   },
+   "support": "unsupported",
+   "usesAge": false,
+   "wikiLink": "Key:maxweight"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "custom",
+   "name": "AddMaxHeight",
+   "order": 111,
+   "status": {
+    "barrie": "unsupported",
+    "guelph": "unsupported",
+    "hamilton": "unsupported",
+    "kingston": "unsupported",
+    "london": "unsupported",
+    "mississauga": "unsupported",
+    "ottawa": "unsupported",
+    "toronto": "unsupported"
+   },
+   "support": "unsupported",
+   "usesAge": false,
+   "wikiLink": "Key:maxheight"
+  },
+  {
+   "defaultDisabled": true,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "custom",
+   "name": "AddMaxPhysicalHeight",
+   "order": 112,
+   "status": {
+    "barrie": "unsupported",
+    "guelph": "unsupported",
+    "hamilton": "unsupported",
+    "kingston": "unsupported",
+    "london": "unsupported",
+    "mississauga": "unsupported",
+    "ottawa": "unsupported",
+    "toronto": "unsupported"
+   },
+   "support": "unsupported",
+   "usesAge": false,
+   "wikiLink": "Key:maxheight"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "codes": [
+     "JP"
+    ],
+    "type": "AllCountriesExcept"
+   },
+   "kind": "filter",
+   "name": "AddRoadName",
+   "order": 113,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "approximated",
+   "usesAge": false,
+   "wikiLink": "Key:name"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "custom",
+   "name": "AddOneway",
+   "order": 114,
+   "status": {
+    "barrie": "unsupported",
+    "guelph": "unsupported",
+    "hamilton": "unsupported",
+    "kingston": "unsupported",
+    "london": "unsupported",
+    "mississauga": "unsupported",
+    "ottawa": "unsupported",
+    "toronto": "unsupported"
+   },
+   "support": "unsupported",
+   "usesAge": false,
+   "wikiLink": "Key:oneway"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "custom",
+   "name": "AddEntrance",
+   "order": 115,
+   "status": {
+    "barrie": "unsupported",
+    "guelph": "unsupported",
+    "hamilton": "unsupported",
+    "kingston": "unsupported",
+    "london": "unsupported",
+    "mississauga": "unsupported",
+    "ottawa": "unsupported",
+    "toronto": "unsupported"
+   },
+   "support": "unsupported",
+   "usesAge": false,
+   "wikiLink": "Key:entrance"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "codes": [
+     "PL",
+     "RU",
+     "MK",
+     "BG",
+     "UA",
+     "BY",
+     "EE",
+     "HU",
+     "RO"
+    ],
+    "type": "NoCountriesExcept"
+   },
+   "kind": "custom",
+   "name": "AddEntranceReference",
+   "order": 116,
+   "status": {
+    "barrie": "unsupported",
+    "guelph": "unsupported",
+    "hamilton": "unsupported",
+    "kingston": "unsupported",
+    "london": "unsupported",
+    "mississauga": "unsupported",
+    "ottawa": "unsupported",
+    "toronto": "unsupported"
+   },
+   "support": "unsupported",
+   "usesAge": false,
+   "wikiLink": "Key:ref"
+  },
+  {
+   "defaultDisabled": true,
+   "enabledInCountries": {
+    "codes": [
+     "BE",
+     "SE"
+    ],
+    "type": "NoCountriesExcept"
+   },
+   "kind": "filter",
+   "name": "AddMopedAccess",
+   "order": 117,
+   "status": {
+    "barrie": "not-in-region",
+    "guelph": "not-in-region",
+    "hamilton": "not-in-region",
+    "kingston": "not-in-region",
+    "london": "not-in-region",
+    "mississauga": "not-in-region",
+    "ottawa": "not-in-region",
+    "toronto": "not-in-region"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Key:moped"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "custom",
+   "name": "AddFerryAccessPedestrian",
+   "order": 118,
+   "status": {
+    "barrie": "unsupported",
+    "guelph": "unsupported",
+    "hamilton": "unsupported",
+    "kingston": "unsupported",
+    "london": "unsupported",
+    "mississauga": "unsupported",
+    "ottawa": "unsupported",
+    "toronto": "unsupported"
+   },
+   "support": "unsupported",
+   "usesAge": false,
+   "wikiLink": "Tag:route=ferry"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "custom",
+   "name": "AddFerryAccessMotorVehicle",
+   "order": 119,
+   "status": {
+    "barrie": "unsupported",
+    "guelph": "unsupported",
+    "hamilton": "unsupported",
+    "kingston": "unsupported",
+    "london": "unsupported",
+    "mississauga": "unsupported",
+    "ottawa": "unsupported",
+    "toronto": "unsupported"
+   },
+   "support": "unsupported",
+   "usesAge": false,
+   "wikiLink": "Tag:route=ferry"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "custom",
+   "name": "AddFerryAccessBicycle",
+   "order": 120,
+   "status": {
+    "barrie": "unsupported",
+    "guelph": "unsupported",
+    "hamilton": "unsupported",
+    "kingston": "unsupported",
+    "london": "unsupported",
+    "mississauga": "unsupported",
+    "ottawa": "unsupported",
+    "toronto": "unsupported"
+   },
+   "support": "unsupported",
+   "usesAge": false,
+   "wikiLink": "Tag:route=ferry"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "custom",
+   "name": "AddFerryAccessHgv",
+   "order": 121,
+   "status": {
+    "barrie": "unsupported",
+    "guelph": "unsupported",
+    "hamilton": "unsupported",
+    "kingston": "unsupported",
+    "london": "unsupported",
+    "mississauga": "unsupported",
+    "ottawa": "unsupported",
+    "toronto": "unsupported"
+   },
+   "support": "unsupported",
+   "usesAge": false,
+   "wikiLink": "Tag:route=ferry"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddAerialwayBicycleAccess",
+   "order": 122,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Tag:aerialway"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "custom",
+   "name": "AddOnewayAerialway",
+   "order": 123,
+   "status": {
+    "barrie": "unsupported",
+    "guelph": "unsupported",
+    "hamilton": "unsupported",
+    "kingston": "unsupported",
+    "london": "unsupported",
+    "mississauga": "unsupported",
+    "ottawa": "unsupported",
+    "toronto": "unsupported"
+   },
+   "support": "unsupported",
+   "usesAge": false,
+   "wikiLink": "Key:oneway"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "codes": [
+     "GB"
+    ],
+    "type": "AllCountriesExcept"
+   },
+   "kind": "filter",
+   "name": "AddProhibitedForPedestrians",
+   "order": 124,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Key:foot"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "MarkCompletedHighwayConstruction",
+   "order": 125,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": true,
+   "wikiLink": "Tag:highway=construction"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "codes": [
+     "AT",
+     "CH",
+     "CO",
+     "DE",
+     "ES",
+     "FR",
+     "IT",
+     "PL",
+     "RO",
+     "SK",
+     "AR",
+     "PE"
+    ],
+    "type": "NoCountriesExcept"
+   },
+   "kind": "custom",
+   "name": "AddSummitCross",
+   "order": 126,
+   "status": {
+    "barrie": "unsupported",
+    "guelph": "unsupported",
+    "hamilton": "unsupported",
+    "kingston": "unsupported",
+    "london": "unsupported",
+    "mississauga": "unsupported",
+    "ottawa": "unsupported",
+    "toronto": "unsupported"
+   },
+   "support": "unsupported",
+   "usesAge": false,
+   "wikiLink": "Key:summit:cross"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "codes": [
+     "AT",
+     "CH",
+     "CZ",
+     "DE",
+     "ES",
+     "FR",
+     "GR",
+     "IS",
+     "IT",
+     "NO",
+     "RO",
+     "SI",
+     "SK",
+     "AR",
+     "PE",
+     "US"
+    ],
+    "type": "NoCountriesExcept"
+   },
+   "kind": "custom",
+   "name": "AddSummitRegister",
+   "order": 127,
+   "status": {
+    "barrie": "unsupported",
+    "guelph": "unsupported",
+    "hamilton": "unsupported",
+    "kingston": "unsupported",
+    "london": "unsupported",
+    "mississauga": "unsupported",
+    "ottawa": "unsupported",
+    "toronto": "unsupported"
+   },
+   "support": "unsupported",
+   "usesAge": false,
+   "wikiLink": "Key:summit:register"
+  },
+  {
+   "defaultDisabled": true,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddTreeLeafType",
+   "order": 128,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Key:leaf_type"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "custom",
+   "name": "AddForestLeafType",
+   "order": 129,
+   "status": {
+    "barrie": "unsupported",
+    "guelph": "unsupported",
+    "hamilton": "unsupported",
+    "kingston": "unsupported",
+    "london": "unsupported",
+    "mississauga": "unsupported",
+    "ottawa": "unsupported",
+    "toronto": "unsupported"
+   },
+   "support": "unsupported",
+   "usesAge": false,
+   "wikiLink": "Key:leaf_type"
+  },
+  {
+   "defaultDisabled": true,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddOrchardProduce",
+   "order": 130,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Tag:landuse=orchard"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "custom",
+   "name": "AddLevel",
+   "order": 131,
+   "status": {
+    "barrie": "unsupported",
+    "guelph": "unsupported",
+    "hamilton": "unsupported",
+    "kingston": "unsupported",
+    "london": "unsupported",
+    "mississauga": "unsupported",
+    "ottawa": "unsupported",
+    "toronto": "unsupported"
+   },
+   "support": "unsupported",
+   "usesAge": false,
+   "wikiLink": "Key:level"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "custom",
+   "name": "AddLevelThing",
+   "order": 132,
+   "status": {
+    "barrie": "unsupported",
+    "guelph": "unsupported",
+    "hamilton": "unsupported",
+    "kingston": "unsupported",
+    "london": "unsupported",
+    "mississauga": "unsupported",
+    "ottawa": "unsupported",
+    "toronto": "unsupported"
+   },
+   "support": "unsupported",
+   "usesAge": false,
+   "wikiLink": "Key:level"
+  },
+  {
+   "defaultDisabled": true,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddAirConditioning",
+   "order": 133,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Key:air_conditioning"
+  },
+  {
+   "defaultDisabled": true,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddSmoking",
+   "order": 134,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": true,
+   "wikiLink": "Key:smoking"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddBoatRental",
+   "order": 135,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Tag:amenity=boat_rental"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddWheelchairAccessPublicTransport",
+   "order": 136,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": true,
+   "wikiLink": "Key:wheelchair"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "custom",
+   "name": "AddIsAmenityIndoor",
+   "order": 137,
+   "status": {
+    "barrie": "unsupported",
+    "guelph": "unsupported",
+    "hamilton": "unsupported",
+    "kingston": "unsupported",
+    "london": "unsupported",
+    "mississauga": "unsupported",
+    "ottawa": "unsupported",
+    "toronto": "unsupported"
+   },
+   "support": "unsupported",
+   "usesAge": false,
+   "wikiLink": "Key:indoor"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddDefibrillatorLocation",
+   "order": 138,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Tag:emergency=defibrillator"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddFirstAidKitLocation",
+   "order": 139,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Tag:emergency=first_aid_kit"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddCaravans",
+   "order": 140,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Key:caravans"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddTents",
+   "order": 141,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Key:tents"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddCabins",
+   "order": 142,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Key:cabins"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddCampDrinkingWater",
+   "order": 143,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": true,
+   "wikiLink": "Key:drinking_water"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddCampShower",
+   "order": 144,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": true,
+   "wikiLink": "Key:shower"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddCampPower",
+   "order": 145,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": true,
+   "wikiLink": "Key:power_supply"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddSanitaryDumpStation",
+   "order": 146,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Key:sanitary_dump_station"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddHotWater",
+   "order": 147,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Key:hot_water"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddShelterCapacity",
+   "order": 148,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Tag:amenity=shelter"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddToiletAvailability",
+   "order": 149,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Key:toilets"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "codes": [
+     "US",
+     "CA"
+    ],
+    "type": "AllCountriesExcept"
+   },
+   "kind": "filter",
+   "name": "AddToiletsFee",
+   "order": 150,
+   "status": {
+    "barrie": "not-in-region",
+    "guelph": "not-in-region",
+    "hamilton": "not-in-region",
+    "kingston": "not-in-region",
+    "london": "not-in-region",
+    "mississauga": "not-in-region",
+    "ottawa": "not-in-region",
+    "toronto": "not-in-region"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Key:fee"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddWheelchairAccessToilets",
+   "order": 151,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": true,
+   "wikiLink": "Key:wheelchair"
+  },
+  {
+   "defaultDisabled": true,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddBikeRepairAvailability",
+   "order": 152,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": true,
+   "wikiLink": "Key:service:bicycle:repair"
+  },
+  {
+   "defaultDisabled": true,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddSecondHandBicycleAvailability",
+   "order": 153,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": true,
+   "wikiLink": "Tag:service:bicycle:second_hand"
+  },
+  {
+   "defaultDisabled": true,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddVegetarian",
+   "order": 154,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": true,
+   "wikiLink": "Key:diet"
+  },
+  {
+   "defaultDisabled": true,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddVegan",
+   "order": 155,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": true,
+   "wikiLink": "Key:diet"
+  },
+  {
+   "defaultDisabled": true,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddHalal",
+   "order": 156,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": true,
+   "wikiLink": "Key:diet:halal"
+  },
+  {
+   "defaultDisabled": true,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddKosher",
+   "order": 157,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": true,
+   "wikiLink": "Key:diet:kosher"
+  },
+  {
+   "defaultDisabled": true,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddGlutenFree",
+   "order": 158,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": true,
+   "wikiLink": "Key:diet:gluten_free"
+  },
+  {
+   "defaultDisabled": true,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddWheelchairAccessBusiness",
+   "order": 159,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Key:wheelchair"
+  },
+  {
+   "defaultDisabled": true,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddInternetAccess",
+   "order": 160,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": true,
+   "wikiLink": "Key:internet_access"
+  },
+  {
+   "defaultDisabled": true,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddAcceptsCards",
+   "order": 161,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Key:payment"
+  },
+  {
+   "defaultDisabled": true,
+   "enabledInCountries": {
+    "codes": [
+     "FI",
+     "GB",
+     "IS",
+     "SE",
+     "NL"
+    ],
+    "type": "NoCountriesExcept"
+   },
+   "kind": "filter",
+   "name": "AddAcceptsCash",
+   "order": 162,
+   "status": {
+    "barrie": "not-in-region",
+    "guelph": "not-in-region",
+    "hamilton": "not-in-region",
+    "kingston": "not-in-region",
+    "london": "not-in-region",
+    "mississauga": "not-in-region",
+    "ottawa": "not-in-region",
+    "toronto": "not-in-region"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Key:payment"
+  },
+  {
+   "defaultDisabled": true,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddHandwashing",
+   "order": 163,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Key:toilets:handwashing"
+  },
+  {
+   "defaultDisabled": true,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddBabyChangingTable",
+   "order": 164,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Key:changing_table"
+  },
+  {
+   "defaultDisabled": true,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddWheelchairAccessToiletsPart",
+   "order": 165,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": true,
+   "wikiLink": "Key:toilets:wheelchair"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "codes": [
+     "IT",
+     "JP",
+     "AR",
+     "US-OR"
+    ],
+    "type": "NoCountriesExcept"
+   },
+   "kind": "filter",
+   "name": "AddFuelSelfService",
+   "order": 166,
+   "status": {
+    "barrie": "not-in-region",
+    "guelph": "not-in-region",
+    "hamilton": "not-in-region",
+    "kingston": "not-in-region",
+    "london": "not-in-region",
+    "mississauga": "not-in-region",
+    "ottawa": "not-in-region",
+    "toronto": "not-in-region"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Key:self_service"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "custom",
+   "name": "CheckShopExistence",
+   "order": 167,
+   "status": {
+    "barrie": "unsupported",
+    "guelph": "unsupported",
+    "hamilton": "unsupported",
+    "kingston": "unsupported",
+    "london": "unsupported",
+    "mississauga": "unsupported",
+    "ottawa": "unsupported",
+    "toronto": "unsupported"
+   },
+   "support": "unsupported",
+   "usesAge": false,
+   "wikiLink": "Key:disused:"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "custom",
+   "name": "AddSidewalk",
+   "order": 168,
+   "status": {
+    "barrie": "unsupported",
+    "guelph": "unsupported",
+    "hamilton": "unsupported",
+    "kingston": "unsupported",
+    "london": "unsupported",
+    "mississauga": "unsupported",
+    "ottawa": "unsupported",
+    "toronto": "unsupported"
+   },
+   "support": "unsupported",
+   "usesAge": false,
+   "wikiLink": "Key:sidewalk"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddRoadSurface",
+   "order": 169,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": true,
+   "wikiLink": "Key:surface"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddTracktype",
+   "order": 170,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": true,
+   "wikiLink": "Key:tracktype"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "codes": [
+     "NO",
+     "SE",
+     "FI",
+     "IS",
+     "DK",
+     "SI",
+     "GB",
+     "IE",
+     "NL",
+     "BE",
+     "FR",
+     "LU",
+     "DE",
+     "PL",
+     "CZ",
+     "HU",
+     "AT",
+     "CH",
+     "LI",
+     "ES",
+     "IT",
+     "HR",
+     "JP",
+     "KR",
+     "TW",
+     "CN-BJ",
+     "CN-TJ",
+     "CN-SD",
+     "CN-JS",
+     "CN-SH",
+     "CN-ZJ",
+     "CN-FJ",
+     "CN-GD",
+     "CN-CQ",
+     "NZ",
+     "AU",
+     "CA-BC",
+     "CA-QC",
+     "CA-ON",
+     "CA-NS",
+     "CA-PE",
+     "US-WA",
+     "US-OR",
+     "US-CA",
+     "US-MA",
+     "US-NJ",
+     "US-NY",
+     "US-DC",
+     "US-CT",
+     "US-FL",
+     "US-MN",
+     "US-MI",
+     "US-IL",
+     "US-WI",
+     "US-IN",
+     "US-AZ",
+     "US-TX"
+    ],
+    "type": "NoCountriesExcept"
+   },
+   "kind": "custom",
+   "name": "AddCycleway",
+   "order": 171,
+   "status": {
+    "barrie": "unsupported",
+    "guelph": "unsupported",
+    "hamilton": "unsupported",
+    "kingston": "unsupported",
+    "london": "unsupported",
+    "mississauga": "unsupported",
+    "ottawa": "unsupported",
+    "toronto": "unsupported"
+   },
+   "support": "unsupported",
+   "usesAge": false,
+   "wikiLink": "Key:cycleway"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddLaneMarkings",
+   "order": 172,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Key:lane_markings"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddLanes",
+   "order": 173,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Key:lanes"
+  },
+  {
+   "defaultDisabled": true,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "custom",
+   "name": "AddRoadWidth",
+   "order": 174,
+   "status": {
+    "barrie": "unsupported",
+    "guelph": "unsupported",
+    "hamilton": "unsupported",
+    "kingston": "unsupported",
+    "london": "unsupported",
+    "mississauga": "unsupported",
+    "ottawa": "unsupported",
+    "toronto": "unsupported"
+   },
+   "support": "unsupported",
+   "usesAge": false,
+   "wikiLink": "Key:width"
+  },
+  {
+   "defaultDisabled": true,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddRoadSmoothness",
+   "order": 175,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": true,
+   "wikiLink": "Key:smoothness"
+  },
+  {
+   "defaultDisabled": true,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddPathSmoothness",
+   "order": 176,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": true,
+   "wikiLink": "Key:smoothness"
+  },
+  {
+   "defaultDisabled": true,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "custom",
+   "name": "AddBarrierOpening",
+   "order": 177,
+   "status": {
+    "barrie": "unsupported",
+    "guelph": "unsupported",
+    "hamilton": "unsupported",
+    "kingston": "unsupported",
+    "london": "unsupported",
+    "mississauga": "unsupported",
+    "ottawa": "unsupported",
+    "toronto": "unsupported"
+   },
+   "support": "unsupported",
+   "usesAge": false,
+   "wikiLink": "Key:barrier"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddPathSurface",
+   "order": 178,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": true,
+   "wikiLink": "Key:surface"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddCyclewaySegregation",
+   "order": 179,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Key:segregated"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddFootwayPartSurface",
+   "order": 180,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": true,
+   "wikiLink": "Key:surface"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddCyclewayPartSurface",
+   "order": 181,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": true,
+   "wikiLink": "Key:surface"
+  },
+  {
+   "defaultDisabled": true,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddSidewalkSurface",
+   "order": 182,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": true,
+   "wikiLink": "Key:sidewalk"
+  },
+  {
+   "defaultDisabled": true,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddCyclewayWidth",
+   "order": 183,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Key:width"
+  },
+  {
+   "defaultDisabled": true,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddMaxSpeed",
+   "order": 184,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Key:maxspeed"
+  },
+  {
+   "defaultDisabled": true,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddBuildingType",
+   "order": 185,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Key:building"
+  },
+  {
+   "defaultDisabled": true,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddBuildingLevels",
+   "order": 186,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Key:building:levels"
+  },
+  {
+   "defaultDisabled": true,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "custom",
+   "name": "AddRoofShape",
+   "order": 187,
+   "status": {
+    "barrie": "unsupported",
+    "guelph": "unsupported",
+    "hamilton": "unsupported",
+    "kingston": "unsupported",
+    "london": "unsupported",
+    "mississauga": "unsupported",
+    "ottawa": "unsupported",
+    "toronto": "unsupported"
+   },
+   "support": "unsupported",
+   "usesAge": false,
+   "wikiLink": "Key:roof:shape"
+  },
+  {
+   "defaultDisabled": false,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddStepCount",
+   "order": 188,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": false,
+   "wikiLink": "Key:step_count"
+  },
+  {
+   "defaultDisabled": true,
+   "enabledInCountries": {
+    "type": "AllCountries"
+   },
+   "kind": "filter",
+   "name": "AddWayLit",
+   "order": 189,
+   "status": {
+    "barrie": "counted",
+    "guelph": "counted",
+    "hamilton": "counted",
+    "kingston": "counted",
+    "london": "counted",
+    "mississauga": "counted",
+    "ottawa": "counted",
+    "toronto": "counted"
+   },
+   "support": "supported",
+   "usesAge": true,
+   "wikiLink": "Key:lit"
+  }
+ ],
+ "scVersion": "63.4"
+}
