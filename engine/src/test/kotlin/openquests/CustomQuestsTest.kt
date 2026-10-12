@@ -5,6 +5,7 @@ import de.westnordost.streetcomplete.data.osm.mapdata.Node
 import de.westnordost.streetcomplete.data.osm.mapdata.Way
 import openquests.custom.CUSTOM_QUESTS
 import openquests.custom.ScFeatures
+import openquests.ported.AREA_QUESTS
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -16,7 +17,8 @@ class CustomQuestsTest {
         val pinned = File("engine/PORTED-QUESTS.txt").readLines()
             .filter { it.isNotBlank() && !it.trimStart().startsWith("#") }
             .map { it.trim().split(Regex("\\s+"))[0] }
-        assertEquals(pinned.sorted(), CUSTOM_QUESTS.keys.sorted())
+            .filter { !it.startsWith("helper:") } // androidMain helper files copied for the area quests
+        assertEquals(pinned.sorted(), (CUSTOM_QUESTS.keys + AREA_QUESTS.keys).sorted())
     }
 
     @Test fun `ported quests are counted with the port's age flag and element types`() {
@@ -25,7 +27,8 @@ class CustomQuestsTest {
         assertTrue(sidewalk.isCounted && !sidewalk.isFilter)
         assertEquals(listOf("ways"), sidewalk.elementTypes)
         assertTrue(registry.quests.single { it.name == "AddOpeningHours" }.usesAge)
-        assertEquals(138 + CUSTOM_QUESTS.size, registry.countedQuests.size)
+        assertEquals(138 + CUSTOM_QUESTS.size + AREA_QUESTS.size, registry.countedQuests.size)
+        assertTrue(registry.quests.single { it.name == "AddCrossing" }.area != null)
     }
 
     @Test fun `SC's feature dictionary resolves from the bundled en-CA presets`() {

@@ -6,6 +6,7 @@ import de.westnordost.streetcomplete.data.osm.geometry.ElementGeometryCreator
 import de.westnordost.streetcomplete.data.osm.mapdata.Element
 import de.westnordost.streetcomplete.data.osm.mapdata.ElementType
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
+import de.westnordost.streetcomplete.data.osm.mapdata.MapDataWithGeometry
 import de.westnordost.streetcomplete.data.osm.mapdata.Node
 import de.westnordost.streetcomplete.data.osm.mapdata.Relation
 import de.westnordost.streetcomplete.data.osm.mapdata.RelationMember
@@ -81,7 +82,7 @@ class Engine(val registry: Registry, val cities: List<City>) {
     }
     private val questsByType: Array<IntArray> = Array(3) { t ->
         val type = ElementType.entries[t]
-        quests.indices.filter { quests[it].matcher!!.includesElementType(type) }.toIntArray()
+        quests.indices.filter { quests[it].matcher?.includesElementType(type) == true }.toIntArray()
     }
     private val geometryCreator = ElementGeometryCreator()
 
@@ -95,6 +96,8 @@ class Engine(val registry: Registry, val cities: List<City>) {
     /** optional: every tagged element whose quest position is in this city (index into [cities]), as
      *  JSON lines for tools/sc-harness CheckCustomQuests, which runs SC's own quest classes on them */
     var dumpElementsCity: Int = -1
+    /** how AreaPass cuts the map data; CITY only for oracle checks */
+    var areaUnit: AreaUnit = AreaUnit.TILES
     private val elementLines = ConcurrentLinkedQueue<String>()
 
     init {
@@ -102,7 +105,8 @@ class Engine(val registry: Registry, val cities: List<City>) {
         // relies on mayEvaluateToTrueWithNoTags, which is conservative (true for `highway ~ ...`).
         val untagged = listOf(Node(1, LatLon(0.0, 0.0)), Way(1, emptyList()), Relation(1, emptyList()))
         for (q in quests) {
-            require(untagged.none { q.matcher!!.matches(it) }) { "${q.name} matches untagged elements" }
+            val matcher = q.matcher ?: continue // area quests see untagged elements too (AreaPass)
+            require(untagged.none { matcher.matches(it) }) { "${q.name} matches untagged elements" }
         }
     }
 
@@ -111,18 +115,54 @@ class Engine(val registry: Registry, val cities: List<City>) {
         dumpLines.sorted().forEach { w.write(it); w.write("\n") }
     }
 
+    /** the area pass's map data of [dumpElementsCity], keyed by "type id"; replaces the main pass's
+     *  lines for the same elements and adds the context (untagged way nodes, elements outside) */
+    private val areaElementLines = HashMap<String, String>()
+
     /** JSON lines, sorted by type and id */
     fun writeElements(w: Writer) {
-        elementLines.sortedWith(compareBy({ it.substringBefore(',') }, { it.substringAfter("\"id\":").substringBefore(',').toLong() }))
+        val byKey = HashMap<String, String>()
+        for (l in elementLines) byKey[l.substringBefore(",\"version\"")] = l
+        for ((k, l) in areaElementLines) byKey[k] = l
+        byKey.values.sortedWith(compareBy({ TYPE_NAMES.indexOf(it.substringAfter("\"type\":\"").substringBefore('"')) },
+            { it.substringAfter("\"id\":").substringBefore(',').toLong() }))
             .forEach { w.write(it); w.write("\n") }
     }
 
-    private fun elementJson(e: Element, type: Int, center: LatLon): String =
+    /** AreaPass: the whole map data of the dumped city, each element flagged with whether its quest
+     *  position is inside the city polygon (the oracle only reports those) */
+    fun dumpAreaElements(city: City, mapData: MapDataWithGeometry) {
+        if (city.index != dumpElementsCity) return
+        log("area: dumping ${city.id}'s map data, bbox ${mapData.boundingBox}")
+        for (e in mapData) {
+            val type = e.type.ordinal
+            val center = mapData.getGeometry(e.type, e.id)?.center
+            val inCity = center != null && city.polygon.contains(center.latitude, center.longitude)
+            val line = elementJson(e, type, center, inCity)
+            areaElementLines[line.substringBefore(",\"version\"")] = line
+        }
+    }
+
+    /** AreaPass: one counted quest of area quest [qi] in city [c] */
+    fun countArea(c: Int, qi: Int, e: Element, center: LatLon, aged: Boolean) {
+        val type = e.type.ordinal
+        counts.perQuest.incrementAndGet(counts.slot(c, qi, type))
+        if (aged) counts.perQuest.incrementAndGet(counts.slot(c, qi, 3))
+        if (quests[qi].name in dumpQuests) {
+            dumpLines += "${quests[qi].name}\t${TYPE_NAMES[type]}\t${e.id}\t${e.version}\t${e.timestampEdited}\t" +
+                "${cities[c].id}\t${center.latitude}\t${center.longitude}\t$aged"
+        }
+    }
+
+    private fun elementJson(e: Element, type: Int, center: LatLon?, inCity: Boolean? = null): String =
         "{\"type\":\"${TYPE_NAMES[type]}\",\"id\":${e.id},\"version\":${e.version},\"timestamp\":${e.timestampEdited}," +
             "\"tags\":${e.tags.entries.sortedBy { it.key }.joinToString(",", "{", "}") { "${jsonString(it.key)}:${jsonString(it.value)}" }}," +
             // way node ids: SC's isArea() (and so getFeature()'s geometry type) needs isClosed
             (if (e is Way) "\"nodes\":${e.nodeIds.joinToString(",", "[", "]")}," else "") +
-            "\"lat\":${center.latitude},\"lon\":${center.longitude}}"
+            (if (e is Relation) "\"members\":${e.members.joinToString(",", "[", "]") {
+                "{\"type\":\"${TYPE_NAMES[it.type.ordinal]}\",\"ref\":${it.ref},\"role\":${jsonString(it.role)}}" }}," else "") +
+            (if (inCity != null) "\"inCity\":$inCity," else "") +
+            (if (center != null) "\"lat\":${center.latitude},\"lon\":${center.longitude}" else "\"geometry\":null") + "}"
 
     // ---------------------------------------------------------------------------------------------
     // matching
@@ -194,6 +234,8 @@ class Engine(val registry: Registry, val cities: List<City>) {
             processRelations(decodeBlock(blobs[i]), memberWays)
         }
         timing("relations", t0, "")
+
+        AreaPass(this, blobs, wayStart, relStart, nodes, memberWays, areaUnit).run()
     }
 
     private fun timing(stage: String, t0: Long, note: String) {
@@ -382,14 +424,14 @@ class Engine(val registry: Registry, val cities: List<City>) {
 // -------------------------------------------------------------------------------------------------
 // helpers
 
-private fun LongArray.distinctSorted(): LongArray {
+internal fun LongArray.distinctSorted(): LongArray {
     if (isEmpty()) return this
     var n = 1
     for (i in 1 until size) if (this[i] != this[n - 1]) this[n++] = this[i]
     return copyOf(n)
 }
 
-private fun tagsOf(keys: List<Int>, vals: List<Int>, strings: Array<String>): Map<String, String> {
+internal fun tagsOf(keys: List<Int>, vals: List<Int>, strings: Array<String>): Map<String, String> {
     val m = HashMap<String, String>(keys.size * 2)
     for (i in keys.indices) m[strings[keys[i]]] = strings[vals[i]]
     return m

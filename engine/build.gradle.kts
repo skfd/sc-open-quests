@@ -42,7 +42,7 @@ application {
     mainClass.set("openquests.MainKt")
     applicationName = "sc-open-quests-engine"
     applicationDefaultJvmArgs = listOf(
-        "-Xmx16g", // see README "Memory" for the measured peak on Ontario
+        "-Xmx24g", // see README "Memory" for the measured peak on Ontario (the area pass needs more)
     ) + engineJvmArgs
 }
 
@@ -50,7 +50,7 @@ tasks.test {
     useJUnitPlatform()
     jvmArgs(engineJvmArgs)
     // the Ontario regression test runs the whole engine in-process
-    maxHeapSize = "16g"
+    maxHeapSize = "24g"
     // repo root, so that config/ and data/ paths resolve as they do for the CLI
     workingDir = rootProject.projectDir.parentFile
     // -Ppbf=<path> points the Ontario regression test elsewhere; it is skipped if the file is missing

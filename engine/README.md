@@ -1,9 +1,9 @@
 # engine
 
 Counts open StreetComplete quests per city from an OSM PBF extract by running StreetComplete's own
-element filter and geometry code on a plain JVM. Status: **milestone 1** plus 12 ported custom quests (see
-"Custom quests" below): all 138 filter quests of SC
-v63.4, 48 Ontario cities, one pass over the Ontario extract. Output format: [DATA-FORMAT.md](../DATA-FORMAT.md).
+element filter and geometry code on a plain JVM. Status: all 138 filter quests of SC v63.4 and 48 of its
+51 custom quests (see "Custom quests" and "Area quests" below), 48 Ontario cities, one pass over the
+Ontario extract plus an area pass for the quests that need surroundings. Output format: [DATA-FORMAT.md](../DATA-FORMAT.md).
 
 ## Licence
 
@@ -34,6 +34,8 @@ engine/build/install/sc-open-quests-engine/bin/sc-open-quests-engine.bat count `
   `asOf`/`asOfDate` follow it; `extractTimestamp` keeps the header's.
 - `--dump-matches <tsv> --dump-quests A,B`: every counted match of those quests with id, version,
   timestamp, city, quest position and agedOnly, for cross-checks.
+- `--dump-elements <jsonl> --dump-city <id>` and `--area-unit city`: input for the oracle, see
+  "Custom quests" and "Area quests".
 - `engine/measure.ps1 count ...` runs the installed engine from the repo root and reports wall time and
   peak working set.
 - `./gradlew.bat test` (from `engine/`): unit tests; a check that recounting the newest stored extract reproduces its committed snapshot; and the spike regression on the 2026-07-16 extract (skipped since that extract was pruned from the shared store).
@@ -46,10 +48,11 @@ dated file, not `ontario-latest.osm.pbf`. The store keeps 14 days of extracts, p
 ## How a count is made
 
 1. **Quests**: every `kind: "filter"` entry of the registry dump (`tools/sc-harness`), parsed with SC's
-   `toElementFilterExpression()`; plus the custom quests ported in `openquests/custom/` (12 of 51, see
-   below). The other 39 custom quests and the note quest are `unsupported` and not counted.
-   At start-up the engine checks that no filter matches an untagged element, then skips untagged
-   elements.
+   `toElementFilterExpression()`; plus the 12 custom quests ported in `openquests/custom/` and the 36
+   generated into `ported/` (see below). AddHousenumber, AddCycleway, AddRoofShape (they need SC's country
+   metadata) and the note quest are `unsupported` and not counted.
+   At start-up the engine checks that no filter or per-element port matches an untagged element, then
+   skips untagged elements in the main pass; the area pass sees them.
 2. **Clock**: SC's age filters (`older today -N`, `< today`) read the wall clock. The `clock` patch
    makes that clock settable; the engine sets it to the extract's replication timestamp. Dates are
    computed in the JVM's default zone, pinned to `America/Toronto` by the launcher
@@ -136,11 +139,44 @@ vendored `commonMain` helpers they use (`osm/Places.kt`, `osm/sidewalk/*`, `osm/
   The oracle uses the same dictionary over the checkout's full preset folder, also in en-CA.
   AddRoadWidth is off by default on every phone; AddMaxPhysicalHeight only on phones without AR (the dump
   records it as default-disabled because the harness mocks the AR check).
-- Not ported yet: AddAmenityCover, CheckExistence and AddIsAmenityIndoor need the feature dictionary
-  and, for some elements, the surroundings; the rest need the
-  surrounding map data (`isApplicableTo` returns null: crossings, kerbs, barriers on paths/roads,
-  housenumbers, entrances, levels, ...). For those, running SC's real `getApplicableElements()` on tiled
-  `MapDataWithGeometry` is the honest route; it also means revisiting the skip-untagged-elements shortcut.
+- The other custom quests need the surrounding map data: see "Area quests".
+
+## Area quests
+
+36 custom quests decide where they apply from the map data around an element (crossings of roads and
+footways, kerbs, entrances on building outlines, ways below bridges, nodes of ferry routes...). They are
+**generated**, not hand-transcribed: `engine/port_area_quests.py --sc <checkout> <Name>...` copies the
+quest's androidMain file, keeps the imports, everything outside the class, every non-override member and
+`getApplicableElements()` verbatim (plus `isApplicableTo()` where `getApplicableElements()` calls it), and
+writes `object <Name> : AreaQuest` into SC's own package under `src/main/kotlin/ported/`, so same-package
+helpers resolve unchanged. A `getFeature` constructor parameter becomes `ScFeatures`. Four androidMain helper
+files (FerryUtils, LevelUtils, SummitMarkingsUtil, MaxHeightUtils) are copied whole. Every file is pinned in
+`PORTED-QUESTS.txt` (helpers as `helper:<File>`); on a new SC tag, rerun the script for whatever
+`sync-sc.ps1` reports as changed, build, and recheck with the oracle. `ported/AreaQuests.kt` lists them.
+
+`AreaPass` runs after the main pass and does what `OsmQuestController.createQuestsForBBox` does after a
+download:
+
+- **Unit: one z16 tile** (`DOWNLOAD_TILE_ZOOM`, about 600 x 440 m here; SC's own `TilesRect` math). The
+  app's first download is one tile and later ones a few, sized by data density. The tile's map data is the
+  API map call's answer for its bbox: every way with a node in the tile, with all its nodes (untagged ones
+  too, with their tags, version and timestamp), the tagged nodes in it, and the tagged relations with such
+  a member. Geometry is SC's `ElementGeometryCreator` (relations from the main pass's member ways).
+- A result counts if it has geometry and its position is **inside the tile** (`mayCreateQuest`), so each
+  quest is counted once; then in the cities whose polygon holds it, where the quest is enabled. A quest
+  that returns an element twice (AddMaxHeight) gives one quest, as the app keys quests by element.
+- **agedOnly**: each tile is run again with the clock at 1900; results that disappear are agedOnly.
+- Tiles run in parallel: 184,811 non-empty tiles for the 48 cities, about 60 s for 33 quests (3 are off in
+  every Ontario city: AddEntranceReference, AddSummitCross, AddSummitRegister).
+- Edge effects of the tile unit are small: Toronto per tile vs. the whole city as one map data gave
+  AddCrossing 914 vs 913 and the same AddKerbHeight, AddEntrance and AddBarrierOnPath counts.
+- `--area-unit city` uses one map data per city (bbox padded by 1 km) instead, only for the dumped city:
+  that is the oracle's exact input. Not for snapshots: AddMaxHeight compares every road with every bridge
+  and takes many minutes on all of Toronto.
+
+**Checked against SC itself** with `tools/sc-harness` CheckCustomQuests in city mode (same map data, SC's
+own classes and geometry, `-PcheckBbox` = the engine's area bbox), Ontario 2026-10-11, all 36 quests:
+Guelph 13,027, Kingston 10,245, Barrie 6,514 quests, identical sets. @@TORONTO@@
 
 ## What still differs from the app
 
@@ -159,7 +195,14 @@ All counted quests are marked `supported`: none of the differences below is spec
 - **Default-disabled quests** (30 filter quests) are counted like the others; the site leaves them out of
   headline totals (`defaultDisabled` in quests.json). The resurvey multiplier is the app default, 1.
 
-## Timings and memory (Ontario 2026-07-16, 967 MB, 24 threads)
+## Timings and memory
+
+Ontario 2026-10-11, 24 threads, with the area pass: main pass about 17 s, area pass about 75 s (ways
+5.4 s: 4.85M ways near a city, 35.8M of their nodes; nodes 3.7 s; tiles 3.2 s; quests 61 s), process
+wall about 115 s. Peak heap about 22 GB (sum of pool peaks) with `-Xmx24g`: the area pass holds the ways
+and nodes near the cities on top of the main pass's node index.
+
+Main pass alone (Ontario 2026-07-16, 967 MB):
 
 | stage | time |
 | --- | --- |
@@ -170,7 +213,7 @@ All counted quests are marked `supported`: none of the differences below is spec
 | relations | 1.3–2.4 s |
 | **total in-process** | **17–23 s**; process wall 19–27 s |
 
-Peak heap 10.4–10.7 GB (sum of pool peaks), peak working set 11.6–12.1 GB, with `-Xmx16g`. Most of it is
+Peak heap 10.4–10.7 GB (sum of pool peaks), peak working set 11.6–12.1 GB, then with `-Xmx16g`. Most of it is
 the node index (16 bytes per node, ~2.1 GB), the blobs held in memory (~1 GB), the positions of the
 0.97M member ways of tagged relations, and garbage from building SC elements in parallel. A bigger region needs a bigger heap; the 92 GB host has room.
 

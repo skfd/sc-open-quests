@@ -14,8 +14,9 @@
   imports SC's Side enum from a Compose file; the engine stubs it in src/main/kotlin/stubs/.
 
   Custom quests are not vendored (their files hold Android UI code); their logic is transcribed into
-  src/main/kotlin/openquests/custom/ and each upstream file is pinned in PORTED-QUESTS.txt. The script
-  fails before copying anything if a pinned file changed at the requested tag.
+  src/main/kotlin/openquests/custom/ or generated into src/main/kotlin/ported/ by port_area_quests.py,
+  and each upstream file is pinned in PORTED-QUESTS.txt. The script fails before copying anything if a
+  pinned file changed at the requested tag.
 
   Patches applied after the copy (listed in SC-VERSION.txt, both hashes recorded):
     clock  util/ktx/Instant.kt: systemTimeNow() reads a settable `var systemClock: Clock`
@@ -109,6 +110,35 @@ $files = @(
     "$pkg/quests/recycling_material/RecyclingMaterial.kt"
     "$pkg/util/tree/Node.kt" # buildTree(), used by RecyclingMaterial
     "$pkg/util/ktx/FeatureDictionary.kt" # getFeature(), as the app's registry gets it
+    # map data for the quests that need surroundings (src/main/kotlin/ported/, port_area_quests.py)
+    "$pkg/data/osm/mapdata/MapDataWithGeometry.kt"
+    "$pkg/data/osm/mapdata/MutableMapDataWithGeometry.kt"
+    "$pkg/data/osm/mapdata/MutableMapData.kt"
+    "$pkg/data/osm/mapdata/MapDataXt.kt" # filter(String)
+    "$pkg/data/osm/geometry/ElementGeometryEntry.kt"
+    "$pkg/osm/WaysCrossingUtils.kt" # findNodesAtCrossingsOf()
+    "$pkg/quests/barrier_type/DetectWayBarrierIntersectionUtil.kt"
+    "$pkg/osm/kerb/KerbUtil.kt" # findAllKerbNodes(), couldBeAKerb()
+    "$pkg/data/download/tiles/TilesRect.kt" # z16 download tiles (AreaPass)
+    "$pkg/data/meta/CountryInfo.kt" # used by osm/cycleway/Cycleway.kt
+    "$pkg/osm/cycleway/Cycleway.kt"
+    "$pkg/osm/cycleway/CyclewayParser.kt"
+    "$pkg/osm/street_parking/StreetParking.kt"
+    "$pkg/osm/street_parking/StreetParkingParser.kt"
+    "$pkg/osm/oneway/Direction.kt"
+    "$pkg/osm/oneway/OnewayUtils.kt"
+    "$pkg/osm/shoulders/Shoulders.kt"
+    "$pkg/osm/shoulders/ShouldersParser.kt"
+    "$pkg/osm/ParsingUtils.kt" # expandSidesTags()
+    "$pkg/quests/barrier_type/StileTypeAnswer.kt"
+    "$pkg/util/ktx/Map.kt" # containsAll()
+    "$pkg/util/ktx/Boolean.kt" # toYesNo()
+    "$pkg/util/math/LatLonRaster.kt"
+    "$pkg/util/math/ElementGeometryMath.kt" # intersects(), isInMultipolygon()
+    "$pkg/osm/RoadWidthUtils.kt" # estimateUsableRoadwayWidth()
+    "$pkg/osm/Things.kt" # isThing()
+    "$pkg/osm/CrossingUtils.kt" # isCrossing()
+    "$pkg/data/osm/mapdata/ElementKey.kt"
 )
 
 # Data files copied from app/src/commonMain/composeResources/files/ into src/main/resources/sc/. The

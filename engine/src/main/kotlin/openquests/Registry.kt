@@ -16,7 +16,9 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import openquests.custom.CUSTOM_QUESTS
+import openquests.custom.AreaQuest
 import openquests.custom.CustomQuest
+import openquests.ported.AREA_QUESTS
 import java.io.File
 
 /** Where a quest is enabled, as SC's `enabledInCountries` (util/countryboundaries/Countries.kt). */
@@ -77,6 +79,8 @@ class QuestDef(
     val kind: String,
     val elementFilter: String?,
     val custom: CustomQuest?,
+    /** a ported custom quest that needs the surrounding map data; counted by AreaPass */
+    val area: AreaQuest?,
     /** from the dump for a filter quest, from the port for a custom quest (the dump has none) */
     val usesAge: Boolean,
     val defaultDisabled: Boolean,
@@ -90,7 +94,7 @@ class QuestDef(
     val filter: ElementFilterExpression? = elementFilter?.toElementFilterExpression()
     val matcher: QuestMatcher? = filter?.let { FilterMatcher(it) } ?: custom?.let { CustomMatcher(it) }
     val isFilter get() = filter != null
-    val isCounted get() = matcher != null
+    val isCounted get() = matcher != null || area != null
 }
 
 class Registry(val scVersion: String, val scCommit: String, val quests: List<QuestDef>) {
@@ -110,6 +114,7 @@ class Registry(val scVersion: String, val scCommit: String, val quests: List<Que
                     require(q["parsesOk"]?.jsonPrimitive?.booleanOrNull != false) { "${q.str("name")}: parsesOk=false in the dump" }
                 }
                 val custom = if (kind == "custom") CUSTOM_QUESTS[q.str("name")] else null
+                val area = if (kind == "custom") AREA_QUESTS[q.str("name")] else null
                 QuestDef(
                     index = i,
                     name = q.str("name")!!,
@@ -117,7 +122,8 @@ class Registry(val scVersion: String, val scCommit: String, val quests: List<Que
                     kind = kind,
                     elementFilter = filterString,
                     custom = custom,
-                    usesAge = custom?.usesAge ?: q["usesAge"]?.jsonPrimitive?.boolean ?: false,
+                    area = area,
+                    usesAge = custom?.usesAge ?: area?.usesAge ?: q["usesAge"]?.jsonPrimitive?.boolean ?: false,
                     defaultDisabled = q["defaultDisabled"]?.jsonPrimitive?.boolean ?: false,
                     countries = Countries.fromJson(q["enabledInCountries"]),
                     enabledInCountriesJson = q["enabledInCountries"],
@@ -128,7 +134,8 @@ class Registry(val scVersion: String, val scCommit: String, val quests: List<Que
             }
             val names = quests.map { it.name }
             require(names.toSet().size == names.size) { "duplicate quest names in ${file.path}" }
-            val unknownPorts = CUSTOM_QUESTS.keys - quests.filter { it.kind == "custom" }.map { it.name }.toSet()
+            require((CUSTOM_QUESTS.keys intersect AREA_QUESTS.keys).isEmpty()) { "quests ported twice" }
+            val unknownPorts = CUSTOM_QUESTS.keys + AREA_QUESTS.keys - quests.filter { it.kind == "custom" }.map { it.name }.toSet()
             require(unknownPorts.isEmpty()) { "ported quests that are not custom quests in ${file.path}: $unknownPorts" }
             return Registry(root.str("scVersion")!!, root.str("scCommit")!!, quests)
         }
