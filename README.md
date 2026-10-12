@@ -2,8 +2,8 @@
 
 How many [StreetComplete](https://streetcomplete.app/) quests are open in each Ontario city, by quest
 type, and how that changes day to day. Each number is what a StreetComplete user standing in that city
-would see, with the app's default settings, on a pinned app version. Live site: TBD (GitHub Pages from
-`docs/`).
+would see, with the app's default settings, on a pinned app version. Live site:
+https://skfd.github.io/sc-open-quests/ (GitHub Pages from `docs/`).
 
 This project is **read-only**: it never edits OpenStreetMap.
 
