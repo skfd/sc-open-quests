@@ -244,8 +244,8 @@ Known gaps:
   ported verbatim and pinned) for a user who wrote none of the notes, with "show all notes" off, the app's
   default: a question mark in the first comment (SC's list includes `;`) or `#surveyme` in any comment.
   `OsmNoteQuestType` is now `supported` and in the headline totals.
-- **Size of it.** Ontario 2026-10-10: 3,624 notes open, 763 of them note quests in the 48 cities; 322 of
-  7,588,287 quests hidden (AddWheelchairAccessBusiness 30, AddOpeningHours 26, CheckShopExistence 23...;
+- **Size of it.** 2026-10-10: 3,624 notes open in the clip's box (it reaches into the US), 763 of them note
+  quests, 189 inside the 48 cities (Toronto 71); 322 of 7,588,287 quests hidden (AddWheelchairAccessBusiness 30, AddOpeningHours 26, CheckShopExistence 23...;
   Toronto 120, Ottawa 95). Checked independently: the run with notes equals the run without minus exactly
   the matches whose truncated position is an open note's.
 - **A dump must reach the extract.** The dump of day D is made about 05:00 UTC and ends there; Geofabrik's
@@ -254,4 +254,5 @@ Known gaps:
   made before its dump existed is recounted once it does.
 - **History.** Snapshots record the dump in `notes`; history meta carries `notes: true` and the site marks
   the date notes start (or stop) as a break. Extracts no longer in the store (2026-07-16, 2026-10-02) keep
-  their counts without notes; the monthly backfill passes the newest clip too.
+  their counts without notes; the monthly backfill passes the newest clip too. Recounting 2026-08-22 and
+  2026-10-10 with notes also brought them the 49 custom quests they lacked.
