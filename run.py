@@ -1,15 +1,17 @@
 """Daily pipeline for sc-open-quests. Python standard library only.
 
 Subcommands:
-  download   refresh the shared Ontario extract via ~/Code/osm-extracts (it skips unchanged ones)
+  download   refresh the shared Ontario extract and the planet notes dump via ~/Code/osm-extracts
+             (it skips unchanged ones)
   count      run the engine on the newest shared extract -> docs/data/snapshots/<asOfDate>.json
-             + quests.json (skipped when a snapshot of this extract already exists)
+             + quests.json (skipped when a snapshot of this extract already exists, unless it lacks
+             notes and a notes dump now reaches it). Needs a notes dump that reaches the extract.
   backfill   count every dated Ontario extract still in the shared store
   history    rebuild docs/data/history/<cityId>.json and docs/data/cities.json from all snapshots
   update     download + count + history, then commit "data <asOfDate>" and push
 
-Extracts live in the shared store (~/Code/.osm-data, see ~/Code/osm-extracts/README.md); this project
-never downloads a PBF itself. The contract between engine, pipeline and site is DATA-FORMAT.md.
+Extracts and notes dumps live in the shared store (~/Code/.osm-data, see ~/Code/osm-extracts/README.md);
+this project never downloads them itself. A notes dump is clipped to Ontario once, into data/notes/. The contract between engine, pipeline and site is DATA-FORMAT.md.
 """
 from __future__ import annotations
 
@@ -36,6 +38,9 @@ LOCK_PATH = LOCK_DIR / "pipeline.lock"
 QUESTS_DIR = ROOT / "data" / "quests"
 CITIES_CONFIG = ROOT / "config" / "cities.json"
 DATA_DIR = ROOT / "docs" / "data"
+NOTES_DIR = ROOT / "data" / "notes"
+NOTES_POLY = ROOT / "config" / "ontario.poly"
+CLIP_NOTES = ROOT / "tools" / "clip_notes.py"
 
 ENGINE_DIR = ROOT / "engine"
 ENGINE_INSTALL = ENGINE_DIR / "build" / "install" / "sc-open-quests-engine"
@@ -121,6 +126,8 @@ def download() -> None:
     its own fetch lock, so sibling projects refreshing at the same time don't both download."""
     log(f"refreshing shared extract: {OSM_EXTRACTS_TOOL} fetch {REGION}")
     subprocess.run([sys.executable, str(OSM_EXTRACTS_TOOL), "fetch", REGION], check=True)
+    log(f"refreshing notes dump: {OSM_EXTRACTS_TOOL} fetch notes")
+    subprocess.run([sys.executable, str(OSM_EXTRACTS_TOOL), "fetch", "notes"], check=True)
 
 
 def latest_extract() -> tuple[Path, Path]:
@@ -143,6 +150,33 @@ def extract_meta(pbf: Path) -> Path:
     if not pbf.exists() or not meta.exists():
         raise FileNotFoundError(f"{pbf} or its meta is missing from the shared store")
     return meta
+
+
+# --- notes ----------------------------------------------------------------------------------------
+
+def notes_clip() -> Path | None:
+    """The Ontario clip of the newest notes dump in the shared store, made on first use. None if the
+    store has no notes dump. Older clips are deleted: each dump holds every note's whole history."""
+    latest_path = OSM_DATA_DIR / "notes" / "latest.json"
+    if not latest_path.exists():
+        return None
+    dump = OSM_DATA_DIR / "notes" / read_json(latest_path)["file"]
+    clip = NOTES_DIR / (dump.name.removesuffix(".osn.bz2") + "-ontario.jsonl")
+    if not clip.exists():
+        log(f"clipping {dump.name} to {NOTES_POLY.name}")
+        subprocess.run([sys.executable, str(CLIP_NOTES), str(dump), "--poly", str(NOTES_POLY), "--out", str(clip)],
+                       check=True)
+    for old in NOTES_DIR.glob("planet-notes-*-ontario.jsonl"):
+        if old != clip:
+            old.unlink()
+    return clip
+
+
+def notes_until(clip: Path) -> datetime:
+    """The newest comment in the dump the clip was cut from: notes are known up to then."""
+    with open(clip, encoding="utf-8") as f:
+        header = json.loads(f.readline())
+    return datetime.fromisoformat(header["until"].replace("Z", "+00:00"))
 
 
 # --- count ----------------------------------------------------------------------------------------
@@ -197,11 +231,20 @@ def count(force: bool = False, extract: tuple[Path, Path] | None = None) -> Path
     """Run the engine on one extract (default: the newest). Returns the snapshot, or None if skipped."""
     with pipeline_lock():
         pbf, meta_path = extract or latest_extract()
-        sha = read_json(meta_path)["sha256"]
+        meta = read_json(meta_path)
+        sha = meta["sha256"]
+        clip = notes_clip()
+        replicated = datetime.fromisoformat(meta["replication_timestamp"])
+        if clip is None or notes_until(clip) < replicated:
+            # the dump of the next morning reaches it; the next scheduled run counts it
+            log(f"no notes dump reaches {pbf.name} ({meta['replication_timestamp']}) yet; not counting it")
+            return None
         existing = snapshot_for_sha(sha, DATA_DIR)
         if existing and not force:
-            log(f"snapshots/{existing.name} already counts {pbf.name}; skipping (--force to redo)")
-            return None
+            if read_json(existing).get("notes"):
+                log(f"snapshots/{existing.name} already counts {pbf.name}; skipping (--force to redo)")
+                return None
+            log(f"snapshots/{existing.name} counts {pbf.name} without notes; recounting with {clip.name}")
         if engine_is_stale():
             build_engine()
         quests = newest_quests_file()
@@ -210,7 +253,8 @@ def count(force: bool = False, extract: tuple[Path, Path] | None = None) -> Path
                "--quests", str(quests.relative_to(ROOT)),
                "--cities", str(CITIES_CONFIG.relative_to(ROOT)),
                "--out", str(DATA_DIR.relative_to(ROOT)),
-               "--source-meta", str(meta_path)]
+               "--source-meta", str(meta_path),
+               "--notes", str(clip.relative_to(ROOT))]
         log("running engine: " + " ".join(cmd[1:]))
         subprocess.run(cmd, cwd=ROOT, env=engine_env(), check=True)
         snap = snapshot_for_sha(sha, DATA_DIR)
@@ -267,7 +311,8 @@ def build_history(snapshots: list[dict], city_config: list[dict], disabled: set[
             "name": names.get(cid, cid),
             "dates": [s["asOfDate"] for s, _ in rows],
             "meta": [{"scVersion": s["scVersion"], "resurveyMultiplier": s["resurveyMultiplier"],
-                      **({"areaUnit": s["areaUnit"]} if "areaUnit" in s else {})}
+                      **({"areaUnit": s["areaUnit"]} if "areaUnit" in s else {}),
+                      **({"notes": True} if s.get("notes") else {})}
                      for s, _ in rows],
             "quests": quests,
             "denominators": {
