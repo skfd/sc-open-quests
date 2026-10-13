@@ -300,6 +300,48 @@ function lineChart(target, h, series, { height = 260, showAged = true, questSetB
   return u;
 }
 
+// A row's trend: an inline SVG line over time (x by date, not index, since monthly history runs into
+// daily counts), scaled to its own min and max because the Open column carries the size. Nulls break
+// the line. The latest value gets a dot.
+const SVG = "http://www.w3.org/2000/svg";
+function sparkline(dates, values, label) {
+  const W = 96, H = 24, PAD = 3;
+  const pts = dates.map((d, i) => [dayTs(d), values[i]]).filter(([, v]) => v != null);
+  if (pts.length < 2) return null;
+  const t0 = pts[0][0], t1 = last(pts)[0];
+  let lo = Infinity, hi = -Infinity;
+  for (const [, v] of pts) { lo = Math.min(lo, v); hi = Math.max(hi, v); }
+  const x = (t) => PAD + ((t - t0) / (t1 - t0 || 1)) * (W - 2 * PAD);
+  const y = (v) => (hi === lo ? H / 2 : PAD + (1 - (v - lo) / (hi - lo)) * (H - 2 * PAD));
+  let d = "", pen = false;
+  for (let i = 0; i < dates.length; i++) {
+    const v = values[i];
+    if (v == null) { pen = false; continue; }
+    d += `${pen ? "L" : "M"}${x(dayTs(dates[i])).toFixed(1)},${y(v).toFixed(1)}`;
+    pen = true;
+  }
+  const svg = document.createElementNS(SVG, "svg");
+  svg.setAttribute("class", "spark");
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  svg.setAttribute("width", W);
+  svg.setAttribute("height", H);
+  svg.setAttribute("role", "img");
+  const first = pts[0][1], now = last(pts)[1];
+  const text = `${label}: ${nf.format(first)} on ${dates[values.findIndex((v) => v != null)]}, ` +
+    `${nf.format(now)} now (low ${nf.format(lo)}, high ${nf.format(hi)})`;
+  svg.setAttribute("aria-label", text);
+  const title = document.createElementNS(SVG, "title");
+  title.textContent = text;
+  const path = document.createElementNS(SVG, "path");
+  path.setAttribute("d", d);
+  const dot = document.createElementNS(SVG, "circle");
+  dot.setAttribute("cx", x(t1).toFixed(1));
+  dot.setAttribute("cy", y(now).toFixed(1));
+  dot.setAttribute("r", 2.5);
+  svg.append(title, path, dot);
+  return svg;
+}
+
 window.addEventListener("resize", () => {
   for (const { u, target } of charts) if (target.isConnected) u.setSize({ width: Math.max(280, target.clientWidth), height: u.height });
 });
@@ -425,6 +467,7 @@ function renderQuestTable(h) {
       el("td", {}, el("div", { class: "quest-cell" }, questIcon(r.q.name),
         el("div", {}, link, r.q.defaultDisabled ? el("span", { class: "chip", title: "Off by default in the app" }, "off by default") : null,
           el("span", { class: "code" }, r.q.name)))),
+      el("td", { class: "c-trend" }, r.counted ? sparkline(h.dates, h.quests[r.q.name].open, name) : null),
       el("td", { class: "num" }, r.open == null ? "—" : nf.format(r.open)),
       el("td", { class: "num" }, r.isNew ? "new" : r.delta == null ? "—" : signed(r.delta)),
       el("td", { class: "num" }, r.agedShare == null ? "—" : `${Math.round(100 * r.agedShare)}%`),
@@ -502,14 +545,20 @@ async function renderCompare() {
   const barKey = key === "name" ? "perKm2" : key;
   const max = Math.max(0, ...rows.map((r) => r[barKey === "open" ? "open" : barKey] || 0));
   const fmt = (v, f) => (v == null ? "—" : f.format(v));
+  // cities.json carries totals over time, not each quest's, so the trend column is for all quests only
+  const trends = !state.compareQuest && cities.dates;
+  for (const th of document.querySelectorAll("#compare-table th.c-trend")) th.hidden = !trends;
   $("#compare-sub").textContent = `${state.compareQuest ? humanize(state.compareQuest) : "All counted quests" +
     (state.includeDisabled ? ", including those off by default" : "")}, ${cities.asOfDate}. ` +
-    "Raw counts follow city size, so the table ranks by density. Click a column to rank by it; the bar shows the ranked column.";
+    "Raw counts follow city size, so the table ranks by density. Click a column to rank by it; the bar shows the ranked column." +
+    (state.compareQuest && cities.dates ? " Trends are shown for all counted quests only." : "");
   $("#compare-table tbody").replaceChildren(...rows.map((r, i) => {
     const v = r[barKey];
+    const trend = trends && (state.includeDisabled ? r.c.trendAll : r.c.trend);
     return el("tr", { class: r.c.id === state.city ? "picked" : null },
       el("td", { class: "num" }, i + 1),
       el("td", {}, el("a", { href: "#", onclick: (e) => { e.preventDefault(); state.city = r.c.id; $("#city").value = r.c.id; setView("city"); } }, r.c.name)),
+      trends ? el("td", { class: "c-trend" }, trend ? sparkline(cities.dates, trend, r.c.name) : null) : null,
       el("td", { class: "num" }, fmt(r.open, nf)),
       el("td", { class: "num" }, rate(r.perKm2)),
       el("td", { class: "num" }, rate(r.perRoadKm)),

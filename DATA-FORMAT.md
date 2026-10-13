@@ -155,13 +155,16 @@ under that SC version, or new in a later one) is `null` at that index, never 0. 
 
 ```jsonc
 { "asOfDate": "2026-07-16", "scVersion": "63.4", "resurveyMultiplier": 1,   // newest snapshot
+  "dates": ["2026-07-16"],                                                  // every snapshot, ascending
   "cities": [ {                                                             // sorted by name
     "id": "toronto", "name": "Toronto", "asOfDate": "2026-07-16", "scVersion": "63.4",
     "landAreaKm2": 665.9, "population": null, "highwayKm": 0.0,
     "open": 0,          // headline: counted quests, default-disabled excluded
     "agedOnly": 0,      // of `open`
     "openAll": 0,       // default-disabled included
-    "questsCounted": 0
+    "questsCounted": 0,
+    "trend": [0],       // `open` on each of `dates`; null where the city wasn't counted
+    "trendAll": [0]     // the same for `openAll`
 } ] }
 ```
 

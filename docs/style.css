@@ -166,6 +166,10 @@ table.data tr.picked td { background: var(--wash); }
 .quest-cell a:hover { text-decoration: underline; color: var(--link); }
 .code { display: block; color: var(--muted); font-size: 0.76rem; }
 .c-pick { width: 28px; }
+.c-trend { width: 112px; }
+.spark { display: block; overflow: visible; }
+.spark path { fill: none; stroke: var(--muted); stroke-width: 1.5; stroke-linejoin: round; stroke-linecap: round; }
+.spark circle { fill: var(--series-1); }
 .up { color: var(--bad); }
 .down { color: var(--good); }
 

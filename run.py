@@ -293,6 +293,13 @@ def default_disabled(data_dir: Path) -> set[str]:
     return {q["name"] for q in read_json(path)["quests"] if q.get("defaultDisabled")}
 
 
+def total_open(city: dict, leave_out: set[str]) -> int | None:
+    """Open quests in one city's snapshot entry over the quests not left out; None if none has a count."""
+    counts = [q.get("open") for k, q in city["quests"].items() if k not in leave_out]
+    counts = [n for n in counts if n is not None]
+    return sum(counts) if counts else None
+
+
 def build_history(snapshots: list[dict], city_config: list[dict], disabled: set[str]) -> dict:
     """Turn snapshots into {"history": {cityId: series}, "cities": index}.
 
@@ -331,6 +338,12 @@ def build_history(snapshots: list[dict], city_config: list[dict], disabled: set[
         }
         history[cid] = series
         headline = {k: v for k, v in last["quests"].items() if k not in disabled}
+        # totals on every snapshot date, null where the city wasn't counted, for the site's sparklines
+        by_date = {s["asOfDate"]: c for s, c in rows}
+        trend = [total_open(by_date[s["asOfDate"]], disabled) if s["asOfDate"] in by_date else None
+                 for s in snapshots]
+        trend_all = [total_open(by_date[s["asOfDate"]], set()) if s["asOfDate"] in by_date else None
+                     for s in snapshots]
         index.append({
             "id": cid,
             "name": series["name"],
@@ -343,11 +356,14 @@ def build_history(snapshots: list[dict], city_config: list[dict], disabled: set[
             "agedOnly": sum(q.get("agedOnly") or 0 for q in headline.values()),
             "openAll": sum(q.get("open") or 0 for q in last["quests"].values()),
             "questsCounted": len(last["quests"]),
+            "trend": trend,
+            "trendAll": trend_all,
         })
     index.sort(key=lambda c: c["name"])
     latest = snapshots[-1] if snapshots else {}
     cities = {"asOfDate": latest.get("asOfDate"), "scVersion": latest.get("scVersion"),
-              "resurveyMultiplier": latest.get("resurveyMultiplier"), "cities": index}
+              "resurveyMultiplier": latest.get("resurveyMultiplier"),
+              "dates": [s["asOfDate"] for s in snapshots], "cities": index}
     return {"history": history, "cities": cities}
 
 
@@ -365,7 +381,7 @@ def history(data_dir: Path = DATA_DIR, cities_config: Path = CITIES_CONFIG) -> i
         if stale.stem not in out["history"]:
             stale.unlink()
             changed += 1
-    changed += write_json(data_dir / "cities.json", out["cities"])
+    changed += write_json(data_dir / "cities.json", out["cities"], compact=True)
     log(f"history: {len(out['history'])} cities over {len(snapshots)} snapshot(s), {changed} file(s) changed")
     return changed
 

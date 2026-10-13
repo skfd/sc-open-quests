@@ -67,6 +67,15 @@ class HistoryTest(unittest.TestCase):
         self.assertEqual(t["highwayKm"], 102.0)
         self.assertEqual(t["questsCounted"], 3)
 
+    def test_city_index_trends_cover_every_snapshot_date(self):
+        idx = self.load("cities.json")
+        self.assertEqual(idx["dates"], ["2026-07-16", "2026-07-17", "2026-07-18"])
+        ottawa, toronto = idx["cities"]
+        self.assertEqual(ottawa["trend"][0], None)   # not in the first snapshot
+        self.assertEqual(toronto["trend"][-1], toronto["open"])
+        self.assertEqual(toronto["trendAll"][-1], toronto["openAll"])
+        self.assertEqual(toronto["trend"][1], 9 + 6 + 4)   # AddC counted that day only
+
     def test_rerun_changes_nothing(self):
         before = {p: p.read_bytes() for p in self.data.rglob("*.json")}
         self.assertEqual(run.history(self.data, self.config), 0)
