@@ -12,6 +12,7 @@ import openquests.ported.AREA_QUESTS
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 /** The quests that ask SC's country metadata (getCountryInfoByLocation). */
 class CountryInfoQuestsTest {
@@ -26,6 +27,18 @@ class CountryInfoQuestsTest {
         assertFalse(info.isLeftHandTraffic)
         // Gatineau, across the river from Ottawa
         assertEquals(listOf("CA-QC", "CA"), ScCountryInfos.countryBoundaries.getIds(LatLon(45.4765, -75.7013)))
+    }
+
+    @Test fun `country info for Berlin, Hamburg and Bremen is SC's DE and default metadata`() {
+        for (p in listOf(LatLon(52.5163, 13.3777), LatLon(53.5503, 9.9930), LatLon(53.0758, 8.8072))) {
+            // SC's countryboundaries data has no German subdivisions (no DE-BE, DE-HH, DE-HB)
+            assertEquals(listOf("DE"), ScCountryInfos.countryBoundaries.getIds(p), "$p")
+            val info = ScCountryInfos.getCountryInfoByLocation(p)
+            assertEquals("DE", info.countryCode)
+            assertEquals(listOf("de"), info.officialLanguages) // DE.yml
+            assertTrue(info.hasAdvisoryCycleLane) // DE.yml; default.yml says false
+            assertFalse(info.roofsAreUsuallyFlat) // default.yml
+        }
     }
 
     private fun mapData(vararg elements: Any): MutableMapDataWithGeometry {

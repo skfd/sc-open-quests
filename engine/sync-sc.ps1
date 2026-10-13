@@ -163,12 +163,15 @@ $resources = @(
     'osmfeatures/default/presets.json'
     'osmfeatures/default/en.json'
     'osmfeatures/default/en-CA.json'
-    # SC's country boundaries and the country metadata an Ontario position reads (CA-ON, CA, default).
-    # Positions elsewhere (Quebec, US) get only default.yml here; quests there are not counted.
+    # SC's country boundaries and the country metadata positions in Ontario and the German city-states
+    # (Berlin, Hamburg, Bremen) read: CA-ON, CA, DE, then default. SC has no DE-* metadata, and its
+    # boundaries give German positions only the id DE. Positions elsewhere (Quebec, US) get only
+    # default.yml here; quests there are not counted.
     'boundaries.ser'
     'country_metadata/default.yml'
     'country_metadata/CA.yml'
     'country_metadata/CA-ON.yml'
+    'country_metadata/DE.yml'
 )
 
 # Custom quests live in SC's androidMain next to their Android forms, so they are not vendored: their

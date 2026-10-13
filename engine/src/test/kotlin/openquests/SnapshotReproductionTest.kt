@@ -22,7 +22,10 @@ import kotlin.test.assertTrue
 class SnapshotReproductionTest {
     @Test fun `recounting a stored extract reproduces its committed snapshot`() {
         val store = File(System.getProperty("openquests.osmData") ?: "", "ontario")
-        val snapshots = File("docs/data/snapshots")
+        val snapshots = File("docs/data/ontario/snapshots")
+        // the Ontario cities only (run.py cuts them from config/cities.json): one engine run is one time zone
+        val cities = File("data/cities/ontario.json")
+        assumeTrue(cities.isFile, "no $cities; run.py count writes it")
         val pair = store.listFiles { f -> f.name.matches(Regex("""ontario-\d{4}-\d{2}-\d{2}\.osm\.pbf""")) }
             .orEmpty().sortedByDescending { it.name }
             .map { it to File(snapshots, it.name.removePrefix("ontario-").removeSuffix(".osm.pbf") + ".json") }
@@ -40,7 +43,7 @@ class SnapshotReproductionTest {
         val result = count(CountOptions(
             pbf = pbf,
             quests = File("data/quests/v${snapshot["scVersion"]!!.jsonPrimitive.content}.json"),
-            cities = File("config/cities.json"),
+            cities = cities,
             out = null,
             notes = clip,
         ))

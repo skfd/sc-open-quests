@@ -101,6 +101,7 @@ data files (from app/src/commonMain/composeResources/files/ into src/main/resour
   1f8c09404038ef2a570529dee899dc43c853cfa27b8c20d2dd05a1c83f359368  country_metadata/default.yml
   deab3d5fec2537634c5067aed554fe6d5783f81ff78b5f03ad509cd2d0d15fa9  country_metadata/CA.yml
   85bfedebfd7997a6ccd8b24fb3969d0819f7db34263a8e1830aad36935501883  country_metadata/CA-ON.yml
+  910368ee540440acb3df27e8fdf474058f655120ea97d1004974006b024e6b71  country_metadata/DE.yml
 ported custom quests (sha256 of the androidMain file with LF line endings; logic in src/main/kotlin/openquests/custom/):
   9e5733e39e8547bba62a503d4d82e02a07b66361a2a09008d646b9c3307798c8  quests/sidewalk/AddSidewalk.kt  (AddSidewalk)
   f7576cee96a9046906076986ddf95804d040efe73f971192431154fbf793c5d8  quests/opening_hours/AddOpeningHours.kt  (AddOpeningHours)

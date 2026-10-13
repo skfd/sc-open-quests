@@ -56,7 +56,10 @@ dated file, not `ontario-latest.osm.pbf`. The store keeps 14 days of extracts, p
 2. **Clock**: SC's age filters (`older today -N`, `< today`) read the wall clock. The `clock` patch
    makes that clock settable; the engine sets it to the extract's replication timestamp. Dates are
    computed in the JVM's default zone, pinned to `America/Toronto` by the launcher
-   (`-Duser.timezone`); the engine refuses to run if a city's `timeZone` differs.
+   (`-Duser.timezone`); the engine refuses to run if a city's `timeZone` differs. Cities in another
+   zone (Berlin, Hamburg, Bremen: `Europe/Berlin`) need their own run, with
+   `JAVA_OPTS=-Duser.timezone=Europe/Berlin` (the launcher puts `JAVA_OPTS` after its defaults, and the
+   last `-D` wins).
 3. **agedOnly**: each match of a `usesAge` quest is re-evaluated on the same thread with the clock at
    1900-01-01, where every `older today -N` and `x < today` test is false. Matches that disappear are
    `agedOnly`. Besides `older`, this catches four date-tag comparisons with today: `opening_date < today`
@@ -68,7 +71,9 @@ dated file, not `ontario-latest.osm.pbf`. The store keeps 14 days of extracts, p
    ids `CA-ON` and `CA` (checked by a test against SC's `boundaries.ser` for 47 of the 48 cities), so
    a quest listing only `CA-ON` is on and one excluding `CA` is off. 11 filter quests are off in every
    city. SC also skips a quest type when the download bbox does not intersect its countries; that is
-   redundant for cities wholly inside CA-ON.
+   redundant for cities wholly inside CA-ON. A German position gets only the id `DE` (SC's data has no
+   German subdivisions), so a German city's `countryCodes` should be `["DE"]`; no SC v63.4 quest lists
+   a `DE-*` code.
 5. **Quest position** from SC's own `ElementGeometryCreator` (vendored): a node is its position; a way
    with fewer than 2 distinct positions or a missing node has no geometry (no quest); a closed way that
    `isArea()` (SC's `IS_AREA_EXPRESSION`) gets the polygon centroid, any other way the point at half its
@@ -187,15 +192,21 @@ download:
 **Country metadata** (AddHousenumber, AddCycleway, AddRoofShape). The app hands these quests
 `{ countryInfos.get(countryBoundaries, it) }`. `ScCountryInfos` is that call, built from SC's own parts:
 - the region ids that SC's countryboundaries data (`boundaries.ser`, library `de.westnordost:countryboundaries:3.0.0`)
-  gives for the position, smallest region first: `CA-ON`, `CA` in Ontario;
-- SC's `CountryInfos` and `CountryInfo`, vendored unchanged. They merge `CA-ON.yml`, `CA.yml` and
-  `default.yml` with kaml 0.104.0, as SC does.
+  gives for the position, smallest region first: `CA-ON`, `CA` in Ontario; only `DE` in Germany, since
+  SC's data has no German subdivisions;
+- SC's `CountryInfos` and `CountryInfo`, vendored unchanged. They merge the yml of each id that has one
+  (`CA-ON.yml`, `CA.yml`; `DE.yml`) and then `default.yml`, each field from the first file that sets it,
+  with kaml 0.104.0, as SC does. SC v63.4 has no `DE-*.yml`.
 
-`sync-sc.ps1` bundles `boundaries.ser` and those three yml files. A position outside Ontario (Gatineau,
-Michigan) reads `default.yml` only, but no quest is counted there. The values the three quests read are:
-- `roofsAreUsuallyFlat`: false (default.yml), so AddRoofShape asks for every building with levels;
-- the cycleway-ambiguity fields;
-- `countryCode`, which AddHousenumber only uses in the answer.
+`sync-sc.ps1` bundles `boundaries.ser` and those four yml files. A position outside Ontario and Germany
+(Gatineau, Michigan) reads `default.yml` only, but no quest is counted there. The values the three
+quests read are:
+- `roofsAreUsuallyFlat`: false (default.yml; neither CA nor DE sets it), so AddRoofShape asks for every
+  building with levels;
+- the cycleway-ambiguity fields: `hasAdvisoryCycleLane` is false in Ontario (default.yml) but true in
+  Germany (DE.yml), where a `cycleway=lane` without `cycleway:lane` is ambiguous and gets AddCycleway;
+- `countryCode` (`CA`, `DE`), which AddCycleway compares with BE/NL and AddHousenumber only uses in the
+  answer.
 
 **Checked against SC itself** with `tools/sc-harness` CheckCustomQuests in city mode (same map data, SC's
 own classes and geometry, `-PcheckBbox` = the engine's area bbox), Ontario 2026-10-11, all 36 quests:
@@ -282,7 +293,7 @@ All counted quests are marked `supported`: none of the differences below is spec
   relations such as `public_transport=stop_area`, relations of sub-relations). SC gives them no geometry
   either, so they get no quest in the app; this is not an engine gap.
 - **Country gating** is evaluated per city, not per element position. Exact while every city lies inside
-  CA-ON.
+  one region (CA-ON, or DE).
 - **Default-disabled quests** (30 filter quests) are counted like the others; the site leaves them out of
   headline totals (`defaultDisabled` in quests.json). The resurvey multiplier is the app default, 1.
 

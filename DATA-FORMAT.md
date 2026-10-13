@@ -6,14 +6,20 @@ This is the contract between the engine (writes snapshots), the pipeline (keeps 
 ## Inputs
 
 - `data/quests/v<SC>.json`: the quest registry dumped from the StreetComplete build (`tools/sc-harness`).
+- `config/regions.json`: `{ "regions": [ { id, name, group, timeZone, poly, source } ] }`, one per
+  Geofabrik extract in the shared store (`id` is the osm-extracts region: ontario, berlin, hamburg,
+  bremen). `group` heads the city selector ("Ontario", "Germany"); `source` names the extract in the
+  footer; `poly` is Geofabrik's `.poly` of the extract, used to clip notes and the planet history.
 - `config/cities.json`: `{ "cities": [ { id, name, relation, adminLevel, countryCodes: ["CA","CA-ON"],
-  timeZone, population, landAreaKm2, boundary } ] }`. `boundary` is a path to an Overpass `out geom`
-  relation element. Adding a city means adding an entry and its boundary file
-  (`tools/import_farmland_cities.py` makes both for the ontario-farmland set).
+  timeZone, population, landAreaKm2, boundary, region } ] }`. `boundary` is a path to an Overpass `out geom`
+  relation element; `region` is the region whose extract holds the city, and its `timeZone` must be the
+  region's. Adding a city means adding an entry and its boundary file (`tools/add_city.py <relation>`
+  makes both; `tools/import_farmland_cities.py` made the ontario-farmland set). The engine gets the
+  region's cities only (`data/cities/<region>.json`, cut by `run.py`).
 - An `.osm.pbf` extract with timestamps. Its header `osmosis_replication_timestamp` is the snapshot's
   **as-of** time.
-- A notes clip (`tools/clip_notes.py`, in `data/notes/`, not committed): the notes of the planet notes dump
-  inside `config/ontario.poly`'s bounding box, open or closed, with every comment. JSON lines; the first is
+- A notes clip per region (`tools/clip_notes.py`, in `data/notes/`, not committed): the notes of the planet
+  notes dump inside the region's poly's bounding box, open or closed, with every comment. JSON lines; the first is
   a header `{"schema":1,"source":"planet-notes-261011.osn.bz2","sha256":…,"until":"<newest comment in the
   dump>","bbox":[minLon,minLat,maxLon,maxLat],"poly":"ontario.poly","notes":<count>}`, then one note per
   line by id: `{"id":…,"lat":"43.6532100","lon":"-79.3832000","created":…,"comments":[{"action":"opened",
@@ -21,8 +27,10 @@ This is the contract between the engine (writes snapshots), the pipeline (keeps 
 
 ## Engine output: one snapshot per extract
 
-`docs/data/snapshots/<asOfDate>.json`, where `asOfDate` is the extract's replication date in the cities'
-time zone (`YYYY-MM-DD`).
+`docs/data/<region>/snapshots/<asOfDate>.json`, where `asOfDate` is the extract's replication date in the
+cities' time zone (`YYYY-MM-DD`). The engine runs once per region, with `--out docs/data/<region>`, so each
+region has its own snapshot of a date, holding only its cities. It also writes
+`docs/data/<region>/quests.json` (not committed), which `run.py history` merges into `docs/data/quests.json`.
 
 ```jsonc
 {
@@ -97,7 +105,8 @@ without `area=yes`, whose position is in the city; great-circle length on a 6371
 
 ## Quest metadata for the site
 
-`docs/data/quests.json`, rewritten each run from the registry dump:
+`docs/data/quests.json`, rewritten each run by `run.py history` from the regions' `quests.json` (the
+newest registry; `status` holds every region's cities):
 
 ```jsonc
 { "scVersion": "63.4", "scCommit": "244c6873…", "quests": [ {   // registry order, one quest per line
@@ -127,7 +136,7 @@ Headline totals on the site exclude `defaultDisabled` quests; the per-quest numb
 
 ## Tile grids for heatmaps
 
-`data/grid/<asOfDate>.json.gz` (gzipped, not committed: about 0.5 MB each, 152k cells on 2026-10-10), written with the snapshot when
+`data/grid/<region>/<asOfDate>.json.gz` (gzipped, not committed: about 0.5 MB each, 152k cells on 2026-10-10), written with the snapshot when
 the engine gets `--grid`: `{"asOfDate":…,"zoom":14,"quests":{"AddBenchBackrest":[[x,y,n],…]}}`. Each cell is
 a z14 slippy-map tile (SC's `enclosingTilePos`) and the number of that quest's counted quests whose
 position is in it, summed over the cities (what `open` counts: default multiplier, notes applied). Quests
@@ -135,7 +144,7 @@ by name, cells by x then y; a quest with nothing counted is absent.
 
 ## Series for the site
 
-`docs/data/history/<cityId>.json` is rebuilt from all snapshots on every run:
+`docs/data/history/<cityId>.json` is rebuilt from all regions' snapshots on every run:
 
 ```jsonc
 { "city": "toronto", "name": "Toronto",
@@ -155,9 +164,11 @@ under that SC version, or new in a later one) is `null` at that index, never 0. 
 
 ```jsonc
 { "asOfDate": "2026-07-16", "scVersion": "63.4", "resurveyMultiplier": 1,   // newest snapshot
-  "dates": ["2026-07-16"],                                                  // every snapshot, ascending
-  "cities": [ {                                                             // sorted by name
-    "id": "toronto", "name": "Toronto", "asOfDate": "2026-07-16", "scVersion": "63.4",
+  "dates": ["2026-07-16"],                       // every snapshot date of any region, ascending, once each
+  "regions": [ { "id": "ontario", "name": "Ontario", "group": "Ontario", "source": "Geofabrik Ontario" } ],
+                                                  // config/regions.json, in its order
+  "cities": [ {                                   // sorted by name
+    "id": "toronto", "name": "Toronto", "region": "ontario", "asOfDate": "2026-07-16", "scVersion": "63.4",
     "landAreaKm2": 665.9, "population": null, "highwayKm": 0.0,
     "open": 0,          // headline: counted quests, default-disabled excluded
     "agedOnly": 0,      // of `open`
@@ -168,7 +179,8 @@ under that SC version, or new in a later one) is `null` at that index, never 0. 
 } ] }
 ```
 
-Per-quest comparisons across cities read the newest snapshot directly.
+Per-quest comparisons across cities read each city's newest snapshot directly
+(`<region>/snapshots/<asOfDate>.json`).
 
 Rerunning on the same extract rewrites the same snapshot file byte for byte, apart from `runSeconds` and
 `engineCommit`.
