@@ -42,6 +42,14 @@ Milestone 1 is done and the site is live at https://skfd.github.io/sc-open-quest
 all 176 quest types of SC v63.4 that the app offers there (14 more are not offered in Ontario), monthly from 2017-01 and daily since 2026-10. `kk-SCOpenQuests` runs daily
 at 13:15. Design and known gaps are in DESIGN.md.
 
+**Germany's city-states joined on 2026-10-13** (DESIGN.md, "Regions"): Berlin, Hamburg, Bremen and
+Bremerhaven, because Ontario's totals barely move and Germany is where SC is used most. Each region is a
+Geofabrik extract (`config/regions.json`); the daily run counts all four regions. Their monthly history
+was counted that evening by `.scratch/germany-backfill.sh` (log: `logs/germany-backfill.log`, about 45 s
+a Berlin month); it commits "data 2017-01-01 to 2026-10-01: monthly history of Berlin, …" locally and the
+next scheduled run pushes it. Check that commit exists and the German lines go down; if the log ends in an
+error, rerun the script (every step skips what is done).
+
 Next, in order:
 1. **Check the first scheduled runs.** A run on 2026-10-12 00:50 committed and pushed "data 2026-10-11"
    (`logs/scheduler.log`). The 13:15 slot fired on its own on 2026-10-12 (no new extract, exit 0); still
