@@ -102,7 +102,14 @@ fun snapshotJson(meta: SnapshotMeta, engine: Engine): String {
             sb.append("\"open\": ${counts.open(c, qi)}, ")
             sb.append("\"nodes\": ${counts.get(c, qi, NODE)}, \"ways\": ${counts.get(c, qi, WAY)}, ")
             sb.append("\"relations\": ${counts.get(c, qi, RELATION)}, ")
-            sb.append("\"agedOnly\": ${counts.agedOnly(c, qi)} }")
+            sb.append("\"agedOnly\": ${counts.agedOnly(c, qi)}")
+            val q = engine.quests[qi]
+            if (q.usesAge) {
+                sb.append(", \"open05\": ${counts.get(c, qi, OPEN_05)}, \"aged05\": ${counts.get(c, qi, AGED_05)}")
+                sb.append(", \"open2\": ${counts.get(c, qi, OPEN_2)}, \"aged2\": ${counts.get(c, qi, AGED_2)}")
+            }
+            if (q.countsNotes) sb.append(", \"openAllNotes\": ${counts.get(c, qi, ALL_NOTES)}")
+            sb.append(" }")
             sb.append(if (k < counted.size - 1) ",\n" else "\n")
         }
         sb.append("      }\n")

@@ -93,6 +93,8 @@ class NotesClip(val source: NotesSource, val notes: List<NoteHistory>) {
  */
 class OpenNotes(val source: NotesSource, val open: List<Note>, val showAllNotes: Boolean = false) {
     val quests: List<Note> = open.filter { it.shouldShowAsQuest(NOBODY, !showAllNotes) }
+    /** the note quests with the app's other setting, "show all notes" */
+    val allQuests: List<Note> = open.filter { it.shouldShowAsQuest(NOBODY, false) }
     val hiddenPositions: Set<LatLon> = open.mapTo(HashSet()) { it.position.truncateTo6Decimals() }
 
     fun hides(position: LatLon): Boolean = position.truncateTo6Decimals() in hiddenPositions

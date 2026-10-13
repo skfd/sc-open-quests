@@ -39,6 +39,7 @@ QUESTS_DIR = ROOT / "data" / "quests"
 CITIES_CONFIG = ROOT / "config" / "cities.json"
 DATA_DIR = ROOT / "docs" / "data"
 NOTES_DIR = ROOT / "data" / "notes"
+GRID_DIR = ROOT / "data" / "grid"  # counted quests per z14 tile, <asOfDate>.json.gz; not committed
 NOTES_POLY = ROOT / "config" / "ontario.poly"
 CLIP_NOTES = ROOT / "tools" / "clip_notes.py"
 
@@ -258,7 +259,8 @@ def count(force: bool = False, extract: tuple[Path, Path] | None = None) -> Path
                "--cities", str(CITIES_CONFIG.relative_to(ROOT)),
                "--out", str(DATA_DIR.relative_to(ROOT)),
                "--source-meta", str(meta_path),
-               "--notes", str(clip.relative_to(ROOT))]
+               "--notes", str(clip.relative_to(ROOT)),
+               "--grid", str(GRID_DIR.relative_to(ROOT))]
         log("running engine: " + " ".join(cmd[1:]))
         subprocess.run(cmd, cwd=ROOT, env=engine_env(), check=True)
         snap = snapshot_for_sha(sha, DATA_DIR)

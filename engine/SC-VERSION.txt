@@ -2,8 +2,9 @@
 # rerun the script instead. StreetComplete is GPL-3.0 (see src/main/kotlin/sc/LICENSE).
 tag=v63.4
 commit=244c6873330de8de1829ff287bbfdef4cb5c96b5
-patches=clock
+patches=clock,multiplier
   clock: util/ktx/Instant.kt: systemTimeNow() reads a settable `var systemClock: Clock` (default Clock.System)
+  multiplier: data/elementfilter/filters/RelativeDate.kt: MULTIPLIER reads a thread-local override first (`multiplierOverride`)
 files (sha256 of the copied file; patched files also give the upstream sha256):
   b5dc8154ec673f1522c129131ace62d6ea6913e8f8afb8e8242fac1549b0d1ed  de/westnordost/streetcomplete/data/elementfilter/BooleanExpression.kt
   af9ee66cfc6e286bbf6c4bf76ff43f7fde01bd04454fe529528db13d8fceecac  de/westnordost/streetcomplete/data/elementfilter/BooleanExpressionBuilder.kt
@@ -14,7 +15,7 @@ files (sha256 of the copied file; patched files also give the upstream sha256):
   a9baa599c3fbd98567eb6053bb69307f07208b248c7be87fd59932326ccafb2a  de/westnordost/streetcomplete/data/elementfilter/filters/ElementFilter.kt
   f746e0a417dc7e7502a171c13fe3ecf7a4a6242edf14801e7e335aa990a3c69a  de/westnordost/streetcomplete/data/elementfilter/filters/ElementFilterOverpass.kt
   58e34a334b19a281128b8965f060aeb4f330d283d3930db027554296912a1b7e  de/westnordost/streetcomplete/data/elementfilter/filters/RegexOrSet.kt
-  f6da2f00099378edf1cfd31c48dff80de7c7a517a83b5e1c6dd608b07f17ef09  de/westnordost/streetcomplete/data/elementfilter/filters/RelativeDate.kt
+  25a6ef40b5c0b490c07c5358e9a6f873bab26d6f98c07306bbf6fc0919d0ab9d  de/westnordost/streetcomplete/data/elementfilter/filters/RelativeDate.kt  (patch multiplier; upstream f6da2f00099378edf1cfd31c48dff80de7c7a517a83b5e1c6dd608b07f17ef09)
   ec55048ad97258992c99a3618dcafb097b63052b1597d2b6c5f71b45e65ebe12  de/westnordost/streetcomplete/data/osm/mapdata/Element.kt
   1fd01cd36bb3ed130b1bb7c80577d887122ea26d15a8638b6196de7c159cb5bf  de/westnordost/streetcomplete/osm/ResurveyUtils.kt
   0d2c60bd8166e130b9fb5bb4f589779ccd649918fd4198045ab2e61f4f1a1042  de/westnordost/streetcomplete/osm/TagsUtils.kt
@@ -157,4 +158,4 @@ ported custom quests (sha256 of the androidMain file with LF line endings; logic
   eab24777688cd718836969465a089a03c72f4c452898395f5cecb2603c8eb015  quests/address/AddHousenumber.kt  (AddHousenumber)
   48a0903ba1a7dfc8f500beb45bc487c3a3f8bf071c59ac14f362c47511575742  quests/cycleway/AddCycleway.kt  (AddCycleway)
   0d61a25ae9963b681a585f204b0fecb95ebe013fd9100bc0f02decdef00c5649  quests/roof_shape/AddRoofShape.kt  (AddRoofShape)
-  51cd47d14ef18dff1b39cde6e58ba1e43d19cfec1d3d60e706aca28c1b635d5e  cm:data/osmnotes/notequests/OsmNoteQuestController.kt  (OsmNoteQuest)
+  51cd47d14ef18dff1b39cde6e58ba1e43d19cfec1d3d60e706aca28c1b635d5e  cm:data/osmnotes/notequests/OsmNoteQuestController.kt  (helper:OsmNoteQuest)

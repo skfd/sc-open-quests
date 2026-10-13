@@ -21,9 +21,45 @@ import kotlin.math.roundToLong
 const val NODE = 0
 const val WAY = 1
 const val RELATION = 2
-/** Counts slot of the note quest's notes (the per-quest slots are nodes, ways, relations, agedOnly, notes) */
+/** Counts slots per (city, quest): nodes, ways, relations, agedOnly (all at the default resurvey
+ *  multiplier 1); the note quest's notes; open and agedOnly at the other two resurvey settings of the
+ *  app (ResurveyIntervals: 0.5 "more often", 2 "less often"); the note quest with "show all notes". */
+const val AGED = 3
 const val NOTE = 4
-private const val SLOTS = 5
+const val OPEN_05 = 5
+const val OPEN_2 = 6
+const val AGED_05 = 7
+const val AGED_2 = 8
+const val ALL_NOTES = 9
+private const val SLOTS = 10
+
+/** Bits of a match, from [matchVariants] */
+const val M_NOW = 1
+const val M_AGED = 2
+const val M_05 = 4
+const val M_AGED_05 = 8
+const val M_2 = 16
+const val M_AGED_2 = 32
+
+/**
+ * Evaluates one quest on one element for every variant that is counted: at the default resurvey
+ * multiplier, and (for a quest that [usesAge]) at 0.5 and 2; each match is agedOnly if it does not
+ * hold at [EngineClock.LONG_AGO], where every `older today -N` test is false whatever the multiplier.
+ * Every variant runs [test] itself: `newer` tests make the variants no subsets of each other.
+ */
+inline fun matchVariants(usesAge: Boolean, test: () -> Boolean): Int {
+    val now = test()
+    if (!usesAge) return if (now) M_NOW else 0
+    val m05 = Resurvey.at(0.5f, test)
+    val m2 = Resurvey.at(2f, test)
+    if (!now && !m05 && !m2) return 0
+    val past = EngineClock.at(EngineClock.LONG_AGO, test)
+    var r = 0
+    if (now) r = r or M_NOW or (if (past) 0 else M_AGED)
+    if (m05) r = r or M_05 or (if (past) 0 else M_AGED_05)
+    if (m2) r = r or M_2 or (if (past) 0 else M_AGED_2)
+    return r
+}
 private val TYPE_NAMES = listOf("node", "way", "relation")
 
 /** Ways that count towards the `highwayKm` denominator: the road network a car or bike quest
@@ -36,7 +72,7 @@ val HIGHWAY_KM_VALUES: Set<String> = listOf(
 
 /** Counts of one engine pass, indexed by city, quest (index into [Engine.quests]) and type. */
 class Counts(val cityCount: Int, val questCount: Int) {
-    /** per (city, quest): nodes, ways, relations, agedOnly, notes */
+    /** per (city, quest): the slots above */
     val perQuest = AtomicLongArray(cityCount * questCount * SLOTS)
     val taggedNodes = AtomicLongArray(cityCount)
     val taggedWays = AtomicLongArray(cityCount)
@@ -48,7 +84,17 @@ class Counts(val cityCount: Int, val questCount: Int) {
     fun get(city: Int, quest: Int, kind: Int) = perQuest[slot(city, quest, kind)]
     fun open(city: Int, quest: Int) =
         get(city, quest, NODE) + get(city, quest, WAY) + get(city, quest, RELATION) + get(city, quest, NOTE)
-    fun agedOnly(city: Int, quest: Int) = get(city, quest, 3)
+    fun agedOnly(city: Int, quest: Int) = get(city, quest, AGED)
+
+    /** one match of [quest] in [city] with the bits of [matchVariants]; [type] for the default */
+    fun add(city: Int, quest: Int, type: Int, mask: Int) {
+        if (mask and M_NOW != 0) perQuest.incrementAndGet(slot(city, quest, type))
+        if (mask and M_AGED != 0) perQuest.incrementAndGet(slot(city, quest, AGED))
+        if (mask and M_05 != 0) perQuest.incrementAndGet(slot(city, quest, OPEN_05))
+        if (mask and M_AGED_05 != 0) perQuest.incrementAndGet(slot(city, quest, AGED_05))
+        if (mask and M_2 != 0) perQuest.incrementAndGet(slot(city, quest, OPEN_2))
+        if (mask and M_AGED_2 != 0) perQuest.incrementAndGet(slot(city, quest, AGED_2))
+    }
 }
 
 /** Diagnostics of one pass, printed to the log. */
@@ -99,6 +145,9 @@ class Engine(val registry: Registry, val cities: List<City>) {
 
     /** the open notes at asOf; null when the run has no notes clip (nothing hidden, note quest not counted) */
     var notes: OpenNotes? = null
+
+    /** optional: counted quests (default resurvey multiplier) per map tile, for heatmaps */
+    var grid: TileGrid? = null
 
     /** optional: lines "quest type id version timestampMs city lat lon agedOnly" for these quests */
     var dumpQuests: Set<String> = emptySet()
@@ -154,12 +203,14 @@ class Engine(val registry: Registry, val cities: List<City>) {
         }
     }
 
-    /** AreaPass: one counted quest of area quest [qi] in city [c] */
-    fun countArea(c: Int, qi: Int, e: Element, center: LatLon, aged: Boolean) {
-        if (notes?.hides(center) == true) { stats.hiddenByNotes.incrementAndGet(); return }
+    /** AreaPass: one result of area quest [qi] in city [c], with the bits of [matchVariants] */
+    fun countArea(c: Int, qi: Int, e: Element, center: LatLon, mask: Int) {
+        if (notes?.hides(center) == true) { if (mask and M_NOW != 0) stats.hiddenByNotes.incrementAndGet(); return }
         val type = e.type.ordinal
-        counts.perQuest.incrementAndGet(counts.slot(c, qi, type))
-        if (aged) counts.perQuest.incrementAndGet(counts.slot(c, qi, 3))
+        counts.add(c, qi, type, mask)
+        if (mask and M_NOW == 0) return
+        grid?.add(qi, center)
+        val aged = mask and M_AGED != 0
         if (quests[qi].name in dumpQuests) {
             dumpLines += "${quests[qi].name}\t${TYPE_NAMES[type]}\t${e.id}\t${e.version}\t${e.timestampEdited}\t" +
                 "${cities[c].id}\t${center.latitude}\t${center.longitude}\t$aged"
@@ -187,15 +238,16 @@ class Engine(val registry: Registry, val cities: List<City>) {
             if (!anyEnabled) continue
             val q = quests[qi]
             val matcher = q.matcher!!
-            if (!matcher.matches(e)) continue
-            if (notes?.hides(center) == true) { stats.hiddenByNotes.incrementAndGet(); continue }
             // agedOnly: would it still match if no `older today -N` (or `< today`) test could be true?
-            val aged = q.usesAge && !EngineClock.at(EngineClock.LONG_AGO) { matcher.matches(e) }
+            val mask = matchVariants(q.usesAge) { matcher.matches(e) }
+            if (mask == 0) continue
+            if (notes?.hides(center) == true) { if (mask and M_NOW != 0) stats.hiddenByNotes.incrementAndGet(); continue }
+            val aged = mask and M_AGED != 0
+            if (mask and M_NOW != 0) grid?.add(qi, center)
             for (c in cityIdx) {
                 if (!enabled[c][qi]) continue
-                counts.perQuest.incrementAndGet(counts.slot(c, qi, type))
-                if (aged) counts.perQuest.incrementAndGet(counts.slot(c, qi, 3))
-                if (q.name in dumpQuests) {
+                counts.add(c, qi, type, mask)
+                if (mask and M_NOW != 0 && q.name in dumpQuests) {
                     dumpLines += "${q.name}\t${TYPE_NAMES[type]}\t${e.id}\t${e.version}\t${e.timestampEdited}\t" +
                         "${cities[c].id}\t${center.latitude}\t${center.longitude}\t$aged"
                 }
@@ -260,8 +312,15 @@ class Engine(val registry: Registry, val cities: List<City>) {
         require(qi >= 0) { "notes given but the registry has no note quest" }
         for (note in notes.quests) {
             val p = note.position
+            val inCities = cityIndex.citiesAt(p.latitude, p.longitude).filter { enabled[it][qi] }
+            for (c in inCities) counts.perQuest.incrementAndGet(counts.slot(c, qi, NOTE))
+            if (inCities.isNotEmpty()) grid?.add(qi, p)
+        }
+        // the app's other setting, "show all notes": every open note is a quest
+        for (note in notes.allQuests) {
+            val p = note.position
             for (c in cityIndex.citiesAt(p.latitude, p.longitude)) {
-                if (enabled[c][qi]) counts.perQuest.incrementAndGet(counts.slot(c, qi, NOTE))
+                if (enabled[c][qi]) counts.perQuest.incrementAndGet(counts.slot(c, qi, ALL_NOTES))
             }
         }
         // NotesDownloader asks for at most 10,000 notes per download; more in a city's bbox and the

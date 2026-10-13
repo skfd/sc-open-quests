@@ -119,6 +119,7 @@ def count(pbf: Path, meta: Path, out: Path) -> Path:
         clip = run.notes_clip()  # the newest dump holds every note's history, so it reaches any month
         if clip:
             cmd += ["--notes", str(clip.relative_to(run.ROOT))]
+        cmd += ["--grid", str(out / "grid")]
         run.log("running engine: " + " ".join(cmd[1:]))
         subprocess.run(cmd, cwd=run.ROOT, env=run.engine_env(), check=True)
     snaps = sorted((out / "snapshots").glob("*.json"), key=lambda p: p.stat().st_mtime)
@@ -229,6 +230,10 @@ def merge() -> None:
     for p in sorted((RECOUNT / "snapshots").glob("*.json")):
         shutil.copy2(p, dst / p.name)
         run.log(f"replaced {p.name} with its recount")
+    # the tile grids (heatmaps) of both; they stay out of git, in data/grid/
+    for p in sorted(STAGED.parent.joinpath("grid").glob("*.json.gz")) + sorted((RECOUNT / "grid").glob("*.json.gz")):
+        run.GRID_DIR.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(p, run.GRID_DIR / p.name)
 
 
 def main(argv: list[str] | None = None) -> int:

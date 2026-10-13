@@ -255,6 +255,18 @@ refuses a dump whose newest comment is older than asOf.
 - Snapshots record the dump in `notes`; without `--notes` it is null, nothing is hidden and the note
   quest is `unsupported`.
 
+## Resurvey settings and tile grids
+
+- **The app's three resurvey settings.** `RelativeDate.MULTIPLIER` (SC's ResurveyIntervals: 0.5 "more
+  often", 1, 2 "less often") is a global in SC. The `multiplier` patch makes it read a thread-local
+  override first, so each match of an age quest (`usesAge`) is evaluated at 1, 0.5 and 2 in the same
+  pass, like agedOnly (`matchVariants`; area quests run `getApplicableElements` once per setting). Every
+  setting runs the quest's own test: `newer` tests make the results no subsets of each other. Checked:
+  a whole run with `--resurvey-multiplier 2` (or 0.5) as the default gives exactly the `open2`/`aged2`
+  (`open05`/`aged05`) of a default run, every city and quest.
+- **Show all notes.** The note quest is also counted with the app's other setting (`openAllNotes`).
+- **`--grid <dir>`** writes `<asOfDate>.json.gz`: counted quests per z14 tile (DATA-FORMAT.md).
+
 ## What still differs from the app
 
 All counted quests are marked `supported`: none of the differences below is specific to a quest.

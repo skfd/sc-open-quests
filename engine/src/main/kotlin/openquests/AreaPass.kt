@@ -221,8 +221,9 @@ class AreaPass(
 
     private val cityIndex = CityIndex(cities)
 
-    /** Runs area quest [qi] on [mapData] (bounded by [box]) at asOf and at LONG_AGO and counts every
-     *  result whose position is in [box] in the cities whose polygon holds it, where [qi] is enabled;
+    /** Runs area quest [qi] on [mapData] (bounded by [box]) at asOf and at LONG_AGO, and for an age
+     *  quest also at the resurvey multipliers 0.5 and 2 (see [matchVariants]), and counts every result
+     *  whose position is in [box] in the cities whose polygon holds it, where [qi] is enabled;
      *  [cityIndexes]: only these cities (city mode). */
     private fun countIn(mapData: MapDataWithGeometry, box: BoundingBox, qi: Int, cityIndexes: List<Int>?) {
         val port = engine.quests[qi].area!!
@@ -231,19 +232,34 @@ class AreaPass(
         // the app keys quests by element, so it is one quest
         val now = quest.getApplicableElements(mapData).distinctBy { it.type to it.id }
         if (VERIFY_FAST && quest !== port) verifyTwin(port, mapData, now.mapTo(HashSet()) { it.type to it.id })
-        if (now.isEmpty()) return
+        val usesAge = engine.quests[qi].usesAge
+        val at05 = if (usesAge) Resurvey.at(0.5f) { quest.getApplicableElements(mapData).toList() } else emptyList()
+        val at2 = if (usesAge) Resurvey.at(2f) { quest.getApplicableElements(mapData).toList() } else emptyList()
+        if (now.isEmpty() && at05.isEmpty() && at2.isEmpty()) return
         val then = EngineClock.at(EngineClock.LONG_AGO) {
             quest.getApplicableElements(mapData).mapTo(HashSet()) { it.type to it.id }
         }
-        for (e in now) {
+        val masks = LinkedHashMap<Pair<ElementType, Long>, Int>()
+        val elements = HashMap<Pair<ElementType, Long>, Element>()
+        fun mark(es: List<Element>, bit: Int, agedBit: Int) {
+            for (e in es) {
+                val k = e.type to e.id
+                elements.putIfAbsent(k, e)
+                masks[k] = (masks[k] ?: 0) or bit or (if (k in then) 0 else agedBit)
+            }
+        }
+        mark(now, M_NOW, M_AGED)
+        mark(at05, M_05, M_AGED_05)
+        mark(at2, M_2, M_AGED_2)
+        for ((k, mask) in masks) {
+            val e = elements.getValue(k)
             // OsmQuestController: no geometry, no quest; then mayCreateQuest: inside the downloaded bbox
             val g = mapData.getGeometry(e.type, e.id) ?: continue
             val pos = g.center
             if (pos !in box) continue
-            val aged = (e.type to e.id) !in then
             val inCities = cityIndexes?.filter { cities[it].polygon.contains(pos.latitude, pos.longitude) }
                 ?: cityIndex.citiesAt(pos.latitude, pos.longitude).toList()
-            for (c in inCities) if (engine.enabled[c][qi]) engine.countArea(c, qi, e, pos, aged)
+            for (c in inCities) if (engine.enabled[c][qi]) engine.countArea(c, qi, e, pos, mask)
         }
     }
 

@@ -59,8 +59,13 @@ time zone (`YYYY-MM-DD`).
           "open": 3063,                 // what the app would show at asOf (centre inside the city polygon)
           "nodes": 2931, "ways": 132, "relations": 0,
           "agedOnly": 0                 // of `open`, how many match only because of time (0 when !usesAge)
-        }
-        // OsmNoteQuestType (with notes): "open" is the note quests in the city, nodes/ways/relations 0
+        },
+        "AddBusStopShelter": { "open": 3732, …, "agedOnly": 2058,   // Toronto 2026-10-10
+          "open05": 6093, "aged05": 4419, // usesAge quests only: open and agedOnly with the app's resurvey
+          "open2": 1674, "aged2": 0 }     //   setting "more often" (multiplier 0.5) and "less often" (2);
+                                          //   absent before 2026-10-13
+        // OsmNoteQuestType (with notes): "open" is the note quests in the city, nodes/ways/relations 0;
+        //   "openAllNotes": with the app's setting "show all notes" (since 2026-10-13)
         // every quest with status "counted" for this city in quests.json appears here, zeros included
         // (127 per city for SC 63.4 in Ontario; ~620 KB per snapshot for 48 cities)
       }
@@ -73,6 +78,10 @@ With notes, a quest whose position truncated to 6 decimals equals an open note's
 app hides it (`OsmQuestController.getBlacklistedPositions`). The note quest counts the open notes in the
 city that SC's own filter shows to a user who wrote none of them, with "show all notes" off (the app's
 default): a question mark in the first comment, or `#surveyme` in any. See `engine/README.md`, "Notes".
+
+The resurvey setting changes only `older today -N` style tests (`RelativeDate`): every variant runs the
+quest's own test again with that multiplier, in the same pass. `open` and `agedOnly` stay the app
+default (1); `resurveyMultiplier` in the header is that default.
 
 `agedOnly`, per element: of the elements counted in `open`, those that no longer match when the clock is set
 to 1900-01-01, where every `older today -N` test is false. That includes date tags compared with today
@@ -115,6 +124,14 @@ of counted quests changes as a break in totals. `status`:
 city's `countryCodes`, else `counted`.
 
 Headline totals on the site exclude `defaultDisabled` quests; the per-quest numbers are still there.
+
+## Tile grids for heatmaps
+
+`data/grid/<asOfDate>.json.gz` (gzipped, not committed: about 0.5 MB each, 152k cells on 2026-10-10), written with the snapshot when
+the engine gets `--grid`: `{"asOfDate":…,"zoom":14,"quests":{"AddBenchBackrest":[[x,y,n],…]}}`. Each cell is
+a z14 slippy-map tile (SC's `enclosingTilePos`) and the number of that quest's counted quests whose
+position is in it, summed over the cities (what `open` counts: default multiplier, notes applied). Quests
+by name, cells by x then y; a quest with nothing counted is absent.
 
 ## Series for the site
 

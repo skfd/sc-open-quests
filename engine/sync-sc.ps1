@@ -24,6 +24,9 @@
            code (LocalDate.now(), LocalDateTime.now(), RelativeDate, nowAsCheckDateString()) goes
            through systemTimeNow(), so this one line lets the engine evaluate `older today -N` at
            the extract's timestamp. The script fails if the upstream line is not found verbatim.
+    multiplier  data/elementfilter/filters/RelativeDate.kt: `RelativeDate.MULTIPLIER` (the app's
+           resurvey setting) reads a thread-local override first, so that one pass can count the
+           age quests at 0.5, 1 and 2. Same verbatim-line rule.
 
 .EXAMPLE
   ./sync-sc.ps1 -ScPath C:\Users\kk\AppData\Local\Temp\sc-v63.4 -Tag v63.4
@@ -190,6 +193,22 @@ $patches = @(
             'var systemClock: Clock = Clock.System'
         )
         Description = 'util/ktx/Instant.kt: systemTimeNow() reads a settable `var systemClock: Clock` (default Clock.System)'
+    }
+    @{
+        Name = 'multiplier'
+        File = "$pkg/data/elementfilter/filters/RelativeDate.kt"
+        Find = '        var MULTIPLIER: Float = 1f'
+        Replace = @(
+            '        var MULTIPLIER: Float'
+            '            get() = multiplierOverride.get() ?: defaultMultiplier'
+            '            set(value) { defaultMultiplier = value }'
+            ''
+            '        /** sc-open-quests patch: a thread can evaluate at another resurvey multiplier (the app''s'
+            '         *  ResurveyIntervals setting: 0.5, 1 or 2), so that one pass counts all three. */'
+            '        val multiplierOverride = ThreadLocal<Float?>()'
+            '        @Volatile private var defaultMultiplier: Float = 1f'
+        )
+        Description = 'data/elementfilter/filters/RelativeDate.kt: MULTIPLIER reads a thread-local override first (`multiplierOverride`)'
     }
 )
 

@@ -1,5 +1,6 @@
 package openquests
 
+import de.westnordost.streetcomplete.data.elementfilter.filters.RelativeDate
 import de.westnordost.streetcomplete.util.ktx.systemClock
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
@@ -41,4 +42,18 @@ object EngineClock : Clock {
 
     @PublishedApi internal fun overrideGet(): Instant? = override.get()
     @PublishedApi internal fun overrideSet(i: Instant?) = override.set(i)
+}
+
+/** The app's resurvey setting (ResurveyIntervals: 0.5, 1 or 2) for the current thread, through the
+ *  `multiplier` patch of RelativeDate.MULTIPLIER; the default stays what the run set. */
+object Resurvey {
+    inline fun <T> at(multiplier: Float, block: () -> T): T {
+        val previous = RelativeDate.multiplierOverride.get()
+        RelativeDate.multiplierOverride.set(multiplier)
+        try {
+            return block()
+        } finally {
+            RelativeDate.multiplierOverride.set(previous)
+        }
+    }
 }

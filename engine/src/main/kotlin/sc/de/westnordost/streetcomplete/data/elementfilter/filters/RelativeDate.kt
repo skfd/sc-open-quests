@@ -30,7 +30,14 @@ class RelativeDate(val deltaDays: Float) : DateFilter {
     override fun toString() = "$deltaDays days"
 
     companion object {
-        var MULTIPLIER: Float = 1f
+        var MULTIPLIER: Float
+            get() = multiplierOverride.get() ?: defaultMultiplier
+            set(value) { defaultMultiplier = value }
+
+        /** sc-open-quests patch: a thread can evaluate at another resurvey multiplier (the app's
+         *  ResurveyIntervals setting: 0.5, 1 or 2), so that one pass counts all three. */
+        val multiplierOverride = ThreadLocal<Float?>()
+        @Volatile private var defaultMultiplier: Float = 1f
     }
 }
 

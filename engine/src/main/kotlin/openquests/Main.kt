@@ -21,7 +21,7 @@ private const val USAGE = """usage: sc-open-quests-engine count --pbf <file.osm.
            --cities <config/cities.json> --out <docs/data> [--source-meta <meta.json>]
            [--today <ISO instant or date>] [--dump-matches <file.tsv> --dump-quests <Name,Name>]
            [--dump-elements <file.jsonl> --dump-city <cityId>] [--area-unit tiles|city]
-           [--notes <clip.jsonl>]
+           [--notes <clip.jsonl>] [--grid <dir>] [--resurvey-multiplier 0.5|1|2]
 
 Writes <out>/snapshots/<asOfDate>.json and <out>/quests.json (see DATA-FORMAT.md). Age filters are
 evaluated at the extract's osmosis_replication_timestamp; --today overrides that (tests). A bare date
@@ -31,7 +31,10 @@ tools/sc-harness CheckCustomQuests. The area quests run on one map data per city
 downloading the whole city; also the oracle's exact input); --area-unit tiles runs them per z16 tile,
 the app's smallest download.
 --notes: a clip of the planet notes dump (tools/clip_notes.py) that reaches asOf. The notes open at asOf
-hide the quests at their positions, and the note quest is counted. Without it, neither."""
+hide the quests at their positions, and the note quest is counted. Without it, neither.
+Age quests are also counted at the app's other resurvey settings (0.5 and 2: open05/aged05, open2/aged2 in
+the snapshot); --resurvey-multiplier sets the default the run counts at instead of 1 (checks only).
+--grid writes <dir>/<asOfDate>.json.gz: counted quests per z14 tile, for heatmaps."""
 
 class CountOptions(
     val pbf: File,
@@ -46,6 +49,8 @@ class CountOptions(
     val dumpCity: String? = null,
     val areaUnit: AreaUnit = AreaUnit.CITY,
     val notes: File? = null,
+    val grid: File? = null,
+    val resurveyMultiplier: Float = 1f,
     val baseDir: File = File("."),
 )
 
@@ -73,7 +78,7 @@ fun parseArgs(args: List<String>): CountOptions {
         m[k.removePrefix("--")] = args[i + 1]
         i += 2
     }
-    val known = setOf("pbf", "quests", "cities", "out", "source-meta", "today", "dump-matches", "dump-quests", "dump-elements", "dump-city", "area-unit", "notes")
+    val known = setOf("pbf", "quests", "cities", "out", "source-meta", "today", "dump-matches", "dump-quests", "dump-elements", "dump-city", "area-unit", "notes", "grid", "resurvey-multiplier")
     require(m.keys.all { it in known }) { "unknown option(s) ${m.keys - known}\n$USAGE" }
     fun req(k: String) = File(m[k] ?: throw IllegalArgumentException("--$k is required\n$USAGE"))
     return CountOptions(
@@ -89,6 +94,10 @@ fun parseArgs(args: List<String>): CountOptions {
         dumpCity = m["dump-city"],
         areaUnit = m["area-unit"]?.let { AreaUnit.valueOf(it.uppercase()) } ?: AreaUnit.CITY,
         notes = m["notes"]?.let(::File),
+        grid = m["grid"]?.let(::File),
+        resurveyMultiplier = m["resurvey-multiplier"]?.toFloat()?.also {
+            require(it in setOf(0.5f, 1f, 2f)) { "--resurvey-multiplier: the app offers 0.5, 1 and 2" }
+        } ?: 1f,
     ).also { require((it.dumpElements == null) == (it.dumpCity == null)) { "--dump-elements and --dump-city go together" } }
 }
 
@@ -110,7 +119,7 @@ fun count(opts: CountOptions): CountResult {
         "cities use time zone(s) $zones but the JVM runs in ${zone.id}; start it with -Duser.timezone=${zones.first()} " +
             "(cities in different zones need separate runs)"
     }
-    require(RelativeDate.MULTIPLIER == 1f) { "resurvey multiplier must be the app default 1" }
+    RelativeDate.MULTIPLIER = opts.resurveyMultiplier
     // SC's getFeature() reads osmfeatures in the default locale; only the en-CA presets are bundled
     val language = java.util.Locale.getDefault().toLanguageTag()
     require(language == ScFeatures.LANGUAGE) {
@@ -118,6 +127,7 @@ fun count(opts: CountOptions): CountResult {
     }
 
     val engine = Engine(registry, cities)
+    if (opts.grid != null) engine.grid = TileGrid()
     engine.dumpQuests = opts.dumpQuests
     engine.areaUnit = opts.areaUnit
     opts.dumpCity?.let { id ->
@@ -178,6 +188,11 @@ fun count(opts: CountOptions): CountResult {
         snapshot.writeText(snapshotJson(meta, engine))
         File(out, "quests.json").writeText(questsJson(registry, cities))
         log("wrote $snapshot and ${File(out, "quests.json")}")
+    }
+    opts.grid?.let { dir ->
+        val f = File(dir, "${meta.asOfDate}.json.gz")
+        engine.grid!!.write(f, meta.asOfDate, engine.quests)
+        log("wrote $f")
     }
     opts.dumpMatches?.let { f ->
         f.absoluteFile.parentFile.mkdirs()
