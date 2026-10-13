@@ -46,6 +46,21 @@
       "region": "ontario"
     },
     {
+      "id": "berlin",
+      "name": "Berlin",
+      "relation": 62422,
+      "adminLevel": 4,
+      "countryCodes": [
+        "DE"
+      ],
+      "timeZone": "Europe/Berlin",
+      "population": 3700577,
+      "landAreaKm2": 891.1417588509238,
+      "boundary": "data/boundaries/62422.json",
+      "region": "berlin",
+      "populationSource": "Destatis Gemeindeverzeichnis GV-ISys, Gebietsstand 30.09.2026; population 31.12.2025 (Zensus 2022 basis)"
+    },
+    {
       "id": "brampton",
       "name": "Brampton",
       "relation": 2407358,
@@ -74,6 +89,36 @@
       "landAreaKm2": 102.53732242402691,
       "boundary": "data/boundaries/10268812.json",
       "region": "ontario"
+    },
+    {
+      "id": "bremen",
+      "name": "Bremen",
+      "relation": 62559,
+      "adminLevel": 6,
+      "countryCodes": [
+        "DE"
+      ],
+      "timeZone": "Europe/Berlin",
+      "population": 588413,
+      "landAreaKm2": 326.26857306997573,
+      "boundary": "data/boundaries/62559.json",
+      "region": "bremen",
+      "populationSource": "Destatis Gemeindeverzeichnis GV-ISys, Gebietsstand 30.09.2026; population 31.12.2025 (Zensus 2022 basis)"
+    },
+    {
+      "id": "bremerhaven",
+      "name": "Bremerhaven",
+      "relation": 62658,
+      "adminLevel": 6,
+      "countryCodes": [
+        "DE"
+      ],
+      "timeZone": "Europe/Berlin",
+      "population": 118502,
+      "landAreaKm2": 85.94373732565617,
+      "boundary": "data/boundaries/62658.json",
+      "region": "bremen",
+      "populationSource": "Destatis Gemeindeverzeichnis GV-ISys, Gebietsstand 30.09.2026; population 31.12.2025 (Zensus 2022 basis)"
     },
     {
       "id": "brockville",
@@ -180,6 +225,21 @@
       "landAreaKm2": 88.91308054852823,
       "boundary": "data/boundaries/7486148.json",
       "region": "ontario"
+    },
+    {
+      "id": "hamburg",
+      "name": "Hamburg",
+      "relation": 62782,
+      "adminLevel": 4,
+      "countryCodes": [
+        "DE"
+      ],
+      "timeZone": "Europe/Berlin",
+      "population": 1869473,
+      "landAreaKm2": 980.9028268527849,
+      "boundary": "data/boundaries/62782.json",
+      "region": "hamburg",
+      "populationSource": "Destatis Gemeindeverzeichnis GV-ISys, Gebietsstand 30.09.2026; population 31.12.2025 (Zensus 2022 basis)"
     },
     {
       "id": "hamilton",

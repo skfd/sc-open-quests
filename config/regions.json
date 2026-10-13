@@ -1,12 +1,12 @@
 {
  "regions": [
-  {
-   "id": "ontario",
-   "name": "Ontario",
-   "group": "Ontario",
-   "timeZone": "America/Toronto",
-   "poly": "config/ontario.poly",
-   "source": "Geofabrik Ontario"
-  }
+  {"id": "ontario", "name": "Ontario", "group": "Ontario", "timeZone": "America/Toronto", "poly": "config/ontario.poly",
+   "source": "Geofabrik Ontario"},
+  {"id": "berlin", "name": "Berlin", "group": "Germany", "timeZone": "Europe/Berlin", "poly": "config/berlin.poly",
+   "source": "Geofabrik Berlin"},
+  {"id": "hamburg", "name": "Hamburg", "group": "Germany", "timeZone": "Europe/Berlin", "poly": "config/hamburg.poly",
+   "source": "Geofabrik Hamburg"},
+  {"id": "bremen", "name": "Bremen", "group": "Germany", "timeZone": "Europe/Berlin", "poly": "config/bremen.poly",
+   "source": "Geofabrik Bremen"}
  ]
 }

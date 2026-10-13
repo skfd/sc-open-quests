@@ -513,8 +513,8 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python run.py", description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = parser.add_subparsers(dest="command", required=True)
-    sub.add_parser("download", help="refresh the shared Ontario extract (osm-extracts fetch)")
-    for name, help_ in [("count", "run the engine on the newest shared extract"),
+    sub.add_parser("download", help="refresh each region's shared extract (osm-extracts fetch)")
+    for name, help_ in [("count", "run the engine on each region's newest shared extract"),
                         ("backfill", "count every dated extract in the shared store"),
                         ("update", "download + count + history + commit + push "
                                    "(--force recounts but does not re-download)")]:
@@ -530,7 +530,8 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command == "backfill":
             backfill(force=args.force)
         elif args.command == "count":
-            count(force=args.force)
+            for region in regions():
+                count(region, force=args.force)
         elif args.command == "history":
             history(args.data_dir, args.cities)
         elif args.command == "update":
