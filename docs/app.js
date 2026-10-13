@@ -413,7 +413,7 @@ function renderCityCharts(h) {
 const STATUS_RANK = { counted: 0, "not-in-region": 2, unsupported: 3 };
 const STATUS_TEXT = {
   counted: "no count in latest run",        // counted per quests.json, but absent from this city's snapshot
-  "not-in-region": "not in Ontario",        // the app doesn't offer it here (enabledInCountries)
+  "not-in-region": "not offered here",      // the app doesn't offer it here (enabledInCountries)
   unsupported: "not counted yet",           // custom logic this site doesn't model yet
 };
 
@@ -602,8 +602,9 @@ async function render() {
 
 function renderFooter() {
   const city = cities.cities.find((c) => c.id === state.city);
+  const region = city && (cities.regions || []).find((r) => r.id === city.region);
   $("#foot-data").textContent =
-    `Data as of ${cities.asOfDate} (Geofabrik Ontario extract) · StreetComplete ${cities.scVersion} quest definitions · ` +
+    `Data as of ${cities.asOfDate} (${region ? region.source : "Geofabrik"} extract) · StreetComplete ${cities.scVersion} quest definitions · ` +
     `resurvey multiplier ×${cities.resurveyMultiplier ?? 1} · ${cities.cities.length} cities` +
     (city && city.asOfDate !== cities.asOfDate ? ` · ${city.name} last counted ${city.asOfDate}` : "");
 }
@@ -640,7 +641,13 @@ async function main() {
   state.picked = state.picked.filter((n) => questByName.has(n));
 
   const sel = $("#city");
-  sel.replaceChildren(...cities.cities.map((c) => el("option", { value: c.id }, c.name)));
+  // cities grouped as the regions are (Ontario, Germany), in config order, when there is more than one group
+  const groups = [...new Set((cities.regions || []).map((r) => r.group))];
+  const groupOf = (c) => ((cities.regions || []).find((r) => r.id === c.region) || {}).group;
+  const option = (c) => el("option", { value: c.id }, c.name);
+  sel.replaceChildren(...(groups.length > 1
+    ? groups.map((g) => el("optgroup", { label: g }, ...cities.cities.filter((c) => groupOf(c) === g).map(option)))
+    : cities.cities.map(option)));
   sel.value = state.city;
   sel.addEventListener("change", () => { state.city = sel.value; writeHash(); renderFooter(); render(); });
 
