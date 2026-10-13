@@ -65,8 +65,9 @@ Next, in order:
    The published 2026-10-11 lacks notes, so the chart shows a break there; `run.py` recounts it from its
    stored extract once a notes dump reaches it.
    Toronto's AddHousenumber went public with its two steps: +293k from 2019-01 to 2019-02 and −277k
-   from 2026-05 to 2026-06, which look like a building import and an address import. Worth a note on
-   the site once confirmed.
+   from 2026-05 to 2026-06. Neither is a counting error. The 2026 drop is the owner's own Toronto
+   address import (confirmed 2026-10-13); the 2019 rise looks like a building import, unconfirmed.
+   Worth a note on the site.
 4. **Outreach.** Now that there is something to show, contact starsep (StreetCompleteStats), the SC devs and jmizv.
 5. **Smaller items:**
    - ~~Model open OSM notes, since the app hides quests at a note's position.~~ Done 2026-10-12.
