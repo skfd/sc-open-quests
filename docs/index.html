@@ -13,14 +13,27 @@
 <script src="app.js" defer></script>
 </head>
 <body>
-<header class="page-head">
-  <h1>Open StreetComplete quests in Ontario</h1>
-  <p class="lede">What a <a href="https://streetcomplete.app/">StreetComplete</a> user would see in each city,
-    with the app's default settings, counted daily from OpenStreetMap.</p>
-  <nav class="tabs" aria-label="View">
-    <a href="#" data-view="city" class="tab">One city</a>
-    <a href="#" data-view="compare" class="tab">Compare cities</a>
-  </nav>
+<header class="band">
+  <div class="page-head">
+    <div class="brand">
+      <img class="app-icon" src="img/streetcomplete.svg" alt="" width="64" height="64">
+      <div>
+        <h1>Open StreetComplete quests in Ontario</h1>
+        <p class="lede">What a <a href="https://streetcomplete.app/">StreetComplete</a> user would see in each city,
+          with the app's default settings, counted daily from OpenStreetMap.</p>
+      </div>
+    </div>
+    <div class="pins" aria-hidden="true">
+      <span class="pin" style="--x:4%;--y:58%"><img src="icons/housenumber.svg" alt=""></span>
+      <span class="pin" style="--x:36%;--y:18%"><img src="icons/bench_poi.svg" alt=""></span>
+      <span class="pin" style="--x:62%;--y:64%"><img src="icons/bus_stop_shelter.svg" alt=""></span>
+      <span class="pin" style="--x:88%;--y:26%"><img src="icons/lantern.svg" alt=""></span>
+    </div>
+    <nav class="tabs" aria-label="View">
+      <a href="#" data-view="city" class="tab">One city</a>
+      <a href="#" data-view="compare" class="tab">Compare cities</a>
+    </nav>
+  </div>
 </header>
 
 <main>
@@ -39,9 +52,15 @@
     <div class="tiles" id="tiles"></div>
 
     <article class="card">
-      <h2 id="chart-title">Open quests over time</h2>
+      <div class="card-head">
+        <h2 id="chart-title">Open quests over time</h2>
+        <label class="field check small">
+          <input type="checkbox" id="show-releases" checked> App releases
+        </label>
+      </div>
       <p class="sub" id="chart-sub"></p>
       <div class="chart" id="chart-total"></div>
+      <p class="hover-note" id="release-note" aria-live="polite"></p>
       <ul class="breaks" id="breaks"></ul>
     </article>
 
@@ -112,6 +131,9 @@
   </p>
   <p>Map data © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>, ODbL.
     Extract by <a href="https://download.geofabrik.de/">Geofabrik</a>.</p>
+  <p>Quest icons and the app icon are StreetComplete's, © Tobias Zwick and
+    <a href="icons/authors.txt">contributors</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC-BY-SA 4.0</a>;
+    quest titles are the app's own English strings. Release dates from <a href="https://github.com/streetcomplete/StreetComplete/releases">GitHub</a>.</p>
 </footer>
 </body>
 </html>

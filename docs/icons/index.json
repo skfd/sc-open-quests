@@ -1,0 +1,765 @@
+{
+ "scVersion": "63.4",
+ "quests": {
+  "OsmNoteQuestType": {
+   "icon": "notes.svg",
+   "title": "Can you contribute anything to this note?"
+  },
+  "AddBusStopShelter": {
+   "icon": "bus_stop_shelter.svg",
+   "title": "Is there a shelter at this stop?"
+  },
+  "AddBenchStatusOnBusStop": {
+   "icon": "bench_public_transport.svg",
+   "title": "Is there a bench at this stop?"
+  },
+  "AddBinStatusOnBusStop": {
+   "icon": "bin_public_transport.svg",
+   "title": "Is there a waste basket at this stop?"
+  },
+  "AddTactilePavingBusStop": {
+   "icon": "blind_bus.svg",
+   "title": "Does this stop have tactile paving?"
+  },
+  "AddBusStopName": {
+   "icon": "bus_stop_name.svg",
+   "title": "What’s the name of this stop?"
+  },
+  "AddBusStopRef": {
+   "icon": "bus_stop_name.svg",
+   "title": "What number or code identifies this stop?"
+  },
+  "AddBusStopLit": {
+   "icon": "bus_stop_lit.svg",
+   "title": "Is this stop lit?"
+  },
+  "AddRailwayCrossingBarrier": {
+   "icon": "railway.svg",
+   "title": "What barriers are used at this railroad crossing?"
+  },
+  "AddCarWashType": {
+   "icon": "car_wash.svg",
+   "title": "What kind of car wash is this?"
+  },
+  "AddBenchBackrest": {
+   "icon": "bench_poi.svg",
+   "title": "Does this bench have a backrest?"
+  },
+  "AddAmenityCover": {
+   "icon": "picnic_table_cover.svg",
+   "title": "Is this covered (protected from rain)?"
+  },
+  "AddBridgeStructure": {
+   "icon": "bridge.svg",
+   "title": "What’s the structure of this bridge?"
+  },
+  "MarkCompletedBuildingConstruction": {
+   "icon": "building_construction.svg",
+   "title": "Is this building completed?"
+  },
+  "AddSport": {
+   "icon": "sport.svg",
+   "title": "What sport is played here?"
+  },
+  "AddPitchSurface": {
+   "icon": "pitch_surface.svg",
+   "title": "What’s the surface here?"
+  },
+  "AddPitchLit": {
+   "icon": "pitch_lantern.svg",
+   "title": "Is it lit here?"
+  },
+  "AddParkingType": {
+   "icon": "parking.svg",
+   "title": "What kind of parking is this?"
+  },
+  "AddParkingAccess": {
+   "icon": "parking_access.svg",
+   "title": "Who is allowed to park here? Parking may be free or paid."
+  },
+  "AddParkingFee": {
+   "icon": "parking_fee.svg",
+   "title": "Do you have to pay to park here?"
+  },
+  "AddTrafficCalmingType": {
+   "icon": "car_bumpy.svg",
+   "title": "What type of traffic calming is this?"
+  },
+  "AddHandrail": {
+   "icon": "steps_handrail.svg",
+   "title": "Do these steps have a handrail?"
+  },
+  "AddStepsRamp": {
+   "icon": "steps_ramp.svg",
+   "title": "Do these steps have a ramp? What kind?"
+  },
+  "AddStepsIncline": {
+   "icon": "steps.svg",
+   "title": "Which direction leads upwards here?"
+  },
+  "AddTactilePavingSteps": {
+   "icon": "steps_tactile_paving.svg",
+   "title": "Is there tactile paving at the top and bottom of these steps?"
+  },
+  "AddBicycleIncline": {
+   "icon": "bicycle_incline.svg",
+   "title": "Which direction leads upwards here?"
+  },
+  "AddMemorialType": {
+   "icon": "memorial.svg",
+   "title": "What kind of memorial is this?"
+  },
+  "AddReligionToPlaceOfWorship": {
+   "icon": "religion.svg",
+   "title": "What religion is practiced at this place?"
+  },
+  "AddReligionToWaysideShrine": {
+   "icon": "religion.svg",
+   "title": "What religion is this shrine associated with?"
+  },
+  "AddPowerAttachment": {
+   "icon": "power.svg",
+   "title": "How is this power line attached?"
+  },
+  "AddPowerPolesMaterial": {
+   "icon": "power.svg",
+   "title": "What’s this pole made of?"
+  },
+  "AddIsBuildingUnderground": {
+   "icon": "building_underground.svg",
+   "title": "Is this building completely underground?"
+  },
+  "AddMotorcycleParkingCover": {
+   "icon": "motorcycle_parking_cover.svg",
+   "title": "Is this motorcycle parking covered (protected from rain)?"
+  },
+  "AddMotorcycleParkingCapacity": {
+   "icon": "motorcycle_parking_capacity.svg",
+   "title": "How many motorcycles can be parked here?"
+  },
+  "AddMotorcycleParkingFee": {
+   "icon": "motorcycle_parking_fee.svg",
+   "title": "Do you have to pay to park here?"
+  },
+  "AddAirCompressor": {
+   "icon": "car_air_compressor.svg",
+   "title": "Is there an air compressor available here?"
+  },
+  "AddRecyclingType": {
+   "icon": "recycling.svg",
+   "title": "What type of recycling facility is this?"
+  },
+  "DetermineRecyclingGlass": {
+   "icon": "recycling_glass.svg",
+   "title": "Can only glass bottles and jars be recycled here, or any type of glass?"
+  },
+  "AddRecyclingContainerMaterials": {
+   "icon": "recycling_container.svg",
+   "title": "What can be left here for recycling?"
+  },
+  "AddKerbHeight": {
+   "icon": "kerb_type.svg",
+   "title": "What’s the height of this curb?"
+  },
+  "AddTactilePavingKerb": {
+   "icon": "kerb_tactile_paving.svg",
+   "title": "Is there tactile paving on this curb here?"
+  },
+  "AddCrossing": {
+   "icon": "pedestrian.svg",
+   "title": "Is there a crossing here?"
+  },
+  "AddCrossingSignals": {
+   "icon": "traffic_lights.svg",
+   "title": "Are there traffic signals that show when to cross here?"
+  },
+  "AddCrossingIsland": {
+   "icon": "pedestrian_crossing_island.svg",
+   "title": "Does this crossing have an island?"
+  },
+  "AddCrossingMarkings": {
+   "icon": "pedestrian_crossing.svg",
+   "title": "Does this crossing have markings across the roadway?"
+  },
+  "AddTactilePavingCrosswalk": {
+   "icon": "blind_pedestrian_crossing.svg",
+   "title": "Does this crosswalk have tactile paving on both ends?"
+  },
+  "AddCrossingKerbHeight": {
+   "icon": "wheelchair_crossing.svg",
+   "title": "What’s the height of the curbs at this crossing?"
+  },
+  "AddTrafficSignalsVibration": {
+   "icon": "blind_traffic_lights.svg",
+   "title": "Do these traffic lights have a tactile indication for blind people for when it’s safe to cross?"
+  },
+  "AddTrafficSignalsButton": {
+   "icon": "traffic_lights_button.svg",
+   "title": "Do these traffic lights have a button to request a walk signal?"
+  },
+  "AddTrafficSignalsSound": {
+   "icon": "blind_traffic_lights_sound.svg",
+   "title": "Are there sound signals for the blind here?"
+  },
+  "AddInformationToTourism": {
+   "icon": "information.svg",
+   "title": "What type of tourist information is this?"
+  },
+  "AddPoliceType": {
+   "icon": "police.svg",
+   "title": "Which type of police station is this?"
+  },
+  "AddPlaygroundAccess": {
+   "icon": "playground.svg",
+   "title": "Who is allowed to use this playground?"
+  },
+  "AddBeachSurface": {
+   "icon": "beach.svg",
+   "title": "What’s the surface here?"
+  },
+  "AddPostboxCollectionTimes": {
+   "icon": "mail.svg",
+   "title": "What are the pickup times of this collection box?"
+  },
+  "CheckExistence": {
+   "icon": "check.svg",
+   "title": "Is this still here?"
+  },
+  "AddGritBinSeasonal": {
+   "icon": "calendar.svg",
+   "title": "Is this also here outside of winter?"
+  },
+  "AddArtworkType": {
+   "icon": "artwork.svg",
+   "title": "What kind of artwork is this?"
+  },
+  "AddBoardType": {
+   "icon": "board_type.svg",
+   "title": "What’s the topic of this information board?"
+  },
+  "AddBoardName": {
+   "icon": "label_thing.svg",
+   "title": "What’s the title of this information board?"
+  },
+  "AddBarrierType": {
+   "icon": "barrier.svg",
+   "title": "What type of barrier is this?"
+  },
+  "AddBarrierOnPath": {
+   "icon": "barrier_on_path.svg",
+   "title": "How does this path cross the barrier here?"
+  },
+  "AddBarrierOnRoad": {
+   "icon": "barrier_on_road.svg",
+   "title": "How does this road cross the barrier here?"
+  },
+  "AddBicycleBarrierType": {
+   "icon": "no_bicycles.svg",
+   "title": "What type of bicycle barrier is this?"
+  },
+  "AddBicycleBarrierInstallation": {
+   "icon": "no_bicycles_lockable.svg",
+   "title": "Can this cycle barrier be opened (with or without a key)?"
+  },
+  "AddStileType": {
+   "icon": "no_cow.svg",
+   "title": "What type of stile is this?"
+  },
+  "AddStepCountStile": {
+   "icon": "steps_count_brown.svg",
+   "title": "How many steps are here?"
+  },
+  "AddBollardType": {
+   "icon": "no_cars.svg",
+   "title": "What type of bollard is this?"
+  },
+  "AddSeating": {
+   "icon": "seating.svg",
+   "title": "What kind of seating does this place have?"
+  },
+  "AddSelfServiceLaundry": {
+   "icon": "laundry.svg",
+   "title": "Does this laundry provide self-service?"
+  },
+  "AddGeneralFee": {
+   "icon": "fee.svg",
+   "title": "Do you need to pay to use this?"
+  },
+  "AddDrinkingWater": {
+   "icon": "drinking_water.svg",
+   "title": "Is the water potable here?"
+  },
+  "AddDrinkingWaterType": {
+   "icon": "drinking_water.svg",
+   "title": "Is drinking water available here? If so, what is its source?"
+  },
+  "AddCameraType": {
+   "icon": "surveillance_camera.svg",
+   "title": "What type of surveillance camera is this?"
+  },
+  "AddFireHydrantType": {
+   "icon": "fire_hydrant.svg",
+   "title": "What kind of fire hydrant is this?"
+  },
+  "AddFireHydrantPosition": {
+   "icon": "fire_hydrant_grass.svg",
+   "title": "Where is this fire hydrant located?"
+  },
+  "AddFireHydrantDiameter": {
+   "icon": "fire_hydrant_diameter.svg",
+   "title": "What diameter is specified on the sign for this fire hydrant?"
+  },
+  "AddFireHydrantRef": {
+   "icon": "fire_hydrant_ref.svg",
+   "title": "What’s the identification number here?"
+  },
+  "AddBbqFuel": {
+   "icon": "fire.svg",
+   "title": "What is this grill powered by?"
+  },
+  "AddTowerAccess": {
+   "icon": "tower.svg",
+   "title": "Who may access this tower? It may be free or paid."
+  },
+  "AddFirewood": {
+   "icon": "firewood.svg",
+   "title": "Is firewood provided here?"
+  },
+  "AddBikeParkingCover": {
+   "icon": "bicycle_parking_cover.svg",
+   "title": "Is this bicycle parking covered (protected from rain)?"
+  },
+  "AddBikeRentalType": {
+   "icon": "bicycle_rental.svg",
+   "title": "What type of bicycle rental is this?"
+  },
+  "AddBikeParkingType": {
+   "icon": "bicycle_parking.svg",
+   "title": "What type of bicycle parking is this?"
+  },
+  "AddBikeParkingAccess": {
+   "icon": "bicycle_parking_access.svg",
+   "title": "Who is allowed to park a bicycle here? Parking may be free or paid."
+  },
+  "AddBikeParkingFee": {
+   "icon": "bicycle_parking_fee.svg",
+   "title": "Do you have to pay to park a bicycle here?"
+  },
+  "AddBikeRentalCapacity": {
+   "icon": "bicycle_rental_capacity.svg",
+   "title": "How many rental bicycle spaces are here?"
+  },
+  "AddBikeParkingCapacity": {
+   "icon": "bicycle_parking_capacity.svg",
+   "title": "How many bicycles can be parked here?"
+  },
+  "AddBicycleRepairStationServices": {
+   "icon": "bicycle_repair_amenity.svg",
+   "title": "What bicycle equipment is available here?"
+  },
+  "AddParcelLockerBrand": {
+   "icon": "parcel_locker_brand.svg",
+   "title": "What’s the brand of this parcel locker?"
+  },
+  "AddHousenumber": {
+   "icon": "housenumber.svg",
+   "title": "What’s the house number of this building?"
+  },
+  "AddAddressStreet": {
+   "icon": "housenumber_street.svg",
+   "title": "What street is this on?"
+  },
+  "AddHairdresserCustomers": {
+   "icon": "hairdresser.svg",
+   "title": "Which customers visit this hairdresser?"
+  },
+  "SpecifyShopType": {
+   "icon": "shop.svg",
+   "title": "What type of shop is this?"
+  },
+  "CheckShopType": {
+   "icon": "check_shop.svg",
+   "title": "This place has been vacant. What’s here now?"
+  },
+  "AddPlaceName": {
+   "icon": "label.svg",
+   "title": "What’s the name of this place?"
+  },
+  "CheckOpeningHoursSigned": {
+   "icon": "opening_hours_signed.svg",
+   "title": "Are the opening hours here signed?"
+  },
+  "AddOpeningHours": {
+   "icon": "opening_hours.svg",
+   "title": "What are the opening hours here?"
+  },
+  "AddBicyclePump": {
+   "icon": "bicycle_pump.svg",
+   "title": "Is there a public bicycle pump here (at least when it’s open)?"
+  },
+  "AddAtmOperator": {
+   "icon": "money.svg",
+   "title": "Which bank operates this ATM?"
+  },
+  "AddAtmCashIn": {
+   "icon": "money.svg",
+   "title": "Can you deposit cash at this ATM?"
+  },
+  "AddClothingBinOperator": {
+   "icon": "recycling_clothes.svg",
+   "title": "Who accepts donations for this clothing bin?"
+  },
+  "AddChargingStationBicycles": {
+   "icon": "bicycle_charger.svg",
+   "title": "Can bicycles be charged here, too?"
+  },
+  "AddChargingStationCapacity": {
+   "icon": "charger_capacity.svg",
+   "title": "How many cars can be charged here at the same time?"
+  },
+  "AddChargingStationBicycleCapacity": {
+   "icon": "charger_bicycle_capacity.svg",
+   "title": "How many bicycles can be charged here at the same time?"
+  },
+  "AddChargingStationOperator": {
+   "icon": "charger_operator.svg",
+   "title": "Who is the operator of this charging station?"
+  },
+  "AddPostboxRoyalCypher": {
+   "icon": "crown.svg",
+   "title": "What’s the royal cypher on this postbox?"
+  },
+  "AddPostboxRef": {
+   "icon": "mail_ref.svg",
+   "title": "What’s the identification number here?"
+  },
+  "AddAccessPointRef": {
+   "icon": "access_point.svg",
+   "title": "What’s the identification number here?"
+  },
+  "AddWheelchairAccessOutside": {
+   "icon": "toilets_wheelchair.svg",
+   "title": "Is this place wheelchair accessible?"
+  },
+  "AddMaxWeight": {
+   "icon": "max_weight.svg",
+   "title": "What’s the weight limit here?"
+  },
+  "AddMaxHeight": {
+   "icon": "max_height.svg",
+   "title": "What height limit is indicated here?"
+  },
+  "AddMaxPhysicalHeight": {
+   "icon": "max_height_measure.svg",
+   "title": "Measure the maximum height here."
+  },
+  "AddRoadName": {
+   "icon": "street_name2.svg",
+   "title": "What’s the name of this street?"
+  },
+  "AddOneway": {
+   "icon": "oneway.svg",
+   "title": "Is this a one-way street? In which direction?"
+  },
+  "AddEntrance": {
+   "icon": "door.svg",
+   "title": "What kind of building entrance is this?"
+  },
+  "AddEntranceReference": {
+   "icon": "door_address.svg",
+   "title": "What is signed at this entrance?"
+  },
+  "AddMopedAccess": {
+   "icon": "moped_access.svg",
+   "title": "Is there a sign indicating access for mopeds on this bike path?"
+  },
+  "AddFerryAccessPedestrian": {
+   "icon": "ferry_pedestrian.svg",
+   "title": "Does this ferry route transport pedestrians?"
+  },
+  "AddFerryAccessMotorVehicle": {
+   "icon": "ferry.svg",
+   "title": "Does this ferry route transport motor vehicles?"
+  },
+  "AddFerryAccessBicycle": {
+   "icon": "ferry_bicycle.svg",
+   "title": "Are bicycles allowed on this ferry?"
+  },
+  "AddFerryAccessHgv": {
+   "icon": "ferry_hgv.svg",
+   "title": "Does this ferry route transport heavy goods vehicles?"
+  },
+  "AddAerialwayBicycleAccess": {
+   "icon": "aerialway_bicycle.svg",
+   "title": "Does this aerial lift transport bicycles?"
+  },
+  "AddOnewayAerialway": {
+   "icon": "aerialway_oneway.svg",
+   "title": "In what direction can you ride this?"
+  },
+  "AddProhibitedForPedestrians": {
+   "icon": "no_pedestrians.svg",
+   "title": "Are pedestrians forbidden to walk on this road without a sidewalk here?"
+  },
+  "MarkCompletedHighwayConstruction": {
+   "icon": "road_construction.svg",
+   "title": "Is this road completed?"
+  },
+  "AddSummitCross": {
+   "icon": "summit_cross.svg",
+   "title": "Is there a summit cross here?"
+  },
+  "AddSummitRegister": {
+   "icon": "peak.svg",
+   "title": "Is there a summit register here?"
+  },
+  "AddTreeLeafType": {
+   "icon": "leaf.svg",
+   "title": "Does this tree have needles or leaves?"
+  },
+  "AddForestLeafType": {
+   "icon": "leaf.svg",
+   "title": "Do the trees here have needles or leaves?"
+  },
+  "AddOrchardProduce": {
+   "icon": "apple.svg",
+   "title": "What’s being grown here?"
+  },
+  "AddLevel": {
+   "icon": "level.svg",
+   "title": "On which level number is this place located?"
+  },
+  "AddLevelThing": {
+   "icon": "level_thing.svg",
+   "title": "On which level number is this thing located?"
+  },
+  "AddAirConditioning": {
+   "icon": "snow_poi.svg",
+   "title": "Is this place air-conditioned?"
+  },
+  "AddSmoking": {
+   "icon": "smoking.svg",
+   "title": "Is smoking allowed here?"
+  },
+  "AddBoatRental": {
+   "icon": "boat.svg",
+   "title": "Which type of boats are for rent here?"
+  },
+  "AddWheelchairAccessPublicTransport": {
+   "icon": "wheelchair.svg",
+   "title": "Is this place wheelchair accessible?"
+  },
+  "AddIsAmenityIndoor": {
+   "icon": "building_inside.svg",
+   "title": "Is this indoors?"
+  },
+  "AddDefibrillatorLocation": {
+   "icon": "defibrillator.svg",
+   "title": "Where is this defibrillator located?"
+  },
+  "AddFirstAidKitLocation": {
+   "icon": "first_aid_kit.svg",
+   "title": "Where is this first aid kit located?"
+  },
+  "AddCaravans": {
+   "icon": "caravan.svg",
+   "title": "May you camp here in a motor home or travel trailer?"
+  },
+  "AddTents": {
+   "icon": "tent.svg",
+   "title": "May you camp here in a tent?"
+  },
+  "AddCabins": {
+   "icon": "cabin.svg",
+   "title": "Are there cabins that you may stay in here?"
+  },
+  "AddCampDrinkingWater": {
+   "icon": "drinking_water.svg",
+   "title": "Is drinking water freely available for guests here?"
+  },
+  "AddCampShower": {
+   "icon": "shower.svg",
+   "title": "Are there showers here?"
+  },
+  "AddCampPower": {
+   "icon": "camp_power.svg",
+   "title": "Are there any power outlets available for guests?"
+  },
+  "AddSanitaryDumpStation": {
+   "icon": "poo.svg",
+   "title": "Is there a sanitary dump station?"
+  },
+  "AddHotWater": {
+   "icon": "thermometer.svg",
+   "title": "Is there hot water here?"
+  },
+  "AddShelterCapacity": {
+   "icon": "shelter_capacity.svg",
+   "title": "How many people can sleep here?"
+  },
+  "AddToiletAvailability": {
+   "icon": "toilets.svg",
+   "title": "Is there a restroom here?"
+  },
+  "AddToiletsFee": {
+   "icon": "toilet_fee.svg",
+   "title": "Do you have to pay to use this restroom?"
+  },
+  "AddWheelchairAccessToilets": {
+   "icon": "toilets_wheelchair.svg",
+   "title": "Is this place wheelchair accessible?"
+  },
+  "AddBikeRepairAvailability": {
+   "icon": "bicycle_repair.svg",
+   "title": "Are bicycle repair services offered here?"
+  },
+  "AddSecondHandBicycleAvailability": {
+   "icon": "bicycle_second_hand.svg",
+   "title": "Are second-hand bicycles sold here?"
+  },
+  "AddVegetarian": {
+   "icon": "restaurant_vegetarian.svg",
+   "title": "Any vegetarian items on the menu here?"
+  },
+  "AddVegan": {
+   "icon": "restaurant_vegan.svg",
+   "title": "Any vegan items on the menu here?"
+  },
+  "AddHalal": {
+   "icon": "halal.svg",
+   "title": "Are halal products offered here?"
+  },
+  "AddKosher": {
+   "icon": "kosher.svg",
+   "title": "Are kosher products offered here?"
+  },
+  "AddGlutenFree": {
+   "icon": "glutenfree.svg",
+   "title": "Are gluten-free products offered here?"
+  },
+  "AddWheelchairAccessBusiness": {
+   "icon": "wheelchair_shop.svg",
+   "title": "Is this place wheelchair accessible?"
+  },
+  "AddInternetAccess": {
+   "icon": "wifi.svg",
+   "title": "What kind of internet connection does this place offer?"
+  },
+  "AddAcceptsCards": {
+   "icon": "card.svg",
+   "title": "Are credit or debit cards accepted here?"
+  },
+  "AddAcceptsCash": {
+   "icon": "cash.svg",
+   "title": "Is cash payment accepted here?"
+  },
+  "AddHandwashing": {
+   "icon": "washing_hands.svg",
+   "title": "Can you wash your hands here?"
+  },
+  "AddBabyChangingTable": {
+   "icon": "baby.svg",
+   "title": "Does this place have a baby changing table?"
+  },
+  "AddWheelchairAccessToiletsPart": {
+   "icon": "toilets_wheelchair.svg",
+   "title": "Is the restroom at this place wheelchair accessible?"
+  },
+  "AddFuelSelfService": {
+   "icon": "fuel_self_service.svg",
+   "title": "Does this gas station allow self-service?"
+  },
+  "CheckShopExistence": {
+   "icon": "check_shop.svg",
+   "title": "Is this still here?"
+  },
+  "AddSidewalk": {
+   "icon": "sidewalk.svg",
+   "title": "Does this street have a sidewalk?"
+  },
+  "AddRoadSurface": {
+   "icon": "street_surface.svg",
+   "title": "What surface does this road have?"
+  },
+  "AddTracktype": {
+   "icon": "tractor.svg",
+   "title": "What’s the surface firmness of this track?"
+  },
+  "AddCycleway": {
+   "icon": "bicycleway.svg",
+   "title": "Is there a bicycle lane or path here? What type?"
+  },
+  "AddLaneMarkings": {
+   "icon": "street.svg",
+   "title": "Does this road have lane markings?"
+  },
+  "AddLanes": {
+   "icon": "street_lanes.svg",
+   "title": "How many car lanes does this road have?"
+  },
+  "AddRoadWidth": {
+   "icon": "street_width.svg",
+   "title": "How wide is the road here?"
+  },
+  "AddRoadSmoothness": {
+   "icon": "street_surface_detail.svg",
+   "title": "What’s the surface quality of this road here?"
+  },
+  "AddPathSmoothness": {
+   "icon": "way_surface_detail.svg",
+   "title": "What’s the surface quality here?"
+  },
+  "AddBarrierOpening": {
+   "icon": "wheelchair_width.svg",
+   "title": "What is the width of the opening here?"
+  },
+  "AddPathSurface": {
+   "icon": "way_surface.svg",
+   "title": "What’s the surface here?"
+  },
+  "AddCyclewaySegregation": {
+   "icon": "path_segregation.svg",
+   "title": "How are the footpath and bicycle path laid out here?"
+  },
+  "AddFootwayPartSurface": {
+   "icon": "footway_surface.svg",
+   "title": "What’s the surface of the footpath here?"
+  },
+  "AddCyclewayPartSurface": {
+   "icon": "bicycleway_surface.svg",
+   "title": "What’s the surface of the bicycle path here?"
+  },
+  "AddSidewalkSurface": {
+   "icon": "sidewalk_surface.svg",
+   "title": "What’s the surface of the sidewalk here?"
+  },
+  "AddCyclewayWidth": {
+   "icon": "bicycleway_width.svg",
+   "title": "How wide is the bicycle path here?"
+  },
+  "AddMaxSpeed": {
+   "icon": "max_speed.svg",
+   "title": "What’s the speed limit for this street?"
+  },
+  "AddBuildingType": {
+   "icon": "building.svg",
+   "title": "What kind of building is this?"
+  },
+  "AddBuildingLevels": {
+   "icon": "building_levels.svg",
+   "title": "How many levels above the basement does this building have?"
+  },
+  "AddRoofShape": {
+   "icon": "roof_shape.svg",
+   "title": "What basic shape does this building’s roof have?"
+  },
+  "AddStepCount": {
+   "icon": "steps_count.svg",
+   "title": "How many steps are here?"
+  },
+  "AddWayLit": {
+   "icon": "lantern.svg",
+   "title": "Is it lit here?"
+  }
+ }
+}

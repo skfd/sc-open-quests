@@ -7,3 +7,4 @@ __pycache__/
 data/backfill/
 data/notes/
 data/grid/
+.preview/

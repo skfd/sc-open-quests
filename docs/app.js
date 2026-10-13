@@ -16,8 +16,11 @@ const state = {
   questSort: { key: "open", dir: -1 },
   compareQuest: "",                 // "" = all counted quests
   compareSort: { key: "perKm2", dir: -1 },
+  releases: true,                   // StreetComplete releases on the time axis
 };
 let cities, quests, questByName, hist;   // loaded data
+let icons = {};                             // quest name -> {icon, title}, from icons/index.json
+let releases = [];                          // [{ts, version}], stable SC releases, oldest first
 const snapshotCache = new Map();
 const charts = [];                          // live uPlot instances, for resize
 
@@ -52,6 +55,14 @@ function humanize(name) {
     .replace(/ (\w)/g, (m, c) => " " + c.toLowerCase());
 }
 
+// The quest's title as the app asks it ("Does this bench have a backrest?"), else its class name humanized.
+function questTitle(name) { return (icons[name] && icons[name].title) || humanize(name); }
+
+function questIcon(name, cls = "q-icon") {
+  const i = icons[name];
+  return i && i.icon ? el("img", { class: cls, src: `icons/${i.icon}`, alt: "", loading: "lazy", width: 32, height: 32 }) : null;
+}
+
 function signed(n) { return n > 0 ? "+" + nf.format(n) : n < 0 ? "−" + nf.format(-n) : "±0"; }
 // Rates: one decimal from 10 up, two significant digits below (0.012, 0.35, 4.7).
 const sig2 = new Intl.NumberFormat("en-CA", { minimumSignificantDigits: 2, maximumSignificantDigits: 2 });
@@ -73,6 +84,7 @@ function readHash() {
   if (p.has("q")) state.picked = p.get("q").split(",").filter(Boolean).slice(0, MAX_PICKED);
   if (p.has("cq")) state.compareQuest = p.get("cq");
   state.includeDisabled = p.get("off") === "1";
+  state.releases = p.get("rel") !== "0";
 }
 
 function writeHash() {
@@ -82,6 +94,7 @@ function writeHash() {
   if (state.picked.length) p.set("q", state.picked.join(","));
   if (state.compareQuest) p.set("cq", state.compareQuest);
   if (state.includeDisabled) p.set("off", "1");
+  if (!state.releases) p.set("rel", "0");
   window.history.replaceState(null, "", "#" + p.toString().replace(/%2C/g, ","));
 }
 
@@ -166,7 +179,92 @@ function breaks(h, { questSet = false } = {}) {
 
 function dayTs(d) { return Date.UTC(+d.slice(0, 4), +d.slice(5, 7) - 1, +d.slice(8, 10)) / 1000; }
 
-function lineChart(target, h, series, { height = 260, showAged = true, questSetBreaks = false } = {}) {
+const majorRelease = (v) => /^v\d+\.0$/.test(v);
+
+// Small pin, as the app marks a quest on the map: a round head over a point at (x, y).
+function pinPath(ctx, x, y, r) {
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.lineTo(x - r * 0.82, y - r * 1.55);
+  ctx.arc(x, y - r * 2.1, r, Math.PI * 0.82, Math.PI * 0.18);
+  ctx.closePath();
+}
+
+// Release pins along the top of the plot. With labels, each is named where there is room; the
+// release nearest the pointer is drawn as a dashed line and described in note.
+function releaseLayer(xs, long, { labels = true, note = null } = {}) {
+  const rel = state.releases ? releases.filter((r) => r.ts >= xs[0] - 86400 && r.ts <= last(xs) + 86400) : [];
+  let hover = null;
+  const shown = (r) => !long || majorRelease(r.version);
+  const describe = (r) => `StreetComplete <b>${r.version}</b> came out on ${new Date(r.ts * 1e3).toISOString().slice(0, 10)}.`;
+  const idle = rel.length
+    ? "Pins along the top are StreetComplete releases" + (long ? " (major versions)" : "") +
+      "; point at one for its date. Every count here uses the quests of " + `v${cities.scVersion}` + ", whatever the date."
+    : "";
+  if (note) note.innerHTML = idle;
+  return {
+    strip: rel.length ? (labels ? 24 : 12) : 0,   // css px above the plot
+    draw(u) {
+      if (!rel.length) return;
+      const ctx = u.ctx, dpr = devicePixelRatio, { left, top, width } = u.bbox;
+      const color = css("--release");
+      ctx.save();
+      ctx.font = `500 ${11 * dpr}px Roboto, system-ui, sans-serif`;
+      ctx.textBaseline = "middle";
+      ctx.textAlign = "left";
+      // Left to right, a release gets a labelled pin where its label fits after the last one, and a
+      // dot otherwise, so a run of monthly releases reads as a dotted stretch rather than a smear.
+      const y = top - 3 * dpr;   // in the strip above the plot (opts.padding)
+      let labelEnd = -Infinity;
+      for (const r of rel) {
+        if (!shown(r)) continue;
+        const x = Math.round(u.valToPos(r.ts, "x", true));
+        if (x < left || x > left + width) continue;
+        const text = long ? r.version.replace(/\.0$/, "") : r.version;
+        const w = ctx.measureText(text).width;
+        ctx.globalAlpha = r === hover ? 1 : 0.85;
+        ctx.fillStyle = color;
+        if (labels && x - 4 * dpr >= labelEnd) {
+          pinPath(ctx, x, y, 3.6 * dpr);
+          ctx.fill();
+          ctx.fillStyle = css("--surface");
+          ctx.beginPath(); ctx.arc(x, y - 7.56 * dpr, 1.4 * dpr, 0, 2 * Math.PI); ctx.fill();
+          ctx.fillStyle = color;
+          ctx.fillText(text, x + 6 * dpr, y - 7.5 * dpr);
+          labelEnd = x + 6 * dpr + w + 6 * dpr;
+        } else {
+          ctx.beginPath(); ctx.arc(x, y - 3 * dpr, (r === hover ? 2.6 : 1.8) * dpr, 0, 2 * Math.PI); ctx.fill();
+        }
+      }
+      if (hover) {
+        const x = Math.round(u.valToPos(hover.ts, "x", true));
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = color;
+        ctx.lineWidth = dpr;
+        ctx.setLineDash([3 * dpr, 3 * dpr]);
+        ctx.beginPath(); ctx.moveTo(x, top); ctx.lineTo(x, top + u.bbox.height); ctx.stroke();
+      }
+      ctx.restore();
+    },
+    cursor(u) {
+      if (!note || !rel.length) return;
+      const cx = u.cursor.left;
+      let best = null, bestD = 10;   // css px
+      if (cx != null && cx >= 0)
+        for (const r of rel) {
+          if (!shown(r)) continue;
+          const d = Math.abs(u.valToPos(r.ts, "x") - cx);
+          if (d < bestD) { best = r; bestD = d; }
+        }
+      if (best === hover) return;
+      hover = best;
+      note.innerHTML = hover ? describe(hover) : idle;
+      u.redraw(false);
+    },
+  };
+}
+
+function lineChart(target, h, series, { height = 260, showAged = true, questSetBreaks = false, releaseLabels = true, note = null } = {}) {
   const xs = h.dates.map(dayTs);
   const mapping = series.open.map((v, i) => (v == null ? null : v - (series.aged[i] || 0)));
   const brk = breaks(h, { questSet: questSetBreaks });
@@ -175,18 +273,20 @@ function lineChart(target, h, series, { height = 260, showAged = true, questSetB
   const long = xs.length > 1 && xs[xs.length - 1] - xs[0] > 300 * 86400;
   const tickFmt = long ? { month: "short", year: "numeric", timeZone: "UTC" } : { month: "short", day: "numeric", timeZone: "UTC" };
   const surface = css("--surface");
+  const rel = releaseLayer(xs, long, { labels: releaseLabels, note });
   const mk = (label, color, data) => ({
     label, stroke: color, width: 2, value: (u, v) => (v == null ? "—" : nf.format(v)),
     points: { show: few, size: 8, width: 2, stroke: color, fill: color },
     spanGaps: false, _data: data,
   });
-  const ser = [mk("Needs mapping", css("--series-1"), mapping)];
+  const ser = [{ ...mk("Needs mapping", css("--series-1"), mapping), fill: css("--wash") }];
   if (showAged) ser.push(mk("Aged, needs resurvey", css("--series-2"), series.aged));
   const axis = { stroke: css("--muted"), grid: { stroke: css("--grid"), width: 1 },
-                 ticks: { stroke: css("--axis"), width: 1, size: 4 }, font: "12px system-ui, sans-serif" };
+                 ticks: { stroke: css("--axis"), width: 1, size: 4 }, font: "12px Roboto, system-ui, sans-serif" };
   const opts = {
     width: Math.max(280, target.clientWidth),
     height,
+    padding: [rel.strip || null, null, null, null],
     tzDate: (ts) => uPlot.tzDate(new Date(ts * 1e3), "Etc/UTC"),
     cursor: { points: { size: 10, width: 2, fill: surface }, drag: { x: false, y: false } },
     scales: {
@@ -207,19 +307,23 @@ function lineChart(target, h, series, { height = 260, showAged = true, questSetB
     hooks: {
       // With no pointer over the plot, the legend reads out the latest snapshot.
       ready: [(u) => u.setLegend({ idx: xs.length - 1 })],
-      setCursor: [(u) => { if (u.cursor.idx == null) u.setLegend({ idx: xs.length - 1 }); }],
+      setCursor: [(u) => { if (u.cursor.idx == null) u.setLegend({ idx: xs.length - 1 }); rel.cursor(u); }],
       draw: [(u) => {
+        rel.draw(u);
         if (!brk.length) return;
-        const ctx = u.ctx, { top, height: ph } = u.bbox;
+        const ctx = u.ctx, { top, height: ph } = u.bbox, dpr = devicePixelRatio;
+        const y0 = top;
         ctx.save();
         ctx.strokeStyle = css("--ink-2");
         ctx.fillStyle = css("--ink-2");
-        ctx.lineWidth = devicePixelRatio;
-        ctx.font = `${11 * devicePixelRatio}px system-ui, sans-serif`;
+        ctx.lineWidth = dpr;
+        ctx.font = `${11 * dpr}px Roboto, system-ui, sans-serif`;
+        ctx.textAlign = "left";
+        ctx.textBaseline = "alphabetic";
         for (const b of brk) {
           const x = Math.round(u.valToPos(xs[b.i] - 43200, "x", true));   // half a day before the new run
-          ctx.beginPath(); ctx.moveTo(x, top); ctx.lineTo(x, top + ph); ctx.stroke();
-          ctx.fillText(" " + b.short, x + 2, top + 12 * devicePixelRatio);
+          ctx.beginPath(); ctx.moveTo(x, y0); ctx.lineTo(x, top + ph); ctx.stroke();
+          ctx.fillText(" " + b.short, x + 2, y0 + 10 * dpr);
         }
         ctx.restore();
       }],
@@ -275,7 +379,7 @@ function renderCityCharts(h) {
   $("#chart-sub").textContent =
     (state.includeDisabled ? "All counted quests, including those off by default. " : "All counted quests that are on by default. ") +
     (h.dates.length === 1 ? "One snapshot so far; the line starts here." : `${h.dates.length} snapshots since ${h.dates[0]}.`);
-  lineChart($("#chart-total"), h, tot, { height: 280, questSetBreaks: true });
+  lineChart($("#chart-total"), h, tot, { height: 300, questSetBreaks: true, note: $("#release-note") });
   $("#breaks").replaceChildren(...breaks(h, { questSet: true }).map((b) => el("li", {}, `│ ${b.date}: ${b.label}. Totals on either side are not directly comparable.`)));
 
   const box = $("#multiples");
@@ -284,14 +388,14 @@ function renderCityCharts(h) {
     const q = questByName.get(qn), s = questSeries(h, qn);
     const target = el("div", { class: "chart" });
     const card = el("article", { class: "card" },
-      el("h3", {}, el("span", {}, humanize(qn)),
-        el("button", { type: "button", title: "Remove from charts", "aria-label": `Remove ${humanize(qn)} from charts`,
+      el("h3", {}, questIcon(qn, "q-icon lg"), el("span", { class: "q-title" }, questTitle(qn)),
+        el("button", { type: "button", title: "Remove from charts", "aria-label": `Remove ${questTitle(qn)} from charts`,
                        onclick: () => togglePick(qn) }, "×")),
       el("p", { class: "sub" }, s ? (q && q.usesAge ? "Mapping and aged series." : "This quest has no resurvey age, so nothing ages into it.")
                                   : "Not counted in this city."),
       target);
     box.append(card);
-    if (s) lineChart(target, h, s, { height: 180, showAged: !!(q && q.usesAge) });
+    if (s) lineChart(target, h, s, { height: 190, showAged: !!(q && q.usesAge), releaseLabels: false });
   }
 }
 
@@ -324,10 +428,11 @@ function renderQuestTable(h) {
   $("#table-city").textContent = h.name;
   const f = state.filter.trim().toLowerCase();
   let rows = questRows(h).filter((r) => (state.includeDisabled || !r.q.defaultDisabled) &&
-    (!f || r.q.name.toLowerCase().includes(f) || humanize(r.q.name).toLowerCase().includes(f)));
+    (!f || r.q.name.toLowerCase().includes(f) || humanize(r.q.name).toLowerCase().includes(f) ||
+     questTitle(r.q.name).toLowerCase().includes(f)));
   const { key, dir } = state.questSort;
   const val = {
-    name: (r) => humanize(r.q.name).toLowerCase(),
+    name: (r) => questTitle(r.q.name).toLowerCase(),
     open: (r) => r.open, delta: (r) => r.delta, aged: (r) => r.agedShare,
     support: (r) => ["supported", "approximated", "unsupported"].indexOf(r.q.support),
     status: (r) => STATUS_RANK[r.status] ?? 9,
@@ -347,13 +452,14 @@ function renderQuestTable(h) {
   const tbody = $("#quest-table tbody");
   tbody.replaceChildren(...rows.map((r) => {
     const picked = state.picked.includes(r.q.name);
-    const name = humanize(r.q.name);
-    const link = r.q.wikiLink ? el("a", { href: `https://wiki.openstreetmap.org/wiki/${r.q.wikiLink}` }, name) : name;
+    const name = questTitle(r.q.name);
+    const link = r.q.wikiLink ? el("a", { href: `https://wiki.openstreetmap.org/wiki/${r.q.wikiLink}` }, name) : el("span", {}, name);
     return el("tr", { class: [r.counted ? "" : "off", picked ? "picked" : ""].join(" ").trim() || null },
       el("td", {}, r.counted ? el("input", { type: "checkbox", checked: picked, "aria-label": `Chart ${name}`,
                                              onchange: () => togglePick(r.q.name) }) : null),
-      el("td", {}, link, r.q.defaultDisabled ? el("span", { class: "chip", title: "Off by default in the app" }, "off by default") : null,
-        el("span", { class: "code" }, r.q.name)),
+      el("td", {}, el("div", { class: "quest-cell" }, questIcon(r.q.name),
+        el("div", {}, link, r.q.defaultDisabled ? el("span", { class: "chip", title: "Off by default in the app" }, "off by default") : null,
+          el("span", { class: "code" }, r.q.name)))),
       el("td", { class: "num" }, r.open == null ? "—" : nf.format(r.open)),
       el("td", { class: "num" }, r.isNew ? "new" : r.delta == null ? "—" : signed(r.delta)),
       el("td", { class: "num" }, r.agedShare == null ? "—" : `${Math.round(100 * r.agedShare)}%`),
@@ -503,6 +609,13 @@ async function main() {
     return;
   }
   questByName = new Map(quests.quests.map((q) => [q.name, q]));
+  // Icons and release dates only decorate; the site works without them.
+  const [ic, rel] = await Promise.all([
+    fetch("icons/index.json").then((r) => (r.ok ? r.json() : null)).catch(() => null),
+    getJSON("sc-releases.json").catch(() => null),
+  ]);
+  icons = (ic && ic.quests) || {};
+  releases = ((rel && rel.releases) || []).map((r) => ({ ts: dayTs(r.date), version: r.version }));
   if (!cities.cities.some((c) => c.id === state.city)) state.city = cities.cities.some((c) => c.id === "toronto") ? "toronto" : cities.cities[0].id;
   state.picked = state.picked.filter((n) => questByName.has(n));
 
@@ -514,6 +627,11 @@ async function main() {
   const dis = $("#include-disabled");
   dis.checked = state.includeDisabled;
   dis.addEventListener("change", () => { state.includeDisabled = dis.checked; writeHash(); render(); });
+
+  const showRel = $("#show-releases");
+  showRel.checked = state.releases;
+  showRel.closest("label").hidden = !releases.length;
+  showRel.addEventListener("change", () => { state.releases = showRel.checked; writeHash(); render(); });
 
   $("#quest-filter").addEventListener("input", (e) => { state.filter = e.target.value; if (hist) renderQuestTable(hist); });
   $("#compare-quest").addEventListener("change", (e) => { state.compareQuest = e.target.value; writeHash(); renderCompare(); });

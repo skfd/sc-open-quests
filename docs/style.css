@@ -1,39 +1,49 @@
+/* Colours from StreetComplete's own theme (ui/theme/Color.kt): primary indigo #4141ba, secondary
+   orange #D14000 (#ff6600 in the dark theme), the traffic-sign green and red, and its quest pins. */
 :root {
   color-scheme: light;
-  --page: #f9f9f7;
-  --surface: #fcfcfb;
-  --ink: #0b0b0b;
-  --ink-2: #52514e;
-  --muted: #898781;
-  --grid: #e1e0d9;
-  --axis: #c3c2b7;
-  --ring: rgba(11, 11, 11, 0.10);
-  --series-1: #2a78d6;  /* needs mapping */
-  --series-2: #eb6834;  /* aged: needs resurvey */
-  --bar: #2a78d6;
-  --wash: rgba(42, 120, 214, 0.10);
-  --good: #006300;
-  --bad: #b3261e;
-  --link: #1c5cab;
+  --brand: #4141ba;
+  --brand-2: #3939a3;
+  --page: #f2f2f4;
+  --surface: #ffffff;
+  --ink: #111111;
+  --ink-2: #4f5250;
+  --muted: #8e9291;
+  --grid: #e6e6ea;
+  --axis: #c9c9d0;
+  --ring: rgba(17, 17, 17, 0.08);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.10), 0 3px 10px rgba(0, 0, 0, 0.06);
+  --series-1: #4141ba;  /* needs mapping */
+  --series-2: #d14000;  /* aged: needs resurvey */
+  --release: #6e6ec9;
+  --bar: #4141ba;
+  --wash: rgba(65, 65, 186, 0.08);
+  --good: #008351;
+  --bad: #c1121c;
+  --link: #3535a8;
 }
 @media (prefers-color-scheme: dark) {
   :root {
     color-scheme: dark;
-    --page: #0d0d0d;
-    --surface: #1a1a19;
+    --brand: #34349a;
+    --brand-2: #2b2b80;
+    --page: #111111;
+    --surface: #222222;
     --ink: #ffffff;
-    --ink-2: #c3c2b7;
-    --muted: #898781;
-    --grid: #2c2c2a;
-    --axis: #383835;
-    --ring: rgba(255, 255, 255, 0.10);
-    --series-1: #3987e5;
-    --series-2: #d95926;
-    --bar: #3987e5;
-    --wash: rgba(57, 135, 229, 0.14);
-    --good: #0ca30c;
-    --bad: #e66767;
-    --link: #86b6ef;
+    --ink-2: #c3c3c8;
+    --muted: #8e9291;
+    --grid: #303033;
+    --axis: #45454a;
+    --ring: rgba(255, 255, 255, 0.08);
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    --series-1: #9a9aff;
+    --series-2: #ff6600;
+    --release: #8a8ae0;
+    --bar: #8080f0;
+    --wash: rgba(154, 154, 255, 0.12);
+    --good: #3fbf7f;
+    --bad: #ff6b6b;
+    --link: #a8a8ff;
   }
 }
 
@@ -42,55 +52,102 @@ body {
   margin: 0;
   background: var(--page);
   color: var(--ink);
-  font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+  font: 15px/1.45 Roboto, system-ui, -apple-system, "Segoe UI", sans-serif;
+  accent-color: var(--series-1);
 }
 a { color: var(--link); }
 h1, h2 { font-weight: 600; margin: 0; }
-h1 { font-size: 1.6rem; }
-h2 { font-size: 1.05rem; }
+h1 { font-size: 1.7rem; letter-spacing: -0.01em; }
+h2 { font-size: 1.1rem; }
 
 .page-head, main, .page-foot { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
-.page-head { padding-top: 28px; }
-.lede { color: var(--ink-2); margin: 6px 0 14px; }
 
-.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--grid); }
-.tab {
-  padding: 8px 14px; color: var(--ink-2); text-decoration: none;
-  border-bottom: 2px solid transparent; margin-bottom: -1px;
+/* ---------- header: the app's indigo, with a faint street grid and a few quest pins ---------- */
+.band {
+  color: #fff;
+  background:
+    repeating-linear-gradient(28deg, transparent 0 46px, rgba(255, 255, 255, 0.06) 46px 49px, transparent 49px 120px),
+    repeating-linear-gradient(-62deg, transparent 0 70px, rgba(255, 255, 255, 0.05) 70px 72px, transparent 72px 150px),
+    linear-gradient(160deg, var(--brand), var(--brand-2));
+  margin-bottom: 8px;
 }
-.tab[aria-current="page"] { color: var(--ink); border-bottom-color: var(--ink); font-weight: 600; }
+.band .page-head { position: relative; padding-top: 28px; }
+.brand { display: flex; gap: 16px; align-items: center; position: relative; z-index: 1; max-width: 720px; }
+.app-icon { flex: none; border-radius: 50%; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25); }
+.band .lede { color: rgba(255, 255, 255, 0.85); margin: 4px 0 0; }
+.band a { color: #fff; }
+.pins { position: absolute; top: 10px; right: 20px; width: 300px; height: 110px; }
+.pin {
+  position: absolute; left: var(--x); top: var(--y);
+  width: 40px; height: 51px; background: url(img/pin.svg) center / contain no-repeat;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.3));
+}
+.pin img { position: absolute; left: 4px; top: 4px; width: 32px; height: 32px; }
+@media (max-width: 900px) { .pins { display: none; } }
 
-.filters { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: end; padding: 16px 0; }
+.tabs { display: flex; gap: 4px; padding-top: 22px; position: relative; z-index: 1; }
+.tab {
+  padding: 9px 18px; color: rgba(255, 255, 255, 0.85); text-decoration: none; font-weight: 500;
+  border-radius: 12px 12px 0 0;
+}
+.tab:hover { background: rgba(255, 255, 255, 0.10); color: #fff; }
+.band .tab[aria-current="page"] { background: var(--page); color: var(--ink); font-weight: 600; }
+.band { margin-bottom: 0; }
+
+/* ---------- controls ---------- */
+.filters { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: end; padding: 18px 0 16px; }
 .field { display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem; color: var(--ink-2); }
 .field.check { flex-direction: row; align-items: center; gap: 8px; font-size: 0.95rem; color: var(--ink); }
+.field.check.small { font-size: 0.85rem; color: var(--ink-2); }
 select, input[type="search"] {
   font: inherit; color: var(--ink); background: var(--surface);
-  border: 1px solid var(--axis); border-radius: 6px; padding: 6px 8px; min-width: 200px;
+  border: 1px solid var(--axis); border-radius: 8px; padding: 7px 10px; min-width: 200px;
 }
+select:focus, input:focus { outline: 2px solid var(--series-1); outline-offset: 1px; }
 
-.notice { background: var(--surface); border: 1px solid var(--ring); border-radius: 8px; padding: 10px 14px; }
+.notice { background: var(--surface); border-radius: 12px; box-shadow: var(--shadow); padding: 10px 14px; }
 
-.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 16px; }
-.tile { background: var(--surface); border: 1px solid var(--ring); border-radius: 10px; padding: 14px 16px; }
+/* ---------- tiles and cards: the app's rounded white surfaces ---------- */
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px; }
+@media (max-width: 600px) { .tile.hero { grid-column: 1 / -1; } }
+.tile { background: var(--surface); border-radius: 16px; box-shadow: var(--shadow); padding: 14px 16px; }
 .tile .label { color: var(--ink-2); font-size: 0.85rem; }
-.tile .value { font-size: 1.7rem; font-weight: 600; line-height: 1.2; margin-top: 2px; }
-.tile.hero .value { font-size: 3rem; }
+.tile .value { font-size: 1.7rem; font-weight: 600; line-height: 1.2; margin-top: 2px; font-variant-numeric: tabular-nums; }
+.tile.hero { background: linear-gradient(160deg, var(--brand), var(--brand-2)); color: #fff; position: relative; overflow: hidden; }
+.tile.hero .label, .tile.hero .delta, .tile.hero .note { color: rgba(255, 255, 255, 0.85); }
+.tile.hero .value { font-size: 2.8rem; }
+.tile.hero::after {
+  content: ""; position: absolute; right: 12px; top: 12px; width: 22px; height: 28px;
+  background: url(img/pin.svg) center / contain no-repeat; opacity: 0.9;
+}
 .tile .delta, .tile .note { font-size: 0.85rem; color: var(--ink-2); margin-top: 2px; }
-.key { display: inline-block; width: 14px; height: 2px; vertical-align: middle; margin-right: 6px; border-radius: 1px; }
+.key { display: inline-block; width: 10px; height: 10px; vertical-align: -1px; margin-right: 6px; border-radius: 50%; }
 
-.card { background: var(--surface); border: 1px solid var(--ring); border-radius: 10px; padding: 16px 18px; margin-bottom: 16px; }
-.card-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 12px; }
+.card { background: var(--surface); border-radius: 16px; box-shadow: var(--shadow); padding: 16px 18px; margin-bottom: 16px; }
+.card-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; }
 .sub { color: var(--ink-2); font-size: 0.88rem; margin: 4px 0 10px; }
 .chart { width: 100%; min-height: 40px; }
+.hover-note { min-height: 1.3em; margin: 2px 0 0; font-size: 0.85rem; color: var(--ink-2); }
+.hover-note b { color: var(--release); }
 .breaks { list-style: none; padding: 0; margin: 6px 0 0; color: var(--ink-2); font-size: 0.85rem; }
 .breaks:empty { display: none; }
 
 .multiples { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 12px; margin-bottom: 16px; }
 .multiples:empty { display: none; }
 .multiples .card { margin: 0; padding: 12px 14px; }
-.multiples h3 { font-size: 0.95rem; font-weight: 600; margin: 0; display: flex; justify-content: space-between; gap: 8px; }
-.multiples h3 button { font: inherit; font-weight: 400; color: var(--ink-2); background: none; border: 0; cursor: pointer; padding: 0 4px; }
+.multiples h3 { font-size: 1rem; font-weight: 600; margin: 0; display: flex; align-items: center; gap: 10px; }
+.multiples h3 .q-title { flex: 1; }
+.multiples h3 button {
+  font: inherit; font-size: 1.2rem; line-height: 1; color: var(--ink-2); background: none; border: 0;
+  cursor: pointer; padding: 2px 6px; border-radius: 50%;
+}
+.multiples h3 button:hover { background: var(--wash); }
 
+/* a quest icon: SC draws them as round badges already */
+.q-icon { flex: none; width: 32px; height: 32px; vertical-align: middle; }
+.q-icon.lg { width: 40px; height: 40px; }
+
+/* ---------- tables ---------- */
 .table-wrap { overflow-x: auto; }
 table.data { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
 table.data th { text-align: left; font-weight: 600; color: var(--ink-2); border-bottom: 1px solid var(--axis); padding: 6px 8px; white-space: nowrap; }
@@ -98,23 +155,29 @@ table.data th[data-sort] { cursor: pointer; user-select: none; }
 table.data th[aria-sort="ascending"]::after { content: " ▲"; font-size: 0.7em; }
 table.data th[aria-sort="descending"]::after { content: " ▼"; font-size: 0.7em; }
 table.data td { border-bottom: 1px solid var(--grid); padding: 6px 8px; vertical-align: middle; }
+table.data tbody tr:hover td { background: var(--wash); }
 table.data .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 table.data tr.off td { color: var(--muted); }
 table.data tr.off a { color: var(--muted); }
+table.data tr.off .q-icon { filter: grayscale(1); opacity: 0.55; }
 table.data tr.picked td { background: var(--wash); }
-.code { display: block; color: var(--muted); font-size: 0.78rem; }
+.quest-cell { display: flex; align-items: center; gap: 10px; }
+.quest-cell a { text-decoration: none; color: inherit; font-weight: 500; }
+.quest-cell a:hover { text-decoration: underline; color: var(--link); }
+.code { display: block; color: var(--muted); font-size: 0.76rem; }
 .c-pick { width: 28px; }
 .up { color: var(--bad); }
 .down { color: var(--good); }
 
-.badge { display: inline-block; font-size: 0.75rem; padding: 1px 7px; border-radius: 999px; border: 1px solid var(--axis); color: var(--ink-2); white-space: nowrap; }
-.badge.supported::before { content: "● "; }
-.badge.approximated::before { content: "◐ "; }
-.badge.unsupported::before { content: "○ "; }
+.badge { display: inline-block; font-size: 0.75rem; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--axis); color: var(--ink-2); white-space: nowrap; }
+.badge::before { font-size: 0.9em; }
+.badge.supported::before { content: "● "; color: var(--good); }
+.badge.approximated::before { content: "◐ "; color: #b38f00; }
+.badge.unsupported::before { content: "○ "; color: var(--muted); }
 .chip { font-size: 0.72rem; color: var(--ink-2); border: 1px dashed var(--axis); border-radius: 4px; padding: 0 4px; margin-left: 6px; white-space: nowrap; }
 
 .bar-col { width: 32%; }
-.hbar { height: 10px; background: var(--bar); border-radius: 0 4px 4px 0; min-width: 1px; }
+.hbar { height: 10px; background: var(--bar); border-radius: 0 5px 5px 0; min-width: 1px; }
 
 .page-foot { color: var(--ink-2); font-size: 0.85rem; padding-top: 8px; padding-bottom: 40px; }
 .page-foot p { margin: 4px 0; }
@@ -124,6 +187,6 @@ table.data tr.picked td { background: var(--wash); }
 /* uPlot chrome in our tokens */
 .u-legend { font-size: 0.85rem; color: var(--ink-2); text-align: left; }
 .u-legend .u-value { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
-.u-legend .u-marker { height: 3px !important; border-width: 0 !important; margin-top: 6px; }
+.u-legend .u-marker { height: 10px !important; width: 10px !important; border-radius: 50%; border-width: 5px !important; }
 .u-legend th { font-weight: 400; }
 .uplot { font-family: inherit; }
