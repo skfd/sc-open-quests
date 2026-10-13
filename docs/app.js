@@ -181,68 +181,31 @@ function dayTs(d) { return Date.UTC(+d.slice(0, 4), +d.slice(5, 7) - 1, +d.slice
 
 const majorRelease = (v) => /^v\d+\.0$/.test(v);
 
-// Small pin, as the app marks a quest on the map: a round head over a point at (x, y).
-function pinPath(ctx, x, y, r) {
-  ctx.beginPath();
-  ctx.moveTo(x, y);
-  ctx.lineTo(x - r * 0.82, y - r * 1.55);
-  ctx.arc(x, y - r * 2.1, r, Math.PI * 0.82, Math.PI * 0.18);
-  ctx.closePath();
-}
-
-// Release pins along the top of the plot. With labels, each is named where there is room; the
-// release nearest the pointer is drawn as a dashed line and described in note.
-function releaseLayer(xs, long, { labels = true, note = null } = {}) {
+// StreetComplete releases as faint, unlabelled vertical lines through the plot. The release nearest
+// the pointer is drawn solid and named in note, below the chart.
+function releaseLayer(xs, long, { note = null } = {}) {
   const rel = state.releases ? releases.filter((r) => r.ts >= xs[0] - 86400 && r.ts <= last(xs) + 86400) : [];
   let hover = null;
   const shown = (r) => !long || majorRelease(r.version);
   const describe = (r) => `StreetComplete <b>${r.version}</b> came out on ${new Date(r.ts * 1e3).toISOString().slice(0, 10)}.`;
   const idle = rel.length
-    ? "Pins along the top are StreetComplete releases" + (long ? " (major versions)" : "") +
-      "; point at one for its date. Every count here uses the quests of " + `v${cities.scVersion}` + ", whatever the date."
+    ? "The faint vertical lines are StreetComplete releases" + (long ? " (major versions)" : "") +
+      "; point at one for its version and date. Every count here uses the quests of " + `v${cities.scVersion}` + ", whatever the date."
     : "";
   if (note) note.innerHTML = idle;
   return {
-    strip: rel.length ? (labels ? 24 : 12) : 0,   // css px above the plot
     draw(u) {
       if (!rel.length) return;
-      const ctx = u.ctx, dpr = devicePixelRatio, { left, top, width } = u.bbox;
-      const color = css("--release");
+      const ctx = u.ctx, dpr = devicePixelRatio, { left, top, width, height } = u.bbox;
       ctx.save();
-      ctx.font = `500 ${11 * dpr}px Roboto, system-ui, sans-serif`;
-      ctx.textBaseline = "middle";
-      ctx.textAlign = "left";
-      // Left to right, a release gets a labelled pin where its label fits after the last one, and a
-      // dot otherwise, so a run of monthly releases reads as a dotted stretch rather than a smear.
-      const y = top - 3 * dpr;   // in the strip above the plot (opts.padding)
-      let labelEnd = -Infinity;
+      ctx.strokeStyle = css("--release");
+      ctx.lineWidth = dpr;
       for (const r of rel) {
         if (!shown(r)) continue;
-        const x = Math.round(u.valToPos(r.ts, "x", true));
+        const x = Math.round(u.valToPos(r.ts, "x", true)) + 0.5;   // on a pixel, so 1px stays crisp
         if (x < left || x > left + width) continue;
-        const text = long ? r.version.replace(/\.0$/, "") : r.version;
-        const w = ctx.measureText(text).width;
-        ctx.globalAlpha = r === hover ? 1 : 0.85;
-        ctx.fillStyle = color;
-        if (labels && x - 4 * dpr >= labelEnd) {
-          pinPath(ctx, x, y, 3.6 * dpr);
-          ctx.fill();
-          ctx.fillStyle = css("--surface");
-          ctx.beginPath(); ctx.arc(x, y - 7.56 * dpr, 1.4 * dpr, 0, 2 * Math.PI); ctx.fill();
-          ctx.fillStyle = color;
-          ctx.fillText(text, x + 6 * dpr, y - 7.5 * dpr);
-          labelEnd = x + 6 * dpr + w + 6 * dpr;
-        } else {
-          ctx.beginPath(); ctx.arc(x, y - 3 * dpr, (r === hover ? 2.6 : 1.8) * dpr, 0, 2 * Math.PI); ctx.fill();
-        }
-      }
-      if (hover) {
-        const x = Math.round(u.valToPos(hover.ts, "x", true));
-        ctx.globalAlpha = 1;
-        ctx.strokeStyle = color;
-        ctx.lineWidth = dpr;
-        ctx.setLineDash([3 * dpr, 3 * dpr]);
-        ctx.beginPath(); ctx.moveTo(x, top); ctx.lineTo(x, top + u.bbox.height); ctx.stroke();
+        ctx.globalAlpha = r === hover ? 0.9 : 0.28;
+        ctx.beginPath(); ctx.moveTo(x, top); ctx.lineTo(x, top + height); ctx.stroke();
       }
       ctx.restore();
     },
@@ -264,7 +227,7 @@ function releaseLayer(xs, long, { labels = true, note = null } = {}) {
   };
 }
 
-function lineChart(target, h, series, { height = 260, showAged = true, questSetBreaks = false, releaseLabels = true, note = null } = {}) {
+function lineChart(target, h, series, { height = 260, showAged = true, questSetBreaks = false, note = null } = {}) {
   const xs = h.dates.map(dayTs);
   const mapping = series.open.map((v, i) => (v == null ? null : v - (series.aged[i] || 0)));
   const brk = breaks(h, { questSet: questSetBreaks });
@@ -273,7 +236,7 @@ function lineChart(target, h, series, { height = 260, showAged = true, questSetB
   const long = xs.length > 1 && xs[xs.length - 1] - xs[0] > 300 * 86400;
   const tickFmt = long ? { month: "short", year: "numeric", timeZone: "UTC" } : { month: "short", day: "numeric", timeZone: "UTC" };
   const surface = css("--surface");
-  const rel = releaseLayer(xs, long, { labels: releaseLabels, note });
+  const rel = releaseLayer(xs, long, { note });
   const mk = (label, color, data) => ({
     label, stroke: color, width: 2, value: (u, v) => (v == null ? "—" : nf.format(v)),
     points: { show: few, size: 8, width: 2, stroke: color, fill: color },
@@ -286,7 +249,6 @@ function lineChart(target, h, series, { height = 260, showAged = true, questSetB
   const opts = {
     width: Math.max(280, target.clientWidth),
     height,
-    padding: [rel.strip || null, null, null, null],
     tzDate: (ts) => uPlot.tzDate(new Date(ts * 1e3), "Etc/UTC"),
     cursor: { points: { size: 10, width: 2, fill: surface }, drag: { x: false, y: false } },
     scales: {
@@ -398,7 +360,7 @@ function renderCityCharts(h) {
                                   : "Not counted in this city."),
       target);
     box.append(card);
-    if (s) lineChart(target, h, s, { height: 190, showAged: !!(q && q.usesAge), releaseLabels: false });
+    if (s) lineChart(target, h, s, { height: 190, showAged: !!(q && q.usesAge) });
   }
 }
 
