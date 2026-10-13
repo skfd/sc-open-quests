@@ -36,10 +36,10 @@ Toronto only, about 10 common quest types whose filters are simple, a few weeks 
 - jmizv's queries are not tied to one city, and its QUESTS.md has a "Pending" (open) column.
 - Toronto is **admin_level 6** (relation 324211), not 8. Configure cities by relation id.
 
-## Status and next steps (2026-10-12)
+## Status and next steps (2026-10-13)
 
 Milestone 1 is done and the site is live at https://skfd.github.io/sc-open-quests/. It covers 48 Ontario cities and
-the 138 filter quests from SC v63.4. There are 4 snapshots, from 2026-07-16 to 2026-10-10. `kk-SCOpenQuests` runs daily
+all 176 quest types of SC v63.4 that the app offers there (14 more are not offered in Ontario), monthly from 2017-01 and daily since 2026-10. `kk-SCOpenQuests` runs daily
 at 13:15. Design and known gaps are in DESIGN.md.
 
 Next, in order:
@@ -55,26 +55,25 @@ Next, in order:
    "Custom quests" and "Area quests"; the last three use SC's country metadata per position). Left:
    - the note quest. Done 2026-10-12 (DESIGN.md, "Notes"), with the hiding below.
    The area unit is the whole city since 2026-10-12 (DESIGN.md, "Area unit").
-3. **Deeper history: counted, staged, not published.** `tools/backfill_history.py` (DESIGN.md, "Monthly
-   history") clipped the planet history to Ontario (`~/Code/.osm-data/ontario-history/`) and counts the 1st
-   of every month, 2017-01 to 2026-10, into `data/backfill/snapshots/` (log: `logs/backfill.log`). A slice
-   equals the Geofabrik extract at the same instant. `data/backfill/recount/` holds the four dailies before
-   2026-10-11 recounted with all 51 quests (07-16 and 10-02 from slices, their extracts are pruned); their
-   old quests are unchanged. To publish: `python tools/backfill_history.py merge`, `python run.py history`,
-   commit "data ...". **The final pass started 2026-10-13 04:00** (log: `logs/backfill-final.log`, about
-   2 minutes a month, then `recount`; done about 08:30). It holds everything the owner asked to store
-   once: notes, the resurvey settings 0.5 and 2, "show all notes" and the z14 tile grids
-   (`data/backfill/grid/`, copied to `data/grid/` by `merge`); DESIGN.md, "Resurvey settings…". Earlier
-   passes, superseded: without notes in `data/backfill/nonotes/`, with notes only in
-   `data/backfill/notes-only/` (its recount of 2026-10-10 crashed when the engine was rebuilt under it).
-   The published 2026-10-11 lacks notes too; `run.py` recounts it from its stored extract once a notes
-   dump reaches it.
-   Toronto's preview (`data/backfill/preview-toronto-nonotes.png`) is flat except AddHousenumber:
-   +293k from 2019-01 to 2019-02 and −277k from 2026-05 to 2026-06, which look like a building import
-   and an address import; worth checking before it goes public.
+3. **Deeper history: published 2026-10-13** ("data 2017-01-01 to 2026-10-10"). The site has 123
+   snapshots per city: the 1st of every month 2017-01 to 2026-10 from the planet history
+   (`tools/backfill_history.py`, DESIGN.md "Monthly history"), plus the dailies, all with notes and all 51
+   custom quests. The final pass (log: `logs/backfill-final.log`) took about 4.5 minutes a month, not 2,
+   and ran 04:00 to 11:02. It also stored the resurvey settings 0.5 and 2, "show all notes" and the z14
+   tile grids (`data/grid/`); DESIGN.md, "Resurvey settings…". `data/backfill/` can be pruned of the
+   superseded `nonotes/` and `notes-only/` passes and the slice .pbf files.
+   The published 2026-10-11 lacks notes, so the chart shows a break there; `run.py` recounts it from its
+   stored extract once a notes dump reaches it.
+   Toronto's AddHousenumber went public with its two steps: +293k from 2019-01 to 2019-02 and −277k
+   from 2026-05 to 2026-06, which look like a building import and an address import. Worth a note on
+   the site once confirmed.
 4. **Outreach.** Now that there is something to show, contact starsep (StreetCompleteStats), the SC devs and jmizv.
 5. **Smaller items:**
    - ~~Model open OSM notes, since the app hides quests at a note's position.~~ Done 2026-10-12.
    - Write down the routine for SC version bumps (v64: rerun `tools/sc-harness`, `engine/sync-sc.ps1`;
-     the note filter is pinned in `PORTED-QUESTS.txt` as helper:OsmNoteQuest).
+     the note filter is pinned in `PORTED-QUESTS.txt` as helper:OsmNoteQuest; then
+     `tools/sc_assets.py <sc-checkout>` for the icons and titles, `tools/sc_releases.py` for the
+     release pins).
+   - ~~Make the site look like StreetComplete; show app releases on the timeline.~~ Done 2026-10-13
+     (DESIGN.md, "Site look").
    - Heatmap per quest type (stretch goal).
