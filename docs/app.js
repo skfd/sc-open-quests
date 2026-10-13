@@ -181,53 +181,56 @@ function dayTs(d) { return Date.UTC(+d.slice(0, 4), +d.slice(5, 7) - 1, +d.slice
 
 const majorRelease = (v) => /^v\d+\.0$/.test(v);
 
-// StreetComplete releases as faint, unlabelled vertical lines through the plot. The release nearest
-// the pointer is drawn solid and named in note, below the chart.
-function releaseLayer(xs, long, { note = null } = {}) {
+// StreetComplete releases as faint, unlabelled vertical lines through the plot. While the pointer is
+// on a date, the release current on that date (the last one at or before it, so the line to the
+// pointer's left) is drawn solid and named in note, below the chart. Over long ranges only majors get
+// a faint line, but a minor release still gets its solid one while it is current.
+function releaseLayer(xs, long, { note = null, idle = true } = {}) {
   const rel = state.releases ? releases.filter((r) => r.ts >= xs[0] - 86400 && r.ts <= last(xs) + 86400) : [];
-  let hover = null;
+  let hover = null, hoverTs = null;
   const shown = (r) => !long || majorRelease(r.version);
-  const describe = (r) => `StreetComplete <b>${r.version}</b> came out on ${new Date(r.ts * 1e3).toISOString().slice(0, 10)}.`;
-  const idle = rel.length
+  const day = (ts) => new Date(ts * 1e3).toISOString().slice(0, 10);
+  const describe = (r, ts) => `StreetComplete <b>${r.version}</b> was the current release on ${day(ts)}` +
+    (r.ts === ts ? "; it came out that day." : `, out since ${day(r.ts)}.`);
+  const idleText = rel.length && idle
     ? "The faint vertical lines are StreetComplete releases" + (long ? " (major versions)" : "") +
-      "; point at one for its version and date. Every count here uses the quests of " + `v${cities.scVersion}` + ", whatever the date."
+      "; move along the chart to see which was current. Every count here uses the quests of " + `v${cities.scVersion}` + ", whatever the date."
     : "";
-  if (note) note.innerHTML = idle;
+  if (note) note.innerHTML = idleText;
   return {
     draw(u) {
       if (!rel.length) return;
       const ctx = u.ctx, dpr = devicePixelRatio, { left, top, width, height } = u.bbox;
+      const line = (r) => {
+        const x = Math.round(u.valToPos(r.ts, "x", true)) + 0.5;   // on a pixel, so 1px stays crisp
+        if (x < left || x > left + width) return;
+        ctx.beginPath(); ctx.moveTo(x, top); ctx.lineTo(x, top + height); ctx.stroke();
+      };
       ctx.save();
       ctx.strokeStyle = css("--release");
       ctx.lineWidth = dpr;
-      for (const r of rel) {
-        if (!shown(r)) continue;
-        const x = Math.round(u.valToPos(r.ts, "x", true)) + 0.5;   // on a pixel, so 1px stays crisp
-        if (x < left || x > left + width) continue;
-        ctx.globalAlpha = r === hover ? 0.9 : 0.28;
-        ctx.beginPath(); ctx.moveTo(x, top); ctx.lineTo(x, top + height); ctx.stroke();
-      }
+      ctx.globalAlpha = 0.28;
+      for (const r of rel) if (shown(r) && r !== hover) line(r);
+      if (hover) { ctx.globalAlpha = 1; ctx.lineWidth = 1.5 * dpr; line(hover); }
       ctx.restore();
     },
     cursor(u) {
-      if (!note || !rel.length) return;
-      const cx = u.cursor.left;
-      let best = null, bestD = 10;   // css px
-      if (cx != null && cx >= 0)
-        for (const r of rel) {
-          if (!shown(r)) continue;
-          const d = Math.abs(u.valToPos(r.ts, "x") - cx);
-          if (d < bestD) { best = r; bestD = d; }
-        }
-      if (best === hover) return;
-      hover = best;
-      note.innerHTML = hover ? describe(hover) : idle;
-      u.redraw(false);
+      if (!rel.length) return;
+      const idx = u.cursor.idx;
+      const ts = idx == null ? null : xs[idx];
+      let cur = null;
+      if (ts != null) for (const r of releases) { if (r.ts <= ts) cur = r; else break; }
+      if (cur === hover && ts === hoverTs) return;
+      const redraw = cur !== hover;
+      hover = cur;
+      hoverTs = ts;
+      if (note) note.innerHTML = hover ? describe(hover, ts) : idleText;
+      if (redraw) u.redraw(false);
     },
   };
 }
 
-function lineChart(target, h, series, { height = 260, showAged = true, questSetBreaks = false, note = null } = {}) {
+function lineChart(target, h, series, { height = 260, showAged = true, questSetBreaks = false, note = null, noteIdle = true } = {}) {
   const xs = h.dates.map(dayTs);
   const mapping = series.open.map((v, i) => (v == null ? null : v - (series.aged[i] || 0)));
   const brk = breaks(h, { questSet: questSetBreaks });
@@ -236,7 +239,7 @@ function lineChart(target, h, series, { height = 260, showAged = true, questSetB
   const long = xs.length > 1 && xs[xs.length - 1] - xs[0] > 300 * 86400;
   const tickFmt = long ? { month: "short", year: "numeric", timeZone: "UTC" } : { month: "short", day: "numeric", timeZone: "UTC" };
   const surface = css("--surface");
-  const rel = releaseLayer(xs, long, { note });
+  const rel = releaseLayer(xs, long, { note, idle: noteIdle });
   const mk = (label, color, data) => ({
     label, stroke: color, width: 2, value: (u, v) => (v == null ? "—" : nf.format(v)),
     points: { show: few, size: 8, width: 2, stroke: color, fill: color },
@@ -394,15 +397,16 @@ function renderCityCharts(h) {
   for (const qn of state.picked) {
     const q = questByName.get(qn), s = questSeries(h, qn);
     const target = el("div", { class: "chart" });
+    const note = el("p", { class: "hover-note", "aria-live": "polite" });
     const card = el("article", { class: "card" },
       el("h3", {}, questIcon(qn, "q-icon lg"), el("span", { class: "q-title" }, questTitle(qn)),
         el("button", { type: "button", title: "Remove from charts", "aria-label": `Remove ${questTitle(qn)} from charts`,
                        onclick: () => togglePick(qn) }, "×")),
       el("p", { class: "sub" }, s ? (q && q.usesAge ? "Mapping and aged series." : "This quest has no resurvey age, so nothing ages into it.")
                                   : "Not counted in this city."),
-      target);
+      target, s ? note : null);
     box.append(card);
-    if (s) lineChart(target, h, s, { height: 190, showAged: !!(q && q.usesAge) });
+    if (s) lineChart(target, h, s, { height: 190, showAged: !!(q && q.usesAge), note, noteIdle: false });
   }
 }
 

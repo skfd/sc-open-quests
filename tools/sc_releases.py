@@ -3,7 +3,8 @@
     python tools/sc_releases.py
 
 Reads the GitHub releases of streetcomplete/StreetComplete (no token needed: three requests),
-keeps the ones that are neither drafts nor prereleases, and writes
+keeps the ones that are neither drafts nor prereleases (by flag, or by a tag such as v31.0-beta1 that
+GitHub has as a full release), and writes
 {"releases": [{"version": "v63.4", "date": "2026-07-28"}, ...]} oldest first.
 """
 import json
@@ -29,7 +30,8 @@ def fetch() -> list[dict]:
 
 
 def main() -> None:
-    stable = sorted((r for r in fetch() if not r["draft"] and not r["prerelease"] and r.get("published_at")),
+    stable = sorted((r for r in fetch() if not r["draft"] and not r["prerelease"] and "-" not in r["tag_name"]
+                     and r.get("published_at")),
                     key=lambda r: r["published_at"])
     rel = [{"version": r["tag_name"], "date": r["published_at"][:10]} for r in stable]
     OUT.write_text(json.dumps({"releases": rel}, indent=1) + "\n", "utf-8")
