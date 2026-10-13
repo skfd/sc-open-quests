@@ -61,10 +61,12 @@ Next, in order:
    equals the Geofabrik extract at the same instant. `data/backfill/recount/` holds the four dailies before
    2026-10-11 recounted with all 51 quests (07-16 and 10-02 from slices, their extracts are pruned); their
    old quests are unchanged. To publish: `python tools/backfill_history.py merge`, `python run.py history`,
-   commit "data ...". **Notes are merged (2026-10-12) but these were counted without them:** recount first
-   (delete `data/backfill/snapshots` and `recount`, rerun `months` and `recount`, about 4 hours;
-   `backfill_history.py` passes the newest notes clip itself). Otherwise the published series flips
-   between notes and no notes.
+   commit "data ...". **Notes:** the first pass (counted without notes) is in `data/backfill/nonotes/`; a
+   recount with notes started 2026-10-12 21:52 and should finish about 03:00, then `recount` redoes the
+   dailies. The published 2026-10-11 lacks notes too; `run.py` recounts it from its stored extract.
+   Toronto's preview (`data/backfill/preview-toronto-nonotes.png`) is flat except AddHousenumber:
+   +293k from 2019-01 to 2019-02 and −277k from 2026-05 to 2026-06, which look like a building import
+   and an address import; worth checking before it goes public.
 4. **Outreach.** Now that there is something to show, contact starsep (StreetCompleteStats), the SC devs and jmizv.
 5. **Smaller items:**
    - ~~Model open OSM notes, since the app hides quests at a note's position.~~ Done 2026-10-12.
