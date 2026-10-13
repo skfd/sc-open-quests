@@ -89,6 +89,9 @@ files (sha256 of the copied file; patched files also give the upstream sha256):
   b6fa4c5437d989d537e6330e0cb30148180a311857f70e970571088ff256e809  de/westnordost/streetcomplete/osm/Things.kt
   2e9c55c4a1a861f8f467888dc8f39150beb1bbcd8c3c3c96f40ebae745261169  de/westnordost/streetcomplete/osm/CrossingUtils.kt
   0d80d4d076e75f7ba7233c1c32b0f1b809e31c4a6a35b70dfc3c91c8e0d2fa09  de/westnordost/streetcomplete/data/osm/mapdata/ElementKey.kt
+  bba8fc18b42485b4ae00684d25f5c631af988eb9baf3331ed23beae91907a984  de/westnordost/streetcomplete/data/osmnotes/Note.kt
+  3bfa716aa79f3ce411051332f59b4bc57945f52d04aa4b548699cd2e98cf49e6  de/westnordost/streetcomplete/data/user/User.kt
+  1702fe44500c456c0698894f24a6d18726f7003e14068b75cb13de6eab3d9583  de/westnordost/streetcomplete/util/ktx/LatLon.kt
 data files (from app/src/commonMain/composeResources/files/ into src/main/resources/sc/):
   4e360e909fcdbf5021d9952771af4c0638168564d871ae14b9ce3f289c33add2  osmfeatures/default/presets.json
   109fca6ea2866cf054f48edb6d8fd050d7b017ae32e92caa9c0302543a6551e9  osmfeatures/default/en.json
@@ -154,3 +157,4 @@ ported custom quests (sha256 of the androidMain file with LF line endings; logic
   eab24777688cd718836969465a089a03c72f4c452898395f5cecb2603c8eb015  quests/address/AddHousenumber.kt  (AddHousenumber)
   48a0903ba1a7dfc8f500beb45bc487c3a3f8bf071c59ac14f362c47511575742  quests/cycleway/AddCycleway.kt  (AddCycleway)
   0d61a25ae9963b681a585f204b0fecb95ebe013fd9100bc0f02decdef00c5649  quests/roof_shape/AddRoofShape.kt  (AddRoofShape)
+  51cd47d14ef18dff1b39cde6e58ba1e43d19cfec1d3d60e706aca28c1b635d5e  cm:data/osmnotes/notequests/OsmNoteQuestController.kt  (OsmNoteQuest)

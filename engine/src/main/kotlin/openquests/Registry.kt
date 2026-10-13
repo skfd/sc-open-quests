@@ -81,6 +81,8 @@ class QuestDef(
     val custom: CustomQuest?,
     /** a ported custom quest that needs the surrounding map data; counted by AreaPass */
     val area: AreaQuest?,
+    /** the note quest, counted from a notes clip (Engine.notes); false when the run has none */
+    val countsNotes: Boolean,
     /** from the dump for a filter quest, from the port for a custom quest (the dump has none) */
     val usesAge: Boolean,
     val defaultDisabled: Boolean,
@@ -94,16 +96,17 @@ class QuestDef(
     val filter: ElementFilterExpression? = elementFilter?.toElementFilterExpression()
     val matcher: QuestMatcher? = filter?.let { FilterMatcher(it) } ?: custom?.let { CustomMatcher(it) }
     val isFilter get() = filter != null
-    val isCounted get() = matcher != null || area != null
+    val isCounted get() = matcher != null || area != null || countsNotes
 }
 
 class Registry(val scVersion: String, val scCommit: String, val quests: List<QuestDef>) {
     val filterQuests = quests.filter { it.isFilter }
-    /** filter quests and ported custom quests, in registry order */
+    /** filter quests, ported custom quests and (with notes) the note quest, in registry order */
     val countedQuests = quests.filter { it.isCounted }
 
     companion object {
-        fun load(file: File): Registry {
+        /** [withNotes]: the run has a notes clip, so the note quest is counted */
+        fun load(file: File, withNotes: Boolean = false): Registry {
             val root = Json.parseToJsonElement(file.readText()).jsonObject
             val quests = root["quests"]!!.jsonArray.mapIndexed { i, q ->
                 q as JsonObject
@@ -123,6 +126,7 @@ class Registry(val scVersion: String, val scCommit: String, val quests: List<Que
                     elementFilter = filterString,
                     custom = custom,
                     area = area,
+                    countsNotes = withNotes && kind == "note",
                     usesAge = custom?.usesAge ?: area?.usesAge ?: q["usesAge"]?.jsonPrimitive?.boolean ?: false,
                     defaultDisabled = q["defaultDisabled"]?.jsonPrimitive?.boolean ?: false,
                     countries = Countries.fromJson(q["enabledInCountries"]),

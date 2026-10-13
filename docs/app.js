@@ -124,7 +124,7 @@ function likeForLikeDelta(h, i) {
   return any ? d : null;
 }
 
-// Indices where the SC version, resurvey multiplier or area unit differs from the previous date. With
+// Indices where the SC version, resurvey multiplier, area unit or notes modelling differs from the previous date. With
 // questSet, also where the set of headline quests changes (a quest type counted for the first
 // time, e.g. a newly ported custom quest), which moves a total but not a single quest's line.
 function breaks(h, { questSet = false } = {}) {
@@ -151,6 +151,11 @@ function breaks(h, { questSet = false } = {}) {
     if (a.areaUnit && b.areaUnit && a.areaUnit !== b.areaUnit) {
       what.push(`area quests per ${a.areaUnit} → per ${b.areaUnit}`);
       short.push(b.areaUnit);
+    }
+    // with notes, quests on an open note's position are hidden, as in the app
+    if (!!a.notes !== !!b.notes) {
+      what.push(b.notes ? "open notes now hide the quests at their position" : "open notes no longer modelled");
+      short.push(b.notes ? "notes" : "no notes");
     }
     if (what.length) out.push({ i, date: h.dates[i], label: what.join(", "), short: short.join(" ") });
   }

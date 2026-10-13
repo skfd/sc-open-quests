@@ -16,7 +16,8 @@ import kotlin.test.assertTrue
  *
  * Unlike [TorontoRegressionTest], which needs one fixed extract, this survives the store pruning
  * old extracts: any extract that was counted and committed must count the same again. Skipped
- * when no stored extract has a snapshot.
+ * when no stored extract has a snapshot. A snapshot counted with notes needs the clip of the same
+ * dump in data/notes/ (run.py makes it); skipped if it is gone.
  */
 class SnapshotReproductionTest {
     @Test fun `recounting a stored extract reproduces its committed snapshot`() {
@@ -30,11 +31,18 @@ class SnapshotReproductionTest {
         val (pbf, snapshotFile) = pair!!
 
         val snapshot = Json.parseToJsonElement(snapshotFile.readText()).jsonObject
+        val notesSha = (snapshot["notes"] as? kotlinx.serialization.json.JsonObject)?.get("sha256")?.jsonPrimitive?.content
+        val clip = notesSha?.let { sha ->
+            File("data/notes").listFiles { f -> f.name.endsWith(".jsonl") }.orEmpty()
+                .firstOrNull { f -> f.bufferedReader().use { it.readLine() }.contains("\"sha256\":\"$sha\"") }
+                .also { assumeTrue(it != null, "no clip of the notes dump $sha in data/notes") }
+        }
         val result = count(CountOptions(
             pbf = pbf,
             quests = File("data/quests/v${snapshot["scVersion"]!!.jsonPrimitive.content}.json"),
             cities = File("config/cities.json"),
             out = null,
+            notes = clip,
         ))
         assertEquals(snapshot["asOf"]!!.jsonPrimitive.content, result.meta.extractTimestamp)
 

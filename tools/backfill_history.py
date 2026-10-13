@@ -116,6 +116,9 @@ def count(pbf: Path, meta: Path, out: Path) -> Path:
                "--quests", str(run.newest_quests_file().relative_to(run.ROOT)),
                "--cities", str(run.CITIES_CONFIG.relative_to(run.ROOT)),
                "--out", str(out), "--source-meta", str(meta)]
+        clip = run.notes_clip()  # the newest dump holds every note's history, so it reaches any month
+        if clip:
+            cmd += ["--notes", str(clip.relative_to(run.ROOT))]
         run.log("running engine: " + " ".join(cmd[1:]))
         subprocess.run(cmd, cwd=run.ROOT, env=run.engine_env(), check=True)
     snaps = sorted((out / "snapshots").glob("*.json"), key=lambda p: p.stat().st_mtime)

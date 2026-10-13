@@ -46,9 +46,14 @@ Next, in order:
 1. **Check the first scheduled runs.** A run on 2026-10-12 00:50 committed and pushed "data 2026-10-11"
    (`logs/scheduler.log`). The 13:15 slot fired on its own on 2026-10-12 (no new extract, exit 0); still
    watch the first one that counts a new extract per city (about 4 minutes).
+   **Since notes (2026-10-12), day D is counted only with the notes dump of D+1**, and the S3 mirror
+   the dump redirects to lagged it by more than 14 hours (261012 made ~04:30 UTC, still 404 at 19:10
+   UTC). At 13:15 (17:15 UTC) that dump is probably not there yet, so data for day D lands on D+2. Watch
+   the first runs (`logs/scheduler.log`: "no notes dump reaches ..."); if it is always a day behind, add
+   a second, evening slot. A run raises once an extract has waited 3 days.
 2. **Custom quests are done.** All 51 are counted and checked exactly against SC (engine/README.md,
    "Custom quests" and "Area quests"; the last three use SC's country metadata per position). Left:
-   - the note quest.
+   - the note quest. Done 2026-10-12 (DESIGN.md, "Notes"), with the hiding below.
    The area unit is the whole city since 2026-10-12 (DESIGN.md, "Area unit").
 3. **Deeper history: counted, staged, not published.** `tools/backfill_history.py` (DESIGN.md, "Monthly
    history") clipped the planet history to Ontario (`~/Code/.osm-data/ontario-history/`) and counts the 1st
@@ -56,10 +61,13 @@ Next, in order:
    equals the Geofabrik extract at the same instant. `data/backfill/recount/` holds the four dailies before
    2026-10-11 recounted with all 51 quests (07-16 and 10-02 from slices, their extracts are pruned); their
    old quests are unchanged. To publish: `python tools/backfill_history.py merge`, `python run.py history`,
-   commit "data ...". Decide first whether to merge the `notes` branch and recount with notes (delete
-   `data/backfill/snapshots` and `recount`, rerun `months` and `recount`, about 4 hours).
+   commit "data ...". **Notes are merged (2026-10-12) but these were counted without them:** recount first
+   (delete `data/backfill/snapshots` and `recount`, rerun `months` and `recount`, about 4 hours;
+   `backfill_history.py` passes the newest notes clip itself). Otherwise the published series flips
+   between notes and no notes.
 4. **Outreach.** Now that there is something to show, contact starsep (StreetCompleteStats), the SC devs and jmizv.
 5. **Smaller items:**
-   - Model open OSM notes, since the app hides quests at a note's position.
-   - Write down the routine for SC version bumps (v64: rerun `tools/sc-harness`, `engine/sync-sc.ps1`).
+   - ~~Model open OSM notes, since the app hides quests at a note's position.~~ Done 2026-10-12.
+   - Write down the routine for SC version bumps (v64: rerun `tools/sc-harness`, `engine/sync-sc.ps1`;
+     the note filter is pinned in `PORTED-QUESTS.txt` as helper:OsmNoteQuest).
    - Heatmap per quest type (stretch goal).

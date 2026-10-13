@@ -5,3 +5,4 @@ logs/
 __pycache__/
 .claude/
 data/backfill/
+data/notes/
