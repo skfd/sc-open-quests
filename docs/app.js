@@ -323,7 +323,10 @@ function lineChart(target, h, series, { height = 260, showAged = true, questSetB
         for (const b of brk) {
           const x = Math.round(u.valToPos(xs[b.i] - 43200, "x", true));   // half a day before the new run
           ctx.beginPath(); ctx.moveTo(x, y0); ctx.lineTo(x, top + ph); ctx.stroke();
-          ctx.fillText(" " + b.short, x + 2, y0 + 10 * dpr);
+          // near the right edge, the label goes to the left of its line
+          const w = ctx.measureText(" " + b.short).width;
+          const right = x + 2 + w <= u.bbox.left + u.bbox.width;
+          ctx.fillText(" " + b.short, right ? x + 2 : x - 4 * dpr - w, y0 + 10 * dpr);
         }
         ctx.restore();
       }],
