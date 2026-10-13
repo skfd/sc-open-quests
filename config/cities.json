@@ -12,7 +12,8 @@
       "timeZone": "America/Toronto",
       "population": 119677,
       "landAreaKm2": 75.2961139285999,
-      "boundary": "data/boundaries/2408837.json"
+      "boundary": "data/boundaries/2408837.json",
+      "region": "ontario"
     },
     {
       "id": "barrie",
@@ -26,7 +27,8 @@
       "timeZone": "America/Toronto",
       "population": 141434,
       "landAreaKm2": 109.1022187520018,
-      "boundary": "data/boundaries/6609999.json"
+      "boundary": "data/boundaries/6609999.json",
+      "region": "ontario"
     },
     {
       "id": "belleville",
@@ -40,7 +42,8 @@
       "timeZone": "America/Toronto",
       "population": 50716,
       "landAreaKm2": 269.1061168154913,
-      "boundary": "data/boundaries/4662919.json"
+      "boundary": "data/boundaries/4662919.json",
+      "region": "ontario"
     },
     {
       "id": "brampton",
@@ -54,7 +57,8 @@
       "timeZone": "America/Toronto",
       "population": 593638,
       "landAreaKm2": 269.6043761357652,
-      "boundary": "data/boundaries/2407358.json"
+      "boundary": "data/boundaries/2407358.json",
+      "region": "ontario"
     },
     {
       "id": "brantford",
@@ -68,7 +72,8 @@
       "timeZone": "America/Toronto",
       "population": 97496,
       "landAreaKm2": 102.53732242402691,
-      "boundary": "data/boundaries/10268812.json"
+      "boundary": "data/boundaries/10268812.json",
+      "region": "ontario"
     },
     {
       "id": "brockville",
@@ -82,7 +87,8 @@
       "timeZone": "America/Toronto",
       "population": 21346,
       "landAreaKm2": 24.08628197526888,
-      "boundary": "data/boundaries/7434058.json"
+      "boundary": "data/boundaries/7434058.json",
+      "region": "ontario"
     },
     {
       "id": "burlington",
@@ -96,7 +102,8 @@
       "timeZone": "America/Toronto",
       "population": 183314,
       "landAreaKm2": 199.99408546640615,
-      "boundary": "data/boundaries/2407513.json"
+      "boundary": "data/boundaries/2407513.json",
+      "region": "ontario"
     },
     {
       "id": "cambridge",
@@ -110,7 +117,8 @@
       "timeZone": "America/Toronto",
       "population": 138479,
       "landAreaKm2": 115.82443197889586,
-      "boundary": "data/boundaries/2062152.json"
+      "boundary": "data/boundaries/2062152.json",
+      "region": "ontario"
     },
     {
       "id": "chatham-kent",
@@ -124,7 +132,8 @@
       "timeZone": "America/Toronto",
       "population": 102042,
       "landAreaKm2": 2910.885204580692,
-      "boundary": "data/boundaries/4010050.json"
+      "boundary": "data/boundaries/4010050.json",
+      "region": "ontario"
     },
     {
       "id": "cornwall",
@@ -139,7 +148,8 @@
       "population": 47845,
       "landAreaKm2": 76.64479534317198,
       "boundary": "data/boundaries/4136858.json",
-      "populationSource": "Statistics Canada 2021 census"
+      "populationSource": "Statistics Canada 2021 census",
+      "region": "ontario"
     },
     {
       "id": "greater-sudbury",
@@ -153,7 +163,8 @@
       "timeZone": "America/Toronto",
       "population": 161531,
       "landAreaKm2": 3631.4629738242347,
-      "boundary": "data/boundaries/7568929.json"
+      "boundary": "data/boundaries/7568929.json",
+      "region": "ontario"
     },
     {
       "id": "guelph",
@@ -167,7 +178,8 @@
       "timeZone": "America/Toronto",
       "population": 131794,
       "landAreaKm2": 88.91308054852823,
-      "boundary": "data/boundaries/7486148.json"
+      "boundary": "data/boundaries/7486148.json",
+      "region": "ontario"
     },
     {
       "id": "hamilton",
@@ -181,7 +193,8 @@
       "timeZone": "America/Toronto",
       "population": 519949,
       "landAreaKm2": 1150.2785882668877,
-      "boundary": "data/boundaries/7034910.json"
+      "boundary": "data/boundaries/7034910.json",
+      "region": "ontario"
     },
     {
       "id": "kawartha-lakes",
@@ -195,7 +208,8 @@
       "timeZone": "America/Toronto",
       "population": 75423,
       "landAreaKm2": 3335.930119934308,
-      "boundary": "data/boundaries/7473857.json"
+      "boundary": "data/boundaries/7473857.json",
+      "region": "ontario"
     },
     {
       "id": "kingston",
@@ -209,7 +223,8 @@
       "timeZone": "America/Toronto",
       "population": 123798,
       "landAreaKm2": 482.8423153012286,
-      "boundary": "data/boundaries/4145881.json"
+      "boundary": "data/boundaries/4145881.json",
+      "region": "ontario"
     },
     {
       "id": "kitchener",
@@ -223,7 +238,8 @@
       "timeZone": "America/Toronto",
       "population": 256855,
       "landAreaKm2": 138.4125011321696,
-      "boundary": "data/boundaries/2062153.json"
+      "boundary": "data/boundaries/2062153.json",
+      "region": "ontario"
     },
     {
       "id": "london",
@@ -237,7 +253,8 @@
       "timeZone": "America/Toronto",
       "population": 383822,
       "landAreaKm2": 423.23087453351434,
-      "boundary": "data/boundaries/7485368.json"
+      "boundary": "data/boundaries/7485368.json",
+      "region": "ontario"
     },
     {
       "id": "markham",
@@ -251,7 +268,8 @@
       "timeZone": "America/Toronto",
       "population": 338503,
       "landAreaKm2": 212.40624940547258,
-      "boundary": "data/boundaries/324213.json"
+      "boundary": "data/boundaries/324213.json",
+      "region": "ontario"
     },
     {
       "id": "milton",
@@ -265,7 +283,8 @@
       "timeZone": "America/Toronto",
       "population": 110128,
       "landAreaKm2": 364.8489909033077,
-      "boundary": "data/boundaries/2414122.json"
+      "boundary": "data/boundaries/2414122.json",
+      "region": "ontario"
     },
     {
       "id": "mississauga",
@@ -279,7 +298,8 @@
       "timeZone": "America/Toronto",
       "population": 721599,
       "landAreaKm2": 297.7585765779934,
-      "boundary": "data/boundaries/1954127.json"
+      "boundary": "data/boundaries/1954127.json",
+      "region": "ontario"
     },
     {
       "id": "newmarket",
@@ -293,7 +313,8 @@
       "timeZone": "America/Toronto",
       "population": 87942,
       "landAreaKm2": 38.38041238025196,
-      "boundary": "data/boundaries/2407406.json"
+      "boundary": "data/boundaries/2407406.json",
+      "region": "ontario"
     },
     {
       "id": "niagara-falls",
@@ -307,7 +328,8 @@
       "timeZone": "America/Toronto",
       "population": 93000,
       "landAreaKm2": 227.30681136513584,
-      "boundary": "data/boundaries/2388057.json"
+      "boundary": "data/boundaries/2388057.json",
+      "region": "ontario"
     },
     {
       "id": "north-bay",
@@ -321,7 +343,8 @@
       "timeZone": "America/Toronto",
       "population": 51553,
       "landAreaKm2": 329.4768253313934,
-      "boundary": "data/boundaries/7129502.json"
+      "boundary": "data/boundaries/7129502.json",
+      "region": "ontario"
     },
     {
       "id": "oakville",
@@ -335,7 +358,8 @@
       "timeZone": "America/Toronto",
       "population": 193832,
       "landAreaKm2": 154.43068852040122,
-      "boundary": "data/boundaries/2407500.json"
+      "boundary": "data/boundaries/2407500.json",
+      "region": "ontario"
     },
     {
       "id": "orangeville",
@@ -349,7 +373,8 @@
       "timeZone": "America/Toronto",
       "population": 28900,
       "landAreaKm2": 15.426833646597142,
-      "boundary": "data/boundaries/7480376.json"
+      "boundary": "data/boundaries/7480376.json",
+      "region": "ontario"
     },
     {
       "id": "orillia",
@@ -363,7 +388,8 @@
       "timeZone": "America/Toronto",
       "population": 31166,
       "landAreaKm2": 42.24223215681945,
-      "boundary": "data/boundaries/7106000.json"
+      "boundary": "data/boundaries/7106000.json",
+      "region": "ontario"
     },
     {
       "id": "oshawa",
@@ -377,7 +403,8 @@
       "timeZone": "America/Toronto",
       "population": 159458,
       "landAreaKm2": 162.5973119841054,
-      "boundary": "data/boundaries/333748.json"
+      "boundary": "data/boundaries/333748.json",
+      "region": "ontario"
     },
     {
       "id": "ottawa",
@@ -392,7 +419,8 @@
       "population": 1017449,
       "landAreaKm2": 2889.8616760531586,
       "boundary": "data/boundaries/4136816.json",
-      "populationSource": "Statistics Canada 2021 census"
+      "populationSource": "Statistics Canada 2021 census",
+      "region": "ontario"
     },
     {
       "id": "owen-sound",
@@ -406,7 +434,8 @@
       "timeZone": "America/Toronto",
       "population": 21341,
       "landAreaKm2": 26.526490966226632,
-      "boundary": "data/boundaries/7478456.json"
+      "boundary": "data/boundaries/7478456.json",
+      "region": "ontario"
     },
     {
       "id": "pembroke",
@@ -420,7 +449,8 @@
       "timeZone": "America/Toronto",
       "population": 13882,
       "landAreaKm2": 21.075864682620562,
-      "boundary": "data/boundaries/7352019.json"
+      "boundary": "data/boundaries/7352019.json",
+      "region": "ontario"
     },
     {
       "id": "peterborough",
@@ -434,7 +464,8 @@
       "timeZone": "America/Toronto",
       "population": 81032,
       "landAreaKm2": 67.35684159508573,
-      "boundary": "data/boundaries/7473849.json"
+      "boundary": "data/boundaries/7473849.json",
+      "region": "ontario"
     },
     {
       "id": "pickering",
@@ -448,7 +479,8 @@
       "timeZone": "America/Toronto",
       "population": 91771,
       "landAreaKm2": 240.63920676251257,
-      "boundary": "data/boundaries/2408836.json"
+      "boundary": "data/boundaries/2408836.json",
+      "region": "ontario"
     },
     {
       "id": "quinte-west",
@@ -462,7 +494,8 @@
       "timeZone": "America/Toronto",
       "population": 43577,
       "landAreaKm2": 535.7114476571364,
-      "boundary": "data/boundaries/7443054.json"
+      "boundary": "data/boundaries/7443054.json",
+      "region": "ontario"
     },
     {
       "id": "richmond-hill",
@@ -476,7 +509,8 @@
       "timeZone": "America/Toronto",
       "population": 202022,
       "landAreaKm2": 102.59479981841528,
-      "boundary": "data/boundaries/2407259.json"
+      "boundary": "data/boundaries/2407259.json",
+      "region": "ontario"
     },
     {
       "id": "sarnia",
@@ -490,7 +524,8 @@
       "timeZone": "America/Toronto",
       "population": 71594,
       "landAreaKm2": 170.0401425367517,
-      "boundary": "data/boundaries/3642177.json"
+      "boundary": "data/boundaries/3642177.json",
+      "region": "ontario"
     },
     {
       "id": "sault-ste-marie",
@@ -504,7 +539,8 @@
       "timeZone": "America/Toronto",
       "population": 73368,
       "landAreaKm2": 276.15069804114637,
-      "boundary": "data/boundaries/7590370.json"
+      "boundary": "data/boundaries/7590370.json",
+      "region": "ontario"
     },
     {
       "id": "st-catharines",
@@ -518,7 +554,8 @@
       "timeZone": "America/Toronto",
       "population": 144829,
       "landAreaKm2": 143.62424125742993,
-      "boundary": "data/boundaries/2387995.json"
+      "boundary": "data/boundaries/2387995.json",
+      "region": "ontario"
     },
     {
       "id": "st-thomas",
@@ -532,7 +569,8 @@
       "timeZone": "America/Toronto",
       "population": 38909,
       "landAreaKm2": 43.114189568345864,
-      "boundary": "data/boundaries/2911978.json"
+      "boundary": "data/boundaries/2911978.json",
+      "region": "ontario"
     },
     {
       "id": "stratford",
@@ -546,7 +584,8 @@
       "timeZone": "America/Toronto",
       "population": 31465,
       "landAreaKm2": 28.69660603752779,
-      "boundary": "data/boundaries/7486330.json"
+      "boundary": "data/boundaries/7486330.json",
+      "region": "ontario"
     },
     {
       "id": "thunder-bay",
@@ -560,7 +599,8 @@
       "timeZone": "America/Toronto",
       "population": 107909,
       "landAreaKm2": 466.67273944246085,
-      "boundary": "data/boundaries/7596931.json"
+      "boundary": "data/boundaries/7596931.json",
+      "region": "ontario"
     },
     {
       "id": "timmins",
@@ -574,7 +614,8 @@
       "timeZone": "America/Toronto",
       "population": 41788,
       "landAreaKm2": 3178.809838542929,
-      "boundary": "data/boundaries/7588071.json"
+      "boundary": "data/boundaries/7588071.json",
+      "region": "ontario"
     },
     {
       "id": "toronto",
@@ -589,7 +630,8 @@
       "population": 2794356,
       "landAreaKm2": 665.9315424307558,
       "boundary": "data/boundaries/324211.json",
-      "populationSource": "Statistics Canada 2021 census"
+      "populationSource": "Statistics Canada 2021 census",
+      "region": "ontario"
     },
     {
       "id": "vaughan",
@@ -603,7 +645,8 @@
       "timeZone": "America/Toronto",
       "population": 323103,
       "landAreaKm2": 274.11438074537523,
-      "boundary": "data/boundaries/324212.json"
+      "boundary": "data/boundaries/324212.json",
+      "region": "ontario"
     },
     {
       "id": "waterloo",
@@ -617,7 +660,8 @@
       "timeZone": "America/Toronto",
       "population": 121436,
       "landAreaKm2": 65.305254232661,
-      "boundary": "data/boundaries/2062154.json"
+      "boundary": "data/boundaries/2062154.json",
+      "region": "ontario"
     },
     {
       "id": "welland",
@@ -631,7 +675,8 @@
       "timeZone": "America/Toronto",
       "population": 52293,
       "landAreaKm2": 84.94065543748995,
-      "boundary": "data/boundaries/2387988.json"
+      "boundary": "data/boundaries/2387988.json",
+      "region": "ontario"
     },
     {
       "id": "whitby",
@@ -645,7 +690,8 @@
       "timeZone": "America/Toronto",
       "population": 128377,
       "landAreaKm2": 168.05831872724175,
-      "boundary": "data/boundaries/2408838.json"
+      "boundary": "data/boundaries/2408838.json",
+      "region": "ontario"
     },
     {
       "id": "windsor",
@@ -659,7 +705,8 @@
       "timeZone": "America/Toronto",
       "population": 217188,
       "landAreaKm2": 158.9492868913867,
-      "boundary": "data/boundaries/7025718.json"
+      "boundary": "data/boundaries/7025718.json",
+      "region": "ontario"
     },
     {
       "id": "woodstock",
@@ -673,7 +720,8 @@
       "timeZone": "America/Toronto",
       "population": 40902,
       "landAreaKm2": 57.14368666221945,
-      "boundary": "data/boundaries/7496363.json"
+      "boundary": "data/boundaries/7496363.json",
+      "region": "ontario"
     }
   ]
 }

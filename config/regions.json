@@ -1,0 +1,12 @@
+{
+ "regions": [
+  {
+   "id": "ontario",
+   "name": "Ontario",
+   "group": "Ontario",
+   "timeZone": "America/Toronto",
+   "poly": "config/ontario.poly",
+   "source": "Geofabrik Ontario"
+  }
+ ]
+}

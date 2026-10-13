@@ -1,17 +1,20 @@
 """Daily pipeline for sc-open-quests. Python standard library only.
 
 Subcommands:
-  download   refresh the shared Ontario extract and the planet notes dump via ~/Code/osm-extracts
+  download   refresh each region's shared extract and the planet notes dump via ~/Code/osm-extracts
              (it skips unchanged ones)
-  count      run the engine on the newest shared extract -> docs/data/snapshots/<asOfDate>.json
-             + quests.json (skipped when a snapshot of this extract already exists, unless it lacks
-             notes and a notes dump now reaches it). Needs a notes dump that reaches the extract.
-  backfill   count every dated Ontario extract still in the shared store
-  history    rebuild docs/data/history/<cityId>.json and docs/data/cities.json from all snapshots
+  count      run the engine on each region's newest shared extract
+             -> docs/data/<region>/snapshots/<asOfDate>.json + quests.json (skipped when a snapshot
+             of this extract already exists, unless it lacks notes and a notes dump now reaches it).
+             Needs a notes dump that reaches the extract.
+  backfill   count every dated extract of every region still in the shared store
+  history    rebuild docs/data/history/<cityId>.json, cities.json and quests.json from all regions
   update     download + backfill + history, then commit "data <asOfDate>" and push
 
-Extracts and notes dumps live in the shared store (~/Code/.osm-data, see ~/Code/osm-extracts/README.md);
-this project never downloads them itself. A notes dump is clipped to Ontario once, into data/notes/. The contract between engine, pipeline and site is DATA-FORMAT.md.
+Regions are config/regions.json, one Geofabrik extract each; a city names its region in
+config/cities.json. Extracts and notes dumps live in the shared store (~/Code/.osm-data, see
+~/Code/osm-extracts/README.md); this project never downloads them itself. A notes dump is clipped to
+each region once, into data/notes/. The contract between engine, pipeline and site is DATA-FORMAT.md.
 """
 from __future__ import annotations
 
@@ -28,7 +31,6 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 
-REGION = "ontario"
 OSM_DATA_DIR = Path(os.environ.get("OSM_DATA_DIR") or Path.home() / "Code" / ".osm-data")
 OSM_EXTRACTS_TOOL = Path(os.environ.get("OSM_EXTRACTS_TOOL")
                          or Path.home() / "Code" / "osm-extracts" / "osm_extracts.py")
@@ -37,10 +39,11 @@ LOCK_PATH = LOCK_DIR / "pipeline.lock"
 
 QUESTS_DIR = ROOT / "data" / "quests"
 CITIES_CONFIG = ROOT / "config" / "cities.json"
+REGIONS_CONFIG = ROOT / "config" / "regions.json"
 DATA_DIR = ROOT / "docs" / "data"
 NOTES_DIR = ROOT / "data" / "notes"
-GRID_DIR = ROOT / "data" / "grid"  # counted quests per z14 tile, <asOfDate>.json.gz; not committed
-NOTES_POLY = ROOT / "config" / "ontario.poly"
+GRID_DIR = ROOT / "data" / "grid"  # counted quests per z14 tile, <region>/<asOfDate>.json.gz; not committed
+REGION_CITIES_DIR = ROOT / "data" / "cities"  # the engine's cities file per region; not committed
 CLIP_NOTES = ROOT / "tools" / "clip_notes.py"
 
 ENGINE_DIR = ROOT / "engine"
@@ -120,29 +123,47 @@ def pipeline_lock():
             LOCK_PATH.unlink(missing_ok=True)
 
 
+# --- regions --------------------------------------------------------------------------------------
+
+def regions(path: Path = REGIONS_CONFIG) -> list[dict]:
+    """config/regions.json: {id, name, group, timeZone, poly, source}, one per Geofabrik extract."""
+    return read_json(path)["regions"]
+
+
+def region_cities(region: dict) -> Path:
+    """The engine's cities file for one region: config/cities.json cut to the cities in it."""
+    cities = [c for c in read_json(CITIES_CONFIG)["cities"] if c["region"] == region["id"]]
+    if not cities:
+        raise ValueError(f"no city in {CITIES_CONFIG.name} has region {region['id']}")
+    path = REGION_CITIES_DIR / f"{region['id']}.json"
+    write_json(path, {"cities": cities})
+    return path
+
+
 # --- extracts (shared store) ---------------------------------------------------------------------
 
 def download() -> None:
-    """Ask osm-extracts to refresh the shared Ontario extract. It HEAD-checks Geofabrik and holds
+    """Ask osm-extracts to refresh each region's shared extract. It HEAD-checks Geofabrik and holds
     its own fetch lock, so sibling projects refreshing at the same time don't both download."""
-    log(f"refreshing shared extract: {OSM_EXTRACTS_TOOL} fetch {REGION}")
-    subprocess.run([sys.executable, str(OSM_EXTRACTS_TOOL), "fetch", REGION], check=True)
+    for region in regions():
+        log(f"refreshing shared extract: {OSM_EXTRACTS_TOOL} fetch {region['id']}")
+        subprocess.run([sys.executable, str(OSM_EXTRACTS_TOOL), "fetch", region["id"]], check=True)
     log(f"refreshing notes dump: {OSM_EXTRACTS_TOOL} fetch notes")
     subprocess.run([sys.executable, str(OSM_EXTRACTS_TOOL), "fetch", "notes"], check=True)
 
 
-def latest_extract() -> tuple[Path, Path]:
-    """(pbf, meta) for the newest extract, by its dated name; never the ontario-latest hardlink."""
-    region_dir = OSM_DATA_DIR / REGION
+def latest_extract(region: dict) -> tuple[Path, Path]:
+    """(pbf, meta) for a region's newest extract, by its dated name; never the <region>-latest hardlink."""
+    region_dir = OSM_DATA_DIR / region["id"]
     latest = read_json(region_dir / "latest.json")
     pbf = region_dir / latest["file"]
     return pbf, extract_meta(pbf)
 
 
-def dated_extracts() -> list[tuple[Path, Path]]:
-    """Every dated extract in the store, oldest first."""
-    region_dir = OSM_DATA_DIR / REGION
-    files = sorted(region_dir.glob(f"{REGION}-????-??-??.osm.pbf"))
+def dated_extracts(region: dict) -> list[tuple[Path, Path]]:
+    """Every dated extract of a region in the store, oldest first."""
+    region_dir = OSM_DATA_DIR / region["id"]
+    files = sorted(region_dir.glob(f"{region['id']}-????-??-??.osm.pbf"))
     return [(p, extract_meta(p)) for p in files]
 
 
@@ -155,19 +176,20 @@ def extract_meta(pbf: Path) -> Path:
 
 # --- notes ----------------------------------------------------------------------------------------
 
-def notes_clip() -> Path | None:
-    """The Ontario clip of the newest notes dump in the shared store, made on first use. None if the
+def notes_clip(region: dict) -> Path | None:
+    """A region's clip of the newest notes dump in the shared store, made on first use. None if the
     store has no notes dump. Older clips are deleted: each dump holds every note's whole history."""
     latest_path = OSM_DATA_DIR / "notes" / "latest.json"
     if not latest_path.exists():
         return None
     dump = OSM_DATA_DIR / "notes" / read_json(latest_path)["file"]
-    clip = NOTES_DIR / (dump.name.removesuffix(".osn.bz2") + "-ontario.jsonl")
+    poly = ROOT / region["poly"]
+    clip = NOTES_DIR / (dump.name.removesuffix(".osn.bz2") + f"-{region['id']}.jsonl")
     if not clip.exists():
-        log(f"clipping {dump.name} to {NOTES_POLY.name}")
-        subprocess.run([sys.executable, str(CLIP_NOTES), str(dump), "--poly", str(NOTES_POLY), "--out", str(clip)],
+        log(f"clipping {dump.name} to {poly.name}")
+        subprocess.run([sys.executable, str(CLIP_NOTES), str(dump), "--poly", str(poly), "--out", str(clip)],
                        check=True)
-    for old in NOTES_DIR.glob("planet-notes-*-ontario.jsonl"):
+    for old in NOTES_DIR.glob(f"planet-notes-*-{region['id']}.jsonl"):
         if old != clip:
             old.unlink()
     return clip
@@ -192,8 +214,9 @@ def newest_quests_file(quests_dir: Path = QUESTS_DIR) -> Path:
     return max(files, key=version)
 
 
-def snapshot_for_sha(sha: str, data_dir: Path = DATA_DIR) -> Path | None:
-    for p in sorted((data_dir / "snapshots").glob("*.json")):
+def snapshot_for_sha(sha: str, region_dir: Path) -> Path | None:
+    """The snapshot in region_dir/snapshots/ that counts the extract with this sha256, if any."""
+    for p in sorted((region_dir / "snapshots").glob("*.json")):
         try:
             if read_json(p).get("source", {}).get("sha256") == sha:
                 return p
@@ -202,10 +225,14 @@ def snapshot_for_sha(sha: str, data_dir: Path = DATA_DIR) -> Path | None:
     return None
 
 
-def engine_env() -> dict[str, str]:
+def engine_env(time_zone: str | None = None) -> dict[str, str]:
+    """The engine's environment. SC's date filters use the JVM's zone, which must be the cities'
+    (Main.kt); JAVA_OPTS comes after the start script's default -Duser.timezone, so it wins."""
     env = dict(os.environ)
     if os.path.isdir(JAVA_HOME):
         env["JAVA_HOME"] = JAVA_HOME
+    if time_zone:
+        env["JAVA_OPTS"] = (env.get("JAVA_OPTS", "") + f" -Duser.timezone={time_zone}").strip()
     return env
 
 
@@ -228,13 +255,15 @@ def build_engine() -> None:
                    env=engine_env(), check=True)
 
 
-def count(force: bool = False, extract: tuple[Path, Path] | None = None) -> Path | None:
-    """Run the engine on one extract (default: the newest). Returns the snapshot, or None if skipped."""
+def count(region: dict, force: bool = False, extract: tuple[Path, Path] | None = None) -> Path | None:
+    """Run the engine on one extract of a region (default: its newest). Returns the snapshot, or
+    None if skipped."""
     with pipeline_lock():
-        pbf, meta_path = extract or latest_extract()
+        pbf, meta_path = extract or latest_extract(region)
         meta = read_json(meta_path)
         sha = meta["sha256"]
-        clip = notes_clip()
+        out = DATA_DIR / region["id"]
+        clip = notes_clip(region)
         replicated = datetime.fromisoformat(meta["replication_timestamp"])
         if clip is None or notes_until(clip) < replicated:
             # the dump of the next morning reaches it; a later scheduled run counts it. The mirror can
@@ -244,45 +273,94 @@ def count(force: bool = False, extract: tuple[Path, Path] | None = None) -> Path
                 raise RuntimeError(f"no notes dump reaches {pbf.name} after {age.days} days; is `fetch notes` working?")
             log(f"no notes dump reaches {pbf.name} ({meta['replication_timestamp']}) yet; not counting it")
             return None
-        existing = snapshot_for_sha(sha, DATA_DIR)
+        existing = snapshot_for_sha(sha, out)
+        name = f"{region['id']}/snapshots/{existing.name}" if existing else None
         if existing and not force:
             if read_json(existing).get("notes"):
-                log(f"snapshots/{existing.name} already counts {pbf.name}; skipping (--force to redo)")
+                log(f"{name} already counts {pbf.name}; skipping (--force to redo)")
                 return None
-            log(f"snapshots/{existing.name} counts {pbf.name} without notes; recounting with {clip.name}")
+            log(f"{name} counts {pbf.name} without notes; recounting with {clip.name}")
         if engine_is_stale():
             build_engine()
         quests = newest_quests_file()
         cmd = [str(ENGINE_BAT), "count",
                "--pbf", str(pbf),
                "--quests", str(quests.relative_to(ROOT)),
-               "--cities", str(CITIES_CONFIG.relative_to(ROOT)),
-               "--out", str(DATA_DIR.relative_to(ROOT)),
+               "--cities", str(region_cities(region).relative_to(ROOT)),
+               "--out", str(out.relative_to(ROOT)),
                "--source-meta", str(meta_path),
                "--notes", str(clip.relative_to(ROOT)),
-               "--grid", str(GRID_DIR.relative_to(ROOT))]
+               "--grid", str((GRID_DIR / region["id"]).relative_to(ROOT))]
         log("running engine: " + " ".join(cmd[1:]))
-        subprocess.run(cmd, cwd=ROOT, env=engine_env(), check=True)
-        snap = snapshot_for_sha(sha, DATA_DIR)
+        subprocess.run(cmd, cwd=ROOT, env=engine_env(region["timeZone"]), check=True)
+        snap = snapshot_for_sha(sha, out)
         if not snap:
             raise RuntimeError("engine finished but no snapshot carries this extract's sha256")
-        log(f"wrote snapshots/{snap.name}")
+        log(f"wrote {region['id']}/snapshots/{snap.name}")
         return snap
 
 
 def backfill(force: bool = False) -> None:
-    """Count every dated extract still in the shared store (the store prunes old ones on fetch)."""
+    """Count every dated extract of every region still in the shared store (the store prunes old
+    ones on fetch)."""
     with pipeline_lock():
-        for extract in dated_extracts():
-            count(force=force, extract=extract)
+        for region in regions():
+            for extract in dated_extracts(region):
+                count(region, force=force, extract=extract)
 
 
 # --- history --------------------------------------------------------------------------------------
 
 def load_snapshots(data_dir: Path) -> list[dict]:
-    """All snapshots, ascending by asOfDate."""
-    snaps = [read_json(p) for p in (data_dir / "snapshots").glob("*.json")]
-    return sorted(snaps, key=lambda s: s["asOfDate"])
+    """All snapshots of all regions (data_dir/<region>/snapshots/), ascending by asOfDate. Each gets
+    a "region" key from the folder it is in."""
+    snaps = []
+    for p in data_dir.glob("*/snapshots/*.json"):
+        snap = read_json(p)
+        snap["region"] = p.parent.parent.name
+        snaps.append(snap)
+    return sorted(snaps, key=lambda s: (s["asOfDate"], s["region"]))
+
+
+def merge_quests(data_dir: Path) -> int:
+    """Write data_dir/quests.json from each region's quests.json: the newest registry, with every
+    region's per-city status. Returns 1 if the file changed."""
+    parts = sorted((read_json(p) for p in data_dir.glob("*/quests.json")),
+                   key=lambda q: tuple(int(x) for x in q["scVersion"].split(".")))
+    if not parts:
+        return 0
+    merged = parts[-1]
+    for q in merged["quests"]:
+        status = {}
+        for part in parts:
+            status.update(next((o["status"] for o in part["quests"] if o["name"] == q["name"]), {}))
+        q["status"] = dict(sorted(status.items()))
+    return write_text(data_dir / "quests.json", quests_json(merged))
+
+
+def quests_json(doc: dict) -> str:
+    """quests.json in the engine's layout (Output.kt questsJson): one quest per line."""
+    def value(key, v):
+        if key == "enabledInCountries":
+            return json.dumps(v, separators=(",", ":"), ensure_ascii=False)
+        if key == "elementTypes":
+            return "[" + ",".join(json.dumps(x) for x in v) + "]"
+        if key == "status":
+            return "{ " + ", ".join(f"{json.dumps(c)}: {json.dumps(s)}" for c, s in v.items()) + " }"
+        return json.dumps(v, ensure_ascii=False)
+    lines = ["    { " + ", ".join(f"{json.dumps(k)}: {value(k, v)}" for k, v in q.items()) + " }"
+             for q in doc["quests"]]
+    head = "".join(f"  {json.dumps(k)}: {json.dumps(v)},\n" for k, v in doc.items() if k != "quests")
+    return "{\n" + head + '  "quests": [\n' + ",\n".join(lines) + "\n  ]\n}\n"
+
+
+def write_text(path: Path, text: str) -> bool:
+    """Write text as UTF-8 with LF. Returns True if the bytes on disk changed."""
+    data = text.encode("utf-8")
+    if path.exists() and path.read_bytes() == data:
+        return False
+    path.write_bytes(data)
+    return True
 
 
 def default_disabled(data_dir: Path) -> set[str]:
@@ -300,8 +378,9 @@ def total_open(city: dict, leave_out: set[str]) -> int | None:
     return sum(counts) if counts else None
 
 
-def build_history(snapshots: list[dict], city_config: list[dict], disabled: set[str]) -> dict:
-    """Turn snapshots into {"history": {cityId: series}, "cities": index}.
+def build_history(snapshots: list[dict], city_config: list[dict], disabled: set[str],
+                  region_config: list[dict] | None = None) -> dict:
+    """Turn snapshots (of every region) into {"history": {cityId: series}, "cities": index}.
 
     A city's series has one entry per snapshot that contains the city; a city missing from a
     snapshot (added to the config later, say) has no entry for that date rather than a row of
@@ -309,6 +388,8 @@ def build_history(snapshots: list[dict], city_config: list[dict], disabled: set[
     or new in a later one) is null at that index, never 0.
     """
     names = {c["id"]: c["name"] for c in city_config}
+    city_regions = {c["id"]: c.get("region") for c in city_config}
+    dates = sorted({s["asOfDate"] for s in snapshots})  # each region has its own snapshot of a date
     city_ids = sorted({cid for s in snapshots for cid in s["cities"]})
     history, index = {}, []
     for cid in city_ids:
@@ -340,13 +421,12 @@ def build_history(snapshots: list[dict], city_config: list[dict], disabled: set[
         headline = {k: v for k, v in last["quests"].items() if k not in disabled}
         # totals on every snapshot date, null where the city wasn't counted, for the site's sparklines
         by_date = {s["asOfDate"]: c for s, c in rows}
-        trend = [total_open(by_date[s["asOfDate"]], disabled) if s["asOfDate"] in by_date else None
-                 for s in snapshots]
-        trend_all = [total_open(by_date[s["asOfDate"]], set()) if s["asOfDate"] in by_date else None
-                     for s in snapshots]
+        trend = [total_open(by_date[d], disabled) if d in by_date else None for d in dates]
+        trend_all = [total_open(by_date[d], set()) if d in by_date else None for d in dates]
         index.append({
             "id": cid,
             "name": series["name"],
+            **({"region": city_regions[cid]} if city_regions.get(cid) else {}),
             "asOfDate": last_snap["asOfDate"],
             "scVersion": last_snap["scVersion"],
             "landAreaKm2": den.get("landAreaKm2"),
@@ -363,18 +443,21 @@ def build_history(snapshots: list[dict], city_config: list[dict], disabled: set[
     latest = snapshots[-1] if snapshots else {}
     cities = {"asOfDate": latest.get("asOfDate"), "scVersion": latest.get("scVersion"),
               "resurveyMultiplier": latest.get("resurveyMultiplier"),
-              "dates": [s["asOfDate"] for s in snapshots], "cities": index}
+              "dates": dates, "cities": index}
+    if region_config:
+        cities["regions"] = [{k: r[k] for k in ("id", "name", "group", "source")} for r in region_config]
     return {"history": history, "cities": cities}
 
 
 def history(data_dir: Path = DATA_DIR, cities_config: Path = CITIES_CONFIG) -> int:
-    """Rewrite history/*.json and cities.json under data_dir. Returns the number of files changed."""
+    """Rewrite history/*.json, cities.json and quests.json under data_dir. Returns the number of
+    files changed."""
     snapshots = load_snapshots(data_dir)
     if not snapshots:
-        log(f"no snapshots in {data_dir / 'snapshots'}; nothing to do")
+        log(f"no snapshots in {data_dir}/*/snapshots; nothing to do")
         return 0
-    out = build_history(snapshots, read_json(cities_config)["cities"], default_disabled(data_dir))
-    changed = 0
+    changed = merge_quests(data_dir)
+    out = build_history(snapshots, read_json(cities_config)["cities"], default_disabled(data_dir), regions())
     for cid, series in out["history"].items():
         changed += write_json(data_dir / "history" / f"{cid}.json", series, compact=True)
     for stale in (data_dir / "history").glob("*.json"):

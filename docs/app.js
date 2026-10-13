@@ -498,9 +498,11 @@ async function renderCity() {
 
 // ---------- compare view ----------
 
-async function snapshot(date) {
-  if (!snapshotCache.has(date)) snapshotCache.set(date, getJSON(`snapshots/${date}.json`));
-  return snapshotCache.get(date);
+// one snapshot per region and date: data/<region>/snapshots/<date>.json
+async function snapshot(region, date) {
+  const path = `${region}/snapshots/${date}.json`;
+  if (!snapshotCache.has(path)) snapshotCache.set(path, getJSON(path));
+  return snapshotCache.get(path);
 }
 
 async function compareRows() {
@@ -510,7 +512,7 @@ async function compareRows() {
     let open;
     if (!qn) open = state.includeDisabled ? c.openAll : c.open;
     else {
-      const snap = await snapshot(c.asOfDate);
+      const snap = await snapshot(c.region, c.asOfDate);
       const sq = snap.cities[c.id] && snap.cities[c.id].quests[qn];
       open = sq ? sq.open : null;
     }

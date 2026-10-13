@@ -71,7 +71,7 @@ def snapshots(meta: dict, config: dict, days: int, change_at: int) -> list[dict]
             "schema": 1, "asOf": f"{as_of.isoformat()}T20:21:30Z", "asOfDate": as_of.isoformat(),
             "timeZone": "America/Toronto", "scVersion": "63.5" if new else "63.4",
             "scCommit": "fixture", "resurveyMultiplier": 1, "engineCommit": "fixture",
-            "source": {"url": run.PBF_URL, "lastModified": f"{as_of.isoformat()} (fixture)",
+            "source": {"url": "https://download.geofabrik.de/north-america/canada/ontario-latest.osm.pbf", "lastModified": f"{as_of.isoformat()} (fixture)",
                        "sha256": f"fixture-{as_of.isoformat()}"},
             "runSeconds": 12.3, "cities": {},
         }
@@ -101,12 +101,15 @@ def snapshots(meta: dict, config: dict, days: int, change_at: int) -> list[dict]
 
 
 
-def write(dest: Path, meta: dict, snaps: list[dict]) -> None:
+def write(dest: Path, meta: dict, snaps: list[dict], config: dict) -> None:
+    """One snapshot per region and date, in <region>/snapshots/, like the engine's per-region runs."""
     shutil.rmtree(dest, ignore_errors=True)
-    (dest / "snapshots").mkdir(parents=True)
-    run.write_json(dest / "quests.json", meta)
-    for s in snaps:
-        run.write_json(dest / "snapshots" / f"{s['asOfDate']}.json", s, compact=True)
+    region_of = {c["id"]: c["region"] for c in config["cities"]}
+    for region in sorted(set(region_of.values())):
+        run.write_json(dest / region / "quests.json", meta)
+        for s in snaps:
+            part = {**s, "cities": {cid: c for cid, c in s["cities"].items() if region_of[cid] == region}}
+            run.write_json(dest / region / "snapshots" / f"{s['asOfDate']}.json", part, compact=True)
     run.history(dest, run.CITIES_CONFIG)
 
 
@@ -114,8 +117,8 @@ def main() -> None:
     meta = quest_meta(run.read_json(run.newest_quests_file()))
     config = run.read_json(run.CITIES_CONFIG)
     here = Path(__file__).resolve().parent
-    write(here / "data", meta, snapshots(meta, config, days=10, change_at=6))
-    write(here / "data-single", meta, snapshots(meta, config, days=1, change_at=99))
+    write(here / "data", meta, snapshots(meta, config, days=10, change_at=6), config)
+    write(here / "data-single", meta, snapshots(meta, config, days=1, change_at=99), config)
 
 
 if __name__ == "__main__":

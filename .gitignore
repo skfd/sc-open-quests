@@ -8,3 +8,5 @@ data/backfill/
 data/notes/
 data/grid/
 .preview/
+docs/data/*/quests.json
+.scratch/

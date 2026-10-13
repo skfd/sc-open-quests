@@ -95,8 +95,8 @@ class HelpersTest(unittest.TestCase):
             self.assertEqual(run.newest_quests_file(Path(d)).name, "v63.10.json")
 
     def test_snapshot_for_sha(self):
-        self.assertEqual(run.snapshot_for_sha("sha-2026-07-17", FIXTURE).name, "2026-07-17.json")
-        self.assertIsNone(run.snapshot_for_sha("nope", FIXTURE))
+        self.assertEqual(run.snapshot_for_sha("sha-2026-07-17", FIXTURE / "ontario").name, "2026-07-17.json")
+        self.assertIsNone(run.snapshot_for_sha("nope", FIXTURE / "ontario"))
 
 
 if __name__ == "__main__":
