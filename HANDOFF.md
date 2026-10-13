@@ -61,9 +61,14 @@ Next, in order:
    equals the Geofabrik extract at the same instant. `data/backfill/recount/` holds the four dailies before
    2026-10-11 recounted with all 51 quests (07-16 and 10-02 from slices, their extracts are pruned); their
    old quests are unchanged. To publish: `python tools/backfill_history.py merge`, `python run.py history`,
-   commit "data ...". **Notes:** the first pass (counted without notes) is in `data/backfill/nonotes/`; a
-   recount with notes started 2026-10-12 21:52 and should finish about 03:00, then `recount` redoes the
-   dailies. The published 2026-10-11 lacks notes too; `run.py` recounts it from its stored extract.
+   commit "data ...". **The final pass started 2026-10-13 04:00** (log: `logs/backfill-final.log`, about
+   2 minutes a month, then `recount`; done about 08:30). It holds everything the owner asked to store
+   once: notes, the resurvey settings 0.5 and 2, "show all notes" and the z14 tile grids
+   (`data/backfill/grid/`, copied to `data/grid/` by `merge`); DESIGN.md, "Resurvey settings…". Earlier
+   passes, superseded: without notes in `data/backfill/nonotes/`, with notes only in
+   `data/backfill/notes-only/` (its recount of 2026-10-10 crashed when the engine was rebuilt under it).
+   The published 2026-10-11 lacks notes too; `run.py` recounts it from its stored extract once a notes
+   dump reaches it.
    Toronto's preview (`data/backfill/preview-toronto-nonotes.png`) is flat except AddHousenumber:
    +293k from 2019-01 to 2019-02 and −277k from 2026-05 to 2026-06, which look like a building import
    and an address import; worth checking before it goes public.
