@@ -3,22 +3,23 @@
 "use strict";
 
 const DATA = (new URLSearchParams(location.search).get("data") || "data").replace(/\/$/, "");
-const MAX_PICKED = 6;
+const MAX_PINNED = 6;
 const nf = new Intl.NumberFormat("en-CA");
 const nf1 = new Intl.NumberFormat("en-CA", { maximumFractionDigits: 1, minimumFractionDigits: 1 });
 
 const state = {
   view: "city",
   city: "toronto",
-  includeDisabled: false,
   filter: "",
-  picked: [],                       // quest names charted as small multiples
+  selected: new Set(),              // quest names counted in the summary chart and tiles
+  pinned: [],                       // quest names charted on their own, as small multiples
   questSort: { key: "open", dir: -1 },
   compareQuest: "",                 // "" = all counted quests
   compareSort: { key: "perKm2", dir: -1 },
   releases: true,                   // StreetComplete releases on the time axis
 };
 let cities, quests, questByName, hist;   // loaded data
+let urlSelection = null;                    // the selection as read from the URL, resolved once quests.json is in
 let icons = {};                             // quest name -> {icon, title}, from icons/index.json
 let releases = [];                          // [{ts, version}], stable SC releases, oldest first
 const snapshotCache = new Map();
@@ -71,41 +72,90 @@ function rate(v) { return v == null || !isFinite(v) ? "—" : (v >= 100 ? nf0 : 
 function ratio(n, d) { return n != null && d ? rate(n / d) : "—"; }
 const last = (arr) => arr[arr.length - 1];
 
-function headlineQuest(q) {   // does this quest count towards the headline total?
-  return q && (state.includeDisabled || !q.defaultDisabled);
-}
+const selected = (name) => state.selected.has(name);   // does this quest count towards the totals?
 
 // ---------- URL state ----------
+// The query string holds what is on screen, so a link reproduces it: city, view, pins, the compare quest,
+// and the selection as a base plus a diff: base=app (the quests the app turns on by default; the default,
+// left out), none or all, then on=A,B ticked on top of it and off=C,D unticked from it. Quest class names
+// are the key, so a link survives an app release: names it doesn't know are dropped, new quests follow
+// the base. ?data= is kept as it is. Links from before 2026-10-21 kept the state in the hash, with q= for
+// the charted quests; they are read once and rewritten.
 
-function readHash() {
-  const p = new URLSearchParams(location.hash.slice(1));
-  if (p.get("view")) state.view = p.get("view") === "compare" ? "compare" : "city";
-  if (p.get("city")) state.city = p.get("city");
-  if (p.has("q")) state.picked = p.get("q").split(",").filter(Boolean).slice(0, MAX_PICKED);
-  if (p.has("cq")) state.compareQuest = p.get("cq");
-  state.includeDisabled = p.get("off") === "1";
-  state.releases = p.get("rel") !== "0";
+const SEL_BASES = ["app", "none", "all"];
+const names = (v) => (v || "").split(",").filter(Boolean);
+
+function readURL() {
+  const p = new URLSearchParams(location.search);
+  const h = new URLSearchParams(location.hash.slice(1));
+  const get = (k) => p.get(k) ?? h.get(k);
+  if (get("view")) state.view = get("view") === "compare" ? "compare" : "city";
+  if (get("city")) state.city = get("city");
+  state.pinned = names(p.get("pin") ?? h.get("q")).slice(0, MAX_PINNED);
+  if (get("cq") != null) state.compareQuest = get("cq");
+  state.releases = get("rel") !== "0";
+  urlSelection = { base: SEL_BASES.includes(p.get("base")) ? p.get("base") : "app", on: names(p.get("on")), off: names(p.get("off")) };
 }
 
-function writeHash() {
+function baseSet(base) {
+  return new Set(quests.quests.filter((q) => base === "all" || (base === "app" && !q.defaultDisabled)).map((q) => q.name));
+}
+
+function resolveSelection({ base, on, off }) {
+  const s = baseSet(base);
+  for (const n of on) if (questByName.has(n)) s.add(n);
+  for (const n of off) s.delete(n);
+  return s;
+}
+
+// The selection as base, on and off: the base whose diff names the fewest quests, in registry order so
+// the same selection always gives the same link. Ties go to the default base.
+function selectionParams() {
+  let best = null;
+  for (const base of SEL_BASES) {
+    const b = baseSet(base);
+    const on = quests.quests.filter((q) => selected(q.name) && !b.has(q.name)).map((q) => q.name);
+    const off = quests.quests.filter((q) => !selected(q.name) && b.has(q.name)).map((q) => q.name);
+    if (!best || on.length + off.length < best.on.length + best.off.length) best = { base, on, off };
+  }
+  return best;
+}
+
+function writeURL() {
   const p = new URLSearchParams();
+  const data = new URLSearchParams(location.search).get("data");
+  if (data) p.set("data", data);
   if (state.view !== "city") p.set("view", state.view);
   p.set("city", state.city);
-  if (state.picked.length) p.set("q", state.picked.join(","));
+  const sel = selectionParams();
+  if (sel.base !== "app") p.set("base", sel.base);
+  if (sel.on.length) p.set("on", sel.on.join(","));
+  if (sel.off.length) p.set("off", sel.off.join(","));
+  if (state.pinned.length) p.set("pin", state.pinned.join(","));
   if (state.compareQuest) p.set("cq", state.compareQuest);
-  if (state.includeDisabled) p.set("off", "1");
   if (!state.releases) p.set("rel", "0");
-  window.history.replaceState(null, "", "#" + p.toString().replace(/%2C/g, ","));
+  // a relative "?query" drops the hash, which is where old links kept the state
+  window.history.replaceState(null, "", "?" + p.toString().replace(/%2C/g, ",").replace(/%2F/g, "/"));
+}
+
+// How the totals' subtitle names the selection.
+function selectionText() {
+  const n = state.selected.size, all = quests.quests.length;
+  const sel = selectionParams();
+  const plain = !sel.on.length && !sel.off.length;
+  if (plain && sel.base === "app") return `the ${n} quest types the app turns on by default`;
+  if (plain && sel.base === "all") return `all ${all} quest types, including those off by default`;
+  return `the ${n} of ${all} quest types ticked in the table below`;
 }
 
 // ---------- series ----------
 
-// Sum of the headline quests at each date. null quest values count as absent, not 0,
+// Sum of the selected quests at each date. null quest values count as absent, not 0,
 // but a date where every quest is null stays null.
 function totalSeries(h) {
   const n = h.dates.length, open = Array(n).fill(null), aged = Array(n).fill(null);
   for (const [name, s] of Object.entries(h.quests)) {
-    if (!headlineQuest(questByName.get(name))) continue;
+    if (!selected(name)) continue;
     for (let i = 0; i < n; i++) {
       if (s.open[i] != null) open[i] = (open[i] || 0) + s.open[i];
       if (s.agedOnly[i] != null) aged[i] = (aged[i] || 0) + s.agedOnly[i];
@@ -120,17 +170,17 @@ function questSeries(h, name) {
   return { open: s.open, aged: s.agedOnly };
 }
 
-// Names of the headline quests that have a value at date index i.
-function headlineQuestsAt(h, i) {
+// Names of the selected quests that have a value at date index i.
+function selectedQuestsAt(h, i) {
   return new Set(Object.entries(h.quests)
-    .filter(([name, s]) => s.open[i] != null && headlineQuest(questByName.get(name))).map(([name]) => name));
+    .filter(([name, s]) => s.open[i] != null && selected(name)).map(([name]) => name));
 }
 
-// Change in the headline total from date i-1 to i, over the quests counted on both dates only.
+// Change in the total from date i-1 to i, over the quests counted on both dates only.
 function likeForLikeDelta(h, i) {
   let d = 0, any = false;
   for (const [name, s] of Object.entries(h.quests)) {
-    if (!headlineQuest(questByName.get(name)) || s.open[i] == null || s.open[i - 1] == null) continue;
+    if (!selected(name) || s.open[i] == null || s.open[i - 1] == null) continue;
     d += s.open[i] - s.open[i - 1];
     any = true;
   }
@@ -138,7 +188,7 @@ function likeForLikeDelta(h, i) {
 }
 
 // Indices where the SC version, resurvey multiplier, area unit or notes modelling differs from the previous date. With
-// questSet, also where the set of headline quests changes (a quest type counted for the first
+// questSet, also where the set of selected quests changes (a quest type counted for the first
 // time, e.g. a newly ported custom quest), which moves a total but not a single quest's line.
 function breaks(h, { questSet = false } = {}) {
   const out = [];
@@ -146,7 +196,7 @@ function breaks(h, { questSet = false } = {}) {
     const a = h.meta[i - 1], b = h.meta[i];
     const what = [], short = [];
     if (questSet) {
-      const before = headlineQuestsAt(h, i - 1), now = headlineQuestsAt(h, i);
+      const before = selectedQuestsAt(h, i - 1), now = selectedQuestsAt(h, i);
       const added = [...now].filter((q) => !before.has(q)).length;
       const dropped = [...before].filter((q) => !now.has(q)).length;
       if (added) { what.push(`${added} more quest type${added > 1 ? "s" : ""} counted`); short.push(`+${added} types`); }
@@ -386,22 +436,21 @@ function renderCityCharts(h) {
   renderTiles(h, tot);
   const name = h.name;
   $("#chart-title").textContent = `Open quests over time in ${name}`;
-  $("#chart-sub").textContent =
-    (state.includeDisabled ? "All counted quests, including those off by default. " : "All counted quests that are on by default. ") +
+  $("#chart-sub").textContent = `Counting ${selectionText()}. ` +
     (h.dates.length === 1 ? "One snapshot so far; the line starts here." : `${h.dates.length} snapshots since ${h.dates[0]}.`);
   lineChart($("#chart-total"), h, tot, { height: 300, questSetBreaks: true, note: $("#release-note") });
   $("#breaks").replaceChildren(...breaks(h, { questSet: true }).map((b) => el("li", {}, `│ ${b.date}: ${b.label}. Totals on either side are not directly comparable.`)));
 
   const box = $("#multiples");
   box.replaceChildren();
-  for (const qn of state.picked) {
+  for (const qn of state.pinned) {
     const q = questByName.get(qn), s = questSeries(h, qn);
     const target = el("div", { class: "chart" });
     const note = el("p", { class: "hover-note", "aria-live": "polite" });
     const card = el("article", { class: "card" },
       el("h3", {}, questIcon(qn, "q-icon lg"), el("span", { class: "q-title" }, questTitle(qn)),
-        el("button", { type: "button", title: "Remove from charts", "aria-label": `Remove ${questTitle(qn)} from charts`,
-                       onclick: () => togglePick(qn) }, "×")),
+        el("button", { type: "button", title: "Unpin", "aria-label": `Unpin ${questTitle(qn)}`,
+                       onclick: () => togglePin(qn) }, "×")),
       el("p", { class: "sub" }, s ? (q && q.usesAge ? "Mapping and aged series." : "This quest has no resurvey age, so nothing ages into it.")
                                   : "Not counted in this city."),
       target, s ? note : null);
@@ -435,12 +484,16 @@ function questRows(h) {
   });
 }
 
+// The rows the search box leaves; the header tick acts on these.
+function shownRows(h) {
+  const f = state.filter.trim().toLowerCase();
+  return questRows(h).filter((r) => !f || r.q.name.toLowerCase().includes(f) ||
+    humanize(r.q.name).toLowerCase().includes(f) || questTitle(r.q.name).toLowerCase().includes(f));
+}
+
 function renderQuestTable(h) {
   $("#table-city").textContent = h.name;
-  const f = state.filter.trim().toLowerCase();
-  let rows = questRows(h).filter((r) => (state.includeDisabled || !r.q.defaultDisabled) &&
-    (!f || r.q.name.toLowerCase().includes(f) || humanize(r.q.name).toLowerCase().includes(f) ||
-     questTitle(r.q.name).toLowerCase().includes(f)));
+  const rows = shownRows(h);
   const { key, dir } = state.questSort;
   const val = {
     name: (r) => questTitle(r.q.name).toLowerCase(),
@@ -460,14 +513,24 @@ function renderQuestTable(h) {
   for (const th of document.querySelectorAll("#quest-table th[data-sort]"))
     th.setAttribute("aria-sort", th.dataset.sort === key ? (dir > 0 ? "ascending" : "descending") : "none");
 
+  const on = rows.filter((r) => selected(r.q.name)).length;
+  const head = $("#select-shown");
+  head.checked = on > 0 && on === rows.length;
+  head.indeterminate = on > 0 && on < rows.length;
+  head.disabled = !rows.length;
+
   const tbody = $("#quest-table tbody");
   tbody.replaceChildren(...rows.map((r) => {
-    const picked = state.picked.includes(r.q.name);
+    const sel = selected(r.q.name), pinned = state.pinned.includes(r.q.name);
     const name = questTitle(r.q.name);
     const link = r.q.wikiLink ? el("a", { href: `https://wiki.openstreetmap.org/wiki/${r.q.wikiLink}` }, name) : el("span", {}, name);
-    return el("tr", { class: [r.counted ? "" : "off", picked ? "picked" : ""].join(" ").trim() || null },
-      el("td", {}, r.counted ? el("input", { type: "checkbox", checked: picked, "aria-label": `Chart ${name}`,
-                                             onchange: () => togglePick(r.q.name) }) : null),
+    return el("tr", { class: [r.counted ? "" : "off", sel ? "" : "unselected", pinned ? "pinned" : ""].join(" ").trim() || null },
+      el("td", { class: "c-pick" }, el("input", { type: "checkbox", checked: sel, "aria-label": `Count ${name} in the totals`,
+                                                  onchange: () => toggleSelect(r.q.name) })),
+      el("td", { class: "c-pin" }, r.counted ? el("button", { type: "button", class: "pin-btn", "aria-pressed": pinned ? "true" : "false",
+                                                              title: pinned ? "Unpin: take its chart away" : "Pin: chart this quest on its own",
+                                                              "aria-label": `${pinned ? "Unpin" : "Pin"} ${name}`,
+                                                              onclick: () => togglePin(r.q.name) }) : null),
       el("td", {}, el("div", { class: "quest-cell" }, questIcon(r.q.name),
         el("div", {}, link, r.q.defaultDisabled ? el("span", { class: "chip", title: "Off by default in the app" }, "off by default") : null,
           el("span", { class: "code" }, r.q.name)))),
@@ -480,13 +543,32 @@ function renderQuestTable(h) {
   }));
 }
 
-function togglePick(name) {
-  const i = state.picked.indexOf(name);
-  if (i >= 0) state.picked.splice(i, 1);
-  else if (state.picked.length < MAX_PICKED) state.picked.push(name);
-  else { setStatus(`Up to ${MAX_PICKED} quests can be charted at once.`); return; }
+function togglePin(name) {
+  const i = state.pinned.indexOf(name);
+  if (i >= 0) state.pinned.splice(i, 1);
+  else if (state.pinned.length < MAX_PINNED) state.pinned.push(name);
+  else { setStatus(`Up to ${MAX_PINNED} quests can be pinned at once.`); return; }
   setStatus("");
-  writeHash();
+  writeURL();
+  renderCity();
+}
+
+function toggleSelect(name) {
+  if (selected(name)) state.selected.delete(name);
+  else state.selected.add(name);
+  selectionChanged();
+}
+
+function selectShown(on) {   // the header tick: every row the search box leaves
+  for (const r of shownRows(hist)) {
+    if (on) state.selected.add(r.q.name);
+    else state.selected.delete(r.q.name);
+  }
+  selectionChanged();
+}
+
+function selectionChanged() {
+  writeURL();
   renderCity();
 }
 
@@ -510,7 +592,7 @@ async function compareRows() {
   const rows = [];
   for (const c of cities.cities) {
     let open;
-    if (!qn) open = state.includeDisabled ? c.openAll : c.open;
+    if (!qn) open = c.open;   // cities.json carries the app-default total, not the reader's selection
     else {
       const snap = await snapshot(c.region, c.asOfDate);
       const sq = snap.cities[c.id] && snap.cities[c.id].quests[qn];
@@ -529,7 +611,7 @@ async function compareRows() {
 async function renderCompare() {
   const sel = $("#compare-quest");
   if (!sel.options.length) {
-    sel.append(el("option", { value: "" }, "All counted quests"));
+    sel.append(el("option", { value: "" }, "All counted quests (app defaults)"));
     const counted = quests.quests.filter((q) => Object.values(q.status || {}).includes("counted"))
       .sort((a, b) => humanize(a.name).localeCompare(humanize(b.name)));
     for (const q of counted) sel.append(el("option", { value: q.name }, humanize(q.name) + (q.defaultDisabled ? " (off by default)" : "")));
@@ -554,13 +636,12 @@ async function renderCompare() {
   // cities.json carries totals over time, not each quest's, so the trend column is for all quests only
   const trends = !state.compareQuest && cities.dates;
   for (const th of document.querySelectorAll("#compare-table th.c-trend")) th.hidden = !trends;
-  $("#compare-sub").textContent = `${state.compareQuest ? humanize(state.compareQuest) : "All counted quests" +
-    (state.includeDisabled ? ", including those off by default" : "")}, ${cities.asOfDate}. ` +
+  $("#compare-sub").textContent = `${state.compareQuest ? humanize(state.compareQuest) : "All counted quests the app turns on by default"}, ${cities.asOfDate}. ` +
     "Raw counts follow city size, so the table ranks by density. Click a column to rank by it; the bar shows the ranked column." +
     (state.compareQuest && cities.dates ? " Trends are shown for all counted quests only." : "");
   $("#compare-table tbody").replaceChildren(...rows.map((r, i) => {
     const v = r[barKey];
-    const trend = trends && (state.includeDisabled ? r.c.trendAll : r.c.trend);
+    const trend = trends && r.c.trend;
     return el("tr", { class: r.c.id === state.city ? "picked" : null },
       el("td", { class: "num" }, i + 1),
       el("td", {}, el("a", { href: "#", onclick: (e) => { e.preventDefault(); state.city = r.c.id; $("#city").value = r.c.id; setView("city"); } }, r.c.name)),
@@ -580,7 +661,7 @@ function setStatus(msg) { const s = $("#status"); s.textContent = msg; s.hidden 
 
 function setView(v) {
   state.view = v;
-  writeHash();
+  writeURL();
   render();
 }
 
@@ -622,7 +703,7 @@ function sortHandler(table, sortState, rerender) {
 }
 
 async function main() {
-  readHash();
+  readURL();
   try {
     [cities, quests] = await Promise.all([getJSON("cities.json"), getJSON("quests.json")]);
   } catch (e) {
@@ -638,7 +719,8 @@ async function main() {
   icons = (ic && ic.quests) || {};
   releases = ((rel && rel.releases) || []).map((r) => ({ ts: dayTs(r.date), version: r.version }));
   if (!cities.cities.some((c) => c.id === state.city)) state.city = cities.cities.some((c) => c.id === "toronto") ? "toronto" : cities.cities[0].id;
-  state.picked = state.picked.filter((n) => questByName.has(n));
+  state.pinned = state.pinned.filter((n) => questByName.has(n));
+  state.selected = resolveSelection(urlSelection);
 
   const sel = $("#city");
   // cities grouped as the regions are (Ontario, Germany), in config order, when there is more than one group
@@ -649,19 +731,17 @@ async function main() {
     ? groups.map((g) => el("optgroup", { label: g }, ...cities.cities.filter((c) => groupOf(c) === g).map(option)))
     : cities.cities.map(option)));
   sel.value = state.city;
-  sel.addEventListener("change", () => { state.city = sel.value; writeHash(); renderFooter(); render(); });
-
-  const dis = $("#include-disabled");
-  dis.checked = state.includeDisabled;
-  dis.addEventListener("change", () => { state.includeDisabled = dis.checked; writeHash(); render(); });
+  sel.addEventListener("change", () => { state.city = sel.value; writeURL(); renderFooter(); render(); });
 
   const showRel = $("#show-releases");
   showRel.checked = state.releases;
   showRel.closest("label").hidden = !releases.length;
-  showRel.addEventListener("change", () => { state.releases = showRel.checked; writeHash(); render(); });
+  showRel.addEventListener("change", () => { state.releases = showRel.checked; writeURL(); render(); });
 
   $("#quest-filter").addEventListener("input", (e) => { state.filter = e.target.value; if (hist) renderQuestTable(hist); });
-  $("#compare-quest").addEventListener("change", (e) => { state.compareQuest = e.target.value; writeHash(); renderCompare(); });
+  $("#select-shown").addEventListener("change", (e) => { if (hist) selectShown(e.target.checked); });
+  $("#select-defaults").addEventListener("click", () => { state.selected = baseSet("app"); selectionChanged(); });
+  $("#compare-quest").addEventListener("change", (e) => { state.compareQuest = e.target.value; writeURL(); renderCompare(); });
   for (const t of document.querySelectorAll(".tab"))
     t.addEventListener("click", (e) => { e.preventDefault(); setView(t.dataset.view); });
 
@@ -669,7 +749,7 @@ async function main() {
   sortHandler("#compare-table", () => state.compareSort, renderCompare);
 
   renderFooter();
-  writeHash();
+  writeURL();
   await render();
 }
 

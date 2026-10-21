@@ -41,9 +41,6 @@
     <label class="field">City
       <select id="city"></select>
     </label>
-    <label class="field check">
-      <input type="checkbox" id="include-disabled"> Include quests that are off by default
-    </label>
   </div>
 
   <p id="status" class="notice" hidden></p>
@@ -69,17 +66,22 @@
     <article class="card">
       <div class="card-head">
         <h2>Quests in <span id="table-city"></span></h2>
-        <label class="field search">
-          <span class="visually-hidden">Filter quest types</span>
-          <input type="search" id="quest-filter" placeholder="Filter quest types" autocomplete="off">
-        </label>
+        <div class="table-tools">
+          <label class="field search">
+            <span class="visually-hidden">Filter quest types</span>
+            <input type="search" id="quest-filter" placeholder="Filter quest types" autocomplete="off">
+          </label>
+          <button type="button" class="btn" id="select-defaults" title="Tick the quests the app turns on by default, untick the rest">App defaults</button>
+        </div>
       </div>
-      <p class="sub">Tick a quest to chart it. Quests the app can show but this site can't count yet are
-        listed greyed, so the gaps are visible.</p>
+      <p class="sub">Tick the quests you care about: the totals and the chart above count only those. Pin a
+        quest to chart it on its own. Quests the app can show but this site can't count yet are listed
+        greyed, so the gaps are visible.</p>
       <div class="table-wrap">
         <table class="data" id="quest-table">
           <thead><tr>
-            <th scope="col" class="c-pick"><span class="visually-hidden">Chart</span></th>
+            <th scope="col" class="c-pick"><input type="checkbox" id="select-shown" title="Tick or untick every quest shown" aria-label="Tick or untick every quest shown"></th>
+            <th scope="col" class="c-pin"><span class="visually-hidden">Pin</span></th>
             <th scope="col" data-sort="name">Quest</th>
             <th scope="col" class="c-trend" title="Open quests over time, each line scaled to its own range">Trend</th>
             <th scope="col" data-sort="open" class="num">Open</th>

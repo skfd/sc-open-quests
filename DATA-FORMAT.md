@@ -132,7 +132,8 @@ of counted quests changes as a break in totals. `status`:
 `unsupported` if the quest is not supported, else `not-in-region` if its `enabledInCountries` excludes the
 city's `countryCodes`, else `counted`.
 
-Headline totals on the site exclude `defaultDisabled` quests; the per-quest numbers are still there.
+The site's totals count the quests the reader ticks; by default those are the ones without `defaultDisabled`.
+The per-quest numbers are always there.
 
 ## Tile grids for heatmaps
 

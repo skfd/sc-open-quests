@@ -77,7 +77,11 @@ Next, in order:
    address import (confirmed 2026-10-13); the 2019 rise looks like a building import, unconfirmed.
    Worth a note on the site.
 4. **Outreach.** Now that there is something to show, contact starsep (StreetCompleteStats), the SC devs and jmizv.
-5. **Smaller items:**
+5. **Site, 2026-10-21:** the reader ticks the quests that count towards the totals and pins quests
+   to chart them; the "off by default" checkbox is gone; the whole view lives in the query string so a
+   link reproduces it across app releases (DESIGN.md, "Selection, pins and the link"). Drive-through
+   check: `.scratch/drive.py` is not kept; `tests/fixtures/screenshot.py` takes the query now.
+6. **Smaller items:**
    - ~~Model open OSM notes, since the app hides quests at a note's position.~~ Done 2026-10-12.
    - Write down the routine for SC version bumps (v64: rerun `tools/sc-harness`, `engine/sync-sc.ps1`;
      the note filter is pinned in `PORTED-QUESTS.txt` as helper:OsmNoteQuest; then

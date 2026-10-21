@@ -1,7 +1,7 @@
 """Screenshot the site rendered from the fixture data (needs `pip install playwright`).
 
     python -m http.server 8765 --bind 127.0.0.1      # from the repo root, in another shell
-    python tests/fixtures/screenshot.py [data-dir] [out.png] [hash]
+    python tests/fixtures/screenshot.py [data-dir] [out.png] [query]
 """
 import sys
 from pathlib import Path
@@ -10,8 +10,8 @@ from playwright.sync_api import sync_playwright
 
 data = sys.argv[1] if len(sys.argv) > 1 else "../tests/fixtures/data"
 out = Path(sys.argv[2] if len(sys.argv) > 2 else Path(__file__).with_name("screenshot.png"))
-frag = sys.argv[3] if len(sys.argv) > 3 else "city=toronto&q=AddBusStopShelter,AddBenchBackrest"
-url = f"http://127.0.0.1:8765/docs/?data={data}#{frag}"
+query = sys.argv[3] if len(sys.argv) > 3 else "city=toronto&pin=AddBusStopShelter,AddBenchBackrest"
+url = f"http://127.0.0.1:8765/docs/?data={data}&{query}"
 
 with sync_playwright() as p:
     browser = p.chromium.launch()
