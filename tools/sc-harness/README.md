@@ -42,24 +42,27 @@ Nothing in SC is changed other than adding these files and tasks. The SC checkou
 
 ## Reproduce for a new SC tag
 
-Windows, Git Bash. JDK 21 from Android Studio and the Android SDK.
+Windows, Git Bash. The Android SDK, and a JDK the tag's `buildSrc` accepts: JDK 21 from Android Studio
+up to v63, JDK 25 since v64 (see the v64.0 run below).
 
 ```sh
-TAG=v63.4
+TAG=v64.0
 git clone --depth 1 --branch $TAG https://github.com/streetcomplete/StreetComplete.git /tmp/sc-$TAG
 cd /tmp/sc-$TAG
+git fetch --depth 1 origin tag v63.4        # the previous pin, for `git diff v63.4 v64.0 -- <file>`
 printf 'sdk.dir=C:/Users/kk/AppData/Local/Android/Sdk\n' > local.properties   # forward slashes
 
 # 1. which unit-test source set does this tag use?
-ls app/src   # androidUnitTest (<= v63.x)  or  androidHostTest (newer)
-cp ~/Code/sc-open-quests/tools/sc-harness/DumpQuestFilters.kt \
-   app/src/androidUnitTest/kotlin/de/westnordost/streetcomplete/   # or androidHostTest/...
+ls app/src   # androidHostTest (>= v64)  or  androidUnitTest (<= v63.x)
+cp ~/Code/sc-open-quests/tools/sc-harness/{DumpQuestFilters,CheckCustomQuests}.kt \
+   app/src/androidHostTest/kotlin/de/westnordost/streetcomplete/   # or androidUnitTest/...
+# (<= v63: OsmNoteQuestType was in quests.note_discussion; edit the import in both files)
 
-# 2. append the task; on androidHostTest tags change "testDebugUnitTest" to "testAndroidHostTest"
+# 2. append the tasks; on androidUnitTest tags change "testAndroidHostTest" to "testDebugUnitTest"
 cat ~/Code/sc-open-quests/tools/sc-harness/build.gradle.kts.snippet >> app/build.gradle.kts
 
-# 3. run
-export JAVA_HOME="/c/Program Files/Android/Android Studio/jbr"
+# 3. run (>= v64: on a JDK 25, see below; <= v63: JAVA_HOME="/c/Program Files/Android/Android Studio/jbr")
+export JAVA_HOME="$HOME/.gradle/jdks/eclipse_adoptium-25-amd64-windows.2"
 ./gradlew --console=plain :app:dumpQuestFilters \
   -PdumpOut="C:/Users/kk/Code/sc-open-quests/data/quests/${TAG}.json"
 ```
@@ -81,6 +84,23 @@ Notes:
   FileCollection already carries the compile dependencies.
 - `elementFilter` keeps the string exactly as SC holds it, including the leading newline and indentation
   of Kotlin raw strings. Trim if you need to; SC's parser doesn't care.
+
+## v64.0 run (2026-10-21)
+
+- `buildSrc` asks for a JDK 25 toolchain and refuses to run on Gradle's own JVM below 25, so: add
+  `plugins { id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0" }` to the root
+  `settings.gradle.kts` after the `pluginManagement` block, the same id without a version to a new
+  `buildSrc/settings.gradle.kts` (with a `pluginManagement { repositories { gradlePluginPortal() } }`),
+  run once on JDK 21 so Gradle downloads JDK 25 into `~/.gradle/jdks/`, then run with `JAVA_HOME` at it.
+- Gradle 9.7.1 (wrapper); it fetched Android SDK Platform 37 by itself.
+- First build (`:app:compileAndroidHostTestKotlinAndroid` with the whole multiplatform app, cold Gradle 9.7.1
+  and the JDK 25 download): 12 min 3 s. The dump itself then takes seconds.
+- 193 registry entries: 140 `filter`, 52 `custom`, 1 `note`. All 140 filter strings re-parse. Against
+  v63.4: added AddChargingStationMotorcar, AddChargingStationSocket (custom), AddDoctorType,
+  AddGeneralAccess, AddLockable, AddMotorcycleParkingSurface, AddParkingCharge, AddVendingMachineType;
+  removed AddChargingStationBicycleCapacity, AddChargingStationCapacity, AddPlaygroundAccess,
+  AddProhibitedForPedestrians, AddTowerAccess. 57 filters now name relations.
+- `questTypeRegistry(mock(), mock(), mock(), mock())` still compiles: the four parameters are the same.
 
 ## v63.4 run (2026-10-11)
 

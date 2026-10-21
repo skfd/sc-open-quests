@@ -4,7 +4,7 @@ import de.westnordost.streetcomplete.data.elementfilter.toElementFilterExpressio
 import de.westnordost.streetcomplete.data.elementfilter.toOverpassQLString
 import de.westnordost.streetcomplete.data.osm.osmquests.OsmElementQuestType
 import de.westnordost.streetcomplete.data.osm.osmquests.OsmFilterQuestType
-import de.westnordost.streetcomplete.quests.note_discussion.OsmNoteQuestType
+import de.westnordost.streetcomplete.quests.note_comments.OsmNoteQuestType // quests.note_discussion up to v63
 import de.westnordost.streetcomplete.quests.questTypeRegistry
 import de.westnordost.streetcomplete.util.countryboundaries.AllCountries
 import de.westnordost.streetcomplete.util.countryboundaries.AllCountriesExcept

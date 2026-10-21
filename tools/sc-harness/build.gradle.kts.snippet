@@ -1,16 +1,16 @@
-// Append to StreetComplete's app/build.gradle.kts (tested at tag v63.4).
+// Append to StreetComplete's app/build.gradle.kts (tested at tags v63.4 and v64.0).
 //
-// v63.x and older: unit tests live in app/src/androidUnitTest and the test task is "testDebugUnitTest".
-// Newer master:    they live in app/src/androidHostTest and the test task is "testAndroidHostTest"
-//                  (see master's printQuestFiltersAsOverpassQL task, which this is modelled on).
+// v64 and newer:   unit tests live in app/src/androidHostTest and the test task is "testAndroidHostTest"
+//                  (see SC's own printQuestFiltersAsOverpassQL task, which this is modelled on).
+// v63.x and older: they live in app/src/androidUnitTest and the test task is "testDebugUnitTest".
 // Change the task names below (and the source folder you drop the .kt files into) accordingly.
 
 // sc-open-quests harness: dump every quest type with its resolved element filter as JSON.
-// Usage: ./gradlew :app:dumpQuestFilters -PdumpOut=/path/to/v63.4.json
+// Usage: ./gradlew :app:dumpQuestFilters -PdumpOut=/path/to/v64.0.json
 tasks.register<JavaExec>("dumpQuestFilters") {
     group = "utils"
 
-    val testTask = tasks.named<Test>("testDebugUnitTest")
+    val testTask = tasks.named<Test>("testAndroidHostTest")
     // no dependsOn(testTask...): that would run the unit tests too; the classpath carries its own build deps
     classpath = testTask.get().classpath
 
@@ -30,7 +30,7 @@ tasks.register<JavaExec>("dumpQuestFilters") {
 tasks.register<JavaExec>("checkCustomQuests") {
     group = "utils"
 
-    val testTask = tasks.named<Test>("testDebugUnitTest")
+    val testTask = tasks.named<Test>("testAndroidHostTest")
     // no dependsOn(testTask...): that would run the unit tests too; the classpath carries its own build deps
     classpath = testTask.get().classpath
 

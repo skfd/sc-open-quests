@@ -18,7 +18,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "docs" / "icons"
 
-ICON = re.compile(r"override val icon\s*=\s*R\.drawable\.quest_(\w+)")
+ICON = re.compile(r"override val icon\s*=\s*R(?:es)?\.drawable\.quest_(\w+)")  # R.drawable up to v63
 TITLE = re.compile(r"override val title\s*=\s*Res\.string\.(\w+)")
 
 

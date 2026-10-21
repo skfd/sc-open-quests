@@ -1,9 +1,10 @@
 # engine
 
 Counts open StreetComplete quests per city from an OSM PBF extract by running StreetComplete's own
-element filter and geometry code on a plain JVM. Status: all 138 filter quests of SC v63.4 and 48 of its
-51 custom quests (see "Custom quests" and "Area quests" below), 48 Ontario cities, one pass over the
-Ontario extract plus an area pass for the quests that need surroundings. Output format: [DATA-FORMAT.md](../DATA-FORMAT.md).
+element filter and geometry code on a plain JVM. Status: all 140 filter quests of SC v64.0 and all 52 of
+its custom quests (see "Custom quests" and "Area quests" below), 48 Ontario cities and 4 German ones, one
+pass over each extract plus an area pass for the quests that need surroundings. Moving to a new SC
+release is a *repin*: [REPIN.md](../REPIN.md). Output format: [DATA-FORMAT.md](../DATA-FORMAT.md).
 
 ## Licence
 
@@ -21,7 +22,7 @@ cd engine; ./gradlew.bat installDist; cd ..
 # from the repo root; paths are relative to the working directory
 engine/build/install/sc-open-quests-engine/bin/sc-open-quests-engine.bat count `
     --pbf C:\Users\kk\Code\.osm-data\ontario\ontario-2026-10-10.osm.pbf `
-    --quests data/quests/v63.4.json --cities config/cities.json --out docs/data `
+    --quests data/quests/v64.0.json --cities config/cities.json --out docs/data `
     --source-meta C:\Users\kk\Code\.osm-data\ontario\ontario-2026-10-10.meta.json
 ```
 
@@ -113,13 +114,18 @@ node positions), relations. Each stage decodes blocks in parallel.
   publishes an `osmfeatures-jvm` variant (an earlier version of this README wrongly said it had none and
   stubbed `GeometryType`). The opening-hours parser is `de.westnordost:osm-opening-hours:0.4.0`, as in SC.
 
-Everything else under `src/main/kotlin/sc/` is byte-identical to SC v63.4. To move to a new SC tag:
-`./sync-sc.ps1 -ScPath <checkout> -Tag vX`, regenerate `data/quests/vX.json` with `tools/sc-harness`, build.
+Everything else under `src/main/kotlin/sc/` is byte-identical to SC v64.0 (the third patch, `nolazy`, is
+described in `sync-sc.ps1`: v64 caches a date filter's threshold, which would freeze the movable clock
+and the multiplier). Stubs under `src/main/kotlin/stubs/` stand in for what the vendored files reach
+into but the engine never calls: Compose's `Locale`/`LocaleList` (the JVM's default locale),
+`DrawableResource`, SC's generated `Res` with `readYamlOrNull` reading the bundled files,
+`ApplicationConstants.MAX_OSM_TAG_VALUE_LENGTH`, `Side`. Moving to a new SC tag is a repin:
+[REPIN.md](../REPIN.md).
 
 ## Custom quests
 
-SC's 51 custom quests (`OsmElementQuestType` but not `OsmFilterQuestType`) live in `androidMain` next to
-their Android forms, so they cannot be vendored. For those whose `getApplicableElements()` looks at one
+SC's 52 custom quests (`OsmElementQuestType` but not `OsmFilterQuestType`) hold their Compose form next
+to their logic (in `commonMain` since v64, in `androidMain` before), so they cannot be vendored. For those whose `getApplicableElements()` looks at one
 element at a time, the filter strings and `isApplicableTo()` are **transcribed** into
 `src/main/kotlin/openquests/custom/<Name>.kt` (one object per quest, implementing `CustomQuest`), calling the
 vendored `commonMain` helpers they use (`osm/Places.kt`, `osm/sidewalk/*`, `osm/opening_hours/*`, ...).
@@ -134,9 +140,11 @@ vendored `commonMain` helpers they use (`osm/Places.kt`, `osm/sidewalk/*`, `osm/
   city); run both with the same "today" (`--today <now>` for the engine, since the oracle reads the wall
   clock) and diff the oracle's TSV with `--dump-matches` for that city. Ontario 2026-10-11, Toronto,
   1,601,992 tagged elements: **55,271 quests, identical sets** for all twelve.
-- Ported (v63.4): AddSidewalk, AddOpeningHours, AddPostboxCollectionTimes, AddRecyclingContainerMaterials,
+- Ported (v64.0): AddSidewalk, AddOpeningHours, AddPostboxCollectionTimes, AddRecyclingContainerMaterials,
   CheckShopType, AddClothingBinOperator, AddOnewayAerialway, AddRoadWidth, AddMaxPhysicalHeight; and,
-  with SC's feature dictionary, CheckShopExistence, CheckOpeningHoursSigned, AddPlaceName.
+  with SC's feature dictionary, CheckShopExistence, CheckOpeningHoursSigned, AddPlaceName. Since v64
+  AddOpeningHours, CheckOpeningHoursSigned and AddPlaceName take relations too, and CheckShopExistence no
+  longer requires a name (a nameless shop whose preset has a name counts).
 - **Feature dictionary** (`ScFeatures`): the app passes the registry
   `{ featureDictionary.getFeature(it) }`, osmfeatures over SC's own presets, asked with no language, so
   in the phone's locale. The engine pins the JVM locale to **en-CA** (launcher `-Duser.language=en
@@ -154,12 +162,14 @@ vendored `commonMain` helpers they use (`osm/Places.kt`, `osm/sidewalk/*`, `osm/
 39 custom quests decide where they apply from the map data around an element (crossings of roads and
 footways, kerbs, entrances on building outlines, ways below bridges, nodes of ferry routes...). They are
 **generated**, not hand-transcribed: `engine/port_area_quests.py --sc <checkout> <Name>...` copies the
-quest's androidMain file, keeps the imports, everything outside the class, every non-override member and
+quest's file, keeps the imports (minus Compose and resources), everything outside the class, every
+non-override member and
 `getApplicableElements()` verbatim (plus `isApplicableTo()` where `getApplicableElements()` calls it), and
 writes `object <Name> : AreaQuest` into SC's own package under `src/main/kotlin/ported/`, so same-package
 helpers resolve unchanged. A `getFeature` constructor parameter becomes `ScFeatures`, and a
-`getCountryInfoByLocation` one becomes `ScCountryInfos` (see "Country metadata" below). Four androidMain helper
-files (FerryUtils, LevelUtils, SummitMarkingsUtil, MaxHeightUtils) are copied whole. Every file is pinned in
+`getCountryInfoByLocation` one becomes `ScCountryInfos` (see "Country metadata" below). Four helper
+files (FerryUtils, LevelUtils, SummitMarkingsUtil, MaxHeightUtils) are copied whole. v64 added
+AddChargingStationSocket (a charging station without mapped charge points), ported the same way. Every file is pinned in
 `PORTED-QUESTS.txt` (helpers as `helper:<File>`); on a new SC tag, rerun the script for whatever
 `sync-sc.ps1` reports as changed, build, and recheck with the oracle. `ported/AreaQuests.kt` lists them.
 
