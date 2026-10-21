@@ -3,7 +3,7 @@
     python tools/sc_assets.py <sc-checkout>      # e.g. C:/Users/kk/AppData/Local/Temp/sc-v63.4
 
 Reads the quest names from docs/data/quests.json, finds each quest's Kotlin class in the checkout,
-and follows `override val icon = R.drawable.quest_<x>` to res/graphics/quest/<x>.svg and
+and follows `override val icon = Res.drawable.quest_<x>` (R.drawable up to v63) to res/graphics/quest/<x>.svg and
 `override val title = Res.string.<id>` to the English strings.xml. Writes docs/icons/<x>.svg,
 docs/icons/index.json ({"scVersion", "quests": {name: {"icon", "title"}}}) and a copy of SC's
 graphics authors.txt. The icons are CC-BY-SA 4.0 (see that file); rerun on every SC version bump.

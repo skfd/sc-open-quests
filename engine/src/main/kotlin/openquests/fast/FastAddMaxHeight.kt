@@ -19,25 +19,25 @@ import de.westnordost.streetcomplete.util.math.intersects
 object FastAddMaxHeight : FastTwin {
     override val name = "AddMaxHeight"
     override val usesAge = false
-    override val sourceSha256 = "df2647c98340fd2f0386b672be78e6be6deae69c939016ec68296d57ff861c10"
+    override val sourceSha256 = "723f092d98d20f5cd94801fd7f255bf34d93be01a89135c314ae7f17822bc74d"
 
     private val nodeFilter by lazy { """
         nodes with
-        (
-          barrier = height_restrictor
-          or amenity = parking_entrance and parking ~ underground|multi-storey
-        )
-        and $noMaxHeight
+          (
+            barrier = height_restrictor
+            or amenity = parking_entrance and parking ~ underground|multi-storey
+          )
+          and $noMaxHeight
     """.toElementFilterExpression() }
 
     private val roadsWithoutMaxHeightFilter by lazy { """
         ways with
-        (
-          highway ~ motorway|motorway_link|trunk|trunk_link|primary|primary_link|secondary|secondary_link|tertiary|tertiary_link|unclassified|residential|living_street|track|road|busway
-          or (highway = service and access !~ private|no and vehicle !~ private|no)
-        )
-        and $noMaxHeight
-        and (access !~ private|no or (foot and foot !~ private|no))
+          (
+            highway ~ motorway|motorway_link|trunk|trunk_link|primary|primary_link|secondary|secondary_link|tertiary|tertiary_link|unclassified|residential|living_street|track|road|busway
+            or (highway = service and access !~ private|no and vehicle !~ private|no)
+          )
+          and $noMaxHeight
+          and (access !~ private|no or (foot and foot !~ private|no))
     """.toElementFilterExpression() }
 
     private val railwayCrossingsFilter by lazy { """

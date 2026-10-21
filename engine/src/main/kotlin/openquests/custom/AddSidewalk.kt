@@ -30,8 +30,7 @@ private val roadsFilter by lazy { """
           and expressway != yes
           and foot != no
         )
-        or
-        (
+        or (
           highway ~ motorway|motorway_link|trunk|trunk_link|primary|primary_link|secondary|secondary_link|tertiary|tertiary_link|unclassified|residential|service|busway
           and (foot ~ yes|designated or bicycle ~ yes|designated)
         )

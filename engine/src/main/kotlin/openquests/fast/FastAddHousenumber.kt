@@ -1,9 +1,8 @@
 package openquests.fast
 
-// SC's AddHousenumber (ported/.../AddHousenumber.kt, copied by hand), with two changes in step 5 that
-// give the same result: the area sort computes each area once (sortedBy recomputes it per comparison;
-// both sorts are stable), and `buildings.removeAll(buildingsInArea)` is skipped when buildingsInArea
-// is empty (the original scans every candidate building for every area with an address).
+// SC's AddHousenumber (ported/.../AddHousenumber.kt, copied by hand), with one change in step 5 that
+// gives the same result: `buildings.removeAll(buildingsInArea)` is skipped when buildingsInArea is
+// empty (the original scans every candidate building for every area with an address).
 import de.westnordost.streetcomplete.data.elementfilter.toElementFilterExpression
 import de.westnordost.streetcomplete.data.osm.geometry.ElementPolygonsGeometry
 import de.westnordost.streetcomplete.data.osm.mapdata.Element
@@ -22,7 +21,7 @@ import de.westnordost.streetcomplete.util.math.measuredMultiPolygonArea
 object FastAddHousenumber : FastTwin {
     override val name = "AddHousenumber"
     override val usesAge = false
-    override val sourceSha256 = "eab24777688cd718836969465a089a03c72f4c452898395f5cecb2603c8eb015"
+    override val sourceSha256 = "d35cebf2aa1aea22236965585372b9a585d22c4bea78e8edecf82bf4a850d0b5"
 
     override fun getApplicableElements(mapData: MapDataWithGeometry): Iterable<Element> {
         val bbox = mapData.boundingBox ?: return listOf()
@@ -42,7 +41,6 @@ object FastAddHousenumber : FastTwin {
 
         if (buildings.isEmpty()) return listOf()
 
-
         /** 2. exclude buildings which are included in relations that have an address */
 
         val relationsWithAddress = mapData.relations.filter { nonMultipolygonRelationsWithAddressFilter.matches(it) }
@@ -52,7 +50,6 @@ object FastAddHousenumber : FastTwin {
         }
 
         if (buildings.isEmpty()) return listOf()
-
 
         /** 3. exclude buildings that intersect with the bounding box because it is not possible to
                ascertain for these if there is an address node within the building - it could be
@@ -68,7 +65,6 @@ object FastAddHousenumber : FastTwin {
         }
 
         if (buildings.isEmpty()) return listOf()
-
 
         /** 4. exclude buildings that contain an address node somewhere within their area */
 
@@ -89,22 +85,25 @@ object FastAddHousenumber : FastTwin {
 
         if (buildings.isEmpty()) return listOf()
 
-
         /** 5. exclude buildings that are contained in an area that has an address tagged on itself
          *     or on a vertex on its outline */
 
         val areasWithAddressesOnOutline = mapData.ways
+            .asSequence()
             .filter { it.isArea() }
-            .sortedByOnce {
-                // we check small areas first, because smaller areas should "consume" address nodes,
-                // or in other words, address nodes on outlines are associated to the smallest area
-                // they are part of
-                val geom = mapData.getGeometry(it.type, it.id) as? ElementPolygonsGeometry
+            // we check small areas first, because smaller areas should "consume" address nodes,
+            // or in other words, address nodes on outlines are associated to the smallest area
+            // they are part of
+            .map { area ->
+                val geom = mapData.getGeometry(area.type, area.id) as? ElementPolygonsGeometry
                 val size = geom?.polygons?.measuredMultiPolygonArea() ?: 0.0
-                size
+                area to size
             }
+            .sortedBy { (_, size) -> size }
+            .map { (area, _) -> area }
             .filter { it.consumeAnyContainedNode(addressNodeIds, mapData) }
             .mapNotNull { mapData.getGeometry(it.type, it.id) as? ElementPolygonsGeometry }
+            .toList()
 
         val areasWithAddresses = mapData
             .filter { nonBuildingAreasWithAddressFilter.matches(it) }
@@ -122,6 +121,7 @@ object FastAddHousenumber : FastTwin {
             val buildingPositionsInArea = nearbyBuildings.filter { it.isInMultipolygon(areaWithAddress.polygons) }
             val buildingsInArea = buildingPositionsInArea.mapNotNull { buildingsByCenterPosition[it] }.toSet()
 
+            // the change: skipped when empty
             if (buildingsInArea.isNotEmpty()) buildings.removeAll(buildingsInArea)
         }
 
@@ -143,8 +143,8 @@ private val nonMultipolygonRelationsWithAddressFilter by lazy { """
 """.toElementFilterExpression() }
 
 private val nodesWithAddressFilter by lazy { """
-   nodes with
-     addr:housenumber or addr:housename or addr:conscriptionnumber or addr:streetnumber
+    nodes with
+      addr:housenumber or addr:housename or addr:conscriptionnumber or addr:streetnumber
 """.toElementFilterExpression() }
 
 private val buildingsWithMissingAddressFilter by lazy { """
@@ -201,7 +201,3 @@ private fun Relation.consumeAnyContainedNode(nodeIds: MutableSet<Long>, mapData:
 /** return whether any of the ways with the given ids are contained in this relation */
 private fun Relation.containsWay(wayId: Long): Boolean =
     members.any { it.type == ElementType.WAY && wayId == it.ref }
-
-/** sortedBy with each key computed once; stable, so the same order as sortedBy */
-private inline fun <T> List<T>.sortedByOnce(crossinline key: (T) -> Double): List<T> =
-    map { it to key(it) }.sortedBy { it.second }.map { it.first }

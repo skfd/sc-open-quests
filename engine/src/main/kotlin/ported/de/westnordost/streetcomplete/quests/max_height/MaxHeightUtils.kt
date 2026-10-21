@@ -1,5 +1,5 @@
-// COPIED by engine/port_area_quests.py from StreetComplete app/src/androidMain/kotlin/de/westnordost/streetcomplete/quests/max_height/MaxHeightUtils.kt
-// (sha256 of its LF text f2b1d8bfcce485fd9fce7325643116c54691042c3f1c1b0adcd19a5ec0252f7f, pinned in engine/PORTED-QUESTS.txt), unchanged below this header.
+// COPIED by engine/port_area_quests.py from StreetComplete app/src/commonMain/kotlin/de/westnordost/streetcomplete/quests/max_height/MaxHeightUtils.kt
+// (sha256 of its LF text 23204371a4f5bdebaf8fa366b33abae29455b79aea595f4f575346645a3997b7, pinned in engine/PORTED-QUESTS.txt), unchanged below this header.
 package de.westnordost.streetcomplete.quests.max_height
 
 import de.westnordost.streetcomplete.data.elementfilter.ElementFilterExpression
@@ -35,7 +35,8 @@ val tunnelFilter: ElementFilterExpression by lazy { """
 """.toElementFilterExpression() }
 
 val bridgeFilter by lazy { """
-    ways with (
+    ways with
+      (
         (
           highway ~ ${(ALL_ROADS + ALL_PATHS).joinToString("|")}
           or railway ~ rail|light_rail|subway|narrow_gauge|tram|disused|preserved|funicular|monorail

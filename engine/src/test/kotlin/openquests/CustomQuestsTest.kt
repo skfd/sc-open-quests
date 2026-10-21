@@ -33,7 +33,7 @@ class CustomQuestsTest {
     }
 
     @Test fun `ported quests are counted with the port's age flag and element types`() {
-        val registry = Registry.load(File("data/quests/v63.4.json"))
+        val registry = Registry.load(File("data/quests/v64.0.json"))
         val sidewalk = registry.quests.single { it.name == "AddSidewalk" }
         assertTrue(sidewalk.isCounted && !sidewalk.isFilter)
         assertEquals(listOf("ways"), sidewalk.elementTypes)

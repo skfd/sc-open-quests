@@ -1,7 +1,8 @@
-package de.westnordost.streetcomplete.osm
+package de.westnordost.streetcomplete.osm.things
 
 import de.westnordost.streetcomplete.data.elementfilter.toElementFilterExpression
 import de.westnordost.streetcomplete.data.osm.mapdata.Element
+import de.westnordost.streetcomplete.osm.asIfItWasnt
 
 /** Return whether this element is a kind of thing, regardless whether it is disused or not */
 fun Element.isThingOrDisusedThing(): Boolean =
@@ -146,6 +147,7 @@ private val IS_THING_EXPRESSION by lazy {
             // "bus_stop", handled in filter below to skip some common bad tagging
             "cyclist_waiting_aid",
             "emergency_access_point",
+            "elevator", // see discussion in #6884
             "hitchhiking",
             "milestone",
             // "speed_camera", - while not directly a sign, it definitely belongs into the traffic

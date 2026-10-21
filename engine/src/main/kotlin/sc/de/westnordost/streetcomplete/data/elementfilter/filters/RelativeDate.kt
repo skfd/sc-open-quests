@@ -14,7 +14,8 @@ interface DateFilter {
 
 /** A date relative to (start of) today (positive: future, negative: past) */
 class RelativeDate(val deltaDays: Float) : DateFilter {
-    override val date: LocalDate get() {
+    // sc-open-quests patch: computed on every read (as up to v63), so the engine can move the clock
+    override val date: LocalDate get() = run {
         val now = LocalDateTime.now()
         val plusHours = (deltaDays * MULTIPLIER * 24).toLong()
         val relativeDateTime = (
@@ -24,7 +25,7 @@ class RelativeDate(val deltaDays: Float) : DateFilter {
                 now.minusInSystemTimeZone(plusHours.absoluteValue, DateTimeUnit.HOUR)
             }
         )
-        return relativeDateTime.date
+        relativeDateTime.date
     }
 
     override fun toString() = "$deltaDays days"

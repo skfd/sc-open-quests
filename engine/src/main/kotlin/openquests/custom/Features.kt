@@ -9,10 +9,11 @@ import java.nio.file.Files
 
 /**
  * SC's feature dictionary, as the app hands it to the quest registry
- * (`{ featureDictionaryLazy.value.getFeature(it) }` in AndroidModule2): osmfeatures over SC's own
- * preset files, queried with no explicit language, so osmfeatures uses the JVM's default locale. The
- * engine pins that to en-CA (see Main.kt), and only the files en-CA reads are bundled
- * (src/main/resources/sc/osmfeatures/default, vendored by sync-sc.ps1).
+ * (`{ featureDictionaryLazy.value.getFeature(it) }` in CommonModule): osmfeatures over SC's own
+ * preset files, queried in the languages of the phone's locale list (since v64
+ * `getLanguagesForFeatureDictionary()`, vendored; the stubbed Compose LocaleList holds the JVM's default
+ * locale, then "en", then null). The engine pins that locale to en-CA (see Main.kt), and only the files
+ * en-CA reads are bundled (src/main/resources/sc/osmfeatures/default, vendored by sync-sc.ps1).
  */
 object ScFeatures {
     /** the locale the app is assumed to run in; the presets bundled are the ones it reads */

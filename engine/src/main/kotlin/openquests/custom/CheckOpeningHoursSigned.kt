@@ -10,13 +10,13 @@ import de.westnordost.streetcomplete.osm.getLastCheckDateKeys
  *  getApplicableElements = mapData.filter { isApplicableTo(it) } */
 object CheckOpeningHoursSigned : CustomQuest {
     override val name = "CheckOpeningHoursSigned"
-    override val elementTypes = setOf(ElementType.NODE, ElementType.WAY)
+    override val elementTypes = setOf(ElementType.NODE, ElementType.WAY, ElementType.RELATION)
     override val usesAge = true
 
     private val getFeature: (Element) -> Feature? = ScFeatures::getFeature
 
     private val filter by lazy { """
-        nodes, ways with
+        nodes, ways, relations with
           opening_hours:signed = no
           and (
             $hasOldOpeningHoursCheckDateFilter

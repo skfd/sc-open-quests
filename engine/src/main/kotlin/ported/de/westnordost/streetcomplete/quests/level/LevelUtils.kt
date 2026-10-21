@@ -1,4 +1,4 @@
-// COPIED by engine/port_area_quests.py from StreetComplete app/src/androidMain/kotlin/de/westnordost/streetcomplete/quests/level/LevelUtils.kt
+// COPIED by engine/port_area_quests.py from StreetComplete app/src/commonMain/kotlin/de/westnordost/streetcomplete/quests/level/LevelUtils.kt
 // (sha256 of its LF text 1b18ef4268be0e52598b75ec23d8f657611f5dab2d70cd6602ddf6945dd36a08, pinned in engine/PORTED-QUESTS.txt), unchanged below this header.
 package de.westnordost.streetcomplete.quests.level
 

@@ -9,7 +9,11 @@ Subcommands:
              Needs a notes dump that reaches the extract.
   backfill   count every dated extract of every region still in the shared store
   history    rebuild docs/data/history/<cityId>.json, cities.json and quests.json from all regions
-  update     download + backfill + history, then commit "data <asOfDate>" and push
+  update     download + backfill + history, then commit "data <asOfDate>" and push; last, check-release
+  check-release  compare the pinned StreetComplete tag (engine/SC-VERSION.txt) with the newest stable
+             GitHub release; if the app moved on, open a GitHub issue "Repin to StreetComplete vX.Y"
+             (once; see REPIN.md) and refresh docs/data/sc-releases.json. Network and `gh` failures
+             are logged, never fatal.
 
 Regions are config/regions.json, one Geofabrik extract each; a city names its region in
 config/cities.json. Extracts and notes dumps live in the shared store (~/Code/.osm-data, see
@@ -47,6 +51,8 @@ REGION_CITIES_DIR = ROOT / "data" / "cities"  # the engine's cities file per reg
 CLIP_NOTES = ROOT / "tools" / "clip_notes.py"
 
 ENGINE_DIR = ROOT / "engine"
+SC_VERSION_FILE = ENGINE_DIR / "SC-VERSION.txt"
+TOOLS_DIR = ROOT / "tools"
 ENGINE_INSTALL = ENGINE_DIR / "build" / "install" / "sc-open-quests-engine"
 ENGINE_BAT = ENGINE_INSTALL / "bin" / "sc-open-quests-engine.bat"
 JAVA_HOME = r"C:\Program Files\Android\Android Studio\jbr"
@@ -204,10 +210,15 @@ def notes_until(clip: Path) -> datetime:
 
 # --- count ----------------------------------------------------------------------------------------
 
+def version_tuple(v: str) -> tuple[int, ...]:
+    """"v64.0", "64.0" or "v64.0.json" -> (64, 0); anything else -> ()."""
+    m = re.fullmatch(r"v?(\d+(?:\.\d+)*)(?:\.json)?", v)
+    return tuple(int(x) for x in m.group(1).split(".")) if m else ()
+
+
 def newest_quests_file(quests_dir: Path = QUESTS_DIR) -> Path:
     def version(p: Path):
-        m = re.fullmatch(r"v(\d+(?:\.\d+)*)\.json", p.name)
-        return tuple(int(x) for x in m.group(1).split(".")) if m else None
+        return version_tuple(p.name) if p.name.startswith("v") else None
     files = [p for p in quests_dir.glob("v*.json") if version(p)]
     if not files:
         raise FileNotFoundError(f"no quest registry in {quests_dir} (run tools/sc-harness)")
@@ -275,14 +286,20 @@ def count(region: dict, force: bool = False, extract: tuple[Path, Path] | None =
             return None
         existing = snapshot_for_sha(sha, out)
         name = f"{region['id']}/snapshots/{existing.name}" if existing else None
+        quests = newest_quests_file()
         if existing and not force:
-            if read_json(existing).get("notes"):
+            snap = read_json(existing)
+            if not snap.get("notes"):
+                log(f"{name} counts {pbf.name} without notes; recounting with {clip.name}")
+            elif version_tuple(snap.get("scVersion") or "0") < version_tuple(quests.stem):
+                # after a repin (REPIN.md): the newest extract gets the new quest set; older ones
+                # keep their counts, so the break sits at the repin date
+                log(f"{name} counts {pbf.name} with SC {snap.get('scVersion')}; recounting with {quests.name}")
+            else:
                 log(f"{name} already counts {pbf.name}; skipping (--force to redo)")
                 return None
-            log(f"{name} counts {pbf.name} without notes; recounting with {clip.name}")
         if engine_is_stale():
             build_engine()
-        quests = newest_quests_file()
         cmd = [str(ENGINE_BAT), "count",
                "--pbf", str(pbf),
                "--quests", str(quests.relative_to(ROOT)),
@@ -504,7 +521,83 @@ def update(force: bool = False) -> None:
         history()
         log("=== publish ===")
         publish()
+    log("=== check-release ===")
+    try:
+        check_release()
+    except Exception as e:  # the day's data is published; a GitHub hiccup must not fail the run
+        log(f"check-release failed (ignored): {e}")
     log("update done")
+
+
+# --- SC releases ----------------------------------------------------------------------------------
+
+def pinned_sc_tag(path: Path = SC_VERSION_FILE) -> str:
+    """The StreetComplete tag the engine is pinned to ("v64.0"), from engine/SC-VERSION.txt."""
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if line.startswith("tag="):
+            return line[len("tag="):].strip()
+    raise ValueError(f"no tag= line in {path}")
+
+
+def newer_release(pinned: str, releases: list[dict]) -> dict | None:
+    """The newest of [releases] ({"version": "v64.0", "date": ...}) whose version is above [pinned],
+    or None. Pure, for the tests."""
+    newer = [r for r in releases if version_tuple(r["version"]) > version_tuple(pinned)]
+    return max(newer, key=lambda r: version_tuple(r["version"])) if newer else None
+
+
+def repin_issue_title(version: str) -> str:
+    return f"Repin to StreetComplete {version}"
+
+
+def gh(*args: str) -> str:
+    """Run the GitHub CLI in the repo; stdout, or a RuntimeError with its stderr."""
+    r = subprocess.run(["gh", *args], cwd=ROOT, capture_output=True, text=True)
+    if r.returncode != 0:
+        raise RuntimeError(f"gh {' '.join(args[:2])} failed: {r.stderr.strip() or r.stdout.strip()}")
+    return r.stdout
+
+
+def repin_issue_exists(title: str) -> bool:
+    """True if an issue with exactly this title exists, open or closed (closed means done or declined;
+    don't nag again)."""
+    out = gh("issue", "list", "--state", "all", "--search", f'"{title}" in:title', "--json", "title")
+    return any(i.get("title") == title for i in json.loads(out or "[]"))
+
+
+def open_repin_issue(release: dict, pinned: str) -> str:
+    """Open the issue; returns its URL."""
+    version = release["version"]
+    url = f"https://github.com/streetcomplete/StreetComplete/releases/tag/{version}"
+    body = (f"StreetComplete {version} was released on {release['date']} ({url}); the engine is pinned "
+            f"to {pinned} (engine/SC-VERSION.txt), so the daily counts use the {pinned} quest set.\n\n"
+            f"Repin it: the routine is REPIN.md. Until then every snapshot carries `scVersion` {pinned[1:]}, "
+            f"and the chart marks the break when the first {version[1:]} snapshot lands.\n\n"
+            f"Opened by `python run.py check-release` (the scheduled update's last step).")
+    return gh("issue", "create", "--title", repin_issue_title(version), "--body", body).strip()
+
+
+def check_release() -> dict | None:
+    """Compare the pinned SC tag with the newest stable GitHub release. Rewrites
+    docs/data/sc-releases.json (the timeline pins; the next publish commits it) and, when the app has
+    moved on, opens the "Repin to StreetComplete vX.Y" issue once. Returns the newer release, if any."""
+    sys.path.insert(0, str(TOOLS_DIR))
+    import sc_releases  # noqa: E402  (tools/sc_releases.py)
+    releases = sc_releases.stable_releases()
+    if sc_releases.write(releases):
+        log(f"sc-releases.json: {len(releases)} stable releases, newest {releases[-1]['version']}")
+    pinned = pinned_sc_tag()
+    release = newer_release(pinned, releases)
+    if release is None:
+        log(f"pinned {pinned} is the newest stable StreetComplete release")
+        return None
+    title = repin_issue_title(release["version"])
+    if repin_issue_exists(title):
+        log(f"{release['version']} is out ({release['date']}), engine pinned to {pinned}; issue \"{title}\" exists")
+    else:
+        url = open_repin_issue(release, pinned)
+        log(f"{release['version']} is out ({release['date']}), engine pinned to {pinned}; opened {url}")
+    return release
 
 
 # --- CLI ------------------------------------------------------------------------------------------
@@ -523,6 +616,7 @@ def main(argv: list[str] | None = None) -> int:
     h = sub.add_parser("history", help="rebuild history/ and cities.json from snapshots")
     h.add_argument("--data-dir", type=Path, default=DATA_DIR)
     h.add_argument("--cities", type=Path, default=CITIES_CONFIG)
+    sub.add_parser("check-release", help="open the repin issue if StreetComplete has a newer stable release")
     args = parser.parse_args(argv)
     try:
         if args.command == "download":
@@ -536,6 +630,8 @@ def main(argv: list[str] | None = None) -> int:
             history(args.data_dir, args.cities)
         elif args.command == "update":
             update(force=args.force)
+        elif args.command == "check-release":
+            check_release()
         return 0
     except Exception as e:  # one line in the scheduler log, non-zero exit for Task Scheduler
         log(f"ERROR: {e}")

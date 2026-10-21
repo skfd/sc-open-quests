@@ -16,36 +16,37 @@ object AddMaxPhysicalHeight : CustomQuest {
     override val usesAge = false
 
     private val nodeFilter by lazy { """
-        nodes with (
-          barrier = height_restrictor
-          or amenity = parking_entrance and parking ~ underground|multi-storey
-        )
-        and (
-          maxheight = below_default
-          or source:maxheight ~ ".*estimat.*"
-          or maxheight:signed = no and !maxheight
-        )
-        and maxheight != default
-        and !maxheight:physical
-        and access !~ private|no
-        and vehicle !~ private|no
+        nodes with
+          (
+            barrier = height_restrictor
+            or amenity = parking_entrance and parking ~ underground|multi-storey
+          )
+          and (
+            maxheight = below_default
+            or source:maxheight ~ ".*estimat.*"
+            or maxheight:signed = no and !maxheight
+          )
+          and maxheight != default
+          and !maxheight:physical
+          and access !~ private|no
+          and vehicle !~ private|no
     """.toElementFilterExpression() }
 
     private val wayFilter by lazy { """
         ways with
-        highway ~ ${(ALL_ROADS - MOTORWAYS).joinToString("|")}
-        and (
-          maxheight = below_default
-          or source:maxheight ~ ".*estimat.*"
-          or maxheight:signed = no and !maxheight
-        )
-        and maxheight != default
-        and !maxheight:physical
-        and access !~ private|no
-        and vehicle !~ private|no
-        and motorroad != yes
-        and motorway != yes
-        and expressway != yes
+          highway ~ ${(ALL_ROADS - MOTORWAYS).joinToString("|")}
+          and (
+            maxheight = below_default
+            or source:maxheight ~ ".*estimat.*"
+            or maxheight:signed = no and !maxheight
+          )
+          and maxheight != default
+          and !maxheight:physical
+          and access !~ private|no
+          and vehicle !~ private|no
+          and motorroad != yes
+          and motorway != yes
+          and expressway != yes
     """.toElementFilterExpression() }
 
     override fun isApplicable(element: Element): Boolean =

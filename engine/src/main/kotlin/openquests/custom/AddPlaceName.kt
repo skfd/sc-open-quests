@@ -8,22 +8,22 @@ import de.westnordost.streetcomplete.data.osm.mapdata.ElementType
 /** Port of SC quests/place_name/AddPlaceName.kt. getApplicableElements = mapData.filter { isApplicableTo(it) } */
 object AddPlaceName : CustomQuest {
     override val name = "AddPlaceName"
-    override val elementTypes = setOf(ElementType.NODE, ElementType.WAY)
+    override val elementTypes = setOf(ElementType.NODE, ElementType.WAY, ElementType.RELATION)
     override val usesAge = false
 
     private val getFeature: (Element) -> Feature? = ScFeatures::getFeature
 
     private val filter by lazy { ("""
-        nodes, ways with
-        (
-          shop and shop !~ no|vacant
-          or office and office !~ no|vacant
-          or craft
-          or amenity = recycling and recycling_type = centre
-          or amenity = shelter and shelter_type = basic_hut
-          or tourism = information and information ~ office|visitor_centre
-          or natural = cave_entrance and fee = yes
-          or """ +
+        nodes, ways, relations with
+          (
+            shop and shop !~ no|vacant
+            or office and office !~ no|vacant
+            or craft
+            or amenity = recycling and recycling_type = centre
+            or amenity = shelter and shelter_type = basic_hut
+            or tourism = information and information ~ office|visitor_centre
+            or natural = cave_entrance and fee = yes
+            or """ +
 
         // The common list is shared by the opening hours quest and the wheelchair quest.
         // It is also mostly shared by the name quest, that has some wildcards (for say craft and office)
@@ -126,16 +126,16 @@ object AddPlaceName : CustomQuest {
                 "fuel",
             ),
         ).map { it.key + " ~ " + it.value.joinToString("|") }.joinToString("\n  or ") + "\n" + """
-        )
-        and (
+          )
+          and (
             (
-                !name
-                and !brand
-                and noname != yes
+              !name
+              and !brand
+              and noname != yes
             )
             or ~fixme|FIXME ~ name|name\?|Name|Name\?
-        )
-        and name:signed != no
+          )
+          and name:signed != no
     """).toElementFilterExpression() }
 
     override fun isApplicable(element: Element): Boolean =

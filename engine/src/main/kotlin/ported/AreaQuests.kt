@@ -12,6 +12,7 @@ val AREA_QUESTS: Map<String, AreaQuest> = listOf<AreaQuest>(
     de.westnordost.streetcomplete.quests.barrier_opening.AddBarrierOpening,
     de.westnordost.streetcomplete.quests.incline_direction.AddBicycleIncline,
     de.westnordost.streetcomplete.quests.bollard_type.AddBollardType,
+    de.westnordost.streetcomplete.quests.socket.AddChargingStationSocket,
     de.westnordost.streetcomplete.quests.crossing.AddCrossing,
     de.westnordost.streetcomplete.quests.crossing_island.AddCrossingIsland,
     de.westnordost.streetcomplete.quests.crossing_kerb_height.AddCrossingKerbHeight,

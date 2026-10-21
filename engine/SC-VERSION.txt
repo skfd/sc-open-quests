@@ -1,35 +1,37 @@
 # StreetComplete source vendored by sync-sc.ps1. Do not edit the files under src/main/kotlin/sc/;
 # rerun the script instead. StreetComplete is GPL-3.0 (see src/main/kotlin/sc/LICENSE).
-tag=v63.4
-commit=244c6873330de8de1829ff287bbfdef4cb5c96b5
-patches=clock,multiplier
+tag=v64.0
+commit=6c88a654cad86a149583c7cb6b409e021f76b9c5
+patches=clock,multiplier,nolazy
   clock: util/ktx/Instant.kt: systemTimeNow() reads a settable `var systemClock: Clock` (default Clock.System)
   multiplier: data/elementfilter/filters/RelativeDate.kt: MULTIPLIER reads a thread-local override first (`multiplierOverride`)
+  nolazy: data/elementfilter/filters/RelativeDate.kt: `date` is a getter again, not `by lazy`
+  nolazy: data/elementfilter/filters/ElementFilter.kt: `dateTimestamp` is a getter again, not `by lazy` (two classes)
 files (sha256 of the copied file; patched files also give the upstream sha256):
   b5dc8154ec673f1522c129131ace62d6ea6913e8f8afb8e8242fac1549b0d1ed  de/westnordost/streetcomplete/data/elementfilter/BooleanExpression.kt
   af9ee66cfc6e286bbf6c4bf76ff43f7fde01bd04454fe529528db13d8fceecac  de/westnordost/streetcomplete/data/elementfilter/BooleanExpressionBuilder.kt
   6d15276119ff080031968b463cf3194bb604a58287566a55817f1a7c5899fb24  de/westnordost/streetcomplete/data/elementfilter/ElementFilterExpression.kt
   9b5d5afc93bd38ced47569d5142d37a0e0f6ed5fec9f42ae44f1564623311ecf  de/westnordost/streetcomplete/data/elementfilter/ElementFiltersParser.kt
-  9ffabd5d1c8cb6cb1a2018021d257f6be7da39779e919c0d308bcedbbb30da84  de/westnordost/streetcomplete/data/elementfilter/NumberWithUnitParser.kt
+  f9d744dc425637ab7a54da20584c8a9e2f9b6b0c78bbf6e25c96f467e8838338  de/westnordost/streetcomplete/data/elementfilter/NumberWithUnitParser.kt
   ad55e63ce728924b0174cfd2f82a724bc25c9dd8cb3f1285326bfa26a65120bb  de/westnordost/streetcomplete/data/elementfilter/OverpassQueryCreator.kt
-  a9baa599c3fbd98567eb6053bb69307f07208b248c7be87fd59932326ccafb2a  de/westnordost/streetcomplete/data/elementfilter/filters/ElementFilter.kt
+  798f8b4c58230e5b762eacf4f062385aaaee20266a9f8cbf549e173b4e59f2aa  de/westnordost/streetcomplete/data/elementfilter/filters/ElementFilter.kt  (patch nolazy; upstream 0d11038153ceec90add849b161b8ed490c70ba7a54d2ae22bfd027ffd4fcc65a)
   f746e0a417dc7e7502a171c13fe3ecf7a4a6242edf14801e7e335aa990a3c69a  de/westnordost/streetcomplete/data/elementfilter/filters/ElementFilterOverpass.kt
   58e34a334b19a281128b8965f060aeb4f330d283d3930db027554296912a1b7e  de/westnordost/streetcomplete/data/elementfilter/filters/RegexOrSet.kt
-  25a6ef40b5c0b490c07c5358e9a6f873bab26d6f98c07306bbf6fc0919d0ab9d  de/westnordost/streetcomplete/data/elementfilter/filters/RelativeDate.kt  (patch multiplier; upstream f6da2f00099378edf1cfd31c48dff80de7c7a517a83b5e1c6dd608b07f17ef09)
-  ec55048ad97258992c99a3618dcafb097b63052b1597d2b6c5f71b45e65ebe12  de/westnordost/streetcomplete/data/osm/mapdata/Element.kt
+  db459c2a3298511c12b13868bb58f6828f674800a2015219c177224a2444165c  de/westnordost/streetcomplete/data/elementfilter/filters/RelativeDate.kt  (patch multiplier,nolazy; upstream 4d611838f2d6a60da327e539852ce86e871985fe071baf532faba8c80613fbb5)
+  974ab1eec328f609c46c8890671c17527e279c6ca6f82882dca4fb77e40f9297  de/westnordost/streetcomplete/data/osm/mapdata/Element.kt
   1fd01cd36bb3ed130b1bb7c80577d887122ea26d15a8638b6196de7c159cb5bf  de/westnordost/streetcomplete/osm/ResurveyUtils.kt
   0d2c60bd8166e130b9fb5bb4f589779ccd649918fd4198045ab2e61f4f1a1042  de/westnordost/streetcomplete/osm/TagsUtils.kt
   cada8081fdb8801dcb15cc0bd88d3b7cac97b454ad22188c94afd9b2df495a51  de/westnordost/streetcomplete/data/osm/edits/update_tags/StringMapChangesBuilder.kt
   274794b0421b88f4f7af5b4d4f6d828e82b01ee7da0cd749f379bf4641870610  de/westnordost/streetcomplete/data/osm/edits/update_tags/StringMapChanges.kt
-  2b18d4d8ace7d2d61b8ee04bff6e643cf3b6142f38431ed9ccf3d80d4800e40a  de/westnordost/streetcomplete/data/osm/edits/update_tags/StringMapEntryChange.kt
+  19f2789b907dc06d7911c5511cac364dddfa0e54708a996fcc6f9e4420f11463  de/westnordost/streetcomplete/data/osm/edits/update_tags/StringMapEntryChange.kt
   e04e27b381a282577a1cfd5cfdd1a359616648334b97ffd6183eece1fa91132d  de/westnordost/streetcomplete/util/StringWithCursor.kt
   5f0f2ea173719b0c7ebe4f7751be7de13f6bf3068dce180161e9b41c8f1ac084  de/westnordost/streetcomplete/util/ktx/Instant.kt  (patch clock; upstream aea8dffdaa3d46a483e65d15173365da77485d9b5436d454a36c9f778265d6a6)
-  4ab2aac0ac54f91ceda9ddc13dc9533a3643ae9fbb307525b52298ca4f3a2d78  de/westnordost/streetcomplete/util/ktx/LocalDate.kt
+  cc55bfc9ae28c123ea169d855e405260ef9273a903111a145424561fe3e41998  de/westnordost/streetcomplete/util/ktx/LocalDate.kt
   8e433722974a585474623498902b82d426c8a0160701a64b8d382b1c288ed815  de/westnordost/streetcomplete/util/ktx/LocalDateTime.kt
   b7ad0e12e905e82d3b56a9f4d10fae7aa3a07aef8a2b9c887bf5a71240237e06  de/westnordost/streetcomplete/osm/BuildingLevelsUtils.kt
-  f9f13e9ab032647c7e051e9212258e90edf4ef1f88672dca2e1195475a142c26  de/westnordost/streetcomplete/osm/surface/SurfaceUtils.kt
+  9b6890b7649428e36801dafc8e660fd6b5824ceee15be1cd2afcfcc694c8b01d  de/westnordost/streetcomplete/osm/surface/SurfaceUtils.kt
   9e091cfd65e5d7cbfd4d1485c8ec3c8045d3f3f8efeedc36d98092313c129a5f  de/westnordost/streetcomplete/osm/surface/SurfaceParser.kt
-  67bdac0294c91bc6cee133bf5a36a5b1e6bfcbfa2c497e99606394b9e48fce0b  de/westnordost/streetcomplete/osm/surface/Surface.kt
+  396e84c9a96b581079b723633da8ab13c5b36543bbb21ff519e45b49c3df6f57  de/westnordost/streetcomplete/osm/surface/Surface.kt
   54ae0fa4b0b9afb31bf8dd33e73cf739bb0197eed749d0abdabaab7ba3e0a595  de/westnordost/streetcomplete/osm/surface/SurfaceCreator.kt
   81cc0208116a5df3bc084e15147aba6b9808e46d1d8760ef88f904cf8942f32f  de/westnordost/streetcomplete/osm/surface/SurfaceCategory.kt
   b409c704e5dc870bbeac48e7e218ec13bf42232f645208fcbcca7e264d0c5609  de/westnordost/streetcomplete/data/osm/geometry/ElementGeometryCreator.kt
@@ -42,23 +44,27 @@ files (sha256 of the copied file; patched files also give the upstream sha256):
   6269b305df088170db654ff2d17c9948182f9e6f2011b47be0a5f9c39013400e  de/westnordost/streetcomplete/util/math/Vector3d.kt
   1426d63608e4bc6b67e924db9e52abc11a7d9dabdc1ca72ca0ad3d9781392544  de/westnordost/streetcomplete/util/math/AngleMath.kt
   76ecb9fbb329d15c0d64b5920efb8b752f64e542d6b27f3f43d90ee02413fc5e  de/westnordost/streetcomplete/util/ktx/Collections.kt
-  ff0c3cebdecdaeb6ec6774c2f9506e12afaaba23eceb8c1f117b03f5ae341d25  de/westnordost/streetcomplete/util/ktx/Double.kt
-  4ce449023108b8d2b968831577a979d2138f82e58ff1041ea93b1698afd13447  de/westnordost/streetcomplete/util/ktx/Element.kt
+  7078db5f48fe2b2a2c6a866c4e05b630b9b3188668eb464f4d70099560cb57ea  de/westnordost/streetcomplete/util/ktx/Double.kt
+  e885a6e3bea97ac9ea0b4107f11750045aab6a1471b3ef1085ec52faf910cba2  de/westnordost/streetcomplete/util/ktx/Element.kt
   a5e600b1f90363cc872779eca6100001f92ca05c6391b39065e120db25478fd1  de/westnordost/streetcomplete/osm/AreaUtils.kt
   81dba6e7fdd280c5492b1a9c5c802be33b63df6e97df4f1688a0de139001fcbc  de/westnordost/streetcomplete/osm/RoadUtils.kt
   ecd1f7368c2128638961599a181d67545681283a82be978ff19e0d3a0d936c9c  de/westnordost/streetcomplete/osm/maxspeed/MaxSpeedUtils.kt
   a35a9c51665680355a87404dc3f351f51e3af6fe8b76f605910f8883f1af9e1a  de/westnordost/streetcomplete/osm/Sides.kt
-  1a746d52b4fbe22d10fb1de5692a9164c8bbc5035b3e461dc22b8e8cfad60012  de/westnordost/streetcomplete/osm/sidewalk/Sidewalk.kt
+  12bc20ddf38e42a6fd5e081af0cbde749961e33c10ccc76816d4e5c8c82f7ea1  de/westnordost/streetcomplete/osm/sidewalk/Sidewalk.kt
   e3f490bd8d93d4d13952623fe2746a85c79deb38b4fb05ecccaabac03e37f939  de/westnordost/streetcomplete/osm/sidewalk/SidewalkParser.kt
-  08ce8e5f5c5bb267abdcca06352d77c161d5d8925f0fe1004e4f10fbdb30b0cd  de/westnordost/streetcomplete/osm/Places.kt
-  f18ce246b7fa4ed2e4d5c0fafdda8c7ea0ea26c6fa16c18338c151fe0aeb4c6d  de/westnordost/streetcomplete/osm/Feature.kt
-  7ed665722002b39d7750a5a4fca5988566bdde9c3e184d95106e3c5e3e85871e  de/westnordost/streetcomplete/osm/opening_hours/OpeningHoursValidator.kt
-  5c5571565a8032e7f715c007c8a127c5c21c2718ecc7e8757d8201593303c3a2  de/westnordost/streetcomplete/osm/opening_hours/Utils.kt
-  b741fa271817b99d052450c7e53a6a7682cfd75850a2f0fb622347323feb0ef0  de/westnordost/streetcomplete/osm/opening_hours/HierarchicOpeningHours.kt
-  334d8438204c61020d261810ada339c8c5d13b0896818630b905181b91d28840  de/westnordost/streetcomplete/osm/LifecycleUtils.kt
-  16b730279e7ba0e918d8605a7b4772c56c860df0274a2bee3a3d34f8cf3ee5b2  de/westnordost/streetcomplete/quests/recycling_material/RecyclingMaterial.kt
+  5dda065628d466c3158d70f9470b7f919cf38636ec1d4852faa6a6482a4752a4  de/westnordost/streetcomplete/osm/places/Places.kt
+  7b06f3f175e609bdbe91f4ce3162fd18e122fb955e88d8ea4af2572f83c22aa0  de/westnordost/streetcomplete/osm/Feature.kt
+  c5fe4cea75e99010eff981a0214267557d1c3deb32bf1c8589f93d12667fcb22  de/westnordost/streetcomplete/osm/opening_hours/OpeningHoursValidator.kt
+  787119de5a984862bb0061343f425a875297f2bd8414701680055b3aff49e455  de/westnordost/streetcomplete/osm/opening_hours/Utils.kt
+  a6d38490e6a816f83bef19e4aef54c6def100fb72b74f381ef6c5abab8e9d69d  de/westnordost/streetcomplete/osm/opening_hours/HierarchicOpeningHours.kt
+  fc6341abbe39682bb39c5541ed228037ee6796446a0e62cbe0f282b82125c322  de/westnordost/streetcomplete/osm/opening_hours/OpeningHoursParser.kt
+  0a795b4e3abcc286292affb1d2ef636dec23a792d89d6e774b8d337808b4d9d2  de/westnordost/streetcomplete/osm/opening_hours/OpeningHoursGenerator.kt
+  e5843801006da62786a78428bf1e1e81ad072dfdebf6cc5ee55749b91644b352  de/westnordost/streetcomplete/util/serialization/HierarchicOpeningHoursSerializer.kt
+  e63851719bffbdb4efc32902a00571ec4f2e1457300bb178a198cdc0cb50706f  de/westnordost/streetcomplete/osm/LifecycleUtils.kt
+  6540d34641e987699f9d8a1eddb62ef9b7a4707ebc7a72eb9b701602068eb6bf  de/westnordost/streetcomplete/quests/recycling_material/RecyclingMaterial.kt
   59a1a69412b4a24ea7d94716b9d38972ea162c52bea4f3e1599bba86871ca1f6  de/westnordost/streetcomplete/util/tree/Node.kt
-  84c522641969eb8ac2ebb0d03f66bbaa37ab6683a08b0bf60f6d8d77a2a0773e  de/westnordost/streetcomplete/util/ktx/FeatureDictionary.kt
+  67f2d89f4b987ea7f7d285441afa5c5e541e537a210ebca2397f90be98c74cf7  de/westnordost/streetcomplete/util/ktx/FeatureDictionary.kt
+  02dfd1f3aaff3a73bef8f64a412023fbeef8dbbf58ff332349f11ea6eb6d7593  de/westnordost/streetcomplete/util/locale/FeatureDictionaryUtil.kt
   1f9324c3638a394a56d9297453f469554cb03967f1684704ec5913f3a4f4553b  de/westnordost/streetcomplete/data/osm/mapdata/MapDataWithGeometry.kt
   1b977f48ea178bb6031a56654026c4774f0ad4f769431f709e2bbc00d967adf8  de/westnordost/streetcomplete/data/osm/mapdata/MutableMapDataWithGeometry.kt
   68368e45dc2563a0d583d7975454099e23a6417ee7ac2d19b835efcee2262fce  de/westnordost/streetcomplete/data/osm/mapdata/MutableMapData.kt
@@ -66,97 +72,100 @@ files (sha256 of the copied file; patched files also give the upstream sha256):
   29afc944d47cc948e5eeae6c8b9266c9b1290410075e07080bd56b76161f8bbb  de/westnordost/streetcomplete/data/osm/geometry/ElementGeometryEntry.kt
   cbef428e25068418f8117df2aca751fafe2d88d55897e47b6e4c815e9ee44a0c  de/westnordost/streetcomplete/osm/WaysCrossingUtils.kt
   d2ac585c225446dfc96c6cf6b3daaddb515f05660c95bc32cbf69fb9cbc4b275  de/westnordost/streetcomplete/quests/barrier_type/DetectWayBarrierIntersectionUtil.kt
-  fb7436d26dec2fdc52a9dcab9bb30bbea4321c1d315deae76e06d3f21d7704b8  de/westnordost/streetcomplete/osm/kerb/KerbUtil.kt
+  54e4233a88b0c99482ab90d38ce5b6788407a3670d7fd8b4d945cc90bf5279e6  de/westnordost/streetcomplete/osm/kerb/KerbUtil.kt
   2e35ee591e1a4a51411e30b79452bf9a927544a5376b6c99840a144069f437c6  de/westnordost/streetcomplete/data/download/tiles/TilesRect.kt
-  0933c47823a86233287182aad38a175be4753c8ef4e95585a00f4fb5056ec178  de/westnordost/streetcomplete/data/meta/CountryInfo.kt
-  c5f5d886189bf0e91e893469b36cbaa25761abd515699a16d2a522ea2875b44f  de/westnordost/streetcomplete/data/meta/CountryInfos.kt
-  bac278fd55e79da8acf69074061a70be4d77f7ed8bb6a5e72d95d0ce64edab8f  de/westnordost/streetcomplete/util/countryboundaries/CountryBoundaries.kt
+  84afc3820cb52528ee7a180d44f77034442dc362762f0219cb4216e1ff4f9346  de/westnordost/streetcomplete/data/meta/CountryInfo.kt
+  43bd1a3642b32a30a907f8aa1892747ad98501eeb13ff477b73c7bdb2591b16f  de/westnordost/streetcomplete/data/meta/CountryInfos.kt
+  495d800c56e423ee25785e39a35af9a5894dc227f36d40c523a0c5204f41c0f8  de/westnordost/streetcomplete/util/countryboundaries/CountryBoundaries.kt
   218edeedc1282faef308f68be1685deb1f2d9acd11a8814d3d1efe3eccc43934  de/westnordost/streetcomplete/util/countryboundaries/Countries.kt
   64d1175529a2abd056ed47acf25c3f08098da640a5959cc4574236fe22b89a2d  de/westnordost/streetcomplete/osm/cycleway/Cycleway.kt
   656dbaced00cd63fb4edc90d05ad8bd730cccce0587d8ce838fb8647dc6f6b95  de/westnordost/streetcomplete/osm/cycleway/CyclewayParser.kt
   ccbb30e1dce7948f70b7f155e00a4f9480c44d20995c8404dc492e871669cf48  de/westnordost/streetcomplete/osm/street_parking/StreetParking.kt
   4cf6fb46d8cae8a0c8b28751e2eb2359d60c1776d8c5653f8e8fc4d369d05bef  de/westnordost/streetcomplete/osm/street_parking/StreetParkingParser.kt
-  8b1e2c2a72c8c2b259271f92af11943ec1095a286963cbb072265d3299c96848  de/westnordost/streetcomplete/osm/oneway/Direction.kt
+  cb932390dda5f7e5471eac78b2ce773be3cd3963faa88b2494172c9e597c6e4d  de/westnordost/streetcomplete/osm/oneway/Direction.kt
   b5736dbae60c26dada6cb01ad7e4b962669bf2c9979b9ddbdfa310addc2c81d4  de/westnordost/streetcomplete/osm/oneway/OnewayUtils.kt
   b52416e89016bd3afd90cbf1a389a8b214d0b7f95f27a244c22947b2c10846c3  de/westnordost/streetcomplete/osm/shoulders/Shoulders.kt
   d531b35a81216dc5baf073061da04436f1c2e45bfcec939a3fdb50210435a1db  de/westnordost/streetcomplete/osm/shoulders/ShouldersParser.kt
   da65252bd03827b1fcb9919ccd61e4fa69331c8d3b1c82540fa1f578bf044ba2  de/westnordost/streetcomplete/osm/ParsingUtils.kt
-  d65534169c977c456481d74ff04e421fa0f632b7352a6862f25fe520f6d48af1  de/westnordost/streetcomplete/quests/barrier_type/StileTypeAnswer.kt
+  9c0cbade0b5c14fd3b7bed7d4003f5f8500b4db5eff004d0cbb590102f7b33cb  de/westnordost/streetcomplete/quests/barrier_type/StileType.kt
   85e92f0685cef54d7997070351e0ec6ebad3a585ba7b29035c2d51934a757f27  de/westnordost/streetcomplete/util/ktx/Map.kt
   cb87a50bad125be38a7cd9f1020d24720420b65224cce735378ae45411b587f8  de/westnordost/streetcomplete/util/ktx/Boolean.kt
   b072f502ed78c9028b9922746d893fa3d62da94787b3c0edb1249a2c1d737aae  de/westnordost/streetcomplete/util/math/LatLonRaster.kt
-  f063b17b5bb036b1e15e171e1561582b4d3a36171af13af57e4acec7c935de53  de/westnordost/streetcomplete/util/math/ElementGeometryMath.kt
+  48b43bad06e96b85156f79bb26bc4013d226bd084e37526b05cd4252398ff22f  de/westnordost/streetcomplete/util/math/ElementGeometryMath.kt
   41d5cb4c57e1c0e061d4270680a28a095456a7672e40378ef076baf90e7c4825  de/westnordost/streetcomplete/osm/RoadWidthUtils.kt
-  b6fa4c5437d989d537e6330e0cb30148180a311857f70e970571088ff256e809  de/westnordost/streetcomplete/osm/Things.kt
+  afcbe65ac2d4e226b6d21ac7de559950e15a1d4e8e03c2cb4aa0648d10fbbdcf  de/westnordost/streetcomplete/osm/things/Things.kt
   2e9c55c4a1a861f8f467888dc8f39150beb1bbcd8c3c3c96f40ebae745261169  de/westnordost/streetcomplete/osm/CrossingUtils.kt
   0d80d4d076e75f7ba7233c1c32b0f1b809e31c4a6a35b70dfc3c91c8e0d2fa09  de/westnordost/streetcomplete/data/osm/mapdata/ElementKey.kt
+  930003f3760c07f85becbdad17a3e4b47b007e52281b4f448f3a882cde0a4fa6  de/westnordost/streetcomplete/quests/socket/ChargingStationSocket.kt
+  b2d862e29bb6e45082255a7c6bed829b1417260dad9725892a4c0b93b8ce6776  de/westnordost/streetcomplete/quests/socket/ChargingStationSocketUtils.kt
   bba8fc18b42485b4ae00684d25f5c631af988eb9baf3331ed23beae91907a984  de/westnordost/streetcomplete/data/osmnotes/Note.kt
   3bfa716aa79f3ce411051332f59b4bc57945f52d04aa4b548699cd2e98cf49e6  de/westnordost/streetcomplete/data/user/User.kt
   1702fe44500c456c0698894f24a6d18726f7003e14068b75cb13de6eab3d9583  de/westnordost/streetcomplete/util/ktx/LatLon.kt
 data files (from app/src/commonMain/composeResources/files/ into src/main/resources/sc/):
-  4e360e909fcdbf5021d9952771af4c0638168564d871ae14b9ce3f289c33add2  osmfeatures/default/presets.json
-  109fca6ea2866cf054f48edb6d8fd050d7b017ae32e92caa9c0302543a6551e9  osmfeatures/default/en.json
-  c90163eacb41d869dbda41d3e6109a8435bba5de42a3adaaf213171ac92b5641  osmfeatures/default/en-CA.json
+  ef2e14ba225020fd8730a6a41b814fc8def52ea5940ff3c7d9296a3fa1167d67  osmfeatures/default/presets.json
+  31bf870b731ae05d869e7f1b0cbde08cda1fa6ab1b0f64e38b42f4342922442d  osmfeatures/default/en.json
+  f11fbf0d1eee1c2d72e828b7d4c4c54680f98cfea02f13314dd4e90c9d00bc70  osmfeatures/default/en-CA.json
   88d288319075f7dd5796d330c184ffce94681831c56b0236fa0f5f11740d9cf9  boundaries.ser
-  1f8c09404038ef2a570529dee899dc43c853cfa27b8c20d2dd05a1c83f359368  country_metadata/default.yml
-  deab3d5fec2537634c5067aed554fe6d5783f81ff78b5f03ad509cd2d0d15fa9  country_metadata/CA.yml
-  85bfedebfd7997a6ccd8b24fb3969d0819f7db34263a8e1830aad36935501883  country_metadata/CA-ON.yml
-  910368ee540440acb3df27e8fdf474058f655120ea97d1004974006b024e6b71  country_metadata/DE.yml
-ported custom quests (sha256 of the androidMain file with LF line endings; logic in src/main/kotlin/openquests/custom/):
-  9e5733e39e8547bba62a503d4d82e02a07b66361a2a09008d646b9c3307798c8  quests/sidewalk/AddSidewalk.kt  (AddSidewalk)
-  f7576cee96a9046906076986ddf95804d040efe73f971192431154fbf793c5d8  quests/opening_hours/AddOpeningHours.kt  (AddOpeningHours)
-  372961313440a7aac4a37a389d49b1b8f88209fefb8e1672202e0a08c2d1b961  quests/postbox_collection_times/AddPostboxCollectionTimes.kt  (AddPostboxCollectionTimes)
-  929c730c1f4a5dd2dc2168b40414c87c53d4050db79804f7788990e274939df1  quests/recycling_material/AddRecyclingContainerMaterials.kt  (AddRecyclingContainerMaterials)
-  17e0069178a075e45f67027fe3e3625c1d8a61afded7755e8c0e424bd2d1755a  quests/shop_type/CheckShopType.kt  (CheckShopType)
-  0fbc924ca69f3c078d6ee61aac323785b1cabaca616ae43d6790cb5497190f35  quests/clothing_bin_operator/AddClothingBinOperator.kt  (AddClothingBinOperator)
-  891f42c7b772b88c181e9bbf8c64b98a9022c8b8e498948edf49acaba6372f12  quests/oneway/AddOnewayAerialway.kt  (AddOnewayAerialway)
-  71108be58b0108b137a610cae7014ff5cafd88f43e15dcd8b457edf9befd3e61  quests/width/AddRoadWidth.kt  (AddRoadWidth)
-  2e73c94eee4a353c25dc63babf3116839f44b9fc1be1dae80671b9fadfd85335  quests/max_height/AddMaxPhysicalHeight.kt  (AddMaxPhysicalHeight)
-  3118fd837ebc2b26eee6fb418273b3b31e1ea7228a898ec796992e95140af1dc  quests/shop_type/CheckShopExistence.kt  (CheckShopExistence)
-  79c4deef8e248b8ba0289b5e0f8cb613b4ce8b2aaa144bfb41580dfc7fa6c6d0  quests/opening_hours_signed/CheckOpeningHoursSigned.kt  (CheckOpeningHoursSigned)
-  6d0d9ef59b8501eda24bec5cbc269d7ce6788b9cfc76372e6e9a7ec31b25a755  quests/place_name/AddPlaceName.kt  (AddPlaceName)
-  4d7eee5cbcf86c6a868644ce7ec9bcb970bf634d17a3e974e8c1aa499288de7e  quests/crossing/AddCrossing.kt  (AddCrossing)
-  1995073e190fea5ceddd26a0713fdb88511f103369f2d6f8972521502e109c96  quests/barrier_type/AddBarrierOnPath.kt  (AddBarrierOnPath)
-  1b4f4d6bee8986023d734c218309312feb7c4683ac9ccc727dabff99d1cce72a  quests/kerb_height/AddKerbHeight.kt  (AddKerbHeight)
-  99f4db0ee29997cc7d4a711f6928e6873e30a8387e1fb98c6ebbb327504434d9  quests/building_entrance/AddEntrance.kt  (AddEntrance)
-  ea18a109e3877958392b6f131583f0f1be6aa9282d078b32221c05c803373bce  quests/railway_crossing/AddRailwayCrossingBarrier.kt  (AddRailwayCrossingBarrier)
-  fbc1b4676a2d9e22af2a5e36e2927f6ee2c8ca5490a4f64f9e262acd25e0e80c  quests/amenity_cover/AddAmenityCover.kt  (AddAmenityCover)
-  2e09cd5cafa9c157850785eac9ccad206a2c3b7a9d67b0b831f785d2c2116bd3  quests/incline_direction/AddBicycleIncline.kt  (AddBicycleIncline)
-  0c179d4d3d3f5a60a6142475d614e4113b5647d0a297574d9f4acde91f01d51d  quests/tactile_paving/AddTactilePavingKerb.kt  (AddTactilePavingKerb)
-  e796b0e8ba99bc8558fec96892f5577cf58fb5aaac0dca5a062a4d86a309d666  quests/crossing_signals/AddCrossingSignals.kt  (AddCrossingSignals)
-  56101a82a2a4cea753336d24cfdc35fded1e910fda9584639429b0ab5d7080e6  quests/crossing_island/AddCrossingIsland.kt  (AddCrossingIsland)
-  e90cc258e345eb2df837088a14e9aa0a348cb9849b03b59c9e3a561906d41dfd  quests/crossing_markings/AddCrossingMarkings.kt  (AddCrossingMarkings)
-  dff41eb711451892d3226d61a3347446c916b10efaee7925ebe66e9384deea1d  quests/tactile_paving/AddTactilePavingCrosswalk.kt  (AddTactilePavingCrosswalk)
-  40fa304520c814bb91c0c2143ea4c53809a7814219db50670b1bbb5ad6265f5f  quests/crossing_kerb_height/AddCrossingKerbHeight.kt  (AddCrossingKerbHeight)
-  f415285affb5d01cac87633acf33e885a64bbb45eab7552d27355f7b7730d76e  quests/traffic_signals_vibrate/AddTrafficSignalsVibration.kt  (AddTrafficSignalsVibration)
-  6de01108e662b25cf7a8e82c46ed5ac08e78c9c13472ee574dd258594f59db5a  quests/traffic_signals_sound/AddTrafficSignalsSound.kt  (AddTrafficSignalsSound)
-  3aa5bc29eae74084eb03fb55633b3c79dea7c7f06ce5e3b5926746a75f81e2ef  quests/existence/CheckExistence.kt  (CheckExistence)
-  e93a2e94a69d081d75554271dd64b3e2f2d3ee3ca5af01afc01c66a4649204a2  quests/barrier_type/AddBarrierOnRoad.kt  (AddBarrierOnRoad)
-  51cae66350a09aee76cc9a2c30a68efe74fd21d1d49a16292a5a8fbf9632720d  quests/barrier_type/AddStileType.kt  (AddStileType)
-  7c017d0685d0dd077763d5c9aadfee00462240daaa5af8e65298a22527c58d2b  quests/step_count/AddStepCountStile.kt  (AddStepCountStile)
-  722cdf65b4fc9a42572d2639ab5e0bd31c9a1759fa21c0c0f731cb1a6e768317  quests/bollard_type/AddBollardType.kt  (AddBollardType)
-  2474a4b9274f93f4086a72c7d882ca5cc2ccc87ef46367ce32790bdd372986b2  quests/address/AddAddressStreet.kt  (AddAddressStreet)
-  bb16c8f3d4a747a28f8de96ac2f91bcdbaa41bfa9fed9ca7cc5280706c2e1060  quests/max_weight/AddMaxWeight.kt  (AddMaxWeight)
-  df2647c98340fd2f0386b672be78e6be6deae69c939016ec68296d57ff861c10  quests/max_height/AddMaxHeight.kt  (AddMaxHeight)
-  ede1616315b698cceab8772aa4c055fb696ebf905f8eb6b221dbabe80969343c  quests/oneway/AddOneway.kt  (AddOneway)
-  07928f18b656bfa1e9f3ed2c074984f964e4e818dd1c839ee10c2932966fbba2  quests/building_entrance_reference/AddEntranceReference.kt  (AddEntranceReference)
-  202b05532b17103fde1e0a7c46d20853a020903286edd9fb1ed5767b0db0e9ce  quests/ferry/AddFerryAccessPedestrian.kt  (AddFerryAccessPedestrian)
-  7e321f050d810106f6bb0d569f7892089f41a0ed6178fee0bb3e455921adf5f9  quests/ferry/AddFerryAccessMotorVehicle.kt  (AddFerryAccessMotorVehicle)
-  ed0611358cb7923907124b1a7d3bec0bdcd0f29f89e69cc0e91666ecefda2362  quests/ferry/AddFerryAccessBicycle.kt  (AddFerryAccessBicycle)
-  e17bb724c4b6b6bc48dd0c107bdcf2de0f3846e153a7ab3518054db4d7f829a2  quests/ferry/AddFerryAccessHgv.kt  (AddFerryAccessHgv)
-  7b9460a2260da1fc1e3945e2eeec5589dd0960d73816e7842f8fa747a05b196c  quests/summit/AddSummitCross.kt  (AddSummitCross)
-  415f287e18865e2826760d3763d1b73b1f94eac8be6434c1c205d4ccc059d17d  quests/summit/AddSummitRegister.kt  (AddSummitRegister)
-  aac260e904900a720d2182ae60c9844719284a618b11fb21a017fd92ba84c71a  quests/leaf_detail/AddForestLeafType.kt  (AddForestLeafType)
-  29331d2fb293e6c36f7cdd3dc1822057e48e6753e9640e7656731a58e2c82df0  quests/level/AddLevel.kt  (AddLevel)
-  74764fe939fbda386c9a076d83522616ea1757876d52687f0fd365e51240d5aa  quests/level/AddLevelThing.kt  (AddLevelThing)
-  deef83a6cd2eb322936e903b85e3995ed3117c5478b0f87f09874ac0fa99878e  quests/amenity_indoor/AddIsAmenityIndoor.kt  (AddIsAmenityIndoor)
-  b9c663c8c11624e953d6a493f4a0f786c13c8e1b67fa93275d4eb0fd7c4ea307  quests/barrier_opening/AddBarrierOpening.kt  (AddBarrierOpening)
+  4c1c8117612a21292fa27844a7ca97d88064162de6c8b35ca84623a8e1844dd0  country_metadata/default.yml
+  805a68d490fe379eef81c74c6b3a2e97a640d00e171bc539d9f6b34ce5c55778  country_metadata/CA.yml
+  d9c576e1d64b52809ba3f253214b57f794e3b8adaa290e2649439b7edc99d4e7  country_metadata/CA-ON.yml
+  160a0bedc8bc073a362e9dbb0a422b3f7a9ec27395f2164e081a23b6524602e5  country_metadata/DE.yml
+ported custom quests (sha256 of the commonMain file with LF line endings; logic in src/main/kotlin/openquests/custom/ and src/main/kotlin/ported/):
+  e9fc031ba8596a9514f5006c2c89a368875cfe720f8b0f09e9c133da75e2172f  quests/sidewalk/AddSidewalk.kt  (AddSidewalk)
+  f4695fbd316dae41d35a778afeb229d1274593200c9ef3cfb5c593c3b971fb1b  quests/opening_hours/AddOpeningHours.kt  (AddOpeningHours)
+  a0ce78664550ca3240df90e20cf037b38ae2e39bd5f2733cc8294aef0fd7b5c7  quests/postbox_collection_times/AddPostboxCollectionTimes.kt  (AddPostboxCollectionTimes)
+  9b2a4651802d69a074ab76c1932dde69bba5f2ab52b8b770eff194c0f25d9883  quests/recycling_material/AddRecyclingContainerMaterials.kt  (AddRecyclingContainerMaterials)
+  bb65ee61a0b59c7b5689b825386ae2debeafea6d2dbb4ede98d07f3c58fa0c5b  quests/shop_type/CheckShopType.kt  (CheckShopType)
+  2cbc86b3151faf9d2f838b7473ce83b45427cd248eef998247a04d91e5561b79  quests/clothing_bin_operator/AddClothingBinOperator.kt  (AddClothingBinOperator)
+  5fcb482e303f3d6753a0be5461957fb109456f5f8343d488212f441450dadb0d  quests/oneway/AddOnewayAerialway.kt  (AddOnewayAerialway)
+  3a0c5b846def263f8fa57388397d69e30249493062786c414d3fac97880fced9  quests/width/AddRoadWidth.kt  (AddRoadWidth)
+  9f203397087e70e9dade4b9eac9a93425a7c0150cce3a1015dc0de8a6bcf0cec  quests/max_height/AddMaxPhysicalHeight.kt  (AddMaxPhysicalHeight)
+  dcb030350ff339b63c1f90b8111f3bc7bf4e47fc506f91c7bfe994639632cd26  quests/shop_type/CheckShopExistence.kt  (CheckShopExistence)
+  8bb21dd74b3289002ad1e9466fd1983c4a71003ea7863b113bb3c298395ecc0c  quests/opening_hours_signed/CheckOpeningHoursSigned.kt  (CheckOpeningHoursSigned)
+  0cd4c6ebb97bc2b54ff51746971250d5bd054f645445376b10d201303ff71964  quests/place_name/AddPlaceName.kt  (AddPlaceName)
+  b8f2f0786b57c50e95bc6f46c6c6b9d1c06cb6c6ddd854cafc51ddc49fde56fd  quests/crossing/AddCrossing.kt  (AddCrossing)
+  6d990cca0ceb7924cc68fa2352c9be330b57bdb274ba133b6940f577eb4d31f3  quests/barrier_type/AddBarrierOnPath.kt  (AddBarrierOnPath)
+  dd9cfef207a7a8ed58f72a1b6ce8ad207755a0eb79850e67a8d93d78e3e2b178  quests/kerb_height/AddKerbHeight.kt  (AddKerbHeight)
+  e79624bde1f83e2b04d14342c9e285d86da623b250bbfd399dc9e3e56459d8a9  quests/building_entrance/AddEntrance.kt  (AddEntrance)
+  282e4de1ff259b85b1e380133931759086c3b725dc8e179a898ac2217d90f481  quests/railway_crossing/AddRailwayCrossingBarrier.kt  (AddRailwayCrossingBarrier)
+  a6a26940b7097d6ca6c03ec17d2c4eabc0f4363b8c8a4efc077d870bffce3590  quests/amenity_cover/AddAmenityCover.kt  (AddAmenityCover)
+  dcc424701208b77b3924c41ec7df4b6c533801d848e1fad905981667a17113e9  quests/incline_direction/AddBicycleIncline.kt  (AddBicycleIncline)
+  33b7cce54f8d368004349d9b3f46d36be68eaf353d7a02985794c4a72217cf85  quests/tactile_paving/AddTactilePavingKerb.kt  (AddTactilePavingKerb)
+  6f947e3cd5f068d66d7ec8ac36868ec46dfae403bee240927433d0fc2e627d93  quests/crossing_signals/AddCrossingSignals.kt  (AddCrossingSignals)
+  ec68bdbb6a5de52f6f57b41ed0224caa5531c03a11c6d6a091944f949e770931  quests/crossing_island/AddCrossingIsland.kt  (AddCrossingIsland)
+  5895debd254edaf61ef274ae4bf7ef10c848ef3b27727b77ca56bd1a82926d29  quests/crossing_markings/AddCrossingMarkings.kt  (AddCrossingMarkings)
+  18b005b8a3c36bd6afb28b0f59b9c589b2dcfb009c49d300e279f74c70e9a471  quests/tactile_paving/AddTactilePavingCrosswalk.kt  (AddTactilePavingCrosswalk)
+  aa362b68f55c11340e2f2ec441e0e5e4b9e84cae4f08f9a66d1891a31e7aa25c  quests/crossing_kerb_height/AddCrossingKerbHeight.kt  (AddCrossingKerbHeight)
+  499d075f842ad051575683f33dbcc010d300ce01d9f20b145915f8750efe9b8d  quests/traffic_signals_vibrate/AddTrafficSignalsVibration.kt  (AddTrafficSignalsVibration)
+  b77763af42bdcd32b18b4474e83af7c759f3d873efcce6cd208f7ea4d3794238  quests/traffic_signals_sound/AddTrafficSignalsSound.kt  (AddTrafficSignalsSound)
+  52a807efa435381e01cefceea92329acb6969ae5daac786f3a69dbf28a5bcc13  quests/existence/CheckExistence.kt  (CheckExistence)
+  5423071d7d133bfbd66f711a5be98ea05bb20d4763340d05fe62ce256938876f  quests/barrier_type/AddBarrierOnRoad.kt  (AddBarrierOnRoad)
+  37209e04a1ba2451ce544efc4b8d9d6137ddcc6bdfdb0de9a7dd02ea84e67adc  quests/barrier_type/AddStileType.kt  (AddStileType)
+  9bdb8f0ea5de060bb088b485c902707592e9f969b7dd340c2c731626a1a8c895  quests/step_count/AddStepCountStile.kt  (AddStepCountStile)
+  a80bbcd8378e8934f00e750e2bb81188e03728435e2fb9accef060ce1ea1c07b  quests/bollard_type/AddBollardType.kt  (AddBollardType)
+  5656f08b3ebba8650ed90ad99c30492565bdc1d47d84c8dfe48daa907e3ed938  quests/address/AddAddressStreet.kt  (AddAddressStreet)
+  27bbae97f49a6cca5d186139ead8ff1184850f6280a68a9fff11536f6fe057ae  quests/max_weight/AddMaxWeight.kt  (AddMaxWeight)
+  723f092d98d20f5cd94801fd7f255bf34d93be01a89135c314ae7f17822bc74d  quests/max_height/AddMaxHeight.kt  (AddMaxHeight)
+  ee5483375f7bbf26d1ef8a264dfe5e9c10a651800234e6240a1b9f078167668c  quests/oneway/AddOneway.kt  (AddOneway)
+  6b1e45231c985f3320437867ac1639fe7458e0f07088adf736f5a7ea6385ea51  quests/building_entrance_reference/AddEntranceReference.kt  (AddEntranceReference)
+  d1e18b5d13de2a0c82913448f70f2e451c2ecc5c2c06a9ec51daa73bcbff1ff8  quests/ferry/AddFerryAccessPedestrian.kt  (AddFerryAccessPedestrian)
+  04469eeb4e7340a6af87205f36043384918df25edee9661f614016b2cdb37b2f  quests/ferry/AddFerryAccessMotorVehicle.kt  (AddFerryAccessMotorVehicle)
+  702967121fdb0efe5916a4c3167964dbf765d32bfdc6b31a480ca4ee03593824  quests/ferry/AddFerryAccessBicycle.kt  (AddFerryAccessBicycle)
+  b14a520d1725504199d8924648d776760f08927394997f08892151373182aa45  quests/ferry/AddFerryAccessHgv.kt  (AddFerryAccessHgv)
+  f27565b3ac2f82f0a722ac353be6a4bad4f78d99e7e143c4510f0cf919a64353  quests/summit/AddSummitCross.kt  (AddSummitCross)
+  c790121ea6413483fe0fb7baa8022265ad427774a1de49467fdce5b486c3fbe3  quests/summit/AddSummitRegister.kt  (AddSummitRegister)
+  c5868bd7ca2f49b29e9e0d3e48fce77d478135ce9da283d233f7ee0ff37ef08d  quests/leaf_detail/AddForestLeafType.kt  (AddForestLeafType)
+  fc8400e3c912651e6ed2eed9f49bb6e4ad4a33da024c77c2ba64358517eb23c6  quests/level/AddLevel.kt  (AddLevel)
+  dce2eb86499d94c8c4f24ee2a38f2e2ac8d0ce101e8c0d05ad5bdc35a476b202  quests/level/AddLevelThing.kt  (AddLevelThing)
+  c427676015f721f598738468f1dc3de82f7632c93fc113dfb47de3e8962484ec  quests/amenity_indoor/AddIsAmenityIndoor.kt  (AddIsAmenityIndoor)
+  6f2e800bb2b7f14d54f0c24a93b5f9d068245700d8bb4f4bd7246c5086f182a2  quests/barrier_opening/AddBarrierOpening.kt  (AddBarrierOpening)
   e2532e05bf95cf63bc0679fe26f077a2238b0e0fa256a4c33c53a17ddfcf8f2f  quests/ferry/FerryUtils.kt  (helper:FerryUtils)
   1b18ef4268be0e52598b75ec23d8f657611f5dab2d70cd6602ddf6945dd36a08  quests/level/LevelUtils.kt  (helper:LevelUtils)
   41d377bff5b8e46f2eca2befacfa7d072c9b238fc516333940a413bb71b99712  quests/summit/SummitMarkingsUtil.kt  (helper:SummitMarkingsUtil)
-  f2b1d8bfcce485fd9fce7325643116c54691042c3f1c1b0adcd19a5ec0252f7f  quests/max_height/MaxHeightUtils.kt  (helper:MaxHeightUtils)
-  3c54a210e1d7b4315f12e78af1bdd444331dbcab68ef472f31aa926026d524c2  cm:ApplicationConstants.kt  (helper:ignoreRelation)
-  eab24777688cd718836969465a089a03c72f4c452898395f5cecb2603c8eb015  quests/address/AddHousenumber.kt  (AddHousenumber)
-  48a0903ba1a7dfc8f500beb45bc487c3a3f8bf071c59ac14f362c47511575742  quests/cycleway/AddCycleway.kt  (AddCycleway)
-  0d61a25ae9963b681a585f204b0fecb95ebe013fd9100bc0f02decdef00c5649  quests/roof_shape/AddRoofShape.kt  (AddRoofShape)
-  51cd47d14ef18dff1b39cde6e58ba1e43d19cfec1d3d60e706aca28c1b635d5e  cm:data/osmnotes/notequests/OsmNoteQuestController.kt  (helper:OsmNoteQuest)
+  23204371a4f5bdebaf8fa366b33abae29455b79aea595f4f575346645a3997b7  quests/max_height/MaxHeightUtils.kt  (helper:MaxHeightUtils)
+  359dde912f138292f371ad5a9de0809249313f6a59b23cfe7436527087ff306a  ApplicationConstants.kt  (helper:ignoreRelation)
+  d35cebf2aa1aea22236965585372b9a585d22c4bea78e8edecf82bf4a850d0b5  quests/address/AddHousenumber.kt  (AddHousenumber)
+  d051385015791839920aca800c1c701518a79b8e47429dfa3043c6ce2abe5284  quests/cycleway/AddCycleway.kt  (AddCycleway)
+  5d630b3c5a3d160863c6e77149c6bb87e3ddfb04669f585f797c5624f22049ee  quests/roof_shape/AddRoofShape.kt  (AddRoofShape)
+  344692b3682161b692a5a3b5d027d653c427707477fa0eb1f6873f1d65371f03  data/osmnotes/notequests/OsmNoteQuestController.kt  (helper:OsmNoteQuest)
+  7922f3199005aa41078397355bbebfffc6da6cc035467d81ef13befae801c446  quests/socket/AddChargingStationSocket.kt  (AddChargingStationSocket)
