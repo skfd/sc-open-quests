@@ -8,10 +8,10 @@
   "scCommit": "244c6873330de8de1829ff287bbfdef4cb5c96b5",
   "resurveyMultiplier": 1,
   "areaUnit": "city",
-  "engineCommit": "1543899cb412efa240b6f4bf1bb4c01a4ef648b0",
+  "engineCommit": "df2a290f569fcb39a2eb74f55e1f1c7ac9ef3eb7",
   "source": { "url": "https://download.geofabrik.de/europe/germany/berlin-latest.osm.pbf", "lastModified": "2026-10-20T23:42:51Z", "sha256": "533c04676a89b3d76d08e3871ca4e75fb38f838dc53308e8ee8cfcf792ebc89a", "file": "berlin-2026-10-20.osm.pbf" },
   "notes": { "dump": "planet-notes-261021.osn.bz2", "sha256": "de3fd91a51913500b9e4c84b025f554bf2ed4c47c3cdf269f1c23814157e7eb3", "until": "2026-10-21T04:41:53Z", "open": 3274, "showAllNotes": false },
-  "runSeconds": 45.3,
+  "runSeconds": 44.8,
   "cities": {
     "berlin": {
       "denominators": { "landAreaKm2": 891.14, "population": 3700577, "taggedNodes": 1172405, "taggedWays": 1271430, "highwayKm": 11021.513 },

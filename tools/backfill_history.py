@@ -42,7 +42,7 @@ IMAGE = "name-ru-repair-osmium"
 BACKFILL = run.ROOT / "data" / "backfill"
 
 # The scheduled update runs at 13:15 and takes a few minutes; don't start an engine run across it.
-QUIET = ((13, 5), (13, 45))
+QUIET = ((12, 55), (13, 50))  # 12 regions and a 3.4 GB download since 2026-10-21; an Ontario month takes 5 min
 
 
 class Region:

@@ -8,10 +8,10 @@
   "scCommit": "244c6873330de8de1829ff287bbfdef4cb5c96b5",
   "resurveyMultiplier": 1,
   "areaUnit": "city",
-  "engineCommit": "1543899cb412efa240b6f4bf1bb4c01a4ef648b0",
+  "engineCommit": "df2a290f569fcb39a2eb74f55e1f1c7ac9ef3eb7",
   "source": { "url": "https://download.geofabrik.de/europe/germany/hamburg-latest.osm.pbf", "lastModified": "2026-10-20T23:42:23Z", "sha256": "d141b6c0e6aad3daece2a052cc30077f7e57157db43bc216a48f81cbcadddf97", "file": "hamburg-2026-10-20.osm.pbf" },
   "notes": { "dump": "planet-notes-261021.osn.bz2", "sha256": "de3fd91a51913500b9e4c84b025f554bf2ed4c47c3cdf269f1c23814157e7eb3", "until": "2026-10-21T04:41:53Z", "open": 944, "showAllNotes": false },
-  "runSeconds": 23,
+  "runSeconds": 25,
   "cities": {
     "hamburg": {
       "denominators": { "landAreaKm2": 980.9, "population": 1869473, "taggedNodes": 545904, "taggedWays": 676795, "highwayKm": 7738.899 },
