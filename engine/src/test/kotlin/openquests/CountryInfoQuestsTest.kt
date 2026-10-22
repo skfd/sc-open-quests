@@ -29,6 +29,22 @@ class CountryInfoQuestsTest {
         assertEquals(listOf("CA-QC", "CA"), ScCountryInfos.countryBoundaries.getIds(LatLon(45.4765, -75.7013)))
     }
 
+    @Test fun `country info for Montreal and Vancouver reads the province's file first`() {
+        val montreal = LatLon(45.5019, -73.5674)
+        assertEquals(listOf("CA-QC", "CA"), ScCountryInfos.countryBoundaries.getIds(montreal))
+        val qc = ScCountryInfos.getCountryInfoByLocation(montreal)
+        assertEquals("CA", qc.countryCode)
+        assertEquals(listOf("fr"), qc.officialLanguages) // CA-QC.yml overrides CA.yml (en, fr)
+        assertTrue(qc.hasBicycleBoulevard) // CA-QC.yml
+        assertFalse(qc.roofsAreUsuallyFlat) // default.yml
+
+        val vancouver = LatLon(49.2827, -123.1207)
+        assertEquals(listOf("CA-BC", "CA"), ScCountryInfos.countryBoundaries.getIds(vancouver))
+        val bc = ScCountryInfos.getCountryInfoByLocation(vancouver)
+        assertEquals(listOf("en"), bc.officialLanguages) // CA-BC.yml
+        assertEquals("yellow", bc.centerLineStyle) // CA.yml
+    }
+
     @Test fun `country info for Berlin, Hamburg and Bremen is SC's DE and default metadata`() {
         for (p in listOf(LatLon(52.5163, 13.3777), LatLon(53.5503, 9.9930), LatLon(53.0758, 8.8072))) {
             // SC's countryboundaries data has no German subdivisions (no DE-BE, DE-HH, DE-HB)

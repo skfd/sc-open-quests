@@ -100,7 +100,19 @@ data files (from app/src/commonMain/composeResources/files/ into src/main/resour
   88d288319075f7dd5796d330c184ffce94681831c56b0236fa0f5f11740d9cf9  boundaries.ser
   1f8c09404038ef2a570529dee899dc43c853cfa27b8c20d2dd05a1c83f359368  country_metadata/default.yml
   deab3d5fec2537634c5067aed554fe6d5783f81ff78b5f03ad509cd2d0d15fa9  country_metadata/CA.yml
+  3870c800aad37b6f361eccb95473f872c65453f0a1b25815d60aaaffdb5453a1  country_metadata/CA-AB.yml
+  98d43f71695cfca987c308d5e5abe842f32b110497bb1a9a24023c8128f64568  country_metadata/CA-BC.yml
+  c9bb543bee7ed388a5b33b29f668659a3728749613f019e121f8cdb1fd17d3aa  country_metadata/CA-MB.yml
+  c0f7f4f4be02b677c8d0d27d7b42be8056e454a2c3d6c8ae2d0a59804c73946d  country_metadata/CA-NB.yml
+  ce63cfe02f992ff3e0267a6b917e70c3f5bab65f06a702fad99ceef3a8c7722a  country_metadata/CA-NL.yml
+  34ae4bde88caf13c2185a3d2cd7ec3ee0b5b56f617f12cca20513d1531f7206e  country_metadata/CA-NS.yml
+  31a46b3660422e8c9e00829100136b112ab5a97d8dd81c4353242e01341a57e1  country_metadata/CA-NT.yml
+  9b9b58e022d4f1f51db85e40ffba071228fa5ad791520e7d8383000a4b9ef8e4  country_metadata/CA-NU.yml
   85bfedebfd7997a6ccd8b24fb3969d0819f7db34263a8e1830aad36935501883  country_metadata/CA-ON.yml
+  e2a167c3e5653e2f99f66eb5d2ec9c20c53ed58a960a7d8567627f53bbc9221f  country_metadata/CA-PE.yml
+  f0d87fc9f2627518345555ad2af70525581154c0c22221d5f31b88b937b0833f  country_metadata/CA-QC.yml
+  b84724ae5209aa13e5bb2ffcc4819b6d3c99f6939851ce880c9173948c914af5  country_metadata/CA-SK.yml
+  17ea9ed5fc16834d0ee9d8aaa9807ea06d7a831fd8198e915da2ab9f28dad714  country_metadata/CA-YT.yml
   910368ee540440acb3df27e8fdf474058f655120ea97d1004974006b024e6b71  country_metadata/DE.yml
 ported custom quests (sha256 of the androidMain file with LF line endings; logic in src/main/kotlin/openquests/custom/):
   9e5733e39e8547bba62a503d4d82e02a07b66361a2a09008d646b9c3307798c8  quests/sidewalk/AddSidewalk.kt  (AddSidewalk)

@@ -192,15 +192,16 @@ download:
 **Country metadata** (AddHousenumber, AddCycleway, AddRoofShape). The app hands these quests
 `{ countryInfos.get(countryBoundaries, it) }`. `ScCountryInfos` is that call, built from SC's own parts:
 - the region ids that SC's countryboundaries data (`boundaries.ser`, library `de.westnordost:countryboundaries:3.0.0`)
-  gives for the position, smallest region first: `CA-ON`, `CA` in Ontario; only `DE` in Germany, since
-  SC's data has no German subdivisions;
+  gives for the position, smallest region first: `CA-ON`, `CA` in Ontario, `CA-QC`, `CA` in Quebec and so
+  on; only `DE` in Germany, since SC's data has no German subdivisions;
 - SC's `CountryInfos` and `CountryInfo`, vendored unchanged. They merge the yml of each id that has one
-  (`CA-ON.yml`, `CA.yml`; `DE.yml`) and then `default.yml`, each field from the first file that sets it,
+  (`CA-ON.yml`, `CA.yml`; `CA-QC.yml`, `CA.yml`; `DE.yml`) and then `default.yml`, each field from the first file that sets it,
   with kaml 0.104.0, as SC does. SC v63.4 has no `DE-*.yml`.
 
-`sync-sc.ps1` bundles `boundaries.ser` and those four yml files. A position outside Ontario and Germany
-(Gatineau, Michigan) reads `default.yml` only, but no quest is counted there. The values the three
-quests read are:
+`sync-sc.ps1` bundles `boundaries.ser`, `default.yml`, `CA.yml`, `DE.yml` and the 13 `CA-*.yml` files SC
+ships, one per province and territory (since 2026-10-21, when the other provinces joined). A position
+outside Canada and Germany (Michigan) reads `default.yml` only, but no quest is counted there. The values
+the three quests read are:
 - `roofsAreUsuallyFlat`: false (default.yml; neither CA nor DE sets it), so AddRoofShape asks for every
   building with levels;
 - the cycleway-ambiguity fields: `hasAdvisoryCycleLane` is false in Ontario (default.yml) but true in

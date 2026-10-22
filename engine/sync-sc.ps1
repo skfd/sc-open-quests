@@ -163,14 +163,27 @@ $resources = @(
     'osmfeatures/default/presets.json'
     'osmfeatures/default/en.json'
     'osmfeatures/default/en-CA.json'
-    # SC's country boundaries and the country metadata positions in Ontario and the German city-states
-    # (Berlin, Hamburg, Bremen) read: CA-ON, CA, DE, then default. SC has no DE-* metadata, and its
-    # boundaries give German positions only the id DE. Positions elsewhere (Quebec, US) get only
-    # default.yml here; quests there are not counted.
+    # SC's country boundaries and the country metadata positions in Canada and the German city-states
+    # (Berlin, Hamburg, Bremen) read: CA-<province>, CA, DE, then default. SC has a file for each of
+    # the 13 provinces and territories; it has no DE-* metadata, and its boundaries give German
+    # positions only the id DE. Positions elsewhere (US) get only default.yml here; quests there are
+    # not counted.
     'boundaries.ser'
     'country_metadata/default.yml'
     'country_metadata/CA.yml'
+    'country_metadata/CA-AB.yml'
+    'country_metadata/CA-BC.yml'
+    'country_metadata/CA-MB.yml'
+    'country_metadata/CA-NB.yml'
+    'country_metadata/CA-NL.yml'
+    'country_metadata/CA-NS.yml'
+    'country_metadata/CA-NT.yml'
+    'country_metadata/CA-NU.yml'
     'country_metadata/CA-ON.yml'
+    'country_metadata/CA-PE.yml'
+    'country_metadata/CA-QC.yml'
+    'country_metadata/CA-SK.yml'
+    'country_metadata/CA-YT.yml'
     'country_metadata/DE.yml'
 )
 

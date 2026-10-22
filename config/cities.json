@@ -1,6 +1,38 @@
 {
   "cities": [
     {
+      "id": "abbotsford",
+      "name": "Abbotsford",
+      "relation": 2221182,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-BC"
+      ],
+      "timeZone": "America/Vancouver",
+      "population": 153524,
+      "landAreaKm2": 385.48883750715737,
+      "boundary": "data/boundaries/2221182.json",
+      "region": "british-columbia",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
+    },
+    {
+      "id": "airdrie",
+      "name": "Airdrie",
+      "relation": 4183360,
+      "adminLevel": 6,
+      "countryCodes": [
+        "CA",
+        "CA-AB"
+      ],
+      "timeZone": "America/Edmonton",
+      "population": 74100,
+      "landAreaKm2": 86.0404639206171,
+      "boundary": "data/boundaries/4183360.json",
+      "region": "alberta",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
+    },
+    {
       "id": "ajax",
       "name": "Ajax",
       "relation": 2408837,
@@ -14,6 +46,22 @@
       "landAreaKm2": 75.2961139285999,
       "boundary": "data/boundaries/2408837.json",
       "region": "ontario"
+    },
+    {
+      "id": "aurora",
+      "name": "Aurora",
+      "relation": 2401094,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-ON"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 62057,
+      "landAreaKm2": 49.83284962882374,
+      "boundary": "data/boundaries/2401094.json",
+      "region": "ontario",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
     },
     {
       "id": "barrie",
@@ -59,6 +107,22 @@
       "boundary": "data/boundaries/62422.json",
       "region": "berlin",
       "populationSource": "Destatis Gemeindeverzeichnis GV-ISys, Gebietsstand 30.09.2026; population 31.12.2025 (Zensus 2022 basis)"
+    },
+    {
+      "id": "blainville",
+      "name": "Blainville",
+      "relation": 7703991,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-QC"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 59819,
+      "landAreaKm2": 55.43159021965343,
+      "boundary": "data/boundaries/7703991.json",
+      "region": "quebec",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
     },
     {
       "id": "brampton",
@@ -136,6 +200,22 @@
       "region": "ontario"
     },
     {
+      "id": "brossard",
+      "name": "Brossard",
+      "relation": 2812764,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-QC"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 91525,
+      "landAreaKm2": 54.3331253806415,
+      "boundary": "data/boundaries/2812764.json",
+      "region": "quebec",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
+    },
+    {
       "id": "burlington",
       "name": "Burlington",
       "relation": 2407513,
@@ -149,6 +229,54 @@
       "landAreaKm2": 199.99408546640615,
       "boundary": "data/boundaries/2407513.json",
       "region": "ontario"
+    },
+    {
+      "id": "burnaby",
+      "name": "Burnaby",
+      "relation": 2221119,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-BC"
+      ],
+      "timeZone": "America/Vancouver",
+      "population": 249125,
+      "landAreaKm2": 96.44364707020318,
+      "boundary": "data/boundaries/2221119.json",
+      "region": "british-columbia",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
+    },
+    {
+      "id": "caledon",
+      "name": "Caledon",
+      "relation": 4198908,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-ON"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 76581,
+      "landAreaKm2": 696.1758233389323,
+      "boundary": "data/boundaries/4198908.json",
+      "region": "ontario",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
+    },
+    {
+      "id": "calgary",
+      "name": "Calgary",
+      "relation": 3227127,
+      "adminLevel": 6,
+      "countryCodes": [
+        "CA",
+        "CA-AB"
+      ],
+      "timeZone": "America/Edmonton",
+      "population": 1306784,
+      "landAreaKm2": 852.5005105098389,
+      "boundary": "data/boundaries/3227127.json",
+      "region": "alberta",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
     },
     {
       "id": "cambridge",
@@ -166,6 +294,22 @@
       "region": "ontario"
     },
     {
+      "id": "cape-breton",
+      "name": "Cape Breton",
+      "relation": 5012156,
+      "adminLevel": 6,
+      "countryCodes": [
+        "CA",
+        "CA-NS"
+      ],
+      "timeZone": "America/Halifax",
+      "population": 93694,
+      "landAreaKm2": 3118.764932456683,
+      "boundary": "data/boundaries/5012156.json",
+      "region": "nova-scotia",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
+    },
+    {
       "id": "chatham-kent",
       "name": "Chatham-Kent",
       "relation": 4010050,
@@ -179,6 +323,54 @@
       "landAreaKm2": 2910.885204580692,
       "boundary": "data/boundaries/4010050.json",
       "region": "ontario"
+    },
+    {
+      "id": "chilliwack",
+      "name": "Chilliwack",
+      "relation": 2221183,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-BC"
+      ],
+      "timeZone": "America/Vancouver",
+      "population": 93203,
+      "landAreaKm2": 280.89653409131733,
+      "boundary": "data/boundaries/2221183.json",
+      "region": "british-columbia",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
+    },
+    {
+      "id": "clarington",
+      "name": "Clarington",
+      "relation": 2408839,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-ON"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 101427,
+      "landAreaKm2": 666.3964512474233,
+      "boundary": "data/boundaries/2408839.json",
+      "region": "ontario",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
+    },
+    {
+      "id": "coquitlam",
+      "name": "Coquitlam",
+      "relation": 2221139,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-BC"
+      ],
+      "timeZone": "America/Vancouver",
+      "population": 148625,
+      "landAreaKm2": 129.98038846128,
+      "boundary": "data/boundaries/2221139.json",
+      "region": "british-columbia",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
     },
     {
       "id": "cornwall",
@@ -195,6 +387,118 @@
       "boundary": "data/boundaries/4136858.json",
       "populationSource": "Statistics Canada 2021 census",
       "region": "ontario"
+    },
+    {
+      "id": "delta",
+      "name": "Delta",
+      "relation": 2153174,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-BC"
+      ],
+      "timeZone": "America/Vancouver",
+      "population": 108455,
+      "landAreaKm2": 415.9328646089679,
+      "boundary": "data/boundaries/2153174.json",
+      "region": "british-columbia",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
+    },
+    {
+      "id": "drummondville",
+      "name": "Drummondville",
+      "relation": 7932209,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-QC"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 79258,
+      "landAreaKm2": 259.7094635656386,
+      "boundary": "data/boundaries/7932209.json",
+      "region": "quebec",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
+    },
+    {
+      "id": "edmonton",
+      "name": "Edmonton",
+      "relation": 2564500,
+      "adminLevel": 6,
+      "countryCodes": [
+        "CA",
+        "CA-AB"
+      ],
+      "timeZone": "America/Edmonton",
+      "population": 1010899,
+      "landAreaKm2": 784.6396424262849,
+      "boundary": "data/boundaries/2564500.json",
+      "region": "alberta",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
+    },
+    {
+      "id": "fredericton",
+      "name": "Fredericton",
+      "relation": 9657385,
+      "adminLevel": 6,
+      "countryCodes": [
+        "CA",
+        "CA-NB"
+      ],
+      "timeZone": "America/Halifax",
+      "population": 63116,
+      "landAreaKm2": 207.56921531183528,
+      "boundary": "data/boundaries/9657385.json",
+      "region": "new-brunswick",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
+    },
+    {
+      "id": "gatineau",
+      "name": "Gatineau",
+      "relation": 5356213,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-QC"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 291041,
+      "landAreaKm2": 383.3658277575583,
+      "boundary": "data/boundaries/5356213.json",
+      "region": "quebec",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
+    },
+    {
+      "id": "granby",
+      "name": "Granby",
+      "relation": 7927022,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-QC"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 69025,
+      "landAreaKm2": 155.763549179147,
+      "boundary": "data/boundaries/7927022.json",
+      "region": "quebec",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
+    },
+    {
+      "id": "grande-prairie",
+      "name": "Grande Prairie",
+      "relation": 4169208,
+      "adminLevel": 6,
+      "countryCodes": [
+        "CA",
+        "CA-AB"
+      ],
+      "timeZone": "America/Edmonton",
+      "population": 64141,
+      "landAreaKm2": 132.93537864861673,
+      "boundary": "data/boundaries/4169208.json",
+      "region": "alberta",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
     },
     {
       "id": "greater-sudbury",
@@ -227,6 +531,38 @@
       "region": "ontario"
     },
     {
+      "id": "halifax",
+      "name": "Halifax",
+      "relation": 9344588,
+      "adminLevel": 6,
+      "countryCodes": [
+        "CA",
+        "CA-NS"
+      ],
+      "timeZone": "America/Halifax",
+      "population": 439819,
+      "landAreaKm2": 10899.252792928548,
+      "boundary": "data/boundaries/9344588.json",
+      "region": "nova-scotia",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
+    },
+    {
+      "id": "halton-hills",
+      "name": "Halton Hills",
+      "relation": 2414222,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-ON"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 62951,
+      "landAreaKm2": 278.4066498932732,
+      "boundary": "data/boundaries/2414222.json",
+      "region": "ontario",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
+    },
+    {
       "id": "hamburg",
       "name": "Hamburg",
       "relation": 62782,
@@ -257,6 +593,22 @@
       "region": "ontario"
     },
     {
+      "id": "kamloops",
+      "name": "Kamloops",
+      "relation": 2230726,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-BC"
+      ],
+      "timeZone": "America/Vancouver",
+      "population": 97902,
+      "landAreaKm2": 314.6088482040752,
+      "boundary": "data/boundaries/2230726.json",
+      "region": "british-columbia",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
+    },
+    {
       "id": "kawartha-lakes",
       "name": "Kawartha Lakes",
       "relation": 7473857,
@@ -270,6 +622,22 @@
       "landAreaKm2": 3335.930119934308,
       "boundary": "data/boundaries/7473857.json",
       "region": "ontario"
+    },
+    {
+      "id": "kelowna",
+      "name": "Kelowna",
+      "relation": 2221794,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-BC"
+      ],
+      "timeZone": "America/Vancouver",
+      "population": 144576,
+      "landAreaKm2": 259.98855437536093,
+      "boundary": "data/boundaries/2221794.json",
+      "region": "british-columbia",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
     },
     {
       "id": "kingston",
@@ -302,6 +670,70 @@
       "region": "ontario"
     },
     {
+      "id": "langley",
+      "name": "Langley",
+      "relation": 2031947,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-BC"
+      ],
+      "timeZone": "America/Vancouver",
+      "population": 132603,
+      "landAreaKm2": 317.5159669722068,
+      "boundary": "data/boundaries/2031947.json",
+      "region": "british-columbia",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
+    },
+    {
+      "id": "laval",
+      "name": "Laval",
+      "relation": 3532125,
+      "adminLevel": 5,
+      "countryCodes": [
+        "CA",
+        "CA-QC"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 438366,
+      "landAreaKm2": 264.33607139186716,
+      "boundary": "data/boundaries/3532125.json",
+      "region": "quebec",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
+    },
+    {
+      "id": "lethbridge",
+      "name": "Lethbridge",
+      "relation": 4163076,
+      "adminLevel": 6,
+      "countryCodes": [
+        "CA",
+        "CA-AB"
+      ],
+      "timeZone": "America/Edmonton",
+      "population": 98406,
+      "landAreaKm2": 125.19982169299983,
+      "boundary": "data/boundaries/4163076.json",
+      "region": "alberta",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
+    },
+    {
+      "id": "levis",
+      "name": "Lévis",
+      "relation": 8164410,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-QC"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 149683,
+      "landAreaKm2": 498.28686760098043,
+      "boundary": "data/boundaries/8164410.json",
+      "region": "quebec",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
+    },
+    {
       "id": "london",
       "name": "London",
       "relation": 7485368,
@@ -315,6 +747,38 @@
       "landAreaKm2": 423.23087453351434,
       "boundary": "data/boundaries/7485368.json",
       "region": "ontario"
+    },
+    {
+      "id": "longueuil",
+      "name": "Longueuil",
+      "relation": 6948543,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-QC"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 254483,
+      "landAreaKm2": 122.49219517995652,
+      "boundary": "data/boundaries/6948543.json",
+      "region": "quebec",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
+    },
+    {
+      "id": "maple-ridge",
+      "name": "Maple Ridge",
+      "relation": 2221140,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-BC"
+      ],
+      "timeZone": "America/Vancouver",
+      "population": 90990,
+      "landAreaKm2": 286.5890301102398,
+      "boundary": "data/boundaries/2221140.json",
+      "region": "british-columbia",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
     },
     {
       "id": "markham",
@@ -332,6 +796,22 @@
       "region": "ontario"
     },
     {
+      "id": "medicine-hat",
+      "name": "Medicine Hat",
+      "relation": 4167203,
+      "adminLevel": 6,
+      "countryCodes": [
+        "CA",
+        "CA-AB"
+      ],
+      "timeZone": "America/Edmonton",
+      "population": 63271,
+      "landAreaKm2": 119.71740619542972,
+      "boundary": "data/boundaries/4167203.json",
+      "region": "alberta",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
+    },
+    {
       "id": "milton",
       "name": "Milton",
       "relation": 2414122,
@@ -347,6 +827,22 @@
       "region": "ontario"
     },
     {
+      "id": "mirabel",
+      "name": "Mirabel",
+      "relation": 7699994,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-QC"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 61108,
+      "landAreaKm2": 486.45612696445403,
+      "boundary": "data/boundaries/7699994.json",
+      "region": "quebec",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
+    },
+    {
       "id": "mississauga",
       "name": "Mississauga",
       "relation": 1954127,
@@ -360,6 +856,70 @@
       "landAreaKm2": 297.7585765779934,
       "boundary": "data/boundaries/1954127.json",
       "region": "ontario"
+    },
+    {
+      "id": "moncton",
+      "name": "Moncton",
+      "relation": 1109568,
+      "adminLevel": 6,
+      "countryCodes": [
+        "CA",
+        "CA-NB"
+      ],
+      "timeZone": "America/Halifax",
+      "population": 79470,
+      "landAreaKm2": 155.55096288392483,
+      "boundary": "data/boundaries/1109568.json",
+      "region": "new-brunswick",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
+    },
+    {
+      "id": "montreal",
+      "name": "Montreal",
+      "relation": 1634158,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-QC"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 1762949,
+      "landAreaKm2": 456.00130097475096,
+      "boundary": "data/boundaries/1634158.json",
+      "region": "quebec",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
+    },
+    {
+      "id": "nanaimo",
+      "name": "Nanaimo",
+      "relation": 2221210,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-BC"
+      ],
+      "timeZone": "America/Vancouver",
+      "population": 99863,
+      "landAreaKm2": 125.22248447282672,
+      "boundary": "data/boundaries/2221210.json",
+      "region": "british-columbia",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
+    },
+    {
+      "id": "new-westminster",
+      "name": "New Westminster",
+      "relation": 1377803,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-BC"
+      ],
+      "timeZone": "America/Vancouver",
+      "population": 78916,
+      "landAreaKm2": 18.425311615986868,
+      "boundary": "data/boundaries/1377803.json",
+      "region": "british-columbia",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
     },
     {
       "id": "newmarket",
@@ -392,6 +952,22 @@
       "region": "ontario"
     },
     {
+      "id": "norfolk-county",
+      "name": "Norfolk County",
+      "relation": 2866581,
+      "adminLevel": 6,
+      "countryCodes": [
+        "CA",
+        "CA-ON"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 67490,
+      "landAreaKm2": 1740.743963602714,
+      "boundary": "data/boundaries/2866581.json",
+      "region": "ontario",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
+    },
+    {
       "id": "north-bay",
       "name": "North Bay",
       "relation": 7129502,
@@ -405,6 +981,38 @@
       "landAreaKm2": 329.4768253313934,
       "boundary": "data/boundaries/7129502.json",
       "region": "ontario"
+    },
+    {
+      "id": "north-vancouver",
+      "name": "North Vancouver",
+      "relation": 1524229,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-BC"
+      ],
+      "timeZone": "America/Vancouver",
+      "population": 88168,
+      "landAreaKm2": 177.1742843322144,
+      "boundary": "data/boundaries/1524229.json",
+      "region": "british-columbia",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
+    },
+    {
+      "id": "north-vancouver-district",
+      "name": "North Vancouver (District)",
+      "relation": 1524228,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-BC"
+      ],
+      "timeZone": "America/Vancouver",
+      "population": 58120,
+      "landAreaKm2": 16.750419452021717,
+      "boundary": "data/boundaries/1524228.json",
+      "region": "british-columbia",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
     },
     {
       "id": "oakville",
@@ -543,6 +1151,54 @@
       "region": "ontario"
     },
     {
+      "id": "port-coquitlam",
+      "name": "Port Coquitlam",
+      "relation": 2221142,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-BC"
+      ],
+      "timeZone": "America/Vancouver",
+      "population": 61498,
+      "landAreaKm2": 33.82325236634747,
+      "boundary": "data/boundaries/2221142.json",
+      "region": "british-columbia",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
+    },
+    {
+      "id": "prince-george",
+      "name": "Prince George",
+      "relation": 2243544,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-BC"
+      ],
+      "timeZone": "America/Vancouver",
+      "population": 76708,
+      "landAreaKm2": 329.43460369226204,
+      "boundary": "data/boundaries/2243544.json",
+      "region": "british-columbia",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
+    },
+    {
+      "id": "quebec-city",
+      "name": "Quebec City",
+      "relation": 2319206,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-QC"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 549459,
+      "landAreaKm2": 484.79263422734175,
+      "boundary": "data/boundaries/2319206.json",
+      "region": "quebec",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
+    },
+    {
       "id": "quinte-west",
       "name": "Quinte West",
       "relation": 7443054,
@@ -556,6 +1212,70 @@
       "landAreaKm2": 535.7114476571364,
       "boundary": "data/boundaries/7443054.json",
       "region": "ontario"
+    },
+    {
+      "id": "red-deer",
+      "name": "Red Deer",
+      "relation": 4166847,
+      "adminLevel": 6,
+      "countryCodes": [
+        "CA",
+        "CA-AB"
+      ],
+      "timeZone": "America/Edmonton",
+      "population": 100844,
+      "landAreaKm2": 109.30005807798464,
+      "boundary": "data/boundaries/4166847.json",
+      "region": "alberta",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
+    },
+    {
+      "id": "regina",
+      "name": "Regina",
+      "relation": 4263150,
+      "adminLevel": 6,
+      "countryCodes": [
+        "CA",
+        "CA-SK"
+      ],
+      "timeZone": "America/Regina",
+      "population": 226404,
+      "landAreaKm2": 182.75671963305018,
+      "boundary": "data/boundaries/4263150.json",
+      "region": "saskatchewan",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
+    },
+    {
+      "id": "repentigny",
+      "name": "Repentigny",
+      "relation": 7706380,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-QC"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 86100,
+      "landAreaKm2": 71.2960709119146,
+      "boundary": "data/boundaries/7706380.json",
+      "region": "quebec",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
+    },
+    {
+      "id": "richmond",
+      "name": "Richmond",
+      "relation": 2221097,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-BC"
+      ],
+      "timeZone": "America/Vancouver",
+      "population": 209937,
+      "landAreaKm2": 263.2140185273004,
+      "boundary": "data/boundaries/2221097.json",
+      "region": "british-columbia",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
     },
     {
       "id": "richmond-hill",
@@ -573,6 +1293,102 @@
       "region": "ontario"
     },
     {
+      "id": "saanich",
+      "name": "Saanich",
+      "relation": 2221059,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-BC"
+      ],
+      "timeZone": "America/Vancouver",
+      "population": 117735,
+      "landAreaKm2": 114.03987560553865,
+      "boundary": "data/boundaries/2221059.json",
+      "region": "british-columbia",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
+    },
+    {
+      "id": "saguenay",
+      "name": "Saguenay",
+      "relation": 8158186,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-QC"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 144723,
+      "landAreaKm2": 1279.4597172600156,
+      "boundary": "data/boundaries/8158186.json",
+      "region": "quebec",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
+    },
+    {
+      "id": "saint-hyacinthe",
+      "name": "Saint-Hyacinthe",
+      "relation": 7927129,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-QC"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 57239,
+      "landAreaKm2": 191.2770326145844,
+      "boundary": "data/boundaries/7927129.json",
+      "region": "quebec",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
+    },
+    {
+      "id": "saint-jean-sur-richelieu",
+      "name": "Saint-Jean-sur-Richelieu",
+      "relation": 1600484,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-QC"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 97873,
+      "landAreaKm2": 233.68560927769784,
+      "boundary": "data/boundaries/1600484.json",
+      "region": "quebec",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
+    },
+    {
+      "id": "saint-jerome",
+      "name": "Saint-Jérôme",
+      "relation": 7698652,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-QC"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 80213,
+      "landAreaKm2": 92.5128183458552,
+      "boundary": "data/boundaries/7698652.json",
+      "region": "quebec",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
+    },
+    {
+      "id": "saint-john",
+      "name": "Saint John",
+      "relation": 9349818,
+      "adminLevel": 6,
+      "countryCodes": [
+        "CA",
+        "CA-NB"
+      ],
+      "timeZone": "America/Halifax",
+      "population": 69895,
+      "landAreaKm2": 454.20372144242174,
+      "boundary": "data/boundaries/9349818.json",
+      "region": "new-brunswick",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
+    },
+    {
       "id": "sarnia",
       "name": "Sarnia",
       "relation": 3642177,
@@ -586,6 +1402,22 @@
       "landAreaKm2": 170.0401425367517,
       "boundary": "data/boundaries/3642177.json",
       "region": "ontario"
+    },
+    {
+      "id": "saskatoon",
+      "name": "Saskatoon",
+      "relation": 4189345,
+      "adminLevel": 6,
+      "countryCodes": [
+        "CA",
+        "CA-SK"
+      ],
+      "timeZone": "America/Regina",
+      "population": 266141,
+      "landAreaKm2": 236.45387683010478,
+      "boundary": "data/boundaries/4189345.json",
+      "region": "saskatchewan",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
     },
     {
       "id": "sault-ste-marie",
@@ -603,6 +1435,38 @@
       "region": "ontario"
     },
     {
+      "id": "sherbrooke",
+      "name": "Sherbrooke",
+      "relation": 5915931,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-QC"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 172950,
+      "landAreaKm2": 366.29560107607085,
+      "boundary": "data/boundaries/5915931.json",
+      "region": "quebec",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
+    },
+    {
+      "id": "st-albert",
+      "name": "St. Albert",
+      "relation": 11890349,
+      "adminLevel": 6,
+      "countryCodes": [
+        "CA",
+        "CA-AB"
+      ],
+      "timeZone": "America/Edmonton",
+      "population": 68232,
+      "landAreaKm2": 65.27255775503744,
+      "boundary": "data/boundaries/11890349.json",
+      "region": "alberta",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
+    },
+    {
       "id": "st-catharines",
       "name": "St. Catharines",
       "relation": 2387995,
@@ -616,6 +1480,22 @@
       "landAreaKm2": 143.62424125742993,
       "boundary": "data/boundaries/2387995.json",
       "region": "ontario"
+    },
+    {
+      "id": "st-johns",
+      "name": "St. John's",
+      "relation": 2805426,
+      "adminLevel": 6,
+      "countryCodes": [
+        "CA",
+        "CA-NL"
+      ],
+      "timeZone": "America/St_Johns",
+      "population": 110525,
+      "landAreaKm2": 522.6995786017383,
+      "boundary": "data/boundaries/2805426.json",
+      "region": "newfoundland-and-labrador",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
     },
     {
       "id": "st-thomas",
@@ -646,6 +1526,54 @@
       "landAreaKm2": 28.69660603752779,
       "boundary": "data/boundaries/7486330.json",
       "region": "ontario"
+    },
+    {
+      "id": "strathcona-county",
+      "name": "Strathcona County",
+      "relation": 50382,
+      "adminLevel": 6,
+      "countryCodes": [
+        "CA",
+        "CA-AB"
+      ],
+      "timeZone": "America/Edmonton",
+      "population": 99225,
+      "landAreaKm2": 1259.4636287300796,
+      "boundary": "data/boundaries/50382.json",
+      "region": "alberta",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
+    },
+    {
+      "id": "surrey",
+      "name": "Surrey",
+      "relation": 1384967,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-BC"
+      ],
+      "timeZone": "America/Vancouver",
+      "population": 568322,
+      "landAreaKm2": 365.0659559918156,
+      "boundary": "data/boundaries/1384967.json",
+      "region": "british-columbia",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
+    },
+    {
+      "id": "terrebonne",
+      "name": "Terrebonne",
+      "relation": 7704070,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-QC"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 119944,
+      "landAreaKm2": 160.67279519773203,
+      "boundary": "data/boundaries/7704070.json",
+      "region": "quebec",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
     },
     {
       "id": "thunder-bay",
@@ -694,6 +1622,38 @@
       "region": "ontario"
     },
     {
+      "id": "trois-rivieres",
+      "name": "Trois-Rivières",
+      "relation": 7711553,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-QC"
+      ],
+      "timeZone": "America/Toronto",
+      "population": 139163,
+      "landAreaKm2": 334.17028340298015,
+      "boundary": "data/boundaries/7711553.json",
+      "region": "quebec",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
+    },
+    {
+      "id": "vancouver",
+      "name": "Vancouver",
+      "relation": 1852574,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-BC"
+      ],
+      "timeZone": "America/Vancouver",
+      "population": 662248,
+      "landAreaKm2": 136.9255170876324,
+      "boundary": "data/boundaries/1852574.json",
+      "region": "british-columbia",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
+    },
+    {
       "id": "vaughan",
       "name": "Vaughan",
       "relation": 324212,
@@ -707,6 +1667,22 @@
       "landAreaKm2": 274.11438074537523,
       "boundary": "data/boundaries/324212.json",
       "region": "ontario"
+    },
+    {
+      "id": "victoria",
+      "name": "Victoria",
+      "relation": 2221062,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CA",
+        "CA-BC"
+      ],
+      "timeZone": "America/Vancouver",
+      "population": 91867,
+      "landAreaKm2": 21.334967867038188,
+      "boundary": "data/boundaries/2221062.json",
+      "region": "british-columbia",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
     },
     {
       "id": "waterloo",
@@ -767,6 +1743,38 @@
       "landAreaKm2": 158.9492868913867,
       "boundary": "data/boundaries/7025718.json",
       "region": "ontario"
+    },
+    {
+      "id": "winnipeg",
+      "name": "Winnipeg",
+      "relation": 1790696,
+      "adminLevel": 6,
+      "countryCodes": [
+        "CA",
+        "CA-MB"
+      ],
+      "timeZone": "America/Winnipeg",
+      "population": 749607,
+      "landAreaKm2": 474.9671806668208,
+      "boundary": "data/boundaries/1790696.json",
+      "region": "manitoba",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
+    },
+    {
+      "id": "wood-buffalo",
+      "name": "Wood Buffalo",
+      "relation": 7087463,
+      "adminLevel": 6,
+      "countryCodes": [
+        "CA",
+        "CA-AB"
+      ],
+      "timeZone": "America/Edmonton",
+      "population": 72326,
+      "landAreaKm2": 66635.9198153254,
+      "boundary": "data/boundaries/7087463.json",
+      "region": "alberta",
+      "populationSource": "Statistics Canada, 2021 Census of Population"
     },
     {
       "id": "woodstock",

@@ -12,7 +12,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 /** SC: CountryBoundariesImpl.isInAny. An Ontario position has the countryboundaries ids
- *  "CA-ON" and "CA"; a quest's code matches only an equal id. */
+ *  "CA-ON" and "CA" (Quebec "CA-QC" and "CA", and so on); a quest's code matches only an equal id. */
 class CountriesTest {
     private val ontario = listOf("CA", "CA-ON")
 
@@ -39,7 +39,7 @@ class CountriesTest {
     @Test fun allCountriesExceptElsewhere() =
         assertTrue(Countries.AllExcept(listOf("JP")).isEnabledIn(ontario))
 
-    @Test fun `SC's countryboundaries data gives CA-ON and CA, or DE, for every city`() {
+    @Test fun `SC's countryboundaries data gives CA-<province> and CA, or DE, for every city`() {
         val file = File(System.getProperty("openquests.scBoundaries") ?: "")
         assumeTrue(file.isFile, "SC boundaries.ser not found at $file")
         val boundaries = SystemFileSystem.source(Path(file.path)).buffered().use { CountryBoundaries.deserializeFrom(it) }
@@ -50,8 +50,10 @@ class CountriesTest {
             val lat = (p.minLat + p.maxLat) / 2; val lon = (p.minLon + p.maxLon) / 2
             if (!p.contains(lat, lon)) continue
             val ids = boundaries.getIds(longitude = lon, latitude = lat)
-            // Ontario, or Germany (SC's data has no German subdivisions, so DE alone)
-            assertTrue(ids.toSet() in listOf(setOf("CA-ON", "CA"), setOf("DE")), "${city.id} at $lat,$lon: $ids")
+            // a Canadian province (CA-ON, CA-QC, ...) and CA, or Germany (SC's data has no German
+            // subdivisions, so DE alone)
+            val canada = ids.size == 2 && "CA" in ids && ids.any { it.matches(Regex("CA-[A-Z]{2}")) }
+            assertTrue(canada || ids.toSet() == setOf("DE"), "${city.id} at $lat,$lon: $ids")
             assertEquals(city.countryCodes.toSet(), ids.toSet(), "${city.id}: countryCodes in config")
             checked++
         }
