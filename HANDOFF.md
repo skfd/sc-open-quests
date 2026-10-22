@@ -38,16 +38,29 @@ Toronto only, about 10 common quest types whose filters are simple, a few weeks 
 
 ## Status and next steps (2026-10-13)
 
-Milestone 1 is done and the site is live at https://skfd.github.io/sc-open-quests/. It covers 48 Ontario cities and
-all 176 quest types of SC v63.4 that the app offers there (14 more are not offered in Ontario), monthly from 2017-01 and daily since 2026-10. `kk-SCOpenQuests` runs daily
-at 13:15. Design and known gaps are in DESIGN.md.
+Milestone 1 is done and the site is live at https://skfd.github.io/sc-open-quests/. It covers every
+Canadian municipality over 50,000 people (111 cities in nine provinces) and Germany's city-states, and all
+quest types of SC v64.0 that the app offers there, monthly from 2017-01 and daily since 2026-10.
+`kk-SCOpenQuests` runs daily at 13:15. Design and known gaps are in DESIGN.md.
 
-**Repinned to SC v64.0 on 2026-10-21, on branch `sc-v64`** (worktree `../sc-open-quests-v64`; DESIGN.md,
-"Repin to StreetComplete v64.0", with the merge recipe; the routine is REPIN.md). 193 quest types, all
-counted and oracle-checked (Guelph and Bremerhaven). Not merged yet: main had uncommitted province work
-from another session. After the merge the first run from main makes the first v64 data commit. From
-then on the scheduled update's last step opens a GitHub issue "Repin to StreetComplete vX.Y" when the
-app moves on.
+**Repinned to SC v64.0 on 2026-10-21** (DESIGN.md, "Repin to StreetComplete v64.0"; the routine is
+REPIN.md). 193 quest types, all counted and oracle-checked (Guelph and Bremerhaven). Merged into main
+the same evening, after the Canada work below; the newest extract of every region was recounted with
+v64.0 at once, and the overnight job recounts the rest. From then on the scheduled update's last step
+opens a GitHub issue "Repin to StreetComplete vX.Y" when the app moves on.
+
+**Canada joined on 2026-10-21** (DESIGN.md, "Regions: the rest of Canada"): 63 cities, every
+municipality over 50,000 in the 2021 census that was not yet counted, in eight new regions (Quebec,
+British Columbia, Alberta, Saskatchewan, Manitoba, New Brunswick, Nova Scotia, Newfoundland and
+Labrador, one Geofabrik extract each) plus the five Ontario ones the farmland list lacked. Their monthly
+history is counted overnight by `.scratch/canada-backfill.sh` (log: `logs/canada-backfill.log`), which
+also recounts Ontario's and Germany's published snapshots with v64.0, merges, rebuilds the history and
+commits "data 2017-01-01 to 2026-10-01: monthly history of the Canadian cities outside Ontario; ..."
+locally; the next scheduled run pushes it. It runs about a day (a Quebec month about 2 min, an Ontario
+recount about 5 min, 117 months each) and pauses around the 13:15 slot. Check that commit exists and
+that Montreal's and Vancouver's lines reach back to 2017; if the log ends in an error, rerun the script
+(every step skips what is done). The territories are not counted: Whitehorse (28k), Yellowknife (20k)
+and Iqaluit (7k) are under the bar, and Nunavut's extract alone is 1.4 GB.
 
 **Germany's city-states joined on 2026-10-13** (DESIGN.md, "Regions"): Berlin, Hamburg, Bremen and
 Bremerhaven, because Ontario's totals barely move and Germany is where SC is used most. Each region is a

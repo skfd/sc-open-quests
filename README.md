@@ -1,7 +1,7 @@
 # sc-open-quests
 
-How many [StreetComplete](https://streetcomplete.app/) quests are open in each Ontario city, by quest
-type, and how that changes day to day. Each number is what a StreetComplete user standing in that city
+How many [StreetComplete](https://streetcomplete.app/) quests are open in each Canadian city over 50,000 people (and in
+Berlin, Hamburg and Bremen), by quest type, and how that changes day to day. Each number is what a StreetComplete user standing in that city
 would see, with the app's default settings, on a pinned app version. Live site:
 https://skfd.github.io/sc-open-quests/ (GitHub Pages from `docs/`).
 
@@ -11,9 +11,10 @@ This project is **read-only**: it never edits OpenStreetMap.
 
 1. **Quest definitions come from the app's own build.** `tools/sc-harness` dumps every quest's resolved
    element filter from StreetComplete into `data/quests/v<SC>.json`. Nothing is hand-written.
-2. **The engine** (`engine/`, Kotlin on the JVM, running StreetComplete's own filter code) reads the
-   Geofabrik Ontario extract and counts each quest per city polygon (`config/cities.json`, 48
-   municipalities). It writes one snapshot per extract to `docs/data/snapshots/<asOfDate>.json`.
+2. **The engine** (`engine/`, Kotlin on the JVM, running StreetComplete's own filter code) reads each
+   region's Geofabrik extract (`config/regions.json`: the provinces, the German city-states) and counts
+   each quest per city polygon (`config/cities.json`, 115 municipalities). It writes one snapshot per
+   extract to `docs/data/<region>/snapshots/<asOfDate>.json`.
 3. **`run.py history`** rebuilds the per-city time series in `docs/data/history/` and the city index
    `docs/data/cities.json` from all snapshots.
 4. **The site** (`docs/index.html`, no build step) reads that JSON.
@@ -30,15 +31,15 @@ the JSON.
   (`C:\Program Files\Android\Android Studio\jbr`) when it exists, otherwise your `JAVA_HOME`.
   `count` builds the engine (`engine\gradlew.bat installDist`) when it is missing or older than its
   sources.
-- About 12 GB of free RAM for a full Ontario pass.
+- About 40 GB of free RAM for a full Ontario pass (53 cities; the engine's heap is 40 GB).
 - Extracts come from the shared store `~/Code/.osm-data`, managed by `~/Code/osm-extracts`
   (override with `OSM_DATA_DIR` / `OSM_EXTRACTS_TOOL`). This project never downloads a PBF itself.
 
 ## Usage
 
 ```bash
-python run.py download   # osm-extracts fetch ontario (it skips an unchanged extract)
-python run.py count      # engine on the newest extract -> docs/data/snapshots/<asOfDate>.json (skipped if counted)
+python run.py download   # osm-extracts fetch <region> for every region (it skips an unchanged extract)
+python run.py count      # engine on each region's newest extract -> docs/data/<region>/snapshots/ (skipped if counted)
 python run.py backfill   # count every dated extract still in the store
 python run.py history    # snapshots -> docs/data/history/<city>.json + docs/data/cities.json
 python run.py update     # all three, then commit "data <asOfDate>" and push
