@@ -5,7 +5,7 @@ import de.westnordost.streetcomplete.data.elementfilter.toElementFilterExpressio
 import de.westnordost.streetcomplete.data.osm.mapdata.Element
 import de.westnordost.streetcomplete.data.osm.mapdata.ElementType
 import de.westnordost.streetcomplete.osm.LAST_CHECK_DATE_KEYS
-import de.westnordost.streetcomplete.osm.isPlace
+import de.westnordost.streetcomplete.osm.places.isPlace
 
 /** Port of SC quests/shop_type/CheckShopExistence.kt. getApplicableElements = mapData.filter { isApplicableTo(it) } */
 object CheckShopExistence : CustomQuest {
@@ -32,13 +32,13 @@ object CheckShopExistence : CustomQuest {
             older today -2 years
             or ${LAST_CHECK_DATE_KEYS.joinToString(" or ") { "$it < today -2 years" }}
           )
-          and (name or brand or noname = yes or name:signed = no)
     """).toElementFilterExpression() }
 
+    // Apply 'filter' last since it will check the age of almost every element (very slow)
     override fun isApplicable(element: Element): Boolean =
-        filter.matches(element) &&
         element.isPlace() &&
-        hasName(element)
+        hasName(element) &&
+        filter.matches(element)
 
     private fun hasName(element: Element) = hasProperName(element.tags) || hasFeatureName(element)
 

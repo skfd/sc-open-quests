@@ -1,4 +1,4 @@
-// COPIED by engine/port_area_quests.py from StreetComplete app/src/androidMain/kotlin/de/westnordost/streetcomplete/quests/ferry/FerryUtils.kt
+// COPIED by engine/port_area_quests.py from StreetComplete app/src/commonMain/kotlin/de/westnordost/streetcomplete/quests/ferry/FerryUtils.kt
 // (sha256 of its LF text e2532e05bf95cf63bc0679fe26f077a2238b0e0fa256a4c33c53a17ddfcf8f2f, pinned in engine/PORTED-QUESTS.txt), unchanged below this header.
 package de.westnordost.streetcomplete.quests.ferry
 

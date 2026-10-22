@@ -4,8 +4,8 @@ import de.westnordost.streetcomplete.data.elementfilter.toElementFilterExpressio
 import de.westnordost.streetcomplete.data.osm.mapdata.Element
 import de.westnordost.streetcomplete.data.osm.mapdata.ElementType
 import de.westnordost.streetcomplete.osm.LAST_CHECK_DATE_KEYS
-import de.westnordost.streetcomplete.osm.isDisusedPlace
-import de.westnordost.streetcomplete.osm.isPlace
+import de.westnordost.streetcomplete.osm.places.isDisusedPlace
+import de.westnordost.streetcomplete.osm.places.isPlace
 
 /** Port of SC quests/shop_type/CheckShopType.kt. getApplicableElements = mapData.filter { isApplicableTo(it) } */
 object CheckShopType : CustomQuest {

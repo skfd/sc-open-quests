@@ -14,8 +14,8 @@ object AddOnewayAerialway : CustomQuest {
 
     private val elementFilter by lazy { """
         ways with
-        aerialway ~ gondola|mixed_lift|chair_lift|t-bar|j-bar|platter
-        and !oneway
+          aerialway ~ gondola|mixed_lift|chair_lift|t-bar|j-bar|platter
+          and !oneway
     """.toElementFilterExpression() }
 
     override fun isApplicable(element: Element): Boolean = element is Way && elementFilter.matches(element)

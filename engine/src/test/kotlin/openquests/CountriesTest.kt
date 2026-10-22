@@ -62,7 +62,7 @@ class CountriesTest {
     }
 
     @Test fun `registry dump gives the expected gating for Toronto`() {
-        val registry = Registry.load(File("data/quests/v63.4.json"))
+        val registry = Registry.load(File("data/quests/v64.0.json"))
         val cities = loadCities(File("config/cities.json"), File("."))
         val toronto = cities.single { it.id == "toronto" }
         val statuses = registry.quests.groupingBy { questStatus(it, toronto) }.eachCount()

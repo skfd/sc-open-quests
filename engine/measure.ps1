@@ -5,7 +5,7 @@
 
 .EXAMPLE
   ./engine/measure.ps1 count --pbf C:\Users\kk\Code\.osm-data\ontario\ontario-2026-10-10.osm.pbf `
-      --quests data/quests/v63.4.json --cities config/cities.json --out docs/data
+      --quests data/quests/v64.0.json --cities config/cities.json --out docs/data
 #>
 $ErrorActionPreference = 'Stop'
 if (-not $env:JAVA_HOME) { $env:JAVA_HOME = 'C:\Program Files\Android\Android Studio\jbr' }

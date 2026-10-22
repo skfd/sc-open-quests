@@ -21,7 +21,7 @@ import openquests.custom.ScFeatures
 object FastAddIsAmenityIndoor : FastTwin {
     override val name = "AddIsAmenityIndoor"
     override val usesAge = false
-    override val sourceSha256 = "deef83a6cd2eb322936e903b85e3995ed3117c5478b0f87f09874ac0fa99878e"
+    override val sourceSha256 = "c427676015f721f598738468f1dc3de82f7632c93fc113dfb47de3e8962484ec"
 
     private val getFeature: (Element) -> Feature? = ScFeatures::getFeature
 
@@ -29,7 +29,7 @@ object FastAddIsAmenityIndoor : FastTwin {
         nodes with
           (
             emergency ~ defibrillator|fire_extinguisher|fire_hose|first_aid_kit
-            or amenity ~ atm|drinking_water|telephone|parcel_locker|library_dropoff|luggage_locker|locker|post_box|public_bookcase|give_box|ticket_validator|shower|vending_machine
+            or amenity ~ atm|bicycle_repair_station|drinking_water|telephone|parcel_locker|library_dropoff|luggage_locker|locker|post_box|public_bookcase|give_box|ticket_validator|shower|vending_machine
             or amenity = clock and display != sundial
           )
           and access !~ private|no
@@ -38,11 +38,13 @@ object FastAddIsAmenityIndoor : FastTwin {
     """.toElementFilterExpression() }
 
     private val nodesOnWalls by lazy { """
-        nodes with emergency ~ defibrillator|fire_extinguisher|fire_hose
+        nodes with
+          emergency ~ defibrillator|fire_extinguisher|fire_hose
     """.toElementFilterExpression() }
 
     private val buildingFilter by lazy { """
-        ways, relations with building and building != roof
+        ways, relations with
+          building and building != roof
     """.toElementFilterExpression() }
 
     override fun getApplicableElements(mapData: MapDataWithGeometry): Iterable<Element> {

@@ -2,12 +2,11 @@ package de.westnordost.streetcomplete.data.meta
 
 import com.charleskorn.kaml.Yaml
 import com.charleskorn.kaml.YamlConfiguration
-import de.westnordost.streetcomplete.util.countryboundaries.CountryBoundaries
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import de.westnordost.streetcomplete.resources.Res
-import de.westnordost.streetcomplete.ui.ktx.readBytesOrNull
+import de.westnordost.streetcomplete.ui.ktx.readYamlOrNull
+import de.westnordost.streetcomplete.util.countryboundaries.CountryBoundaries
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.decodeFromString
 
 class CountryInfos(private val res: Res) {
     private val yaml = Yaml(
@@ -22,7 +21,7 @@ class CountryInfos(private val res: Res) {
     /** Get the info by a list of country codes sorted by size. E.g. DE-NI,DE gets the info
      *  for Lower Saxony in Germany and uses defaults from Germany */
     fun get(regionCode: List<String>): CountryInfo =
-        CountryInfo(regionCode.mapNotNull { get(it) } + default)
+        CountryInfo(regionCode.firstOrNull(), regionCode.mapNotNull { get(it) } + default)
 
     private fun get(regionCode: String): IncompleteCountryInfo? {
         if (!countryInfos.containsKey(regionCode)) {
@@ -31,16 +30,10 @@ class CountryInfos(private val res: Res) {
         return countryInfos[regionCode]
     }
 
-    private fun load(regionCode: String): IncompleteCountryInfo? {
-        val bytes = runBlocking { res.readBytesOrNull("files/country_metadata/$regionCode.yml") }
-        if (bytes == null) return null
-        val countryCode = regionCode.split("-").first()
-        val yml =
-            "countryCode: $countryCode\n" +
-            bytes.decodeToString()
-
-        return yaml.decodeFromString(yml)
-    }
+    private fun load(regionCode: String): IncompleteCountryInfo? =
+        runBlocking {
+            res.readYamlOrNull<IncompleteCountryInfo>("files/country_metadata/$regionCode.yml", yaml)
+        }
 }
 
 fun CountryInfos.get(countryBoundaries: CountryBoundaries, position: LatLon): CountryInfo =

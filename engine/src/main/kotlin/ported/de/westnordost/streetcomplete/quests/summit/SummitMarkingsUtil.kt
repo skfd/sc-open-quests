@@ -1,4 +1,4 @@
-// COPIED by engine/port_area_quests.py from StreetComplete app/src/androidMain/kotlin/de/westnordost/streetcomplete/quests/summit/SummitMarkingsUtil.kt
+// COPIED by engine/port_area_quests.py from StreetComplete app/src/commonMain/kotlin/de/westnordost/streetcomplete/quests/summit/SummitMarkingsUtil.kt
 // (sha256 of its LF text 41d377bff5b8e46f2eca2befacfa7d072c9b238fc516333940a413bb71b99712, pinned in engine/PORTED-QUESTS.txt), unchanged below this header.
 package de.westnordost.streetcomplete.quests.summit
 

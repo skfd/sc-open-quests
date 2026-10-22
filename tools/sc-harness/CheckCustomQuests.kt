@@ -75,7 +75,7 @@ fun main() {
     }
 
     // resolve quest names before reading a possibly huge input
-    // getFeature as the app wires it (AndroidModule2): { featureDictionaryLazy.value.getFeature(it) }
+    // getFeature as the app wires it (CommonModule; AndroidModule2 up to v63): { featureDictionaryLazy.value.getFeature(it) }
     val presets = System.getProperty("sc.presets")?.takeIf { it.isNotBlank() }
         ?: "src/commonMain/composeResources/files/osmfeatures/default"
     val brands = File(presets).resolveSibling("brands").path
@@ -83,7 +83,7 @@ fun main() {
         System.err.println("feature dictionary: $presets (+ $brands), locale ${java.util.Locale.getDefault().toLanguageTag()}")
         FeatureDictionary.create(SystemFileSystem, presets, brands)
     }
-    // getCountryInfoByLocation and getCountryOrSubdivisionCode as the app wires them (AndroidModule2):
+    // getCountryInfoByLocation and getCountryOrSubdivisionCode as the app wires them (CommonModule):
     // { countryInfos.get(countryBoundaries, it) } and { countryBoundaries.getIds(it).firstOrNull() },
     // over the checkout's boundaries.ser and country_metadata/ (CountryInfos reads them through
     // Compose resources, which do not load here, so its load() is mirrored below with SC's kaml setup)
@@ -97,11 +97,14 @@ fun main() {
     val incompleteInfos = java.util.concurrent.ConcurrentHashMap<String, java.util.Optional<IncompleteCountryInfo>>()
     fun loadInfo(regionCode: String): IncompleteCountryInfo? = incompleteInfos.getOrPut(regionCode) {
         val f = File(files, "country_metadata/$regionCode.yml")
+        // v64: readYamlOrNull decodes the file as it is (up to v63 a "countryCode:" line was prepended)
         java.util.Optional.ofNullable(if (!f.isFile) null else
-            yaml.decodeFromString<IncompleteCountryInfo>("countryCode: ${regionCode.split("-").first()}\n" + f.readText()))
+            yaml.decodeFromString<IncompleteCountryInfo>(f.readText()))
     }.orElse(null)
     val getCountryInfoByLocation: (LatLon) -> CountryInfo = { pos ->
-        CountryInfo(countryBoundaries.getIds(pos).mapNotNull { loadInfo(it) } + loadInfo("default")!!)
+        val ids = countryBoundaries.getIds(pos)
+        // v64: CountryInfo(countryOrSubdivisionCode, infos); up to v63 CountryInfo(infos)
+        CountryInfo(ids.firstOrNull(), ids.mapNotNull { loadInfo(it) } + loadInfo("default")!!)
     }
     val registry = questTypeRegistry(
         mock(),

@@ -29,10 +29,6 @@ enum class WeightMeasurementUnit(val displayString: String) {
 
 @Serializable
 data class IncompleteCountryInfo(
-    // this value is not defined in the yaml file but it is the ISO language code part of the file name!
-    // e.g. US for US-TX.yml
-    val countryCode: String,
-
     // sorted alphabetically for better overview
     val additionalStreetsignLanguages: List<String>? = null,
     val additionalValidHousenumberRegex: String? = null,
@@ -41,7 +37,9 @@ data class IncompleteCountryInfo(
     val atmOperators: List<String>? = null,
     val centerLineStyle: String? = null,
     val chargingStationOperators: List<String>? = null,
+    val chargingStationSocketTypes: List<String>? = null,
     val clothesContainerOperators: List<String>? = null,
+    val domesticSocketTypes: List<String>? = null,
     val edgeLineStyle: String? = null,
     val exclusiveCycleLaneStyle: String? = null,
     val hasAdvisorySpeedLimitSign: Boolean? = null,
@@ -83,8 +81,13 @@ data class IncompleteCountryInfo(
     val workweek: String? = null,
 )
 
-data class CountryInfo(private val infos: List<IncompleteCountryInfo>) {
-    val countryCode get() = infos.first().countryCode
+data class CountryInfo(
+    /** e.g. US-AL */
+    val countryOrSubdivisionCode: String?,
+    private val infos: List<IncompleteCountryInfo>
+) {
+    /** e.g. US */
+    val countryCode: String? = countryOrSubdivisionCode?.substringBefore('-')
 
     // part of default.yml, so cannot be null
     val advisorySpeedLimitSignStyle: String get() =
@@ -159,8 +162,12 @@ data class CountryInfo(private val infos: List<IncompleteCountryInfo>) {
          infos.firstNotNullOfOrNull { it.atmOperators }
     val chargingStationOperators: List<String>? get() =
          infos.firstNotNullOfOrNull { it.chargingStationOperators }
+    val chargingStationSocketTypes: List<String> get() =
+         infos.firstNotNullOfOrNull { it.chargingStationSocketTypes } ?: emptyList()
     val clothesContainerOperators: List<String>? get() =
          infos.firstNotNullOfOrNull { it.clothesContainerOperators }
+    val domesticSocketTypes: List<String> get() =
+         infos.firstNotNullOfOrNull { it.domesticSocketTypes } ?: emptyList()
     val livingStreetSignStyle: String? get() =
          infos.firstNotNullOfOrNull { it.livingStreetSignStyle }
     val mobileCountryCode: Int? get() =
@@ -190,7 +197,7 @@ data class CountryInfo(private val infos: List<IncompleteCountryInfo>) {
     val languageTag: String?
         get() {
             val lang = language ?: return null
-            return "$lang-$countryCode"
+            return if (countryCode == null) lang else "$lang-$countryCode"
         }
 
     /** the country locale, but preferring the user's set language if the country has several
@@ -199,7 +206,9 @@ data class CountryInfo(private val infos: List<IncompleteCountryInfo>) {
         get() {
             if (officialLanguages.isEmpty()) return Locale.current
 
-            val locales = officialLanguages.map { Locale("$it-$countryCode") }
+            val locales = officialLanguages.map {
+                Locale(if (countryCode == null) it else "$it-$countryCode")
+            }
             val preferredLocale = locales.find { it.language == Locale.current.language }
             return preferredLocale ?: locales.first()
         }

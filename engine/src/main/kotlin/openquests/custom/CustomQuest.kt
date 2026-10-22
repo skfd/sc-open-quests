@@ -5,9 +5,10 @@ import de.westnordost.streetcomplete.data.osm.mapdata.ElementType
 
 /**
  * A custom StreetComplete quest (an `OsmElementQuestType` that is not an `OsmFilterQuestType`) whose
- * applicability is decided by the element's own tags, ported from SC's androidMain.
+ * applicability is decided by the element's own tags, ported from SC's quest source (commonMain since
+ * v64, androidMain before).
  *
- * SC keeps these quests next to their Android forms, so they cannot be vendored as they are. Each port
+ * SC keeps these quests next to their Compose forms, so they cannot be vendored as they are. Each port
  * copies the quest's filter strings and `isApplicableTo()` verbatim and calls the vendored SC helpers
  * they use; [isApplicable] is what the quest's `getApplicableElements(mapData)` keeps, since that is
  * what the app runs on downloaded data (`OsmQuestController`). The upstream file of each port is pinned

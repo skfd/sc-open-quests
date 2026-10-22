@@ -1,9 +1,11 @@
 """Generate engine ports of StreetComplete custom quests that need the surrounding map data.
 
-SC keeps its quest classes in androidMain next to their Android forms, so they cannot be vendored as
-they are. This script copies a quest's source and keeps only what decides where it applies:
+SC keeps a quest's Compose form next to its logic (in commonMain since v64, in androidMain before), so
+the file cannot be vendored as it is. This script copies a quest's source and keeps only what decides
+where it applies:
 
-- the imports (minus Android, resources, achievements and the quest-type interfaces),
+- the imports (minus Compose, resources, achievements and the quest-type interfaces; a `Foo.*` import
+  of a quest package stays only when the kept code names Foo, e.g. `ChargingStationSocket.entries`),
 - everything outside the class (top-level filters and helper functions), verbatim,
 - inside the class, every member that is not an override (private filters and helpers), plus
   `override fun getApplicableElements(mapData: MapDataWithGeometry)`, verbatim.
@@ -28,7 +30,7 @@ import sys
 from pathlib import Path
 
 ENGINE = Path(__file__).resolve().parent
-PKG_ROOT = "app/src/androidMain/kotlin/de/westnordost/streetcomplete"
+PKG_ROOT = "app/src/commonMain/kotlin/de/westnordost/streetcomplete"
 
 DROP_IMPORTS = [
     r"\.R$",
@@ -36,13 +38,15 @@ DROP_IMPORTS = [
     r"\.data\.user\.achievements\.",
     r"\.data\.quest\.AndroidQuest$",
     r"\.data\.osm\.osmquests\.OsmElementQuestType$",
+    r"\.data\.osm\.osmquests\.QuestAction$",
+    r"^androidx\.compose\.",
     r"\.screens\.",
     r"^org\.jetbrains\.compose\.",
     r"\.view\.",
     r"\.ui\.",
 ]
 
-# androidMain files of quest packages that hold only helpers used by the ported quests; copied whole
+# files of quest packages that hold only helpers used by the ported quests; copied whole
 HELPERS = [
     "quests/ferry/FerryUtils.kt",
     "quests/level/LevelUtils.kt",
@@ -61,22 +65,8 @@ def find_quest_file(sc: Path, name: str) -> Path:
     hits = [p for p in (sc / PKG_ROOT / "quests").rglob(f"{name}.kt")
             if re.search(rf"^class {name}\b", lf(p), re.M)]
     if len(hits) != 1:
-        sys.exit(f"{name}: expected one androidMain file declaring class {name}, found {hits}")
+        sys.exit(f"{name}: expected one file declaring class {name}, found {hits}")
     return hits[0]
-
-
-def declared_in_common_main(sc: Path, target: str) -> bool:
-    """False for an import from a quests package whose class is not in commonMain, i.e. an answer
-    or form type that lives in androidMain with the quest and is only used by the dropped members."""
-    parts = target.split(".")
-    if "quests" not in parts:
-        return True
-    i = next((k for k, p in enumerate(parts) if p[:1].isupper()), None)
-    if i is None:
-        return True  # a top-level function or value; let the compiler judge
-    folder = sc / "app/src/commonMain/kotlin" / "/".join(parts[:i])
-    decl = re.compile(rf"\b(class|object|interface|typealias)\s+{parts[i]}\b")
-    return folder.is_dir() and any(decl.search(lf(p)) for p in folder.glob("*.kt"))
 
 
 def matching_brace(text: str, open_idx: int) -> int:
@@ -132,7 +122,7 @@ def split_members(body: str) -> list[tuple[str, str]]:
             pending.append(line)
             in_comment = "*/" not in stripped
             continue
-        if indent4 and stripped.startswith("//"):
+        if indent4 and stripped.startswith(("//", "@")):  # a comment or annotation goes with its member
             pending.append(line)
             continue
         if indent4 and stripped.startswith("/*"):
@@ -151,7 +141,7 @@ def split_members(body: str) -> list[tuple[str, str]]:
             chunks[-1].append(line)
     out = []
     for c in chunks:
-        first = next(l for l in c if l.strip() and not l.strip().startswith(("//", "/*", "*")))
+        first = next(l for l in c if l.strip() and not l.strip().startswith(("//", "/*", "*", "@")))
         out.append((first.strip(), "\n".join(c).rstrip()))
     return out
 
@@ -184,7 +174,6 @@ def port(sc: Path, name: str) -> tuple[Path, str, str]:
     head, body, tail = text[:class_start], text[open_idx + 1:close_idx], text[close_idx + 1:]
     imports = [l for l in head.split("\n") if l.startswith("import ")]
     imports = [l for l in imports if not any(re.search(p, l[len("import "):]) for p in DROP_IMPORTS)]
-    imports = [l for l in imports if declared_in_common_main(sc, l[len("import "):])]
     between = "\n".join(l for l in head.split("\n")[1:] if not l.startswith("import ")).strip()
 
     kept = []
@@ -210,10 +199,15 @@ def port(sc: Path, name: str) -> tuple[Path, str, str]:
                         .replace(f"override val {member}", f"val {member}", 1))
 
     kept_text = "\n\n".join(kept) + "\n" + tail + "\n" + between
-    # drop imports that only the dropped members used
+    # drop imports that only the dropped members used. A `Foo.*` import of a quest package (an answer
+    # enum next to the form) stays only when the kept code names Foo; the vendored osm/ enums
+    # (Cycleway.*, ...) stay as they are
     def used(imp: str) -> bool:
-        leaf = imp.rsplit(".", 1)[1]
-        return leaf == "*" or re.search(rf"\b{re.escape(leaf)}\b", kept_text) is not None
+        parts = imp.split(".")
+        leaf = parts[-1]
+        if leaf == "*":
+            return "quests" not in parts or re.search(rf"\b{re.escape(parts[-2])}\b", kept_text) is not None
+        return re.search(rf"\b{re.escape(leaf)}\b", kept_text) is not None
     imports = [l for l in imports if used(l[len("import "):])]
     feature_line = ""
     for p in param_names:
@@ -242,7 +236,7 @@ def port(sc: Path, name: str) -> tuple[Path, str, str]:
     out = (
         f"// GENERATED by engine/port_area_quests.py from StreetComplete {PKG_ROOT}/{rel}\n"
         f"// (sha256 of its LF text {sha}, pinned in engine/PORTED-QUESTS.txt). Do not edit: rerun the script.\n"
-        f"// Kept verbatim: the filters, helpers and getApplicableElements(); dropped: the Android UI and\n"
+        f"// Kept verbatim: the filters, helpers and getApplicableElements(); dropped: the Compose UI and\n"
         f"// answer members. StreetComplete is GPL-3.0.\n"
         f"package {package}\n\n"
         + "\n".join(imports) + "\n\n"
@@ -261,7 +255,7 @@ def port(sc: Path, name: str) -> tuple[Path, str, str]:
 
 
 def copy_helper(sc: Path, rel: str) -> tuple[str, str]:
-    """An androidMain helper file of a quest package, copied whole with a header."""
+    """A helper file of a quest package, copied whole with a header."""
     text = lf(sc / PKG_ROOT / rel)
     sha = hashlib.sha256(text.encode("utf-8")).hexdigest()
     package = re.search(r"^package ([\w.]+)$", text, re.M).group(1)

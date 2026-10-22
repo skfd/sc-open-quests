@@ -42,6 +42,13 @@ Milestone 1 is done and the site is live at https://skfd.github.io/sc-open-quest
 all 176 quest types of SC v63.4 that the app offers there (14 more are not offered in Ontario), monthly from 2017-01 and daily since 2026-10. `kk-SCOpenQuests` runs daily
 at 13:15. Design and known gaps are in DESIGN.md.
 
+**Repinned to SC v64.0 on 2026-10-21, on branch `sc-v64`** (worktree `../sc-open-quests-v64`; DESIGN.md,
+"Repin to StreetComplete v64.0", with the merge recipe; the routine is REPIN.md). 193 quest types, all
+counted and oracle-checked (Guelph and Bremerhaven). Not merged yet: main had uncommitted province work
+from another session. After the merge the first run from main makes the first v64 data commit. From
+then on the scheduled update's last step opens a GitHub issue "Repin to StreetComplete vX.Y" when the
+app moves on.
+
 **Germany's city-states joined on 2026-10-13** (DESIGN.md, "Regions"): Berlin, Hamburg, Bremen and
 Bremerhaven, because Ontario's totals barely move and Germany is where SC is used most. Each region is a
 Geofabrik extract (`config/regions.json`); the daily run counts all four regions. Their monthly history
@@ -59,7 +66,7 @@ Next, in order:
    UTC). At 13:15 (17:15 UTC) that dump is probably not there yet, so data for day D lands on D+2. Watch
    the first runs (`logs/scheduler.log`: "no notes dump reaches ..."); if it is always a day behind, add
    a second, evening slot. A run raises once an extract has waited 3 days.
-2. **Custom quests are done.** All 51 are counted and checked exactly against SC (engine/README.md,
+2. **Custom quests are done.** All 51 (52 since v64.0) are counted and checked exactly against SC (engine/README.md,
    "Custom quests" and "Area quests"; the last three use SC's country metadata per position). Left:
    - the note quest. Done 2026-10-12 (DESIGN.md, "Notes"), with the hiding below.
    The area unit is the whole city since 2026-10-12 (DESIGN.md, "Area unit").
@@ -83,10 +90,7 @@ Next, in order:
    check: `.scratch/drive.py` is not kept; `tests/fixtures/screenshot.py` takes the query now.
 6. **Smaller items:**
    - ~~Model open OSM notes, since the app hides quests at a note's position.~~ Done 2026-10-12.
-   - Write down the routine for SC version bumps (v64: rerun `tools/sc-harness`, `engine/sync-sc.ps1`;
-     the note filter is pinned in `PORTED-QUESTS.txt` as helper:OsmNoteQuest; then
-     `tools/sc_assets.py <sc-checkout>` for the icons and titles, `tools/sc_releases.py` for the
-     release pins).
+   - ~~Write down the routine for SC version bumps.~~ Done 2026-10-21: REPIN.md, used for v64.0.
    - ~~Make the site look like StreetComplete; show app releases on the timeline.~~ Done 2026-10-13
      (DESIGN.md, "Site look").
    - Heatmap per quest type (stretch goal).

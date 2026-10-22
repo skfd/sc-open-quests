@@ -9,14 +9,15 @@
 
   The files compile unchanged on a plain JVM because the build applies the kotlinx.serialization
   compiler plugin (for the @Serializable annotations in Element.kt, ElementGeometry.kt, ...) and uses
-  the same Kotlin (2.4.0) and kotlinx-datetime (0.8.0) versions as SC v63.4. util/ktx/Element.kt
+  the same Kotlin (2.4.20) and kotlinx-datetime (0.8.0) versions as SC v64.0. util/ktx/Element.kt
   imports de.westnordost.osmfeatures.GeometryType, from the osmfeatures library (jvm variant). osm/Sides.kt
   imports SC's Side enum from a Compose file; the engine stubs it in src/main/kotlin/stubs/.
 
-  Custom quests are not vendored (their files hold Android UI code); their logic is transcribed into
-  src/main/kotlin/openquests/custom/ or generated into src/main/kotlin/ported/ by port_area_quests.py,
-  and each upstream file is pinned in PORTED-QUESTS.txt. The script fails before copying anything if a
-  pinned file changed at the requested tag.
+  Custom quests are not vendored (their files hold Compose UI code; since v64 they live in commonMain
+  with everything else); their logic is transcribed into src/main/kotlin/openquests/custom/ or generated
+  into src/main/kotlin/ported/ by port_area_quests.py, and each upstream file is pinned in
+  PORTED-QUESTS.txt. The script fails before copying anything if a pinned file changed at the requested
+  tag.
 
   Patches applied after the copy (listed in SC-VERSION.txt, both hashes recorded):
     clock  util/ktx/Instant.kt: systemTimeNow() reads a settable `var systemClock: Clock`
@@ -27,13 +28,18 @@
     multiplier  data/elementfilter/filters/RelativeDate.kt: `RelativeDate.MULTIPLIER` (the app's
            resurvey setting) reads a thread-local override first, so that one pass can count the
            age quests at 0.5, 1 and 2. Same verbatim-line rule.
+    nolazy  Since v64 a date filter caches its threshold (`RelativeDate.date` and the filters'
+           `dateTimestamp` are `by lazy`), so the first evaluation would fix the clock and the
+           multiplier for the filter's lifetime. The engine evaluates one filter instance at the
+           extract's time, at 1900 (agedOnly) and at three multipliers, so both become getters again,
+           as they were up to v63. Same verbatim-line rule (the filter line occurs twice).
 
 .EXAMPLE
-  ./sync-sc.ps1 -ScPath C:\Users\kk\AppData\Local\Temp\sc-v63.4 -Tag v63.4
+  ./sync-sc.ps1 -ScPath C:\Users\kk\AppData\Local\Temp\sc-v64.0 -Tag v64.0
 #>
 param(
     [Parameter(Mandatory = $true)][string]$ScPath,
-    [string]$Tag = 'v63.4'
+    [string]$Tag = 'v64.0'
 )
 $ErrorActionPreference = 'Stop'
 
@@ -104,15 +110,19 @@ $files = @(
     "$pkg/osm/Sides.kt"
     "$pkg/osm/sidewalk/Sidewalk.kt"
     "$pkg/osm/sidewalk/SidewalkParser.kt" # parseSidewalkSides()
-    "$pkg/osm/Places.kt" # isPlace(), isDisusedPlace()
+    "$pkg/osm/places/Places.kt" # isPlace(), isDisusedPlace()
     "$pkg/osm/Feature.kt" # applyTo(), used by Places.kt
     "$pkg/osm/opening_hours/OpeningHoursValidator.kt" # isSupported()
     "$pkg/osm/opening_hours/Utils.kt" # getMonths(), getWeekdays(), used by OpeningHoursValidator
     "$pkg/osm/opening_hours/HierarchicOpeningHours.kt" # used by Utils.kt
+    "$pkg/osm/opening_hours/OpeningHoursParser.kt" # toHierarchicOpeningHours(), used by the serializer (v64)
+    "$pkg/osm/opening_hours/OpeningHoursGenerator.kt" # toOpeningHours(), used by HierarchicOpeningHours.kt (v64)
+    "$pkg/util/serialization/HierarchicOpeningHoursSerializer.kt" # @Serializable(with = ...) on HierarchicOpeningHours (v64)
     "$pkg/osm/LifecycleUtils.kt" # asIfItWasnt(), used by Places.kt
     "$pkg/quests/recycling_material/RecyclingMaterial.kt"
     "$pkg/util/tree/Node.kt" # buildTree(), used by RecyclingMaterial
     "$pkg/util/ktx/FeatureDictionary.kt" # getFeature(), as the app's registry gets it
+    "$pkg/util/locale/FeatureDictionaryUtil.kt" # getLanguagesForFeatureDictionary(): the phone's locales (stubbed LocaleList)
     # map data for the quests that need surroundings (src/main/kotlin/ported/, port_area_quests.py)
     "$pkg/data/osm/mapdata/MapDataWithGeometry.kt"
     "$pkg/data/osm/mapdata/MutableMapDataWithGeometry.kt"
@@ -138,15 +148,17 @@ $files = @(
     "$pkg/osm/shoulders/Shoulders.kt"
     "$pkg/osm/shoulders/ShouldersParser.kt"
     "$pkg/osm/ParsingUtils.kt" # expandSidesTags()
-    "$pkg/quests/barrier_type/StileTypeAnswer.kt"
+    "$pkg/quests/barrier_type/StileType.kt" # AddStileType
     "$pkg/util/ktx/Map.kt" # containsAll()
     "$pkg/util/ktx/Boolean.kt" # toYesNo()
     "$pkg/util/math/LatLonRaster.kt"
     "$pkg/util/math/ElementGeometryMath.kt" # intersects(), isInMultipolygon()
     "$pkg/osm/RoadWidthUtils.kt" # estimateUsableRoadwayWidth()
-    "$pkg/osm/Things.kt" # isThing()
+    "$pkg/osm/things/Things.kt" # isThing(), isThingOrDisusedThing() (util/ktx/Element.kt)
     "$pkg/osm/CrossingUtils.kt" # isCrossing()
     "$pkg/data/osm/mapdata/ElementKey.kt"
+    "$pkg/quests/socket/ChargingStationSocket.kt" # the socket enum, spliced into AddChargingStationSocket's filter (v64)
+    "$pkg/quests/socket/ChargingStationSocketUtils.kt" # INVALID_CHARGING_STATION_SOCKETS (v64)
     # notes: the note quest (openquests/NoteQuest.kt) and the hiding of quests at open notes
     "$pkg/data/osmnotes/Note.kt"
     "$pkg/data/user/User.kt" # NoteComment.user
@@ -187,15 +199,16 @@ $resources = @(
     'country_metadata/DE.yml'
 )
 
-# Custom quests live in SC's androidMain next to their Android forms, so they are not vendored: their
-# applicability logic is transcribed into src/main/kotlin/openquests/custom/. PORTED-QUESTS.txt pins
-# the upstream file of each (sha256 of the file with LF line endings, i.e. of the git blob's text).
-# If one changed, the script fails: re-check the port against the new file, then update its hash.
-$androidMain = Join-Path $ScPath 'app/src/androidMain/kotlin'
+# Custom quests hold Compose UI code next to their logic, so they are not vendored: their
+# applicability logic is transcribed into src/main/kotlin/openquests/custom/ or generated into
+# src/main/kotlin/ported/. PORTED-QUESTS.txt pins the upstream file of each (sha256 of the file with LF
+# line endings, i.e. of the git blob's text), relative to commonMain (a `cm:` prefix is accepted and
+# ignored; it dated from v63, when the quests sat in androidMain). If one changed, the script fails:
+# re-check the port against the new file, then update its hash.
 $portsFile = Join-Path $PSScriptRoot 'PORTED-QUESTS.txt'
 
-# Patches: file -> (name, upstream line, replacement lines). Applied after the copy; each must match
-# exactly one line verbatim, or the script fails.
+# Patches: file -> (name, upstream line, replacement lines). Applied after the copy, in order; each
+# must match exactly Count lines verbatim (default 1), or the script fails.
 $patches = @(
     @{
         Name = 'clock'
@@ -226,6 +239,27 @@ $patches = @(
         )
         Description = 'data/elementfilter/filters/RelativeDate.kt: MULTIPLIER reads a thread-local override first (`multiplierOverride`)'
     }
+    @{
+        Name = 'nolazy'
+        File = "$pkg/data/elementfilter/filters/RelativeDate.kt"
+        Find = '    override val date: LocalDate by lazy {'
+        Replace = @(
+            '    // sc-open-quests patch: computed on every read (as up to v63), so the engine can move the clock'
+            '    override val date: LocalDate get() = run {'
+        )
+        Description = 'data/elementfilter/filters/RelativeDate.kt: `date` is a getter again, not `by lazy`'
+    }
+    @{
+        Name = 'nolazy'
+        File = "$pkg/data/elementfilter/filters/ElementFilter.kt"
+        Find = '    protected val dateTimestamp by lazy { dateFilter.date.toEpochMilli() }'
+        Count = 2
+        Replace = @(
+            '    // sc-open-quests patch: computed on every read (as up to v63), so the engine can move the clock'
+            '    protected val dateTimestamp get() = dateFilter.date.toEpochMilli()'
+        )
+        Description = 'data/elementfilter/filters/ElementFilter.kt: `dateTimestamp` is a getter again, not `by lazy` (two classes)'
+    }
 )
 
 function Get-Sha256Lf([string]$path) {
@@ -239,8 +273,8 @@ $changed = @()
 foreach ($l in [System.IO.File]::ReadAllLines($portsFile)) {
     if ($l -match '^\s*(#|$)') { continue }
     $name, $path, $sha = -split $l
-    # "cm:<path>" pins a commonMain file whose code is transcribed (e.g. ApplicationConstants.ignoreRelation)
-    $src = if ($path.StartsWith('cm:')) { Join-Path $commonMain "$pkg/$($path.Substring(3))" } else { Join-Path $androidMain "$pkg/$path" }
+    if ($path.StartsWith('cm:')) { $path = $path.Substring(3) }
+    $src = Join-Path $commonMain "$pkg/$path"
     if (-not (Test-Path $src)) { $changed += "$name ($path is gone)"; continue }
     $now = Get-Sha256Lf $src
     if ($now -ne $sha) { $changed += "$name ($path is now $now)" }
@@ -257,7 +291,7 @@ $lines = @(
     "# rerun the script instead. StreetComplete is GPL-3.0 (see src/main/kotlin/sc/LICENSE)."
     "tag=$Tag"
     "commit=$commit"
-    "patches=$(($patches | ForEach-Object { $_.Name }) -join ',')"
+    "patches=$(($patches | ForEach-Object { $_.Name } | Select-Object -Unique) -join ',')"
 )
 foreach ($p in $patches) { $lines += "  $($p.Name): $($p.Description)" }
 $lines += "files (sha256 of the copied file; patched files also give the upstream sha256):"
@@ -269,16 +303,20 @@ foreach ($f in $files) {
     New-Item -ItemType Directory -Force (Split-Path $target) | Out-Null
     Copy-Item $src $target
     $upstream = Get-Sha256 $target
-    $patch = $patches | Where-Object { $_.File -eq $f }
-    if ($patch) {
-        $text = [System.IO.File]::ReadAllText($target)
-        $nl = if ($text.Contains("`r`n")) { "`r`n" } else { "`n" }
-        $fileLines = [regex]::Split($text, '\r?\n')
-        $hits = @($fileLines | Where-Object { $_ -ceq $patch.Find }).Count
-        if ($hits -ne 1) { throw "patch $($patch.Name): expected the line '$($patch.Find)' once in $f, found $hits" }
-        $out = foreach ($l in $fileLines) { if ($l -ceq $patch.Find) { $patch.Replace } else { $l } }
-        [System.IO.File]::WriteAllText($target, ($out -join $nl), (New-Object System.Text.UTF8Encoding $false))
-        $lines += "  $(Get-Sha256 $target)  $f  (patch $($patch.Name); upstream $upstream)"
+    $filePatches = @($patches | Where-Object { $_.File -eq $f })
+    if ($filePatches) {
+        foreach ($patch in $filePatches) {
+            $want = if ($patch.ContainsKey('Count')) { $patch.Count } else { 1 }
+            $text = [System.IO.File]::ReadAllText($target)
+            $nl = if ($text.Contains("`r`n")) { "`r`n" } else { "`n" }
+            $fileLines = [regex]::Split($text, '\r?\n')
+            $hits = @($fileLines | Where-Object { $_ -ceq $patch.Find }).Count
+            if ($hits -ne $want) { throw "patch $($patch.Name): expected the line '$($patch.Find)' $want time(s) in $f, found $hits" }
+            $out = foreach ($l in $fileLines) { if ($l -ceq $patch.Find) { $patch.Replace } else { $l } }
+            [System.IO.File]::WriteAllText($target, ($out -join $nl), (New-Object System.Text.UTF8Encoding $false))
+        }
+        $names = ($filePatches | ForEach-Object { $_.Name }) -join ','
+        $lines += "  $(Get-Sha256 $target)  $f  (patch $names; upstream $upstream)"
     } else {
         $lines += "  $upstream  $f"
     }
@@ -296,8 +334,8 @@ foreach ($f in $resources) {
     $lines += "  $(Get-Sha256 $target)  $f"
 }
 
-$lines += "ported custom quests (sha256 of the androidMain file with LF line endings; logic in src/main/kotlin/openquests/custom/):"
+$lines += "ported custom quests (sha256 of the commonMain file with LF line endings; logic in src/main/kotlin/openquests/custom/ and src/main/kotlin/ported/):"
 $lines += $portLines
 
 [System.IO.File]::WriteAllLines((Join-Path $PSScriptRoot 'SC-VERSION.txt'), [string[]]$lines)
-Write-Host "Vendored $($files.Count) files from StreetComplete $Tag ($commit) into $dest; patches: $(($patches | ForEach-Object { $_.Name }) -join ', ')"
+Write-Host "Vendored $($files.Count) files from StreetComplete $Tag ($commit) into $dest; patches: $(($patches | ForEach-Object { $_.Name } | Select-Object -Unique) -join ', ')"
