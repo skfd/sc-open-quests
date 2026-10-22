@@ -1,5 +1,5 @@
 {
- "scVersion": "63.4",
+ "scVersion": "64.0",
  "quests": {
   "OsmNoteQuestType": {
    "icon": "notes.svg",
@@ -81,6 +81,10 @@
    "icon": "parking_fee.svg",
    "title": "Do you have to pay to park here?"
   },
+  "AddParkingCharge": {
+   "icon": "parking_charge.svg",
+   "title": "How much do you need to pay to park here?"
+  },
   "AddTrafficCalmingType": {
    "icon": "car_bumpy.svg",
    "title": "What type of traffic calming is this?"
@@ -118,7 +122,7 @@
    "title": "What religion is this shrine associated with?"
   },
   "AddPowerAttachment": {
-   "icon": "power.svg",
+   "icon": "power_line.svg",
    "title": "How is this power line attached?"
   },
   "AddPowerPolesMaterial": {
@@ -136,6 +140,10 @@
   "AddMotorcycleParkingCapacity": {
    "icon": "motorcycle_parking_capacity.svg",
    "title": "How many motorcycles can be parked here?"
+  },
+  "AddMotorcycleParkingSurface": {
+   "icon": "motorcycle_parking_surface.svg",
+   "title": "What’s the surface here?"
   },
   "AddMotorcycleParkingFee": {
    "icon": "motorcycle_parking_fee.svg",
@@ -209,10 +217,6 @@
    "icon": "police.svg",
    "title": "Which type of police station is this?"
   },
-  "AddPlaygroundAccess": {
-   "icon": "playground.svg",
-   "title": "Who is allowed to use this playground?"
-  },
   "AddBeachSurface": {
    "icon": "beach.svg",
    "title": "What’s the surface here?"
@@ -281,6 +285,10 @@
    "icon": "laundry.svg",
    "title": "Does this laundry provide self-service?"
   },
+  "AddGeneralAccess": {
+   "icon": "access.svg",
+   "title": "Who may use this?"
+  },
   "AddGeneralFee": {
    "icon": "fee.svg",
    "title": "Do you need to pay to use this?"
@@ -315,11 +323,7 @@
   },
   "AddBbqFuel": {
    "icon": "fire.svg",
-   "title": "What is this grill powered by?"
-  },
-  "AddTowerAccess": {
-   "icon": "tower.svg",
-   "title": "Who may access this tower? It may be free or paid."
+   "title": "What fuel is used to cook here?"
   },
   "AddFirewood": {
    "icon": "firewood.svg",
@@ -352,6 +356,10 @@
   "AddBikeParkingCapacity": {
    "icon": "bicycle_parking_capacity.svg",
    "title": "How many bicycles can be parked here?"
+  },
+  "AddLockable": {
+   "icon": "lock_power.svg",
+   "title": "Can you lock this while charging?"
   },
   "AddBicycleRepairStationServices": {
    "icon": "bicycle_repair_amenity.svg",
@@ -409,21 +417,25 @@
    "icon": "recycling_clothes.svg",
    "title": "Who accepts donations for this clothing bin?"
   },
+  "AddChargingStationMotorcar": {
+   "icon": "car_charger.svg",
+   "title": "Can cars be charged here?"
+  },
   "AddChargingStationBicycles": {
    "icon": "bicycle_charger.svg",
-   "title": "Can bicycles be charged here, too?"
+   "title": "Can bicycles be charged here?"
   },
-  "AddChargingStationCapacity": {
-   "icon": "charger_capacity.svg",
-   "title": "How many cars can be charged here at the same time?"
-  },
-  "AddChargingStationBicycleCapacity": {
-   "icon": "charger_bicycle_capacity.svg",
-   "title": "How many bicycles can be charged here at the same time?"
+  "AddChargingStationSocket": {
+   "icon": "charger_socket.svg",
+   "title": "How many sockets does this charging station have?"
   },
   "AddChargingStationOperator": {
    "icon": "charger_operator.svg",
    "title": "Who is the operator of this charging station?"
+  },
+  "AddVendingMachineType": {
+   "icon": "vending_machine.svg",
+   "title": "What type of vending machine is this?"
   },
   "AddPostboxRoyalCypher": {
    "icon": "crown.svg",
@@ -496,10 +508,6 @@
   "AddOnewayAerialway": {
    "icon": "aerialway_oneway.svg",
    "title": "In what direction can you ride this?"
-  },
-  "AddProhibitedForPedestrians": {
-   "icon": "no_pedestrians.svg",
-   "title": "Are pedestrians forbidden to walk on this road without a sidewalk here?"
   },
   "MarkCompletedHighwayConstruction": {
    "icon": "road_construction.svg",
@@ -637,6 +645,10 @@
    "icon": "glutenfree.svg",
    "title": "Are gluten-free products offered here?"
   },
+  "AddDoctorType": {
+   "icon": "doctor_type.svg",
+   "title": "What doctors are present here?"
+  },
   "AddWheelchairAccessBusiness": {
    "icon": "wheelchair_shop.svg",
    "title": "Is this place wheelchair accessible?"
@@ -703,7 +715,7 @@
   },
   "AddRoadSmoothness": {
    "icon": "street_surface_detail.svg",
-   "title": "What’s the surface quality of this road here?"
+   "title": "What’s the surface quality here?"
   },
   "AddPathSmoothness": {
    "icon": "way_surface_detail.svg",
