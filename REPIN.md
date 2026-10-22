@@ -93,3 +93,8 @@ either: old snapshots keep them, the site shows them while the newest registry h
   by hand once (each region's newest extract is recounted with the new registry; older ones keep
   their counts, so the break sits at the repin date), `history`, then `publish` via `update`, or let
   the 13:15 run do it. Close the issue with the data commit.
+- Or recount everything: `tools/backfill_history.py recount --region <r>` then `merge --region <r>`
+  for every region rewrites every published snapshot with the new registry (from the store's extract
+  or a history slice), and the series carry one registry with no break, as was done for v64.0 (an
+  Ontario snapshot takes about 5 minutes, so it is an overnight job). The site marks a break only where
+  two consecutive snapshots differ, so nothing on the site needs changing either way.

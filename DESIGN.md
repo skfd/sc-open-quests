@@ -370,10 +370,13 @@ Known gaps:
   on purpose (it regresses the vendored filter and geometry code, not the quest set).
 - **Where the break is.** After a repin `run.py count` (also inside `update`'s backfill) recounts
   the newest extract of each region with the new registry and leaves the older ones in the store
-  alone, so the first v64 snapshot is the newest extract at merge time and the totals chart marks the
-  change of the counted set there ("+8 types 64.0"), as it did for the custom quests. The branch
-  carries no data commit on purpose: the daily "data" commits would conflict with it in the generated
-  history files; the first run from main after the merge makes it.
+  alone, so by default the first v64 snapshot is the newest extract at merge time and the totals chart
+  marks the change of the counted set there ("+8 types 64.0"), as it did for the custom quests. **For
+  v64.0 there is no such break:** the Canada backfill of the same night (next section) recounted every
+  published Ontario and German snapshot with v64.0 too, so every series carries one registry and the
+  site's break list, which compares consecutive snapshots, has nothing to mark. The branch carried no
+  data commit on purpose: the daily "data" commits would conflict with it in the generated history
+  files; the first run from main after the merge made it.
 - **Merging `sc-v64` into main** (written while another session had uncommitted province work in
   main): `engine/SC-VERSION.txt` is generated, never hand-merged; after the merge rerun
   `engine/sync-sc.ps1 -ScPath <Temp/sc-v64.0> -Tag v64.0` with whatever the other side added to
