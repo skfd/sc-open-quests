@@ -331,3 +331,44 @@ Known gaps:
   tags; only names differ from a German phone). `landAreaKm2` is the OSM boundary's area, water
   included, as for Ontario: Hamburg's 980.9 km² against the official 755 km² is the Neuwerk exclave's
   boundary running out over the Wadden Sea mudflats. Populations are Destatis's, 31.12.2025.
+
+## Repin to StreetComplete v64.0 (2026-10-21)
+
+- **The operation has a name: repin.** Everything the engine counts with is pinned to one SC tag (the
+  vendored source, the ports, the registry dump, icons, release pins); moving them all is a repin, the
+  routine is [REPIN.md](REPIN.md). The scheduled update now ends with `run.py check-release`: it
+  refreshes `docs/data/sc-releases.json` and opens the GitHub issue "Repin to StreetComplete vX.Y"
+  once when a stable release is newer than `engine/SC-VERSION.txt`. It is the one network dependency
+  the daily run has besides the extracts, and it cannot fail the run: the data is published first, and
+  any error in it is logged and ignored.
+- **What v64.0 changed for the counts.** 193 quest types (was 190): added AddDoctorType,
+  AddVendingMachineType, AddGeneralAccess (replaces AddPlaygroundAccess and AddTowerAccess),
+  AddChargingStationSocket (custom: a charging station without mapped charge points),
+  AddParkingCharge, AddMotorcycleParkingSurface, AddChargingStationMotorcar and AddLockable (the two
+  replace AddChargingStationCapacity and AddChargingStationBicycleCapacity); removed
+  AddProhibitedForPedestrians. 57 filter quests and three hand-ported ones (AddOpeningHours,
+  CheckOpeningHoursSigned, AddPlaceName) now take relations; CheckShopExistence no longer requires a
+  name (a nameless shop whose preset has a name counts, so it rises); AddIsAmenityIndoor asks for
+  bicycle repair stations too. A removed quest leaves the table (quests.json is the newest registry)
+  while its series stays in the history files.
+- **What v64.0 changed for the engine.** SC became multiplatform: every quest moved from androidMain
+  to commonMain, with a Compose form instead of an Android one, so sync-sc.ps1 and the port generator
+  read commonMain, the generator drops Compose imports and annotations, and a `Foo.*` import of a
+  quest package stays only when the kept code names Foo. SC started caching a date filter's threshold
+  (`by lazy`); that would freeze the engine's movable clock and resurvey multiplier after the first
+  evaluation, so a third recorded patch, `nolazy`, makes both getters again. New stubs: Compose's
+  `LocaleList` (the phone's locale list is the JVM's default locale, en-CA, so
+  `getLanguagesForFeatureDictionary()` gives en-CA, en, null), `DrawableResource` and
+  `Res.allDrawableResources` (osm/Feature.kt grew an icon lookup), `ApplicationConstants`
+  (`MAX_OSM_TAG_VALUE_LENGTH`; `Element` now requires every tag key and value to be at most 255
+  characters, which OSM's API guarantees), `readYamlOrNull`. SC's harness needs a JDK 25 since v64
+  (Gradle downloads it: tools/sc-harness/README.md).
+- **Checked.** The oracle (SC's own classes on the same map data) gives identical sets for all 52
+  custom quests on Guelph (33,389 quests) and, for the first time, on a German city: Bremerhaven
+  (20,404; AddCycleway, AddHousenumber and AddRoofShape read DE.yml there). The three fast twins
+  match their ports on both. The engine's unit tests pass; TorontoRegressionTest stays on v63.4.json
+  on purpose (it regresses the vendored filter and geometry code, not the quest set).
+- **Where the break is.** After a repin `run.py count` recounts the newest extract of each region
+  with the new registry and leaves the older ones, so the first v64 snapshot is 2026-10-20 and the
+  totals chart marks the change of the counted set there, as it did for the custom quests.
+
