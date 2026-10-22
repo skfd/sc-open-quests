@@ -53,7 +53,11 @@ opens a GitHub issue "Repin to StreetComplete vX.Y" when the app moves on.
 municipality over 50,000 in the 2021 census that was not yet counted, in eight new regions (Quebec,
 British Columbia, Alberta, Saskatchewan, Manitoba, New Brunswick, Nova Scotia, Newfoundland and
 Labrador, one Geofabrik extract each) plus the five Ontario ones the farmland list lacked. Their monthly
-history is counted overnight by `.scratch/canada-backfill.sh` (log: `logs/canada-backfill.log`), which
+history is counted overnight by `.scratch/canada-backfill.sh` (started 21:05 on 2026-10-21; its output
+went to a hidden console, not to `logs/canada-backfill.log`, so read progress from
+`data/backfill/<region>/snapshots/`, oldest region Quebec first, Ontario's and Germany's recounts in
+`data/backfill/<region>/recount/`; a rerun writes the log: `bash .scratch/canada-backfill.sh >
+logs/canada-backfill.log 2>&1 &`), which
 also recounts Ontario's and Germany's published snapshots with v64.0, merges, rebuilds the history and
 commits "data 2017-01-01 to 2026-10-01: monthly history of the Canadian cities outside Ontario; ..."
 locally; the next scheduled run pushes it. It runs about a day (a Quebec month about 2 min, an Ontario
