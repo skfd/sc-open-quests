@@ -87,6 +87,9 @@ either: old snapshots keep them, the site shows them while the newest registry h
 - `engine/README.md` (what changed in the vendoring, stubs, the port list), `DESIGN.md` (a dated
   "Repin to vX.Y" entry: what the release changed for the counts), `HANDOFF.md` status,
   `tools/sc-harness/README.md` (the run's timings and any new gotcha).
-- Merge to main. From main, `python run.py count` by hand once (the newest extract is recounted with
-  the new registry; older ones keep their counts, so the break sits at the repin date), `history`,
-  then `publish` via `update`, or let the 13:15 run do it. Close the issue with the data commit.
+- Merge to main, without a data commit on the branch (the daily "data" commits would conflict with
+  it in the generated history files). From main, `engine/gradlew installDist` and `test` first (a new
+  Kotlin downloads on the first build; don't leave that to the scheduler), then `python run.py count`
+  by hand once (each region's newest extract is recounted with the new registry; older ones keep
+  their counts, so the break sits at the repin date), `history`, then `publish` via `update`, or let
+  the 13:15 run do it. Close the issue with the data commit.

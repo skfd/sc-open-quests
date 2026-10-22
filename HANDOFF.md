@@ -42,9 +42,12 @@ Milestone 1 is done and the site is live at https://skfd.github.io/sc-open-quest
 all 176 quest types of SC v63.4 that the app offers there (14 more are not offered in Ontario), monthly from 2017-01 and daily since 2026-10. `kk-SCOpenQuests` runs daily
 at 13:15. Design and known gaps are in DESIGN.md.
 
-**Repinned to SC v64.0 on 2026-10-21** (DESIGN.md, "Repin to StreetComplete v64.0"; the routine is
-REPIN.md). 193 quest types, all counted and oracle-checked (Guelph and Bremerhaven). From now on the
-scheduled update's last step opens a GitHub issue "Repin to StreetComplete vX.Y" when the app moves on.
+**Repinned to SC v64.0 on 2026-10-21, on branch `sc-v64`** (worktree `../sc-open-quests-v64`; DESIGN.md,
+"Repin to StreetComplete v64.0", with the merge recipe; the routine is REPIN.md). 193 quest types, all
+counted and oracle-checked (Guelph and Bremerhaven). Not merged yet: main had uncommitted province work
+from another session. After the merge the first run from main makes the first v64 data commit. From
+then on the scheduled update's last step opens a GitHub issue "Repin to StreetComplete vX.Y" when the
+app moves on.
 
 **Germany's city-states joined on 2026-10-13** (DESIGN.md, "Regions"): Berlin, Hamburg, Bremen and
 Bremerhaven, because Ontario's totals barely move and Germany is where SC is used most. Each region is a

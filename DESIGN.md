@@ -368,7 +368,21 @@ Known gaps:
   (20,404; AddCycleway, AddHousenumber and AddRoofShape read DE.yml there). The three fast twins
   match their ports on both. The engine's unit tests pass; TorontoRegressionTest stays on v63.4.json
   on purpose (it regresses the vendored filter and geometry code, not the quest set).
-- **Where the break is.** After a repin `run.py count` recounts the newest extract of each region
-  with the new registry and leaves the older ones, so the first v64 snapshot is 2026-10-20 and the
-  totals chart marks the change of the counted set there, as it did for the custom quests.
+- **Where the break is.** After a repin `run.py count` (also inside `update`'s backfill) recounts
+  the newest extract of each region with the new registry and leaves the older ones in the store
+  alone, so the first v64 snapshot is the newest extract at merge time and the totals chart marks the
+  change of the counted set there ("+8 types 64.0"), as it did for the custom quests. The branch
+  carries no data commit on purpose: the daily "data" commits would conflict with it in the generated
+  history files; the first run from main after the merge makes it.
+- **Merging `sc-v64` into main** (written while another session had uncommitted province work in
+  main): `engine/SC-VERSION.txt` is generated, never hand-merged; after the merge rerun
+  `engine/sync-sc.ps1 -ScPath <Temp/sc-v64.0> -Tag v64.0` with whatever the other side added to
+  `$resources` (its `CA-*.yml` must exist in the v64 checkout). `sync-sc.ps1`, `engine/README.md`,
+  `CountriesTest.kt` and `CountryInfoQuestsTest.kt` hand-merge, both sides are additive. Then, from
+  main and before the next 13:15: `engine/gradlew installDist` and `test` (the first build downloads
+  Kotlin 2.4.20; do not leave that to the scheduler), `python run.py count`, `history`, and commit the
+  data. `tools/sc_assets.py` ran already (the icons commit). Ontario's count went from 196 s to
+  245 s: CheckShopExistence now asks the feature dictionary for every nameless place before its age
+  filter, as SC does. `gh` under Task Scheduler is unproven; a failure shows as
+  "check-release failed (ignored)" in `logs/scheduler.log`.
 

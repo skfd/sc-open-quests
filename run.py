@@ -287,13 +287,14 @@ def count(region: dict, force: bool = False, extract: tuple[Path, Path] | None =
         existing = snapshot_for_sha(sha, out)
         name = f"{region['id']}/snapshots/{existing.name}" if existing else None
         quests = newest_quests_file()
+        newest = extract is None or pbf.name == latest_extract(region)[0].name
         if existing and not force:
             snap = read_json(existing)
             if not snap.get("notes"):
                 log(f"{name} counts {pbf.name} without notes; recounting with {clip.name}")
-            elif version_tuple(snap.get("scVersion") or "0") < version_tuple(quests.stem):
-                # after a repin (REPIN.md): the newest extract gets the new quest set; older ones
-                # keep their counts, so the break sits at the repin date
+            elif newest and version_tuple(snap.get("scVersion") or "0") < version_tuple(quests.stem):
+                # after a repin (REPIN.md): the region's newest extract gets the new quest set; the
+                # older ones in the store (backfill) keep their counts, so the break sits at the repin
                 log(f"{name} counts {pbf.name} with SC {snap.get('scVersion')}; recounting with {quests.name}")
             else:
                 log(f"{name} already counts {pbf.name}; skipping (--force to redo)")
