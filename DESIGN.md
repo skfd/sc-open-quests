@@ -484,3 +484,7 @@ The owner asked for planet coverage. Before building, four checks; the owner's c
   under what licence, is for the session that explores the breakdown.
 - **Cities stay as they are for now:** the population bar of today. Inside a city, counts go down to
   neighbourhoods, Wandrer-style.
+- **History and cadence (asked in the measuring session):** monthly history since 2017 for every place
+  that gets counted, as for Canada and Germany, cut from the planet history file; then weekly counts from
+  one planet file, clipped to the counted places' envelopes in one pass. Canada and Germany stay daily.
+  Disk is set aside for later; the owner will solve it.

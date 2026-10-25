@@ -119,6 +119,7 @@ measured". **The owner chose a direction the same evening** (DESIGN.md, "Planet 
 direction"): the site is for players; every place on Earth gets a name, and only places the community
 asks for get counted; Wandrer.earth's nested regions are the model, down to neighbourhoods inside a
 city; cities keep today's population bar for now. Next is a new session that explores that breakdown,
-including whether Wandrer's regions can be the data source. Still open: whether land outside cities
-counts, how much history, daily or weekly, and where the disk comes from. Independent of the answer: GitHub Pages' 1 GB cap is about nine
+including whether Wandrer's regions can be the data source. History is monthly since 2017 and the world is
+counted weekly from one planet file (DESIGN.md, same section); disk is the owner's, later. Still open:
+whether land outside cities counts. Independent of the answer: GitHub Pages' 1 GB cap is about nine
 months away at today's size, so the publish format has to change anyway.
