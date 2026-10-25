@@ -111,3 +111,11 @@ Next, in order:
    - ~~Make the site look like StreetComplete; show app releases on the timeline.~~ Done 2026-10-13
      (DESIGN.md, "Site look").
    - Heatmap per quest type (stretch goal).
+
+## Planet coverage (asked 2026-10-24)
+
+The owner asked for planet coverage. The measurements are in DESIGN.md, "Planet coverage: what was
+measured". Open for the owner before anything is built: which places and at what population bar (and
+what to do with province-sized cities and cities without an OSM link), how much history, daily or
+weekly, and where the disk comes from. Independent of the answer: GitHub Pages' 1 GB cap is about nine
+months away at today's size, so the publish format has to change anyway.
