@@ -6,7 +6,7 @@ This is the contract between the engine (writes snapshots), the pipeline (keeps 
 ## Inputs
 
 - `data/quests/v<SC>.json`: the quest registry dumped from the StreetComplete build (`tools/sc-harness`).
-- `config/regions.json`: `{ "regions": [ { id, name, group, timeZone, poly, source, extract?, url? } ] }`.
+- `config/regions.json`: `{ "regions": [ { id, name, group, timeZone, poly, source, extract?, url?, cadence? } ] }`.
   A region is one engine run: one time zone, its own cities, its own archive `data/archive/<id>/`. `extract`
   (default: `id`) is the shared-store extract it is counted from: the folder `~/Code/.osm-data/<extract>/`
   and the `osm-extracts fetch <extract>`; `url` is passed as `fetch --url` when osm-extracts does not know
@@ -15,6 +15,11 @@ This is the contract between the engine (writes snapshots), the pipeline (keeps 
   `url`. Today every region is its own Geofabrik extract (`id` = osm-extracts region: ontario, berlin, …).
   `group` heads the city selector ("Ontario", "Germany"); `source` names the extract in the footer; `poly`
   is the region's `.poly` (Geofabrik's, for today's), used to clip notes and the planet history.
+  `cadence` is `"daily"` (default) or `"weekly"`. A daily region is counted from its extract by
+  `run.py update`; a weekly one has no extract (`extract` and `url` are ignored) and is counted by
+  `run.py weekly` from the planet history file: a slice at the file's replication timestamp each week, plus
+  the 1st of every month since 2017-01 not yet counted. Its snapshots' `source.url` is null and
+  `source.file` is `<id>-history-<YYMMDD>.osh.pbf@<time>`. Today every region is daily.
 - `config/cities.json`: `{ "cities": [ { id, name, relation, adminLevel, countryCodes: ["CA","CA-ON"],
   timeZone, population, landAreaKm2, boundary, region } ] }`. `boundary` is a path to an Overpass `out geom`
   relation element; `region` is the region whose extract holds the city, and its `timeZone` must be the
@@ -60,7 +65,8 @@ the snapshots published until then stay in git history.
                                        //   "tiles" (per z16 tile); absent before 2026-10-12, when
                                        //   the snapshots held no area quests
   "engineCommit": "<git sha of this repo>",   // null if git is unavailable
-  "source": { "url": "...",            // null when the engine got no --source-meta
+  "source": { "url": "...",            // null when the engine got no --source-meta, or for a slice of a
+                                       //   planet history file brought up to date with diffs
               "lastModified": "2026-07-16T23:33:11Z",  // the download's Last-Modified, as ISO; or null
               "sha256": "...",         // always: computed by the engine from the PBF it read
               "file": "ontario-2026-07-16.osm.pbf" },  // the PBF's file name

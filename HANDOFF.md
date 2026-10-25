@@ -161,3 +161,8 @@ has gone well** (2026-10-25: `logs/scheduler.log` ends in "update done", the pus
 snapshot deletions went through, the site still loads every city, and `data/archive/` still holds 1,497+
 files): `rm -rf .backup/archive-2026-10-24`.
 
+
+**Weekly planet job (2026-10-24, night):** `python run.py weekly` and `"cadence": "weekly"` per region
+(DESIGN.md, "Weekly planet job"). No region is weekly yet, so it only runs `osm-extracts fetch
+planet-history`. To do at merge: register it with `.\schedule-weekly-add.ps1` (Mondays 07:30) once
+osm-extracts has `fetch planet-history`; until then the weekly run logs the failed fetch and stops.

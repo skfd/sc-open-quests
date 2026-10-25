@@ -43,10 +43,13 @@ python run.py download   # osm-extracts fetch <extract> once per distinct extrac
 python run.py count      # engine on each region's newest extract -> data/archive/<region>/snapshots/ (skipped if counted)
 python run.py backfill   # count every dated extract still in the store
 python run.py history    # archive -> docs/data/history/<city>.json, cities.json, compare/<quest>.json, newest snapshots
-python run.py update     # all three, then commit "data <asOfDate>" and push
+python run.py update     # all three, then commit "data <asOfDate>" and push (--no-push: commit only)
+python run.py weekly     # osm-extracts fetch planet-history, then the "cadence": "weekly" regions from the
+                         # planet history file -> archive, history, commit "data weekly <date>", push (--no-push)
 ```
 
-`update` is the scheduled entry point. A second run on the same extract downloads nothing, counts
+`update` is the scheduled entry point; `weekly` the weekly one (today no region is weekly, so it only
+keeps the planet history file current). A second run on the same extract downloads nothing, counts
 nothing and commits nothing. `count --force` recounts.
 
 Tests: `python -m unittest`.
@@ -68,6 +71,14 @@ Two PowerShell scripts manage a Task Scheduler entry. Run them as Administrator.
 
 The task is named `kk-SCOpenQuests`. It starts when available if the machine was off at 13:15 and
 is stopped after two hours.
+
+```powershell
+.\schedule-weekly-add.ps1      # run.py weekly on Mondays at 07:30, appends to logs\weekly.log
+.\schedule-weekly-remove.ps1
+```
+
+`kk-SCOpenQuests-weekly` starts when available and is stopped after ten hours. It never holds the
+pipeline lock across the daily 13:15 run (DESIGN.md, "Weekly planet job").
 
 ## Licence and attribution
 
