@@ -138,5 +138,7 @@ the area quests' counts (DESIGN.md, "Area unit: the whole city").
 counting on request". Wandrer.earth cannot be the source (no API, all rights reserved) but is the model;
 names come from Overture Maps `divisions` (ODbL, one world hierarchy, OSM relation per feature); counts
 stay on OSM geometry; neighbourhoods are sub-places counted by position inside their city's run;
-regions and countries are roll-ups labelled "N of M counted". Waiting on the owner's answers, then the
-Overture spike described at the end of that section.
+regions and countries are roll-ups labelled "N of M counted". The owner's answers and the Overture spike's result are in the same section: 113 of
+our 115 cities found by relation, 1.08M named places with a polygon worldwide, about 175 MB as a name layer.
+Next: the name layer's shards and the request form, once the measuring session's publish format has
+landed.
