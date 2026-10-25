@@ -115,7 +115,10 @@ Next, in order:
 ## Planet coverage (asked 2026-10-24)
 
 The owner asked for planet coverage. The measurements are in DESIGN.md, "Planet coverage: what was
-measured". Open for the owner before anything is built: which places and at what population bar (and
-what to do with province-sized cities and cities without an OSM link), how much history, daily or
-weekly, and where the disk comes from. Independent of the answer: GitHub Pages' 1 GB cap is about nine
+measured". **The owner chose a direction the same evening** (DESIGN.md, "Planet coverage: the owner's
+direction"): the site is for players; every place on Earth gets a name, and only places the community
+asks for get counted; Wandrer.earth's nested regions are the model, down to neighbourhoods inside a
+city; cities keep today's population bar for now. Next is a new session that explores that breakdown,
+including whether Wandrer's regions can be the data source. Still open: whether land outside cities
+counts, how much history, daily or weekly, and where the disk comes from. Independent of the answer: GitHub Pages' 1 GB cap is about nine
 months away at today's size, so the publish format has to change anyway.

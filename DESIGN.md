@@ -427,7 +427,7 @@ Known gaps:
   counts; the five new Ontario cities have monthly points to 2026-10-01 and dailies from 2026-10-07.
 
 
-## Planet coverage: what was measured (2026-10-24, nothing decided yet)
+## Planet coverage: what was measured (2026-10-24)
 
 The owner asked for planet coverage. Before building, four checks; the owner's choices are still open
 (HANDOFF.md, "Planet coverage").
@@ -471,3 +471,16 @@ The owner asked for planet coverage. Before building, four checks; the owner's c
   out of git (R2 or release assets).
 - **Disk.** 151 GB free on C:, with the 163 GB planet history file in the store. A planet pbf is about
   85 GB more.
+
+## Planet coverage: the owner's direction (2026-10-24)
+
+- **Players come first.** The site is for StreetComplete players asking "how is my place doing?", not
+  for planet totals per quest type.
+- **Every place on Earth gets a name, but only requested places get counted.** A named breakdown of
+  the whole world exists up front; stats are counted for a place only when its community asks for it.
+  Whether land outside any city (rural roads) counts is still being debated.
+- **Wandrer.earth is the model.** Its nested named regions (country down to neighbourhood) are the
+  inspiration, and possibly the data source for the breakdown. Whether its regions can be reused, and
+  under what licence, is for the session that explores the breakdown.
+- **Cities stay as they are for now:** the population bar of today. Inside a city, counts go down to
+  neighbourhoods, Wandrer-style.
