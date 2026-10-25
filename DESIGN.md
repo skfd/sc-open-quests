@@ -737,8 +737,9 @@ the place list is the breakdown session's.
   planet-history`; any failure, disk the likely one, is logged and the file is used as it is (an older
   history is still a valid source); (2) clip every weekly region from the newest history file in one
   pass, deleting each region's older clip; (3) count the 1st of each month since 2017-01 that the region
-  lacks, at 12:00Z as before; (4) a slice at the history file's own replication timestamp, skipped if the
-  region already has that date (a history file the fetch could not move on); (5) merge into
+  lacks, at 12:00Z as before; (4) a slice at the history file's own replication timestamp, skipped if a snapshot already
+  counts that slice (a history file the fetch could not move on); the engine dates it in the region's zone
+  and the snapshot is dropped if the region has that date already (no tzdata needed); (5) merge into
   `data/archive/`, rebuild history, commit `data weekly <UTC date of the history file>` and push
   (`--no-push` commits only, on `update` too). With no weekly region it stops after (1).
 - **History file naming.** `backfill_history.py` takes `history-<YYMMDD>.osm.pbf` (the planet site's dump,
@@ -756,8 +757,9 @@ the place list is the breakdown session's.
   start when available, no second instance; not registered yet. A new weekly region's first run counts
   118 months (Bremen under a minute each with its slice, Ontario 5 min: past the ten hours, so run `backfill_history.py
   months` by hand first, or let the next weeks finish it; staged months are kept across runs).
-- **A history file ending on a 1st** (00:00Z, say) gives that date's snapshot from the weekly slice, and
-  the month's 12:00Z slice is then skipped: one snapshot per date.
+- **One snapshot per date.** A month's 12:00Z slice beats a weekly slice of the same local date (a file
+  ending 2026-11-02T00:00Z is still the 1st in Toronto). A file ending on a 1st before 12:00Z gives that
+  date's snapshot from the weekly slice, and the month's 12:00Z slice is then skipped.
 - **Checked end to end without the planet.** A stand-in history file: Bremen's 261005 clip plus the
   planet's daily diffs 5137 and 5138 (`osmium apply-changes -H`, 25 s, 73 MB to 166 MB: the diffs carry the
   whole world's edits), named `history-261007.osh.pbf` with a meta at 5138's 2026-10-07T00:00:00Z, in a

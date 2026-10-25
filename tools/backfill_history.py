@@ -39,7 +39,6 @@ import sys
 import time
 from datetime import date, datetime, time as dtime, timedelta, timezone
 from pathlib import Path
-from zoneinfo import ZoneInfo
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import run  # noqa: E402
@@ -345,18 +344,45 @@ def months(r: Region, first: str, last: str, step: int, keep: bool) -> None:
         run.log(f"{r.id} {snap.name} in {time.monotonic() - t0:.0f} s")
 
 
+def counts_slice(r: Region, t: datetime) -> bool:
+    """True if a staged or archived snapshot already counts this clip at t (the history file did not move
+    on). Its date is t's in the region's zone, so within a day of t's UTC date."""
+    target = f"{r.history.name}@{iso(t)}"
+    for d in (t.date() - timedelta(days=1), t.date(), t.date() + timedelta(days=1)):
+        for p in (r.staged / f"{d}.json", r.published / f"{d}.json"):
+            if p.exists() and run.read_json(p).get("source", {}).get("file") == target:
+                return True
+    return False
+
+
 def count_at(r: Region, t: datetime) -> Path | None:
-    """Slice the region at t, count it into data/backfill/<region>/snapshots/ and delete the slice; None
-    (and nothing done) if the region already has a snapshot of t's date in its time zone."""
-    day = t.astimezone(ZoneInfo(r.config["timeZone"])).date().isoformat()
-    if day in counted_dates(r):
-        run.log(f"{r.id} {day} already counted")
+    """Slice the region at t, count it, delete the slice and stage the snapshot in
+    data/backfill/<region>/snapshots/. None if a snapshot already counts that slice, or if the region
+    already has one of its date (the 12:00Z slice of a 1st beats a weekly slice on the same date). The
+    count goes to data/backfill/<region>/now/ first: only the engine knows the date in the region's zone
+    (Python's zoneinfo needs the tzdata package on Windows)."""
+    if counts_slice(r, t):
+        run.log(f"{r.id}: the history file at {iso(t)} is already counted")
         return None
     pbf, meta = slice_at(r, t)
-    snap = count(r, pbf, meta, r.backfill)
+    out = r.backfill / "now"
+    shutil.rmtree(out, ignore_errors=True)
+    snap = count(r, pbf, meta, out)
     pbf.unlink()
-    run.log(f"{r.id} {snap.name}: the history file at {iso(t)}")
-    return snap
+    if snap.stem in counted_dates(r):
+        run.log(f"{r.id} {snap.stem} already counted; the slice at {iso(t)} is dropped")
+        shutil.rmtree(out)
+        return None
+    r.staged.mkdir(parents=True, exist_ok=True)
+    (r.backfill / "grid").mkdir(parents=True, exist_ok=True)
+    staged = snap.replace(r.staged / snap.name)
+    for grid in (out / "grid").glob("*.json.gz"):
+        grid.replace(r.backfill / "grid" / grid.name)
+    if (out / "quests.json").exists():
+        (out / "quests.json").replace(r.backfill / "quests.json")
+    shutil.rmtree(out)
+    run.log(f"{r.id} {staged.name}: the history file at {iso(t)}")
+    return staged
 
 
 def weekly(region_ids: list[str]) -> datetime:

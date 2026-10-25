@@ -169,15 +169,50 @@ class LastMonthTest(StoreCase):
 
 
 class CountAtTest(StoreCase):
-    def test_the_date_is_the_regions_and_counted_once(self):
+    def region(self):
         self.history_file("history-261007.osh.pbf", DIFFED_META)
         bh.set_planet(None)
         r = bh.Region("bremen")
         r.staged.mkdir(parents=True)
-        (r.staged / "2026-10-07.json").write_text("{}")
-        with mock.patch.object(bh, "slice_at") as slice_at:
-            self.assertIsNone(bh.count_at(r, utc("2026-10-06T22:30:00Z")))  # 00:30 in Berlin
-            slice_at.assert_not_called()
+        return r
+
+    def fake_engine(self, r, as_of_date):
+        def count(region, pbf, meta, out):
+            snap = out / "snapshots" / f"{as_of_date}.json"
+            snap.parent.mkdir(parents=True)
+            snap.write_text(json.dumps({"asOfDate": as_of_date, "source": {"file": run.read_json(meta)["file"]}}))
+            (out / "grid").mkdir()
+            (out / "grid" / f"{as_of_date}.json.gz").write_bytes(b"")
+            (out / "quests.json").write_text("{}")
+            return snap
+
+        def slice_at(region, t):
+            pbf, meta = region.backfill / "slice.osm.pbf", region.backfill / "slice.meta.json"
+            pbf.write_bytes(b"")
+            meta.write_text(json.dumps({"file": f"{region.history.name}@{bh.iso(t)}"}))
+            return pbf, meta
+        return mock.patch.object(bh, "count", side_effect=count), mock.patch.object(bh, "slice_at", side_effect=slice_at)
+
+    def test_now_is_staged_under_the_engines_date_then_counted_once(self):
+        r = self.region()
+        t = utc("2026-10-06T22:30:00Z")  # 00:30 on the 7th in Berlin
+        count, slice_at = self.fake_engine(r, "2026-10-07")
+        with count, slice_at:
+            self.assertEqual(bh.count_at(r, t), r.staged / "2026-10-07.json")
+            self.assertTrue((r.backfill / "grid" / "2026-10-07.json.gz").exists())
+            self.assertTrue((r.backfill / "quests.json").exists())
+            self.assertFalse((r.backfill / "now").exists())
+            self.assertIsNone(bh.count_at(r, t))  # a history file that did not move on
+            self.assertEqual(bh.count.call_count, 1)
+
+    def test_a_monthly_of_the_same_date_wins(self):
+        r = self.region()
+        (r.staged / "2026-11-01.json").write_text(json.dumps({"source": {"file": "x@2026-11-01T12:00:00Z"}}))
+        count, slice_at = self.fake_engine(r, "2026-11-01")  # 2026-11-02T00:00Z is the 1st in Toronto
+        with count, slice_at:
+            self.assertIsNone(bh.count_at(r, utc("2026-11-02T00:00:00Z")))
+        self.assertEqual(run.read_json(r.staged / "2026-11-01.json")["source"]["file"], "x@2026-11-01T12:00:00Z")
+        self.assertFalse((r.backfill / "now").exists())
 
     def test_weekly_counts_the_months_first_then_now(self):
         self.history_file("history-261007.osh.pbf", DIFFED_META)
