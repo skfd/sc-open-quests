@@ -188,7 +188,7 @@ def count(r: Region, pbf: Path, meta: Path, out: Path) -> Path:
             cmd += ["--notes", str(clip.relative_to(run.ROOT))]
         cmd += ["--grid", str(out / "grid")]
         run.log("running engine: " + " ".join(cmd[1:]))
-        subprocess.run(cmd, cwd=run.ROOT, env=run.engine_env(r.config["timeZone"]), check=True)
+        subprocess.run(cmd, cwd=run.ROOT, env=run.engine_env(r.config["timeZone"], heap=True), check=True)
     snaps = sorted((out / "snapshots").glob("*.json"), key=lambda p: p.stat().st_mtime)
     new = [p for p in snaps if p not in before] or snaps[-1:]
     return new[-1]

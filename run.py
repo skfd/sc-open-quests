@@ -318,14 +318,88 @@ def snapshot_for_sha(sha: str, region_dir: Path) -> Path | None:
     return None
 
 
-def engine_env(time_zone: str | None = None) -> dict[str, str]:
+# The engine's heap is what the machine can spare when it starts, not a fixed cap (the owner, 2026-10-24).
+# Ontario counts in 12-16 GB and a bigger heap only makes the collector lazier (DESIGN.md, "Planet coverage:
+# what was measured"); the 2026-10-17 run died at the commit limit (paging file), not at -Xmx40g.
+HEAP_RESERVE_GB = 8      # left to Windows and everything else running
+HEAP_MIN_GB = 12         # below this the engine waits for memory rather than start
+HEAP_MAX_FRACTION = 0.75  # of physical memory, however idle the machine is
+HEAP_WAIT_MINUTES = int(os.environ.get("SCOQ_HEAP_WAIT_MINUTES", "60"))
+HEAP_POLL_SECONDS = 60
+
+
+def memory_status() -> tuple[float, float, float] | None:
+    """(free physical, free commit charge, total physical) in GB, or None off Windows. The commit charge
+    is what the paging file still allows; it ran out on 2026-10-17 with physical memory to spare."""
+    if sys.platform != "win32":
+        return None
+    import ctypes
+
+    class MEMORYSTATUSEX(ctypes.Structure):
+        _fields_ = [("dwLength", ctypes.c_ulong), ("dwMemoryLoad", ctypes.c_ulong),
+                    ("ullTotalPhys", ctypes.c_ulonglong), ("ullAvailPhys", ctypes.c_ulonglong),
+                    ("ullTotalPageFile", ctypes.c_ulonglong), ("ullAvailPageFile", ctypes.c_ulonglong),
+                    ("ullTotalVirtual", ctypes.c_ulonglong), ("ullAvailVirtual", ctypes.c_ulonglong),
+                    ("ullAvailExtendedVirtual", ctypes.c_ulonglong)]
+    m = MEMORYSTATUSEX()
+    m.dwLength = ctypes.sizeof(m)
+    if not ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(m)):
+        return None
+    gb = 1 << 30
+    return m.ullAvailPhys / gb, m.ullAvailPageFile / gb, m.ullTotalPhys / gb
+
+
+def spare_heap_gb(status: tuple[float, float, float]) -> int:
+    """The heap the machine can spare now: the smaller of free memory and free commit charge, less the
+    reserve, at most HEAP_MAX_FRACTION of physical memory."""
+    free_phys, free_commit, total = status
+    return int(min(free_phys, free_commit, total * HEAP_MAX_FRACTION) - HEAP_RESERVE_GB)
+
+
+def engine_heap_gb(status=memory_status, sleep=None, wait_minutes: int | None = None) -> int | None:
+    """Wait until the machine can spare HEAP_MIN_GB, then return what it can spare. None off Windows
+    (the start script's default stands). Raises after wait_minutes: a skipped count is picked up by the
+    next run, which goes over every stored extract; an engine that dies of memory halfway is not."""
+    import time
+    sleep = sleep or time.sleep
+    wait_minutes = HEAP_WAIT_MINUTES if wait_minutes is None else wait_minutes
+    waited = 0
+    while True:
+        st = status()
+        if st is None:
+            return None
+        spare = spare_heap_gb(st)
+        if spare >= HEAP_MIN_GB:
+            if waited:
+                log(f"memory freed after {waited} min")
+            return spare
+        if waited >= wait_minutes:
+            raise RuntimeError(f"memory stayed busy for {waited} min: {st[0]:.0f} GB free, {st[1]:.0f} GB commit "
+                               f"left, the engine needs {HEAP_MIN_GB + HEAP_RESERVE_GB}; not counting now")
+        if not waited:
+            log(f"memory busy ({st[0]:.0f} GB free, {st[1]:.0f} GB commit left); waiting up to "
+                f"{wait_minutes} min for {HEAP_MIN_GB + HEAP_RESERVE_GB} GB")
+        sleep(HEAP_POLL_SECONDS)
+        waited += HEAP_POLL_SECONDS // 60
+
+
+def engine_env(time_zone: str | None = None, heap: bool = False) -> dict[str, str]:
     """The engine's environment. SC's date filters use the JVM's zone, which must be the cities'
-    (Main.kt); JAVA_OPTS comes after the start script's default -Duser.timezone, so it wins."""
+    (Main.kt); JAVA_OPTS comes after the start script's default -Duser.timezone and -Xmx, so it wins.
+    With heap, -Xmx is what the machine can spare now (engine_heap_gb), which may wait for memory."""
     env = dict(os.environ)
     if os.path.isdir(JAVA_HOME):
         env["JAVA_HOME"] = JAVA_HOME
+    opts = env.get("JAVA_OPTS", "")
+    if heap and "-Xmx" not in opts:
+        gb = engine_heap_gb()
+        if gb is not None:
+            log(f"engine heap: -Xmx{gb}g (what the machine can spare now)")
+            opts += f" -Xmx{gb}g"
     if time_zone:
-        env["JAVA_OPTS"] = (env.get("JAVA_OPTS", "") + f" -Duser.timezone={time_zone}").strip()
+        opts += f" -Duser.timezone={time_zone}"
+    if opts.strip():
+        env["JAVA_OPTS"] = opts.strip()
     return env
 
 
@@ -393,7 +467,7 @@ def count(region: dict, force: bool = False, extract: tuple[Path, Path] | None =
                "--notes", str(clip.relative_to(ROOT)),
                "--grid", str((GRID_DIR / region["id"]).relative_to(ROOT))]
         log("running engine: " + " ".join(cmd[1:]))
-        subprocess.run(cmd, cwd=ROOT, env=engine_env(region["timeZone"]), check=True)
+        subprocess.run(cmd, cwd=ROOT, env=engine_env(region["timeZone"], heap=True), check=True)
         snap = snapshot_for_sha(sha, out)
         if not snap:
             raise RuntimeError("engine finished but no snapshot carries this extract's sha256")
