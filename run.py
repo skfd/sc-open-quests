@@ -22,9 +22,9 @@ Regions are config/regions.json; a city names its region in config/cities.json. 
 run (one time zone) over one shared extract: its "extract" key, default its id; several regions may share
 one, and an extract osm-extracts does not know by name comes with a "url". Extracts and notes dumps live
 in the shared store (~/Code/.osm-data, see ~/Code/osm-extracts/README.md); this project never downloads
-them itself. A notes dump is clipped to each region once, into data/notes/. Every snapshot is kept in
-data/archive/<region>/ (not committed); docs/data, which GitHub Pages publishes, holds only the newest per
-region. The contract between engine, pipeline and site is DATA-FORMAT.md.
+them itself. A notes dump is clipped to every region in one pass, into data/notes/. Every snapshot is kept
+in data/archive/<region>/ (not committed); docs/data, which GitHub Pages publishes, holds only the newest
+per region. The contract between engine, pipeline and site is DATA-FORMAT.md.
 """
 from __future__ import annotations
 
@@ -32,6 +32,7 @@ import argparse
 import contextlib
 import glob
 import json
+import math
 import os
 import re
 import subprocess
@@ -209,21 +210,75 @@ def extract_meta(pbf: Path) -> Path:
 
 # --- notes ----------------------------------------------------------------------------------------
 
-def notes_clip(region: dict) -> Path | None:
-    """A region's clip of the newest notes dump in the shared store, made on first use. None if the
-    store has no notes dump. Older clips are deleted: each dump holds every note's whole history."""
+NOTE_BOX_PADDING_M = 1000.0  # the engine's AREA_PADDING_M (AreaPass.kt): what it sees around a city
+
+
+def notes_dump() -> Path | None:
+    """The newest planet notes dump in the shared store, or None."""
     latest_path = OSM_DATA_DIR / "notes" / "latest.json"
     if not latest_path.exists():
         return None
-    dump = OSM_DATA_DIR / "notes" / read_json(latest_path)["file"]
-    poly = ROOT / region["poly"]
-    clip = NOTES_DIR / (dump.name.removesuffix(".osn.bz2") + f"-{region['id']}.jsonl")
+    return OSM_DATA_DIR / "notes" / read_json(latest_path)["file"]
+
+
+def clip_path(dump: Path, region: dict) -> Path:
+    return NOTES_DIR / (dump.name.removesuffix(".osn.bz2") + f"-{region['id']}.jsonl")
+
+
+def city_bbox(boundary: Path, relation: int) -> tuple[float, float, float, float]:
+    """(minLon, minLat, maxLon, maxLat) of a city boundary file: its way members' geometry, which is the
+    engine's polygon (Polygon.fromOverpassJson), and Overpass's "bounds", whichever reaches further."""
+    root = read_json(boundary)
+    rel = next(e for e in root.get("elements", [root]) if e.get("type") == "relation" and e.get("id") == relation)
+    lats = [p["lat"] for m in rel["members"] if m["type"] == "way" for p in m["geometry"]]
+    lons = [p["lon"] for m in rel["members"] if m["type"] == "way" for p in m["geometry"]]
+    if b := rel.get("bounds"):
+        lats += [b["minlat"], b["maxlat"]]
+        lons += [b["minlon"], b["maxlon"]]
+    return min(lons), min(lats), max(lons), max(lats)
+
+
+def note_boxes(region: dict) -> list[list[float]]:
+    """The region's cities' bounding boxes padded by NOTE_BOX_PADDING_M, as the engine pads them: the
+    notes clip keeps every note in them even where a city sticks out of the region's simplified poly."""
+    boxes = []
+    for c in read_json(CITIES_CONFIG)["cities"]:
+        if c["region"] != region["id"]:
+            continue
+        w, s, e, n = city_bbox(ROOT / c["boundary"], c["relation"])
+        d_lat = NOTE_BOX_PADDING_M / 111_320.0
+        d_lon = NOTE_BOX_PADDING_M / (111_320.0 * math.cos(math.radians(max(abs(s), abs(n)))))
+        boxes.append([round(w - d_lon, 7), round(s - d_lat, 7), round(e + d_lon, 7), round(n + d_lat, 7)])
+    return boxes
+
+
+def notes_clips(dump: Path, regs: list[dict]) -> None:
+    """Clip the dump to all these regions in one pass (tools/clip_notes.py --config)."""
+    config = NOTES_DIR / (dump.name.removesuffix(".osn.bz2") + ".clips.json")
+    write_json(config, {"clips": [{"poly": str(ROOT / r["poly"]), "out": str(clip_path(dump, r)),
+                                   "boxes": note_boxes(r)} for r in regs]})
+    log(f"clipping {dump.name} to {len(regs)} region(s): {', '.join(r['id'] for r in regs)}")
+    try:
+        subprocess.run([sys.executable, str(CLIP_NOTES), str(dump), "--config", str(config)], check=True)
+    finally:
+        config.unlink(missing_ok=True)
+
+
+def notes_clip(region: dict) -> Path | None:
+    """A region's clip of the newest notes dump in the shared store, made on first use. None if the
+    store has no notes dump. The first region to need a clip of a dump makes it for every configured
+    region that lacks one, in one pass over the dump. Older clips are deleted: each dump holds every
+    note's whole history."""
+    dump = notes_dump()
+    if dump is None:
+        return None
+    clip = clip_path(dump, region)
     if not clip.exists():
-        log(f"clipping {dump.name} to {poly.name}")
-        subprocess.run([sys.executable, str(CLIP_NOTES), str(dump), "--poly", str(poly), "--out", str(clip)],
-                       check=True)
+        todo = [r for r in regions() if r["id"] != region["id"] and not clip_path(dump, r).exists()]
+        notes_clips(dump, [region, *todo])
+    stale = re.compile(r"planet-notes-\d{6}-" + re.escape(region["id"]) + r"\.jsonl")
     for old in NOTES_DIR.glob(f"planet-notes-*-{region['id']}.jsonl"):
-        if old != clip:
+        if old != clip and stale.fullmatch(old.name):
             old.unlink()
     return clip
 
