@@ -6,10 +6,15 @@ This is the contract between the engine (writes snapshots), the pipeline (keeps 
 ## Inputs
 
 - `data/quests/v<SC>.json`: the quest registry dumped from the StreetComplete build (`tools/sc-harness`).
-- `config/regions.json`: `{ "regions": [ { id, name, group, timeZone, poly, source } ] }`, one per
-  Geofabrik extract in the shared store (`id` is the osm-extracts region: ontario, berlin, hamburg,
-  bremen). `group` heads the city selector ("Ontario", "Germany"); `source` names the extract in the
-  footer; `poly` is Geofabrik's `.poly` of the extract, used to clip notes and the planet history.
+- `config/regions.json`: `{ "regions": [ { id, name, group, timeZone, poly, source, extract?, url? } ] }`.
+  A region is one engine run: one time zone, its own cities, its own archive `data/archive/<id>/`. `extract`
+  (default: `id`) is the shared-store extract it is counted from: the folder `~/Code/.osm-data/<extract>/`
+  and the `osm-extracts fetch <extract>`; `url` is passed as `fetch --url` when osm-extracts does not know
+  the extract by name. Several regions may share an extract (a country across time zones, or more cities
+  than one run takes); `download` fetches each extract once, and regions sharing one must give the same
+  `url`. Today every region is its own Geofabrik extract (`id` = osm-extracts region: ontario, berlin, …).
+  `group` heads the city selector ("Ontario", "Germany"); `source` names the extract in the footer; `poly`
+  is the region's `.poly` (Geofabrik's, for today's), used to clip notes and the planet history.
 - `config/cities.json`: `{ "cities": [ { id, name, relation, adminLevel, countryCodes: ["CA","CA-ON"],
   timeZone, population, landAreaKm2, boundary, region } ] }`. `boundary` is a path to an Overpass `out geom`
   relation element; `region` is the region whose extract holds the city, and its `timeZone` must be the
@@ -18,10 +23,14 @@ This is the contract between the engine (writes snapshots), the pipeline (keeps 
   region's cities only (`data/cities/<region>.json`, cut by `run.py`).
 - An `.osm.pbf` extract with timestamps. Its header `osmosis_replication_timestamp` is the snapshot's
   **as-of** time.
-- A notes clip per region (`tools/clip_notes.py`, in `data/notes/`, not committed): the notes of the planet
-  notes dump inside the region's poly's bounding box, open or closed, with every comment. JSON lines; the first is
-  a header `{"schema":1,"source":"planet-notes-261011.osn.bz2","sha256":…,"until":"<newest comment in the
-  dump>","bbox":[minLon,minLat,maxLon,maxLat],"poly":"ontario.poly","notes":<count>}`, then one note per
+- A notes clip per region (`tools/clip_notes.py`, one pass over the dump for all regions, in `data/notes/`,
+  not committed): the notes of the planet notes dump inside the region's poly (holes subtracted, edges
+  included; until 2026-10-24 its bounding box) or inside one of its cities' bounding boxes padded by 1 km,
+  open or closed, with every comment. JSON lines; the first is a header
+  `{"schema":1,"source":"planet-notes-261011.osn.bz2","sha256":…,"until":"<newest comment in the
+  dump>","bbox":[minLon,minLat,maxLon,maxLat],"poly":"ontario.poly","notes":<count>,"boxes":[[…],…]}`
+  (`bbox`: the poly's, longitudes past ±180 for a poly across the antimeridian; `boxes`: the padded city
+  boxes, absent when none were given), then one note per
   line by id: `{"id":…,"lat":"43.6532100","lon":"-79.3832000","created":…,"comments":[{"action":"opened",
   "timestamp":…,"uid":…,"text":…}]}` (lat/lon as the dump's strings, `uid` absent for anonymous comments).
 
@@ -57,7 +66,8 @@ the snapshots published until then stay in git history.
               "file": "ontario-2026-07-16.osm.pbf" },  // the PBF's file name
   "notes": { "dump": "planet-notes-261011.osn.bz2", "sha256": "...", // the notes dump the clip came from;
              "until": "2026-10-11T00:02:41Z",   // its newest comment (it must be at or after asOf)
-             "open": 21345,                     // notes open at asOf in the clip's region
+             "open": 21345,                     // notes open at asOf in the clip's region (the poly's bbox
+                                                //   until 2026-10-24, then the poly and the city boxes)
              "showAllNotes": false },           // the app setting the note quest assumes (its default)
                                        // null: notes not modelled (no quest hidden, no note quest);
                                        //   absent on snapshots made before 2026-10-12
