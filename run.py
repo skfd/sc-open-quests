@@ -13,6 +13,10 @@ Subcommands:
   migrate-archive  move snapshots published before 2026-10-24 (docs/data/<region>/snapshots/) into
              data/archive/; count and history do it too, so it is idempotent and needs no flag
   update     download + backfill + history, then commit "data <asOfDate>" and push; last, check-release
+  weekly     refresh the planet history file (osm-extracts fetch planet-history; a failure leaves it as it
+             is), count the weekly regions from it (tools/backfill_history.py weekly: clip, the months not
+             yet counted, a slice at the file's timestamp), merge, history, then commit
+             "data weekly <date>" and push. With no weekly region it only refreshes the history file
   check-release  compare the pinned StreetComplete tag (engine/SC-VERSION.txt) with the newest stable
              GitHub release; if the app moved on, open a GitHub issue "Repin to StreetComplete vX.Y"
              (once; see REPIN.md) and refresh docs/data/sc-releases.json. Network and `gh` failures
@@ -20,7 +24,9 @@ Subcommands:
 
 Regions are config/regions.json; a city names its region in config/cities.json. A region is one engine
 run (one time zone) over one shared extract: its "extract" key, default its id; several regions may share
-one, and an extract osm-extracts does not know by name comes with a "url". Extracts and notes dumps live
+one, and an extract osm-extracts does not know by name comes with a "url". A region with "cadence":
+"weekly" has no extract: `weekly` counts it from the planet history file, and download, count, backfill
+and update leave it alone (default "daily", the Geofabrik path). Extracts and notes dumps live
 in the shared store (~/Code/.osm-data, see ~/Code/osm-extracts/README.md); this project never downloads
 them itself. A notes dump is clipped to every region in one pass, into data/notes/. Every snapshot is kept
 in data/archive/<region>/ (not committed); docs/data, which GitHub Pages publishes, holds only the newest
@@ -140,9 +146,26 @@ def pipeline_lock():
 # --- regions --------------------------------------------------------------------------------------
 
 def regions(path: Path = REGIONS_CONFIG) -> list[dict]:
-    """config/regions.json: {id, name, group, timeZone, poly, source[, extract][, url]}. A region is one
-    engine run: one time zone, its own cities and output folder. Several regions may share an extract."""
+    """config/regions.json: {id, name, group, timeZone, poly, source[, extract][, url][, cadence]}. A region
+    is one engine run: one time zone, its own cities and output folder. Several regions may share an extract."""
     return read_json(path)["regions"]
+
+
+CADENCES = ("daily", "weekly")
+
+
+def region_cadence(region: dict) -> str:
+    """How a region is counted: "daily" (the default) from its Geofabrik extract by `update`, or "weekly"
+    from the planet history file by `weekly`."""
+    cadence = region.get("cadence", "daily")
+    if cadence not in CADENCES:
+        raise ValueError(f"region {region['id']}: cadence {cadence!r} is not one of {', '.join(CADENCES)}")
+    return cadence
+
+
+def regions_by_cadence(cadence: str, regs: list[dict] | None = None) -> list[dict]:
+    """The regions with this cadence, in config order (every region's cadence checked)."""
+    return [r for r in (regions() if regs is None else regs) if region_cadence(r) == cadence]
 
 
 def region_extract(region: dict) -> str:
@@ -178,7 +201,7 @@ def region_cities(region: dict) -> Path:
 def download() -> None:
     """Ask osm-extracts to refresh each distinct shared extract once. It HEAD-checks the source and holds
     its own fetch lock, so sibling projects refreshing at the same time don't both download."""
-    for extract, url in extract_fetches(regions()):
+    for extract, url in extract_fetches(regions_by_cadence("daily")):
         cmd = [sys.executable, str(OSM_EXTRACTS_TOOL), "fetch", extract] + (["--url", url] if url else [])
         log(f"refreshing shared extract: {' '.join(cmd[1:])}")
         subprocess.run(cmd, check=True)
@@ -479,7 +502,7 @@ def backfill(force: bool = False) -> None:
     """Count every dated extract of every region still in the shared store (the store prunes old
     ones on fetch)."""
     with pipeline_lock():
-        for region in regions():
+        for region in regions_by_cadence("daily"):
             for extract in dated_extracts(region):
                 count(region, force=force, extract=extract)
 
@@ -733,16 +756,21 @@ def git(*args: str, check: bool = True) -> subprocess.CompletedProcess:
     return subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True, check=check)
 
 
-def publish(data_dir: Path = DATA_DIR) -> bool:
-    """Commit docs/data as "data <asOfDate>" and push. Returns True if a commit was made."""
+def publish(data_dir: Path = DATA_DIR, message: str | None = None, push: bool = True) -> bool:
+    """Commit docs/data as message (default "data <asOfDate>") and push, unless push is False (--no-push).
+    Returns True if a commit was made."""
     rel = data_dir.relative_to(ROOT).as_posix()
     git("add", "--", rel)
     if git("diff", "--cached", "--quiet", "--", rel, check=False).returncode == 0:
         log("docs/data unchanged; nothing to commit")
         return False
-    as_of = read_json(data_dir / "cities.json").get("asOfDate") or "unknown"
-    git("commit", "-m", f"data {as_of}", "--", rel)
-    log(f"committed: data {as_of}")
+    if message is None:
+        message = f"data {read_json(data_dir / 'cities.json').get('asOfDate') or 'unknown'}"
+    git("commit", "-m", message, "--", rel)
+    log(f"committed: {message}")
+    if not push:
+        log("not pushed (--no-push)")
+        return True
     push = git("push", check=False)
     if push.returncode != 0:
         raise RuntimeError(f"git push failed: {push.stderr.strip()}")
@@ -750,7 +778,7 @@ def publish(data_dir: Path = DATA_DIR) -> bool:
     return True
 
 
-def update(force: bool = False) -> None:
+def update(force: bool = False, push: bool = True) -> None:
     with pipeline_lock():
         log("=== download ===")
         download()
@@ -761,13 +789,68 @@ def update(force: bool = False) -> None:
         log("=== history ===")
         history()
         log("=== publish ===")
-        publish()
+        publish(push=push)
     log("=== check-release ===")
     try:
         check_release()
     except Exception as e:  # the day's data is published; a GitHub hiccup must not fail the run
         log(f"check-release failed (ignored): {e}")
     log("update done")
+
+
+# --- weekly: the planet history file -----------------------------------------------------------------
+
+def fetch_planet_history() -> bool:
+    """Ask osm-extracts to bring the planet history file up to date with replication diffs. A failure
+    (most likely too little disk for the second copy) is logged, not raised: the history file as it is
+    stays a valid source, only older. Returns True on success."""
+    cmd = [sys.executable, str(OSM_EXTRACTS_TOOL), "fetch", "planet-history"]
+    log(f"refreshing the planet history file: {' '.join(cmd[1:])}")
+    done = subprocess.run(cmd, check=False)
+    if done.returncode != 0:
+        log(f"fetch planet-history failed (exit {done.returncode}; its message is above); "
+            "counting from the history file as it is")
+        return False
+    return True
+
+
+def weekly(push: bool = True) -> None:
+    """The weekly job: refresh the planet history file, count the weekly regions from it, merge them into
+    the archive, rebuild history and publish. Each step that touches data/ takes the pipeline lock, and
+    no step starts that would run into the daily update's window (backfill_history.wait_for_quiet), so the
+    two never overlap and the daily never finds the lock held. The fetch touches only the shared store,
+    which osm-extracts locks itself."""
+    sys.path.insert(0, str(TOOLS_DIR))
+    import backfill_history as bh  # noqa: E402  (tools/backfill_history.py; it imports this module)
+    log("=== planet history ===")
+    bh.wait_for_quiet(ahead_minutes=120)  # a week of diffs over the planet: about 1-1.5 h
+    fetch_planet_history()
+    weekly_regions = regions_by_cadence("weekly")
+    try:
+        bh.set_planet(None)
+        log(f"planet history: planet/{bh.PLANET_FILE}, up to {bh.iso(bh.planet_timestamp())}")
+    except SystemExit as e:  # no history file, or no meta: fatal only if a region needs it
+        if weekly_regions:
+            raise RuntimeError(str(e)) from None
+        log(str(e))
+    if not weekly_regions:
+        log(f'no region is weekly ("cadence" in {REGIONS_CONFIG.name}); the planet history file was all to do')
+        return
+    log(f"=== count: {', '.join(r['id'] for r in weekly_regions)} ===")
+    try:
+        t = bh.weekly([r["id"] for r in weekly_regions])
+    except SystemExit as e:
+        raise RuntimeError(str(e)) from None
+    bh.wait_for_quiet()
+    with bh.locked():
+        log("=== merge ===")
+        for r in weekly_regions:
+            bh.merge(bh.Region(r["id"]))
+        log("=== history ===")
+        history()
+        log("=== publish ===")
+        publish(message=f"data weekly {t.date().isoformat()}", push=push)
+    log("weekly done")
 
 
 # --- SC releases ----------------------------------------------------------------------------------
@@ -854,6 +937,10 @@ def main(argv: list[str] | None = None) -> int:
                                    "(--force recounts but does not re-download)")]:
         p = sub.add_parser(name, help=help_)
         p.add_argument("--force", action="store_true", help="redo even if nothing changed")
+        if name == "update":
+            p.add_argument("--no-push", dest="push", action="store_false", help="commit but do not push")
+    w = sub.add_parser("weekly", help="planet history + the weekly regions + history + commit + push")
+    w.add_argument("--no-push", dest="push", action="store_false", help="commit but do not push")
     h = sub.add_parser("history", help="rebuild history/, cities.json and compare/ from the archived snapshots")
     h.add_argument("--data-dir", type=Path, default=DATA_DIR)
     h.add_argument("--cities", type=Path, default=CITIES_CONFIG)
@@ -869,7 +956,7 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command == "backfill":
             backfill(force=args.force)
         elif args.command == "count":
-            for region in regions():
+            for region in regions_by_cadence("daily"):
                 count(region, force=args.force)
         elif args.command == "history":
             with pipeline_lock():
@@ -878,7 +965,9 @@ def main(argv: list[str] | None = None) -> int:
             with pipeline_lock():
                 migrate_archive()
         elif args.command == "update":
-            update(force=args.force)
+            update(force=args.force, push=args.push)
+        elif args.command == "weekly":
+            weekly(push=args.push)
         elif args.command == "check-release":
             check_release()
         return 0
@@ -888,4 +977,6 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
+    # one module, not two: tools/backfill_history.py imports `run`, and must share this one's lock and paths
+    sys.modules.setdefault("run", sys.modules[__name__])
     sys.exit(main())
