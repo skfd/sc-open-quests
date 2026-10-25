@@ -6,7 +6,9 @@
 Fetches the relation from Overpass (`[out:json];relation(ID);out geom;`) and writes it, the bare element,
 to data/boundaries/<relation>.json -- the same shape tools/import_farmland_cities.py wrote and
 Polygon.fromOverpassJson reads. Prints the cities.json entry and puts it, replacing any entry with the
-same id, into --out (config/cities.json), sorted by id. countryCodes must be what SC's boundaries give
+same id, into --out (config/cities.json), sorted by id. The id is --id, else the id the relation already
+has there, else the name's slug with accents dropped (Québec -> quebec, Łódź -> lodz), else r<relation>
+(r1543125) for a name in another script (Москва, 東京) or a slug another relation holds. countryCodes must be what SC's boundaries give
 the city (engine CountriesTest checks): ["CA","CA-ON"] in Ontario, but only ["DE"] in Germany.
 
 adminLevel is the relation's admin_level tag; the relation must be boundary=administrative.
@@ -34,6 +36,7 @@ import math
 import re
 import sys
 import time
+import unicodedata
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -222,8 +225,38 @@ def dist_to_ring_m(lat: float, lon: float, ring: list[tuple[float, float]]) -> f
     return best
 
 
-def slug(name: str) -> str:
-    return re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
+# Latin letters that NFKD does not decompose into an ASCII letter and a mark
+_LATIN = str.maketrans({"ß": "ss", "ẞ": "ss", "æ": "ae", "Æ": "ae", "œ": "oe", "Œ": "oe", "ø": "o", "Ø": "o",
+                        "ł": "l", "Ł": "l", "đ": "d", "Đ": "d", "ð": "d", "Ð": "d", "þ": "th", "Þ": "th",
+                        "ı": "i", "ħ": "h", "Ħ": "h", "ŋ": "ng", "Ŋ": "ng"})
+
+
+def slug(name: str, relation: int) -> str:
+    """City id from its name: accents dropped (Québec -> quebec, Łódź -> lodz, Köln -> koln), anything
+    else lowercased to [a-z0-9-]. A name with letters or digits that do not transliterate (Cyrillic, CJK,
+    Arabic...) gets the relation id instead (r1543125), never a shortened or empty slug."""
+    s = unicodedata.normalize("NFKD", name.translate(_LATIN))
+    s = "".join(ch for ch in s if not unicodedata.combining(ch))
+    if any(not ch.isascii() and unicodedata.category(ch)[0] in "LN" for ch in s):
+        return f"r{relation}"
+    return re.sub(r"[^a-z0-9]+", "-", s.lower()).strip("-") or f"r{relation}"
+
+
+def choose_id(name: str, relation: int, given: str | None, cities: list[dict]) -> str:
+    """--id if given; else the id the relation already has in cities.json (re-adding a city replaces
+    it); else slug(), or r<relation> if another relation holds that slug. Exits on an id outside
+    [a-z0-9-] (an empty one included)."""
+    if given is None:
+        same = [c["id"] for c in cities if c.get("relation") == relation]
+        city_id = same[0] if same else slug(name, relation)
+        if any(c["id"] == city_id and c.get("relation") != relation for c in cities):
+            print(f"  id {city_id!r} is another relation's; using r{relation} (or pass --id)", file=sys.stderr)
+            city_id = f"r{relation}"
+    else:
+        city_id = given
+    if not re.fullmatch(r"[a-z0-9]+(-[a-z0-9]+)*", city_id):
+        sys.exit(f"city id {city_id!r} is empty or not lowercase [a-z0-9-]; pass --id")
+    return city_id
 
 
 def main() -> None:
@@ -257,8 +290,9 @@ def main() -> None:
         print(f"  no {poly.relative_to(ROOT)} to check against", file=sys.stderr)
 
     name = a.name or tags["name"]
+    doc = json.loads(a.out.read_text(encoding="utf-8")) if a.out.exists() else {"cities": []}
     entry = {
-        "id": a.id or slug(name),
+        "id": choose_id(name, a.relation, a.id, doc["cities"]),
         "name": name,
         "relation": a.relation,
         "adminLevel": int(tags["admin_level"]),
@@ -273,7 +307,6 @@ def main() -> None:
         entry["populationSource"] = a.population_source
 
     (ROOT / "data/boundaries" / f"{a.relation}.json").write_text(json.dumps(e), encoding="utf-8")
-    doc = json.loads(a.out.read_text(encoding="utf-8")) if a.out.exists() else {"cities": []}
     doc["cities"] = sorted([c for c in doc["cities"] if c["id"] != entry["id"]] + [entry], key=lambda c: c["id"])
     a.out.write_text(json.dumps(doc, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(json.dumps(entry, indent=2))
