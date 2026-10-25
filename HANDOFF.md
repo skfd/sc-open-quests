@@ -126,7 +126,7 @@ months away at today's size, so the publish format has to change anyway.
 
 **Taken by the measuring session (2026-10-24 evening), all independent of how places are named:**
 the publish format for the Pages cap (newest snapshot per region in `docs/`, the archive outside it, a
-small per-quest compare file); every SC country_metadata file bundled and a missing one an error; a
+small per-quest compare file; done on its branch, DESIGN.md "Publish format: newest snapshot only"); every SC country_metadata file bundled and a missing one an error; a
 region's extract separate from its id, so several runs can share one extract; the notes clip in one
 pass for many polygons; Unicode-safe city ids; and whether `osmium apply-changes --with-history` can keep
 the planet history file current. Not taken: the place breakdown, the city list, any planet download.

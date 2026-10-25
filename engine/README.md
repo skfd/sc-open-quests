@@ -26,7 +26,8 @@ engine/build/install/sc-open-quests-engine/bin/sc-open-quests-engine.bat count `
     --source-meta C:\Users\kk\Code\.osm-data\ontario\ontario-2026-10-10.meta.json
 ```
 
-- Writes `docs/data/snapshots/<asOfDate>.json` and `docs/data/quests.json`. Exit code 1 on any error.
+- Writes `<out>/snapshots/<asOfDate>.json` and `<out>/quests.json`; `run.py` passes
+  `--out data/archive/<region>`. Exit code 1 on any error.
 - `--source-meta`: the extract's metadata. Both the osm-extracts `<file>.meta.json` (`sha256`) and the
   toronto-streets-osm `meta.json` (`pbf_sha256`) work. The engine hashes the PBF while reading it and
   fails if the meta describes a different file. Without it, `source.url`/`lastModified` are null.
