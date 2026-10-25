@@ -1,0 +1,17 @@
+{"schema":1,"region":"c810eb355e70","places":[
+["c810eb355e70","Santa Elena",2,-1,-81.0114,-2.5075,-80.1999,-1.6687,"Santa Elena Province",null],
+["b228f0358c55","La Libertad",3,0,-80.9238,-2.2753,-80.8689,-2.2085,"La Libertad Canton",null],
+["589105af9459","La Libertad",5,1,-80.9238,-2.2753,-80.8689,-2.2085,null,null],
+["8adef37e8e77","Salinas",3,0,-81.0114,-2.3386,-80.8559,-2.1839,"Salinas Canton",null],
+["7bfe288a5945","Anconcito",5,3,-80.9157,-2.3386,-80.8559,-2.2899,null,null],
+["ac03ce0795e1","José Luis Tamayo",5,3,-80.9403,-2.3107,-80.8599,-2.2278,null,null],
+["556861a95c11","Salinas",5,3,-81.0114,-2.2905,-80.9107,-2.1839,null,null],
+["7272f15376cb","Santa Elena",3,0,-80.8866,-2.5075,-80.1999,-1.6687,"Santa Elena Canton",null],
+["69cc8083bdfc","Atahualpa",5,7,-80.822,-2.382,-80.7032,-2.2618,null,null],
+["bbc433e7fa03","Chanduy",5,7,-80.7884,-2.5075,-80.2662,-2.2461,null,null],
+["8376739c2054","Colonche",5,7,-80.7633,-2.267,-80.3424,-1.8003,null,null],
+["458765fb5160","Manglaralto",5,7,-80.8024,-1.9819,-80.573,-1.6687,null,null],
+["fd9079575c66","San Jose de Ancon",5,7,-80.8705,-2.3606,-80.7791,-2.2587,null,null],
+["de8a7dd57e8e","Santa Elena",5,7,-80.8866,-2.3255,-80.552,-2.1081,null,null],
+["bd6b1e694c8a","Simón Bolívar",5,7,-80.552,-2.2853,-80.1999,-2.0254,null,null]
+]}

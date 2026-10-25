@@ -1,0 +1,17 @@
+{"schema":1,"region":"4fef579d143e","places":[
+["4fef579d143e","Región de Atacama",2,-1,-71.5925,-29.5347,-68.2632,-25.286,"Atacama Region",null],
+["3288af6945da","Provincia de Chañaral",3,0,-70.7243,-26.9428,-68.3479,-25.286,"Chañaral Province",null],
+["04a821071d11","Chañaral",5,1,-70.7243,-26.9428,-69.8814,-25.8947,null,null],
+["956b66f5e5d6","Diego de Almagro",5,1,-70.2109,-26.9221,-68.3479,-25.286,null,null],
+["6aa4da3dc980","Provincia de Copiapó",3,0,-71.1434,-28.6426,-68.2632,-26.6431,"Copiapó Province",null],
+["7957d4b430b6","Caldera",5,4,-70.9733,-27.8336,-70.2447,-26.6431,null,null],
+["5ea08bd6e629","Copiapó",5,4,-71.1434,-28.1829,-68.2632,-26.6624,null,null],
+["5fe433b46a69","Villa Las Estrellas",8,6,-70.3011,-27.3841,-70.2997,-27.3829,null,null],
+["181d60984233","Tierra Amarilla",5,4,-70.3813,-28.6426,-68.9721,-27.1543,null,null],
+["66119357592f","Provincia de Huasco",3,0,-71.5257,-29.5347,-69.6876,-27.9636,"Huasco Province",null],
+["625070cf321a","Alto del Carmen",5,9,-70.62,-29.5347,-69.6876,-28.5735,null,null],
+["0d1a70b72b20","Freirina",5,9,-71.5257,-29.1916,-70.8127,-28.2797,null,null],
+["66944aa767b6","Huasco",5,9,-71.3156,-28.6175,-70.7689,-27.9636,null,null],
+["22f1fdcfc6af","Vallenar",5,9,-71.1997,-29.356,-70.0035,-28.0099,null,null],
+["b9b8ab277561","San Ambrosio",8,13,-70.7861,-28.5786,-70.7832,-28.5744,null,null]
+]}

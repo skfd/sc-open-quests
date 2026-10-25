@@ -1,0 +1,12 @@
+{"schema":1,"region":"b71777b47fbb","places":[
+["b71777b47fbb","Estuaire",2,-1,9.3015,-0.572,10.9739,1.0699,"Estuaire Province",null],
+["db1c86ef2be0","Komo",3,0,9.7886,-0.4045,10.9823,0.8404,null,null],
+["1d33513e179b","Mbel",5,1,10.1648,0.2705,10.179,0.2722,null,null],
+["d55e9b72c441","Komo-Mondah",3,0,9.3143,0.1848,9.9601,0.6618,null,null],
+["a78f72bac5fd","2ème Arrondissement d'Akanda",8,3,9.3633,0.4551,9.5919,0.5981,null,null],
+["0c417df000ea","Première Cité",9,4,9.3981,0.4941,9.4067,0.5012,null,null],
+["74a92b9afb36","Komo-Ocèan",3,0,9.311,-0.5808,9.9101,0.3475,null,null],
+["cc8ba468ace6","Libreville",3,0,9.3728,0.3499,9.5239,0.5513,null,null],
+["8cb259e8a4dc","1er Arrondissement de Libreville",7,7,9.3964,0.4023,9.4615,0.4995,null,null],
+["939c3bc03b2a","Noya",3,0,9.5507,0.4603,10.43,1.0605,null,null]
+]}

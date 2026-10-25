@@ -1,0 +1,15 @@
+{"schema":1,"region":"185c5014b405","places":[
+["185c5014b405","Huehuetenango",2,-1,-92.1161,15.1385,-91.047,16.0739,null,null],
+["572c1d29ae74","Aguacatán",3,0,-91.3902,15.2669,-91.1579,15.5103,null,null],
+["f9c8cba5a675","Barillas",3,0,-91.4435,15.6868,-91.047,16.0739,null,null],
+["e13e83310770","Cuilco",3,0,-92.1161,15.2694,-91.8609,15.5791,null,null],
+["445e54efbe4c","Huehuetenango",3,0,-91.5786,15.2303,-91.3192,15.3667,"Huehuetenango Municipality",null],
+["d965068e9bfb","Colonia José ernesto Monzón",8,4,-91.4642,15.3173,-91.4617,15.32,null,null],
+["704c20e9eed1","La Democracia",3,0,-92.0037,15.5514,-91.8001,15.7193,null,null],
+["5ae325fe840f","La Libertad",3,0,-92.0235,15.4675,-91.827,15.6339,null,null],
+["cd9a562921c5","Malacatancito",3,0,-91.6438,15.1385,-91.3597,15.2874,null,null],
+["8175bc7132ac","Nentón",3,0,-91.8946,15.7441,-91.4984,16.0739,null,null],
+["a7a52250fa77","San Mateo Ixtatán",3,0,-91.6433,15.7739,-91.3607,16.0739,null,null],
+["73f26b44e332","Santa Ana Huista",3,0,-91.9409,15.651,-91.8021,15.798,null,null],
+["3268204b26ed","Tectitán",3,0,-92.0779,15.2638,-92.0038,15.3768,null,null]
+]}

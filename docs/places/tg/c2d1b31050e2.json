@@ -1,0 +1,16 @@
+{"schema":1,"region":"c2d1b31050e2","places":[
+["c2d1b31050e2","Région de la Kara",2,-1,0.2271,8.861,1.435,10.2194,"Kara Region",null],
+["6cda94e98056","Assoli",3,0,0.9547,9.2122,1.4312,9.4539,null,null],
+["32f12ed04246","Bassar",3,0,0.4562,8.8431,1.0336,9.6541,null,null],
+["b9e9e859c035","Bakpayam",5,2,0.5256,9.2541,0.5275,9.2559,null,null],
+["4fefb2bc4bed","Kadjétou",5,2,0.6134,8.9715,0.6187,8.9757,null,null],
+["4bc905e87204","Kpalou",5,2,0.7444,9.155,0.7532,9.1669,null,null],
+["d498fdc3a9af","M'Kpassambyame",5,2,0.8436,9.2774,0.8571,9.2847,null,null],
+["be19b5b48e94","Nangbani",5,2,0.7917,9.2631,0.7997,9.2684,null,null],
+["0d5affe0647b","Saboundi",5,2,0.7574,9.1808,0.7607,9.1858,null,null],
+["efc0707c0e3e","Binah",3,0,1.2111,9.4833,1.3684,9.9139,null,null],
+["1caaeead4a4a","Dankpen",3,0,0.2297,9.4066,0.9135,10.032,null,null],
+["ac98adbed04d","Doufelgou",3,0,0.8369,9.6389,1.3587,10.1077,null,null],
+["25786fe3d244","Keran",3,0,0.6667,9.8447,1.175,10.2208,null,null],
+["6c6160818f11","Kozah",3,0,0.9144,9.4044,1.3983,9.7714,null,null]
+]}

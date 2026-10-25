@@ -1,0 +1,23 @@
+{"schema":1,"region":"1ccb6b6de0a4","places":[
+["1ccb6b6de0a4","Región Aysén del General Carlos Ibáñez del Campo",2,-1,-75.649,-49.2115,-71.0914,-43.6385,"Aysen del General Carlos Ibanez del Campo Region",null],
+["544385e2667a","Provincia de Aysén",3,0,-75.649,-47.0685,-71.96,-43.6385,"Aysén Province",null],
+["d10b6d08f242","Aysén",5,1,-75.6526,-47.3402,-71.96,-44.9536,null,null],
+["2bebb0481cab","Cisnes",5,1,-75.2038,-45.1614,-72.0503,-43.6385,null,null],
+["9025ff1350d8","Plaza La Junta",9,3,-72.406,-43.9728,-72.4046,-43.9715,null,null],
+["25404baf6fbc","Plaza Puyuhuapi",9,3,-72.5589,-44.3258,-72.558,-44.325,null,null],
+["a60061f321f1","Guaitecas",5,1,-74.5052,-44.2228,-73.2545,-43.586,null,null],
+["96a606153179","Provincia de Capitán Prat",3,0,-75.6064,-49.2115,-71.8505,-46.8599,"Capitán Prat Province",null],
+["7fc9a9a3d176","Cochrane",5,7,-73.5076,-47.9354,-71.8505,-46.8599,null,null],
+["bb3645e8a6d2","O’Higgins",5,7,-73.4962,-49.2115,-72.2257,-47.7342,null,null],
+["549fdedbae97","Tortel",5,7,-75.7109,-48.9999,-73.0397,-46.954,null,null],
+["242e21ec426f","Plaza Elicura",9,10,-73.5355,-47.798,-73.5353,-47.7979,null,null],
+["5c7194732abc","Plaza San Pedro",9,10,-73.5356,-47.8021,-73.5353,-47.8019,null,null],
+["ee5f2c56b36b","Provincia de Coyhaique",3,0,-72.9315,-46.1397,-71.0914,-43.9251,"Coyhaique Province",null],
+["0abadd1e5439","Coyhaique",5,13,-72.9315,-46.1397,-71.3198,-44.8307,null,null],
+["213ff9ac1948","Plazoleta Angol",9,14,-72.0758,-45.5732,-72.0747,-45.5726,null,null],
+["39ac423d6aed","Lago Verde",5,13,-72.3922,-44.8809,-71.0914,-43.9251,null,null],
+["d1babca8c96b","Provincia de General Carrera",3,0,-73.4095,-47.0941,-71.6447,-45.9202,"General Carrera Province",null],
+["a01807789a6e","Chile Chico",5,17,-73.4095,-47.0941,-71.6447,-46.4346,null,null],
+["459e7aa27de5","Río Ibáñez",5,17,-73.1385,-46.6852,-71.7032,-45.9202,null,null],
+["cd7643c6dfcb","Plaza Puerto Río Tranquilo",9,19,-72.6773,-46.6245,-72.6758,-46.6234,null,null]
+]}

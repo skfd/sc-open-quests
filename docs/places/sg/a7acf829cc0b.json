@@ -1,0 +1,15 @@
+{"schema":1,"region":"a7acf829cc0b","places":[
+["a7acf829cc0b","West Region",2,-1,103.6057,1.1587,103.8015,1.4336,null,null],
+["a8d5a2e7471e","Boon Lay",3,0,103.6811,1.2991,103.7212,1.3317,null,null],
+["b0d3de510cb1","Bukit Batok",3,0,103.7365,1.3325,103.7704,1.3797,null,null],
+["92b9d62c950e","Bukit Panjang",3,0,103.7551,1.3419,103.7917,1.3908,null,null],
+["3b11c2d5c17b","Choa Chu Kang",3,0,103.7327,1.3691,103.7613,1.4055,null,null],
+["85f60bdec2d6","Clementi",3,0,103.7475,1.2916,103.7757,1.3413,null,null],
+["8b4c71784c59","Jurong East",3,0,103.7098,1.2963,103.7573,1.3536,null,null],
+["665c7a652114","Jurong West",3,0,103.6749,1.3236,103.7282,1.3643,null,null],
+["b6673f25d7cf","Pioneer",3,0,103.6498,1.2869,103.6965,1.331,null,null],
+["9064ada11611","Tengah",3,0,103.7062,1.346,103.7485,1.3789,null,null],
+["c5493a51c144","Tuas",3,0,103.6057,1.2101,103.6677,1.3528,null,null],
+["eede4d239b1e","Western Islands",3,0,103.6537,1.1587,103.8015,1.2966,null,null],
+["dc98652e215b","Western Water Catchment",3,0,103.6391,1.328,103.746,1.4351,null,null]
+]}

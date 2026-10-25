@@ -1,0 +1,21 @@
+{"schema":1,"region":"05c2fe6a8f07","places":[
+["05c2fe6a8f07","Izabal",2,-1,-89.6269,15.0688,-88.2356,15.9665,null,null],
+["6f825adf8fc0","El Estor",3,0,-89.6269,15.1601,-89.0708,15.71,null,null],
+["042cac8c219e","Livingston",3,0,-89.4935,15.5241,-88.6704,15.9204,"Livingston Municipality",null],
+["362138569459","Cayo Piedra",5,2,-88.9015,15.6809,-88.8968,15.6833,null,null],
+["8201e5de24a1","Las Flores",5,2,-89.0821,15.6671,-89.0758,15.6727,null,null],
+["ad68b66d9352","Rio Dulce",5,2,-89.0187,15.6561,-88.9993,15.6694,null,null],
+["006fadb3c8b7","Río Frío",5,2,-88.892,15.6569,-88.8837,15.6648,null,null],
+["51e6c6aa93b3","Santa Elena",5,2,-89.1062,15.6521,-89.0976,15.6571,null,null],
+["852138709dd5","Los Amates",3,0,-89.2225,15.0688,-88.8701,15.5241,null,null],
+["92901dd6be50","Aldea Playa de Chikasaw, Los Amates, Izabal",5,8,-88.932,15.319,-88.9249,15.325,null,null],
+["f74419d789f7","Finca Aztec D.M.",5,8,-89.014,15.284,-89.005,15.2891,null,null],
+["0195283c38a6","Finca Chicasaw D.M.",5,8,-88.9455,15.3282,-88.941,15.3316,null,null],
+["d90943099b71","Finca El Pilar D.M.",5,8,-88.9596,15.3078,-88.9525,15.3119,null,null],
+["cf355044c600","Quiriguá",5,8,-89.0883,15.2665,-89.0699,15.2779,null,null],
+["8a154be8e343","Morales",3,0,-89.0708,15.2229,-88.4872,15.621,"Morales Municipality",null],
+["0da41840aae7","Cayuga",5,14,-88.7061,15.5304,-88.6966,15.5397,null,null],
+["14f95ea6b052","Tenedores",5,14,-88.63,15.5541,-88.6224,15.575,null,null],
+["38c6ff7ab960","Puerto Barrios",3,0,-88.7347,15.5018,-88.2356,15.9665,null,null],
+["51bcfccaa5c4","Plaza Israel",9,17,-88.578,15.7119,-88.5778,15.7121,null,null]
+]}

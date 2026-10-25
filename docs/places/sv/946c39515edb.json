@@ -1,0 +1,23 @@
+{"schema":1,"region":"946c39515edb","places":[
+["946c39515edb","San Vicente",2,-1,-88.9,13.2519,-88.4859,13.8023,"San Vicente Department",null],
+["a4ed93cab0c1","Apastepeque",3,0,-88.8079,13.6207,-88.614,13.7154,null,null],
+["30791952863e","Guadalupe",3,0,-88.9006,13.6127,-88.8385,13.6572,null,null],
+["5c106a77e4df","Verapaz",5,2,-88.8792,13.6384,-88.8655,13.65,null,null],
+["323201fdf3a5","San Cayetano Istepeque",3,0,-88.8367,13.6428,-88.8018,13.6892,null,null],
+["2bdf5dc3b08f","San Esteban Catarina",3,0,-88.8136,13.6854,-88.684,13.8075,null,null],
+["3ed5fc5ff65e","San Ildefonso",3,0,-88.6247,13.6204,-88.4919,13.7522,null,null],
+["29ee249b0ce8","San Lorenzo",3,0,-88.8458,13.6822,-88.8024,13.7353,null,null],
+["51c614dbba70","San Sebastian",3,0,-88.8727,13.7216,-88.749,13.8075,null,null],
+["db62af9120bd","San Vicente",3,0,-88.8495,13.4813,-88.5739,13.6688,null,null],
+["53dd170f055f","Caserio Valle Nuevo",5,9,-88.6598,13.6085,-88.6551,13.6134,null,null],
+["740371273208","Caserío Rio Frío",5,9,-88.6155,13.6017,-88.6071,13.6055,null,null],
+["0b0348613a32","Caserío San Juan Buenavista",5,9,-88.5863,13.6015,-88.5772,13.6062,null,null],
+["dea15e76170b","Chamoco",5,9,-88.6375,13.5987,-88.6282,13.6054,null,null],
+["b80cb7034b01","Santa Clara",3,0,-88.7568,13.6764,-88.5927,13.7991,null,null],
+["f22bde185c53","Santo Domingo",3,0,-88.8754,13.6924,-88.8371,13.7525,null,null],
+["2f0fae0888d4","Tecoluca",3,0,-88.8464,13.2519,-88.6763,13.6188,null,null],
+["9cf48cf20a83","Caserio El Playon",8,16,-88.774,13.4392,-88.7619,13.4431,null,null],
+["300e0bdf4952","Caserío El Playón",8,16,-88.7611,13.4351,-88.7491,13.4435,null,null],
+["368142de2a6e","Tepetitan",3,0,-88.861,13.6426,-88.8333,13.6967,null,null],
+["5ec66adadf74","Verapaz",3,0,-88.9039,13.6501,-88.8482,13.7081,null,null]
+]}

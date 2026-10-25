@@ -1,0 +1,14 @@
+{"schema":1,"region":"7ea778897b61","places":[
+["7ea778897b61","Rajoni i Prizrenit / Prizrenski okrug",2,-1,20.4802,41.8576,20.986,42.608,"District of Prizren",null],
+["41daec49027a","Komuna e Dragashit / Opština Dragaš",3,0,20.5546,41.8576,20.7943,42.1513,"Municipality of Dragash / Dragaš",null],
+["2495fa66570c","Dragash",5,1,20.6201,42.0505,20.6594,42.0743,null,null],
+["43067c81ace2","Pazari i Brodit",9,1,20.7053,41.9912,20.7055,41.9914,null,null],
+["95e56edb0974","Komuna e Malishevës / Opština Mališevo",3,0,20.5595,42.3971,20.886,42.608,"Municipality of Mališevo",null],
+["76bba5f29233","Sheshi i Qytetit",9,4,20.7429,42.4823,20.7443,42.4834,null,null],
+["fe2a2bc51d8b","Komuna e Prizrenit / Opština Prizren / Prizren Belediyesi",3,0,20.4802,42.0816,20.9859,42.3411,"Municipality of Prizren",null],
+["cf6221213c77","Kurilla",5,6,20.7443,42.2134,20.7501,42.2173,null,null],
+["d1622160484e","Qyteti Historik",7,6,20.7356,42.2051,20.747,42.213,null,null],
+["16461acd9d52","Komuna e Suharekës / Opština Suva Reka",3,0,20.7215,42.2379,20.986,42.4896,"Municipality of Suharekë / Suva Reka",null],
+["ecbcd57e5e44","Mamuşa Belediyesi / Komuna e Mamushës",3,0,20.7071,42.3032,20.7548,42.3477,"Municipality of Mamuša",null],
+["cabfb0510c5e","Mamuşa - Mamushë",5,10,20.7071,42.3032,20.7548,42.3477,"Mamusa",null]
+]}

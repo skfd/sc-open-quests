@@ -1,0 +1,23 @@
+{"schema":1,"region":"f9e48a454ab8","places":[
+["f9e48a454ab8","Región de Arica y Parinacota",2,-1,-70.3779,-19.229,-68.9114,-17.4984,"Arica y Parinacota Region",null],
+["1a7315ca3406","Provincia de Arica",3,0,-70.3779,-19.229,-69.0464,-18.0458,"Arica Province",null],
+["6d7f0ef45bb5","Arica",5,1,-70.3779,-18.904,-69.489,-18.0458,null,null],
+["c00d463059a1","Condominio Bello Horizonte",8,2,-70.2993,-18.4474,-70.2984,-18.4449,null,null],
+["edbe3f94d50c","Condominio Doña Bernardita",8,2,-70.2979,-18.4413,-70.2965,-18.4401,null,null],
+["6dde5f2d6801","Condominio Doña Laura",8,2,-70.2964,-18.4412,-70.2954,-18.4399,null,null],
+["0d82c9147c79","Condominio Doña Margarita",8,2,-70.2964,-18.4401,-70.2954,-18.4392,null,null],
+["47fa1e159e1b","Condominio Doña Victoria",8,2,-70.2964,-18.4392,-70.2954,-18.4384,null,null],
+["856cfa4de867","Condominio Pacífico Norte 1",8,2,-70.2977,-18.4425,-70.2965,-18.4414,null,null],
+["503c3da3344c","Condominio Pacífico Norte 2",8,2,-70.2987,-18.4426,-70.2974,-18.4417,null,null],
+["e8e2430bc3bb","Condominio Pacífico Norte 3",8,2,-70.2988,-18.4434,-70.2971,-18.4422,null,null],
+["41962a4fcbb0","Condominio Pacífico Norte 4",8,2,-70.2964,-18.4424,-70.2954,-18.4416,null,null],
+["4a3f6228b31f","Condominio Portal del Sol",8,2,-70.2982,-18.4373,-70.2964,-18.4353,null,null],
+["23cc30ef9319","Condominio Puertas del Pacífico II",8,2,-70.2983,-18.4465,-70.2968,-18.4449,null,null],
+["a4b0b91c8fd9","Plaza 7 de Junio",9,2,-70.2934,-18.4729,-70.2928,-18.4723,null,null],
+["b5da5cb5dbf9","Plaza Tocopilla",9,2,-70.2904,-18.4711,-70.2899,-18.4706,null,null],
+["234cd03e7030","Plaza Villa Azolas",9,2,-70.294,-18.4692,-70.2934,-18.4686,null,null],
+["bd551488be4c","Camarones",5,1,-70.3514,-19.229,-69.0464,-18.6977,null,null],
+["e50af4947e3f","Provincia de Parinacota",3,0,-69.8261,-19.0341,-68.9114,-17.4984,"Parinacota Province",null],
+["d03bef4325b9","General Lagos",5,18,-69.8261,-18.167,-69.2756,-17.4984,null,null],
+["48b3e61fb317","Putre",5,18,-69.6952,-19.0341,-68.9114,-17.954,null,null]
+]}

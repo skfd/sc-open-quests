@@ -1,0 +1,10 @@
+{"schema":1,"region":"5500f1fd4699","places":[
+["5500f1fd4699","Bandiagara",2,-1,-4.107,13.1557,-1.9805,14.9951,"Bandiagara Region",null],
+["1df983d3885f","Cercle de Bandiagara",3,0,-4.107,13.7833,-2.947,14.9951,"Bandiagara Cercle",null],
+["e07650d8e79f","Amba",5,1,-3.6991,14.8059,-3.6977,14.8074,null,null],
+["39ff7604351d","Ecole",9,1,-3.2702,14.6616,-3.2689,14.6628,null,null],
+["6fda434dc7c5","Mairie",9,1,-3.2697,14.6623,-3.2686,14.664,null,null],
+["64464fff27e4","Cercle de Bankass",3,0,-4.059,13.1557,-3.2168,14.2255,"Bankass Cercle",null],
+["073e3a4354f7","Cercle de Koro",3,0,-3.4759,13.6135,-1.9805,14.826,"Koro Cercle",null],
+["54b164e53a88","Sogou",5,6,-3.1268,14.0577,-3.1231,14.0604,null,null]
+]}

@@ -1,0 +1,23 @@
+{"schema":1,"region":"0448061aa127","places":[
+["0448061aa127","Monaco",2,-1,7.409,43.7248,7.4399,43.7519,null,null],
+["1efb31d37308","Fontvieille",7,0,7.412,43.7248,7.424,43.7316,null,null],
+["9e8c53e0225f","Jardin Exotique",7,0,7.409,43.7281,7.4175,43.7359,null,null],
+["2b67f8034e31","La Condamine",7,0,7.4159,43.7311,7.4321,43.7377,null,null],
+["328296890af7","Place d'Armes",9,3,7.419,43.7323,7.42,43.7329,null,null],
+["bdea7b3c7f73","Place des Bougainvilliers",9,3,7.4179,43.7341,7.4186,43.7354,null,null],
+["bd6f652afc6b","La Rousse",7,0,7.4286,43.7456,7.4387,43.7519,null,null],
+["8a5039596fba","Larvotto",7,0,7.4295,43.7397,7.4399,43.7495,null,null],
+["e347f23fd945","L'Anse du Portier",8,7,7.4304,43.7397,7.4338,43.7446,null,null],
+["40749ab98879","Le Portier",8,7,7.4305,43.7397,7.4338,43.7439,null,null],
+["8be4707ca146","Belvedere Gerard Brianti",9,9,7.432,43.7424,7.4322,43.7425,null,null],
+["5f597b245b01","Place Princesse Gabriella",9,9,7.4305,43.7409,7.4322,43.7416,null,null],
+["b896a6de83f6","Place Anne-Marie Campora",9,7,7.432,43.7449,7.4325,43.7453,null,null],
+["b40b8b481faf","Monaco-Ville",7,0,7.4175,43.7294,7.4283,43.733,"Monaco City",null],
+["9fac2b6d7069","Place Saint-Nicolas",9,13,7.4221,43.7304,7.4224,43.7306,null,null],
+["a7a717cfb459","Placette Don Pacchiero",9,13,7.4227,43.7307,7.4228,43.7308,null,null],
+["36ec5ac4561f","Placette François Bosio",9,13,7.4229,43.7309,7.423,43.731,null,null],
+["0a067856c822","Monte-Carlo",7,0,7.4191,43.7371,7.4308,43.7461,null,null],
+["46bbdd5fb5c1","Place du Casino",9,17,7.4273,43.739,7.4281,43.7397,"Casino Square",null],
+["e410dac8790d","Ravin de Sainte-Dévote",7,0,7.4189,43.737,7.4223,43.7389,null,null],
+["a1fd2292cf73","Les Monegetti",8,0,7.4145,43.7343,7.4209,43.7387,null,null]
+]}

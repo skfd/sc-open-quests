@@ -1,0 +1,18 @@
+{"schema":1,"region":"056f98b25b99","places":[
+["056f98b25b99","Upper East Region",2,-1,-1.5731,10.2744,0.0344,11.1749,null,null],
+["023a086591be","Bawku Municipal District",3,0,-0.3386,10.9091,-0.1459,11.1749,null,null],
+["f6188b82f924","Bawku West District",3,0,-0.6189,10.5584,-0.3296,11.1272,null,null],
+["b1d0aadf0e81","Binduri District",3,0,-0.3959,10.7995,-0.2117,11.0919,null,null],
+["6b47eb159181","Bolgatanga East District",3,0,-0.8583,10.7403,-0.7412,10.8636,null,null],
+["f9bb9aabd12e","Bolgatanga Municipal District",3,0,-1.0148,10.6168,-0.8063,10.8775,null,null],
+["ef4e82d54ea9","Bongo District",3,0,-0.9339,10.8276,-0.6449,11.0065,null,null],
+["1238566fd4d2","Builsa North District",3,0,-1.4071,10.5433,-1.081,10.8772,null,null],
+["71c0670219a3","Builsa South District",3,0,-1.5731,10.2744,-1.0656,10.7861,null,null],
+["31180cbfe4c9","Garu District",3,0,-0.3761,10.6194,-0.0679,10.9235,null,null],
+["45396cc20edf","Kassena-Nankana Municipal District",3,0,-1.1816,10.4885,-0.9324,11.0025,null,null],
+["b1d9d62c7f38","Kassena-Nankana West District",3,0,-1.5289,10.7265,-0.905,11.021,null,null],
+["1962ca686d93","Nabdam District",3,0,-0.7634,10.7431,-0.5568,10.9501,null,null],
+["8fc74cf75c5f","Pusiga District",3,0,-0.2258,10.9913,0.0255,11.1613,null,null],
+["a66779a52581","Talensi District",3,0,-0.9566,10.4798,-0.5179,10.8103,null,null],
+["5ec31582ac63","Tempane District",3,0,-0.1788,10.771,0.0344,11.0352,null,null]
+]}

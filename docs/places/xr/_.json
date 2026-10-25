@@ -1,0 +1,12 @@
+{"schema":1,"region":"_","places":[
+["ae3b7d6dcc39","Spratly Islands",0,-1,111.6674,7.3691,115.5792,11.4549,null,null],
+["bd95a9a394aa","Kalayaan",3,0,114.2779,11.0506,115.0246,11.4549,null,null],
+["f769602006d8","Pag-asa",9,1,114.2775,11.0506,114.2897,11.056,null,null],
+["1981b2794606","Đặc khu Trường Sa",3,0,111.6674,8.186,114.668,11.4318,null,null],
+["b013f09930f9","Barque Canada Reef (North)",8,3,113.3539,8.2682,113.3563,8.2705,null,null],
+["30dedd283bf7","Barque Canada Reef (Southwest)",8,3,113.2265,8.0755,113.2275,8.0767,null,null],
+["8cb45b2e07f5","Barque Canada Reef (West)",8,3,113.2823,8.1529,113.2834,8.1539,null,null],
+["9f674904bd00","南沙区",3,0,112.8256,8.862,115.5792,10.9449,"Nansha District",null],
+["bf200220153f","永暑社区",9,7,112.6723,9.3377,113.2215,9.8617,"Yongshu Community",null],
+["e487aabc263d","美济社区",9,7,115.2949,9.6792,115.7819,10.134,"Meiji",null]
+]}

@@ -1,0 +1,16 @@
+{"schema":1,"region":"c7e3aea7c1f1","places":[
+["c7e3aea7c1f1","Keski-Pohjanmaa",2,-1,22.7872,63.1164,25.0363,64.0944,"Central Ostrobothnia",null],
+["1d8f7ab05d38","Kaustisen seutukunta",3,0,23.4224,63.1164,25.0363,63.8862,"Kaustinen sub-region",null],
+["3b878aa00c61","Halsua",5,1,24.0397,63.3319,24.5548,63.577,null,null],
+["92286263770e","Kaustinen",5,1,23.4224,63.483,24.099,63.6754,null,null],
+["de913874d8eb","Lestijärvi",5,1,24.4085,63.3587,25.0363,63.6532,null,null],
+["df31f98e9816","Perho",5,1,24.052,63.1164,24.8036,63.3922,null,null],
+["e5f9e909db5f","Toholampi",5,1,23.9754,63.566,24.6151,63.8862,null,null],
+["b69d35f42f23","Veteli",5,1,23.6574,63.2581,24.1979,63.5374,null,null],
+["5212c398b261","Kokkolan seutukunta",3,0,22.7872,63.4991,24.4927,64.0944,"Kokkola sub-region",null],
+["260716eaab89","Kannus",5,8,23.6565,63.7563,24.2475,64.0919,null,null],
+["783ea6267a2e","Kruunarintori",9,9,23.9169,63.9007,23.9175,63.9009,null,null],
+["f3756bcba6e1","Tukkimiehentori",9,9,23.9172,63.9018,23.9187,63.9021,null,null],
+["6bd8877f1fcf","Kokkola",5,8,22.2879,63.4991,24.4927,64.179,null,null],
+["7b1b82505ef2","Mannerheiminaukio",9,12,23.1301,63.8385,23.1309,63.8388,null,null]
+]}

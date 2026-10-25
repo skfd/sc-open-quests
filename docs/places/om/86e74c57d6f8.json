@@ -1,0 +1,15 @@
+{"schema":1,"region":"86e74c57d6f8","places":[
+["86e74c57d6f8","محافظة شمال الشرقية",2,-1,57.6624,21.1585,59.2332,23.2417,"Ash Sharqiyah North Governorate",null],
+["74d42a73f0f8","WILAYAT AL MUDAYBI",3,0,57.6624,21.1585,58.7596,23.1512,null,null],
+["eb48a4d1b74d","Al Akhdhar",5,1,58.1714,22.8475,58.1765,22.85,null,null],
+["3386b63823a5","Al Maiden",5,1,58.2556,22.9754,58.2624,22.9802,null,null],
+["f5c2e1f37b36","Al Misfah Al Sharqia",5,1,58.2919,22.9681,58.2987,22.9724,null,null],
+["3afefddfc65f","Al Rawdhah",5,1,58.1969,22.8614,58.2377,22.8898,null,null],
+["ce373b3a3b43","Al Wariah",5,1,58.2886,22.9828,58.2986,22.9889,null,null],
+["9a6af9bc4915","al-Ma'morah",5,1,58.1365,22.7563,58.1589,22.8002,null,null],
+["8af8e2b198a1","WILAYAT AL QABIL",3,0,58.421,22.1334,58.9364,22.9152,null,null],
+["f276f392ad36","WILAYAT BIDIYAH",3,0,58.533,21.5926,59.0534,22.6787,null,null],
+["3b1eec78e9a9","WILAYAT DAMA WA AT TAIYIN",3,0,58.3424,22.7473,59.0915,23.2488,null,null],
+["82a95efba112","WILAYAT IBRA",3,0,58.2857,22.5539,58.7247,22.9866,null,null],
+["9ec24d0c76d2","WILAYAT WADI BANI KHALID",3,0,58.8396,22.4856,59.2332,22.8196,null,null]
+]}

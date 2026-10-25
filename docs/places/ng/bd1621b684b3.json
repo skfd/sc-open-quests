@@ -1,0 +1,20 @@
+{"schema":1,"region":"bd1621b684b3","places":[
+["bd1621b684b3","Abia",2,-1,7.1404,4.823,7.9875,6.0421,"Abia State",null],
+["693a3bbcb053","Aba North",3,0,7.3202,5.0601,7.4027,5.1345,null,null],
+["4154c70d66e8","Aba South",3,0,7.3067,5.0522,7.3875,5.1203,null,null],
+["efaa08698405","Arochukwu",3,0,7.6342,5.3545,7.9875,5.683,null,null],
+["4b7b084838d6","Bende",3,0,7.4662,5.4315,7.7149,5.8439,null,null],
+["53b792718974","Ikwuano",3,0,7.5079,5.3063,7.6776,5.5126,null,null],
+["088d80f9470b","Isiala-Ngwa North",3,0,7.2669,5.1976,7.5069,5.359,null,null],
+["f16fefdce9b2","Isiala-Ngwa South",3,0,7.3035,5.2979,7.553,5.4752,null,null],
+["7cf82b2cabf7","Isuikwuato",3,0,7.3864,5.6995,7.5692,5.9169,null,null],
+["3241774356d7","Obi Ngwa",3,0,7.3644,5.0024,7.5531,5.3051,null,null],
+["a0ee6e3d54b4","Ohafia",3,0,7.6568,5.507,7.9177,5.818,null,null],
+["cb26b576a355","Osisioma Ngwa",3,0,7.2639,5.073,7.3889,5.3114,null,null],
+["bef653a4a1e5","Ugwunagbo",3,0,7.2908,4.969,7.4202,5.0775,null,null],
+["7c1e570c9dd0","Ukwa East",3,0,7.31,4.823,7.5342,5.0505,null,null],
+["d9dd93fb7e6f","Ukwa West",3,0,7.1404,4.8569,7.33,5.1035,null,null],
+["a90247595c88","Umu-Nneochi",3,0,7.2545,5.9035,7.5534,6.0421,null,null],
+["ebb3afacb302","Umuahia North",3,0,7.3816,5.5031,7.582,5.7127,null,null],
+["68648445bc25","Umuahia South",3,0,7.3735,5.4346,7.5426,5.5626,null,null]
+]}

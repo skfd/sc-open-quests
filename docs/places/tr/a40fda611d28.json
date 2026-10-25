@@ -1,0 +1,23 @@
+{"schema":1,"region":"a40fda611d28","places":[
+["a40fda611d28","Siirt",2,-1,41.3573,37.5892,42.8845,38.2621,null,null],
+["6f97076028aa","Baykan",3,0,41.6074,38.0254,41.9436,38.2621,null,null],
+["fcbaf742dd74","Eruh",3,0,41.8145,37.5892,42.5293,37.8906,null,null],
+["ee52396db357","Kurtalan",3,0,41.3573,37.708,41.8355,38.0839,null,null],
+["3eaa43611f30","Bahçelievler Mahallesi",8,3,41.7012,37.9268,41.7111,37.9336,null,null],
+["fb54c307b4c9","Cumhuriyet Mahallesi",8,3,41.6852,37.9175,41.6982,37.9302,null,null],
+["57f830f7a171","Sümer Mahallesi",8,3,41.6869,37.9266,41.7066,37.9336,null,null],
+["17b19ba50ab0","Pervari",3,0,42.1298,37.6597,42.8845,38.0433,null,null],
+["de39894c0305","Siirt Merkez",3,0,41.7726,37.687,42.1507,38.0518,"Siirt",null],
+["35eeeefae560","Batı Mahallesi",7,8,41.9409,37.9243,41.9457,37.9281,null,null],
+["92355ef6166f","İnönü Mahallesi",7,8,41.9435,37.9215,41.946,37.9249,null,null],
+["53f027c94aaa","Karakol Mahallesi",7,8,41.9431,37.9247,41.9459,37.9264,null,null],
+["bf628c9f4bc1","Sakarya Mahallesi",7,8,41.9457,37.924,41.9487,37.9264,null,null],
+["6e33714a62c0","Tınaztepe Mahallesi",7,8,41.9457,37.9261,41.9506,37.9291,null,null],
+["12920f0dd846","Yeni Mahallesi",7,8,41.9341,37.9276,41.9515,37.949,null,null],
+["896df881db0e","Ülkü Mahallesi",7,8,41.9437,37.9259,41.9488,37.9272,null,null],
+["63b834ec986d","Bahçelievler Mahallesi",8,8,41.9292,37.9272,41.9433,37.9394,null,null],
+["59eaa0e92093","Kooperatif Mahallesi",8,8,41.9181,37.9344,41.9371,37.9452,null,null],
+["b401c1e6078b","Tillo",3,0,41.952,37.8814,42.1599,38.0111,null,null],
+["65cd804df244","Şirvan",3,0,41.8877,37.9249,42.4539,38.2476,null,null],
+["2a4ad87835ae","Cevizdalı Köyü",8,19,42.003,38.1673,42.0691,38.2156,null,null]
+]}

@@ -1,0 +1,22 @@
+{"schema":1,"region":"b690cad7878f","places":[
+["b690cad7878f","Jutiapa",2,-1,-90.294,13.7401,-89.4985,14.5633,null,null],
+["ea3fc81c89c8","Agua Blanca",3,0,-89.6927,14.3638,-89.4985,14.5633,null,null],
+["0c539b7364de","Asunción Mita",3,0,-89.7864,14.1959,-89.5202,14.4313,null,null],
+["fd4d13d59c0b","Atescatempa",3,0,-89.7696,14.1209,-89.6467,14.2386,null,null],
+["af75bdd6fca5","Comapa",3,0,-90.0142,14.0325,-89.8415,14.2078,null,null],
+["e7ecefce5df6","Conguaco",3,0,-90.0634,13.938,-89.9253,14.0941,null,null],
+["2a2984a653aa","El Adelanto",3,0,-89.902,14.156,-89.8069,14.2022,null,null],
+["a457c6c1ddc5","El Progreso",3,0,-89.8943,14.3005,-89.8119,14.4709,null,null],
+["a1fac260f89f","Jalpatagua",3,0,-90.0813,14.0066,-89.9027,14.2138,null,null],
+["3c63e1160d49","Jerez",3,0,-89.7973,14.0317,-89.7215,14.1265,null,null],
+["1b3c66c2e85f","Jutiapa",3,0,-90.0615,14.159,-89.7685,14.4631,"Jutiapa Municipality",null],
+["6970f95cdbb9","Canton Encino Gacho Jutiapa",5,10,-89.9556,14.3805,-89.8848,14.4515,null,null],
+["58b9e161ee7b","Moyuta",3,0,-90.2186,13.7401,-90.0241,14.0909,null,null],
+["736b6e84e640","Pasaco",3,0,-90.294,13.7817,-90.1524,14.0113,null,null],
+["29aa574e771f","Quesada",3,0,-90.1256,14.185,-89.9794,14.3859,null,null],
+["1c4350aaa3a3","San José Acatempa",3,0,-90.2067,14.2012,-90.0393,14.3425,null,null],
+["b910be4ec693","Santa Catarina Mita",3,0,-89.8596,14.3577,-89.6731,14.5262,null,null],
+["5467afa9eb7e","Yupiltepeque",3,0,-89.8138,14.1032,-89.7512,14.2355,null,null],
+["d01ea25ba89a","Zapotitlán",3,0,-89.8761,14.0499,-89.772,14.164,null,null],
+["84e9a1a3f264","La Palma",5,18,-89.8192,14.1226,-89.8169,14.1262,null,null]
+]}

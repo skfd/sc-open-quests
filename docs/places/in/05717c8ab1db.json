@@ -1,0 +1,22 @@
+{"schema":1,"region":"05717c8ab1db","places":[
+["05717c8ab1db","Meghalaya",2,-1,89.8144,25.0306,92.8027,26.1182,null,null],
+["f6affc349386","East Garo Hills",3,0,90.3161,25.4157,90.9824,25.8198,null,null],
+["db823687c88d","East Jaintia Hills",3,0,92.1718,25.0306,92.8027,25.4725,null,null],
+["366892dc24f3","East Khasi Hills",3,0,91.3532,25.1227,92.1571,25.6825,null,null],
+["9dfa12c27483","Mawlyngngad",5,3,91.9217,25.522,91.9334,25.5346,null,null],
+["3a7ecab4e892","Rasong",5,3,91.9128,25.4397,91.9151,25.4423,null,null],
+["b7e10e40b477","Sohryngkham",5,3,91.9413,25.5322,91.9726,25.5579,null,null],
+["5a0d7aa099f4","Umphyrnai",5,3,91.8952,25.5187,91.9214,25.5374,null,null],
+["585d9994e1ed","Lumshyiap",7,3,91.8994,25.5872,91.907,25.5957,null,null],
+["f7ee0ae9f559","Shanmari",8,8,91.8994,25.5906,91.9029,25.5952,null,null],
+["dc143b31b38b","Eastern West Khasi Hills",3,0,91.3429,25.4696,91.8142,25.8279,null,null],
+["2ef96d3cbf80","North Garo Hills",3,0,90.3401,25.7121,91.0278,26.0091,null,null],
+["f1eb6ba4405a","Ri-Bhoi",3,0,91.3423,25.6342,92.2796,26.1182,null,null],
+["40c2a7d7577c","South Garo Hills",3,0,90.2269,25.1446,90.969,25.554,null,null],
+["31fa65e75e69","South West Garo Hills",3,0,89.8144,25.2855,90.17,25.6024,null,null],
+["b0205af342a8","South West Khasi Hills",3,0,90.8401,25.1681,91.5791,25.4932,null,null],
+["3de3844ca932","West Garo Hills",3,0,89.8927,25.2006,90.4349,26.0117,null,null],
+["dad48bd402d1","Daribokgre",5,16,90.3195,25.4863,90.3265,25.4943,null,null],
+["efb6daefcf39","West Jaintia Hills",3,0,91.9836,25.1304,92.6613,25.7547,null,null],
+["b5f2589d146c","West Khasi Hills",3,0,90.7488,25.307,91.4781,25.8591,null,null]
+]}

@@ -286,6 +286,10 @@ def main(argv=None):
     cities = json.loads((ROOT / "config" / "cities.json").read_text(encoding="utf-8"))["cities"]
     rows = read_divisions(a.src)
     print(f"{len(rows)} divisions with an area", flush=True)
+    stateless = [r for r in rows if not r["country"]]
+    for r in stateless:  # disputed areas Overture gives no country: no file can hold them
+        print(f"left out, no country: {r['gers']} {r['subtype']} {r['name']!r}")
+    rows = [r for r in rows if r["country"]]
     assign(rows)
     counted, report = match_cities(rows, cities)
     index_countries, files, stats = build(rows, counted)
@@ -295,7 +299,7 @@ def main(argv=None):
           f"places with no parent in their file {stats['orphans']}; countries with no root {stats['noRoot']}")
     text = "\n".join(report) + "\n"
     if a.report:
-        Path(a.report).write_text(text, encoding="utf-8")
+        Path(a.report).write_text(text, encoding="utf-8", newline="\n")
     sys.stdout.write(text)
 
 
