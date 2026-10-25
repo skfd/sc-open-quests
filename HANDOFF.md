@@ -133,3 +133,10 @@ the planet history file current. Not taken: the place breakdown, the city list, 
 For the breakdown session: sub-city counts (neighbourhoods) should sum quest positions inside the
 city's run (the z14 grid or finer), not run neighbourhoods as small cities; a smaller map data changes
 the area quests' counts (DESIGN.md, "Area unit: the whole city").
+
+**The breakdown session's proposal (2026-10-24, late evening):** DESIGN.md, "Places: naming the world,
+counting on request". Wandrer.earth cannot be the source (no API, all rights reserved) but is the model;
+names come from Overture Maps `divisions` (ODbL, one world hierarchy, OSM relation per feature); counts
+stay on OSM geometry; neighbourhoods are sub-places counted by position inside their city's run;
+regions and countries are roll-ups labelled "N of M counted". Waiting on the owner's answers, then the
+Overture spike described at the end of that section.
