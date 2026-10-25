@@ -415,6 +415,11 @@ def merge(r: Region) -> None:
     for p in sorted((r.recount / "snapshots").glob("*.json")):
         shutil.copy2(p, dst / p.name)
         run.log(f"replaced {r.id} {p.name} with its recount")
+    # the per-city quest status (run.py history merges every region's): a daily region's own count wrote
+    # one; a weekly region has only the engine's from its slices
+    quests, archived = r.backfill / "quests.json", dst.parent / "quests.json"
+    if quests.exists() and (not archived.exists() or run.region_cadence(r.config) == "weekly"):
+        shutil.copy2(quests, archived)
     # the tile grids (heatmaps) of both; they stay out of git, in data/grid/<region>/
     grid = run.GRID_DIR / r.id
     for p in sorted((r.backfill / "grid").glob("*.json.gz")) + sorted((r.recount / "grid").glob("*.json.gz")):
