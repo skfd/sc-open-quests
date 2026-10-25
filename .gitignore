@@ -9,5 +9,6 @@ data/notes/
 data/grid/
 .preview/
 docs/data/*/quests.json
+data/archive/
 .scratch/
 data/cities/

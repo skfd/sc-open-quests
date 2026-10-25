@@ -4,11 +4,14 @@ Subcommands:
   download   refresh each region's shared extract and the planet notes dump via ~/Code/osm-extracts
              (it skips unchanged ones)
   count      run the engine on each region's newest shared extract
-             -> docs/data/<region>/snapshots/<asOfDate>.json + quests.json (skipped when a snapshot
+             -> data/archive/<region>/snapshots/<asOfDate>.json + quests.json (skipped when a snapshot
              of this extract already exists, unless it lacks notes and a notes dump now reaches it).
              Needs a notes dump that reaches the extract.
   backfill   count every dated extract of every region still in the shared store
-  history    rebuild docs/data/history/<cityId>.json, cities.json and quests.json from all regions
+  history    rebuild docs/data/history/<cityId>.json, cities.json, quests.json and compare/<quest>.json
+             from the archive of all regions, and copy each region's newest snapshot into docs/data
+  migrate-archive  move snapshots published before 2026-10-24 (docs/data/<region>/snapshots/) into
+             data/archive/; count and history do it too, so it is idempotent and needs no flag
   update     download + backfill + history, then commit "data <asOfDate>" and push; last, check-release
   check-release  compare the pinned StreetComplete tag (engine/SC-VERSION.txt) with the newest stable
              GitHub release; if the app moved on, open a GitHub issue "Repin to StreetComplete vX.Y"
@@ -18,7 +21,9 @@ Subcommands:
 Regions are config/regions.json, one Geofabrik extract each; a city names its region in
 config/cities.json. Extracts and notes dumps live in the shared store (~/Code/.osm-data, see
 ~/Code/osm-extracts/README.md); this project never downloads them itself. A notes dump is clipped to
-each region once, into data/notes/. The contract between engine, pipeline and site is DATA-FORMAT.md.
+each region once, into data/notes/. Every snapshot is kept in data/archive/ (not committed); docs/data,
+which GitHub Pages publishes, holds only the newest per region. The contract between engine, pipeline
+and site is DATA-FORMAT.md.
 """
 from __future__ import annotations
 
@@ -45,6 +50,7 @@ QUESTS_DIR = ROOT / "data" / "quests"
 CITIES_CONFIG = ROOT / "config" / "cities.json"
 REGIONS_CONFIG = ROOT / "config" / "regions.json"
 DATA_DIR = ROOT / "docs" / "data"
+ARCHIVE_DIR = ROOT / "data" / "archive"  # every snapshot, <region>/snapshots/<asOfDate>.json; not committed
 NOTES_DIR = ROOT / "data" / "notes"
 GRID_DIR = ROOT / "data" / "grid"  # counted quests per z14 tile, <region>/<asOfDate>.json.gz; not committed
 REGION_CITIES_DIR = ROOT / "data" / "cities"  # the engine's cities file per region; not committed
@@ -273,7 +279,8 @@ def count(region: dict, force: bool = False, extract: tuple[Path, Path] | None =
         pbf, meta_path = extract or latest_extract(region)
         meta = read_json(meta_path)
         sha = meta["sha256"]
-        out = DATA_DIR / region["id"]
+        migrate_archive()
+        out = ARCHIVE_DIR / region["id"]
         clip = notes_clip(region)
         replicated = datetime.fromisoformat(meta["replication_timestamp"])
         if clip is None or notes_until(clip) < replicated:
@@ -340,10 +347,10 @@ def load_snapshots(data_dir: Path) -> list[dict]:
     return sorted(snaps, key=lambda s: (s["asOfDate"], s["region"]))
 
 
-def merge_quests(data_dir: Path) -> int:
-    """Write data_dir/quests.json from each region's quests.json: the newest registry, with every
-    region's per-city status. Returns 1 if the file changed."""
-    parts = sorted((read_json(p) for p in data_dir.glob("*/quests.json")),
+def merge_quests(data_dir: Path, archive: Path | None = None) -> int:
+    """Write data_dir/quests.json from each region's quests.json in the archive (default data_dir): the
+    newest registry, with every region's per-city status. Returns 1 if the file changed."""
+    parts = sorted((read_json(p) for p in (archive or data_dir).glob("*/quests.json")),
                    key=lambda q: tuple(int(x) for x in q["scVersion"].split(".")))
     if not parts:
         return 0
@@ -398,7 +405,8 @@ def total_open(city: dict, leave_out: set[str]) -> int | None:
 
 def build_history(snapshots: list[dict], city_config: list[dict], disabled: set[str],
                   region_config: list[dict] | None = None) -> dict:
-    """Turn snapshots (of every region) into {"history": {cityId: series}, "cities": index}.
+    """Turn snapshots (of every region) into {"history": {cityId: series}, "cities": index,
+    "compare": {quest: {"quest", "open": {cityId: n}}}}.
 
     A city's series has one entry per snapshot that contains the city; a city missing from a
     snapshot (added to the config later, say) has no entry for that date rather than a row of
@@ -410,6 +418,7 @@ def build_history(snapshots: list[dict], city_config: list[dict], disabled: set[
     dates = sorted({s["asOfDate"] for s in snapshots})  # each region has its own snapshot of a date
     city_ids = sorted({cid for s in snapshots for cid in s["cities"]})
     history, index = {}, []
+    compare = {}  # quest -> {cityId: open in the city's newest snapshot}: what the compare view ranks
     for cid in city_ids:
         rows = [(s, s["cities"][cid]) for s in snapshots if cid in s["cities"]]
         quest_names = sorted({q for _, c in rows for q in c["quests"]})
@@ -417,6 +426,8 @@ def build_history(snapshots: list[dict], city_config: list[dict], disabled: set[
                       "agedOnly": [c["quests"].get(q, {}).get("agedOnly") for _, c in rows]}
                   for q in quest_names}
         last_snap, last = rows[-1]
+        for q, v in last["quests"].items():
+            compare.setdefault(q, {})[cid] = v.get("open")
         den = last["denominators"]
         series = {
             "city": cid,
@@ -464,17 +475,88 @@ def build_history(snapshots: list[dict], city_config: list[dict], disabled: set[
               "dates": dates, "cities": index}
     if region_config:
         cities["regions"] = [{k: r[k] for k in ("id", "name", "group", "source")} for r in region_config]
-    return {"history": history, "cities": cities}
+    return {"history": history, "cities": cities,
+            "compare": {q: {"quest": q, "open": dict(sorted(v.items()))} for q, v in sorted(compare.items())}}
 
 
-def history(data_dir: Path = DATA_DIR, cities_config: Path = CITIES_CONFIG) -> int:
-    """Rewrite history/*.json, cities.json and quests.json under data_dir. Returns the number of
-    files changed."""
-    snapshots = load_snapshots(data_dir)
-    if not snapshots:
-        log(f"no snapshots in {data_dir}/*/snapshots; nothing to do")
+def migrate_archive(data_dir: Path = DATA_DIR, archive: Path = ARCHIVE_DIR) -> int:
+    """Move the snapshots and per-region quests.json under data_dir/<region>/ into the archive. Until
+    2026-10-24 every snapshot was published; docs/data now keeps each region's newest only (see
+    publish_newest). A file the archive already holds byte for byte is deleted from data_dir; one that
+    differs is left and logged; the region's newest stays, published. Idempotent. Returns the number of
+    files moved or deleted."""
+    if data_dir.resolve() == archive.resolve():
         return 0
-    changed = merge_quests(data_dir)
+    done = 0
+    for p in sorted(data_dir.glob("*/snapshots/*.json")):
+        region = p.parent.parent.name
+        dst = archive / region / "snapshots" / p.name
+        if not dst.exists():
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            p.replace(dst)
+            done += 1
+        elif p.name == max(q.name for q in dst.parent.glob("*.json")):
+            continue   # the region's published newest; publish_newest keeps it equal to the archive's
+        elif dst.read_bytes() == p.read_bytes():
+            p.unlink()
+            done += 1
+        else:
+            log(f"{region}/snapshots/{p.name} differs from the archive's copy; left in {data_dir}")
+    for p in sorted(data_dir.glob("*/quests.json")):   # the engine's, gitignored; it now writes the archive's
+        dst = archive / p.parent.name / "quests.json"
+        if dst.exists():
+            p.unlink()
+        else:
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            p.replace(dst)
+        done += 1
+    if done:
+        log(f"migrate-archive: {done} file(s) from {data_dir} into {archive}")
+    return done
+
+
+def publish_newest(data_dir: Path, archive: Path) -> int:
+    """Copy each region's newest snapshot in the archive to data_dir/<region>/snapshots/ and delete the
+    region's other published snapshots the archive holds. Returns the number of files changed."""
+    changed = 0
+    for region_dir in sorted(p for p in archive.iterdir() if p.is_dir()):
+        snaps = sorted((region_dir / "snapshots").glob("*.json"))
+        if not snaps:
+            continue
+        newest = snaps[-1]
+        out = data_dir / region_dir.name / "snapshots" / newest.name
+        data = newest.read_bytes()
+        if not out.exists() or out.read_bytes() != data:
+            out.parent.mkdir(parents=True, exist_ok=True)
+            out.write_bytes(data)
+            changed += 1
+        for old in out.parent.glob("*.json"):
+            if old.name != newest.name and (region_dir / "snapshots" / old.name).exists():
+                old.unlink()
+                changed += 1
+    return changed
+
+
+def history(data_dir: Path = DATA_DIR, cities_config: Path = CITIES_CONFIG, archive: Path | None = None) -> int:
+    """Rewrite history/*.json, cities.json, quests.json and compare/*.json under data_dir from the
+    snapshots in archive (default: ARCHIVE_DIR for docs/data, else data_dir itself, as the test fixtures
+    have it). With a separate archive, first migrate anything published the old way, then publish each
+    region's newest snapshot. Returns the number of files changed."""
+    archive = archive or (ARCHIVE_DIR if data_dir.resolve() == DATA_DIR.resolve() else data_dir)
+    separate = archive.resolve() != data_dir.resolve()
+    changed = migrate_archive(data_dir, archive) if separate else 0
+    snapshots = load_snapshots(archive)
+    if not snapshots:
+        log(f"no snapshots in {archive}/*/snapshots; nothing to do")
+        return 0
+    published = data_dir / "cities.json"
+    if published.exists():
+        lost = set(read_json(published).get("dates") or []) - {s["asOfDate"] for s in snapshots}
+        if lost:  # a fresh clone, or a lost archive: rebuilding would cut the published history short
+            raise RuntimeError(f"{archive} lacks {len(lost)} snapshot date(s) the published history has "
+                               f"(e.g. {min(lost)}); restore the archive (git history holds the snapshots "
+                               f"published until 2026-10-24) or delete {published} to rebuild from what is there")
+    changed += merge_quests(data_dir, archive)
     out = build_history(snapshots, read_json(cities_config)["cities"], default_disabled(data_dir), regions())
     for cid, series in out["history"].items():
         changed += write_json(data_dir / "history" / f"{cid}.json", series, compact=True)
@@ -482,7 +564,15 @@ def history(data_dir: Path = DATA_DIR, cities_config: Path = CITIES_CONFIG) -> i
         if stale.stem not in out["history"]:
             stale.unlink()
             changed += 1
+    for quest, per_city in out["compare"].items():
+        changed += write_json(data_dir / "compare" / f"{quest}.json", per_city, compact=True)
+    for stale in (data_dir / "compare").glob("*.json"):
+        if stale.stem not in out["compare"]:
+            stale.unlink()
+            changed += 1
     changed += write_json(data_dir / "cities.json", out["cities"], compact=True)
+    if separate:
+        changed += publish_newest(data_dir, archive)
     log(f"history: {len(out['history'])} cities over {len(snapshots)} snapshot(s), {changed} file(s) changed")
     return changed
 
@@ -614,9 +704,13 @@ def main(argv: list[str] | None = None) -> int:
                                    "(--force recounts but does not re-download)")]:
         p = sub.add_parser(name, help=help_)
         p.add_argument("--force", action="store_true", help="redo even if nothing changed")
-    h = sub.add_parser("history", help="rebuild history/ and cities.json from snapshots")
+    h = sub.add_parser("history", help="rebuild history/, cities.json and compare/ from the archived snapshots")
     h.add_argument("--data-dir", type=Path, default=DATA_DIR)
     h.add_argument("--cities", type=Path, default=CITIES_CONFIG)
+    h.add_argument("--archive", type=Path, default=None,
+                   help=f"where the snapshots are (default {ARCHIVE_DIR.relative_to(ROOT).as_posix()} with the "
+                        "default --data-dir, else --data-dir itself)")
+    sub.add_parser("migrate-archive", help="move snapshots published in docs/data into data/archive")
     sub.add_parser("check-release", help="open the repin issue if StreetComplete has a newer stable release")
     args = parser.parse_args(argv)
     try:
@@ -628,7 +722,11 @@ def main(argv: list[str] | None = None) -> int:
             for region in regions():
                 count(region, force=args.force)
         elif args.command == "history":
-            history(args.data_dir, args.cities)
+            with pipeline_lock():
+                history(args.data_dir, args.cities, args.archive)
+        elif args.command == "migrate-archive":
+            with pipeline_lock():
+                migrate_archive()
         elif args.command == "update":
             update(force=args.force)
         elif args.command == "check-release":

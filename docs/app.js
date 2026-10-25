@@ -22,7 +22,7 @@ let cities, quests, questByName, hist;   // loaded data
 let urlSelection = null;                    // the selection as read from the URL, resolved once quests.json is in
 let icons = {};                             // quest name -> {icon, title}, from icons/index.json
 let releases = [];                          // [{ts, version}], stable SC releases, oldest first
-const snapshotCache = new Map();
+const compareCache = new Map();             // quest name -> promise of compare/<quest>.json
 const charts = [];                          // live uPlot instances, for resize
 
 // ---------- small helpers ----------
@@ -580,24 +580,27 @@ async function renderCity() {
 
 // ---------- compare view ----------
 
-// one snapshot per region and date: data/<region>/snapshots/<date>.json
-async function snapshot(region, date) {
-  const path = `${region}/snapshots/${date}.json`;
-  if (!snapshotCache.has(path)) snapshotCache.set(path, getJSON(path));
-  return snapshotCache.get(path);
+// one quest's open count per city, each in its newest snapshot: data/compare/<quest>.json. A quest
+// counted nowhere has no file, which reads as no count anywhere.
+async function compareFile(quest) {
+  if (!compareCache.has(quest)) {
+    compareCache.set(quest, fetch(`${DATA}/compare/${encodeURIComponent(quest)}.json`, { cache: "no-cache" })
+      .then((r) => {
+        if (r.status === 404) return { open: {} };
+        if (!r.ok) throw new Error(`compare/${quest}.json: HTTP ${r.status}`);
+        return r.json();
+      }));
+  }
+  return compareCache.get(quest);
 }
 
 async function compareRows() {
   const qn = state.compareQuest;
+  const per = qn ? (await compareFile(qn)).open : null;
   const rows = [];
   for (const c of cities.cities) {
-    let open;
-    if (!qn) open = c.open;   // cities.json carries the app-default total, not the reader's selection
-    else {
-      const snap = await snapshot(c.region, c.asOfDate);
-      const sq = snap.cities[c.id] && snap.cities[c.id].quests[qn];
-      open = sq ? sq.open : null;
-    }
+    // cities.json carries the app-default total, not the reader's selection
+    const open = qn ? per[c.id] ?? null : c.open;
     rows.push({
       c, open,
       perKm2: open != null && c.landAreaKm2 ? open / c.landAreaKm2 : null,
