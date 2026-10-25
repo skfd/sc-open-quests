@@ -150,8 +150,8 @@ identical, SnapshotReproductionTest fixed to take Ontario's own notes clip), sha
 one-pass notes clip (Bremen and Berlin recounted with the new clip: no quest moves, only `notes.open`).
 A rehearsal of `backfill` and `history` skipped all 67 stored extracts and changed no file. Watch the
 first 13:15 run after it (`logs/scheduler.log`): its push carries the 1,473 snapshot deletions.
-Left for the weekly planet pipeline: the planet source (download weekly, or the history file kept current;
-DESIGN.md, "Planet history kept current with diffs"), which waits on disk; and the place list, which is
+Planet source: the owner chose the history file kept current with weekly diffs and is preparing
+about 165 GB of disk (DESIGN.md, "Planet history kept current with diffs"); and the place list, which is
 the breakdown session's. Optional: the engine's `-Xmx40g` could be about 20 GB (Ontario runs in 16).
 
 **Archive backup (2026-10-24, night):** `data/archive/` (1,497 files, 306 MB) is copied to

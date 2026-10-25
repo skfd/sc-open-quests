@@ -641,6 +641,11 @@ in 5 min; data in `data/overture/`, not committed; the measuring scripts in `.sc
   polygon (a point cannot be counted), shard by region (a file per country listing its regions, a file per
   region listing what is inside it), and keep the files out of `docs/` with the archive, or trim the
   record to id, name, parent and bbox (about half the size).
+- **The owner chose it (2026-10-24, later that night):** the history file is kept current weekly with
+  diffs, so a place requested later still gets monthly points without a gap; the owner is preparing the
+  disk (about 165 GB free beyond today's files). The updater is `osm-extracts fetch planet-history`
+  (only osm-extracts downloads into the store); sc-open-quests' weekly job slices and counts.
+
 
 ## Pipeline: shared extracts and one notes pass (2026-10-24)
 
