@@ -213,3 +213,27 @@ table.data tr.unselected a { color: var(--muted); }
 .u-legend .u-marker { height: 10px !important; width: 10px !important; border-radius: 50%; border-width: 5px !important; }
 .u-legend th { font-weight: 400; }
 .uplot { font-family: inherit; }
+
+/* ---------- places ---------- */
+.place-results { list-style: none; padding: 0; margin: 0; }
+.place-results:empty { display: none; }
+.place-results li { padding: 6px 0; border-bottom: 1px solid var(--grid); display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.place-results a { font-weight: 500; }
+.place-kind { color: var(--muted); font-size: 0.8rem; }
+.place-chain { color: var(--ink-2); font-size: 0.85rem; flex-basis: 100%; }
+.place-n { color: var(--muted); font-size: 0.8rem; font-variant-numeric: tabular-nums; margin-left: 6px; }
+.chip.counted { border-style: solid; border-color: var(--series-1); color: var(--series-1); }
+.crumbs { display: flex; flex-wrap: wrap; gap: 4px 8px; font-size: 0.88rem; margin-bottom: 6px; }
+.crumbs .sep { color: var(--muted); }
+.place-head h2 { font-size: 1.5rem; }
+.place-head h2 .en { font-weight: 400; color: var(--ink-2); }
+.place-head h2 .place-kind { font-size: 0.85rem; font-weight: 400; margin-left: 10px; }
+.place-grid { list-style: none; padding: 0; margin: 4px 0 12px; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 4px 16px; }
+.place-grid .chip { margin-left: 6px; }
+.card h3 { font-size: 0.95rem; font-weight: 600; margin: 12px 0 2px; color: var(--ink-2); text-transform: capitalize; }
+.counted-list { list-style: none; padding: 0; margin: 0 0 8px; }
+.counted-list li { padding: 6px 0; border-bottom: 1px solid var(--grid); display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.counted-list .num { margin-left: auto; font-variant-numeric: tabular-nums; }
+.btn.primary { background: var(--brand); color: #fff; border-color: var(--brand); text-decoration: none; display: inline-block; font-weight: 500; }
+.btn.primary:hover { background: var(--brand-2); color: #fff; }
+.ask p { margin: 6px 0; }

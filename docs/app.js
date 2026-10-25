@@ -17,6 +17,9 @@ const state = {
   compareQuest: "",                 // "" = all counted quests
   compareSort: { key: "perKm2", dir: -1 },
   releases: true,                   // StreetComplete releases on the time axis
+  place: "",                        // places view: the place shown (12-hex id), "" = the list of countries
+  placeIn: "",                      // its region file as "<cc>/<regionId>", the hint that finds it
+  placeScope: "",                   // the country the place search looks inside ("" = names in the index)
 };
 let cities, quests, questByName, hist;   // loaded data
 let urlSelection = null;                    // the selection as read from the URL, resolved once quests.json is in
@@ -89,11 +92,12 @@ function readURL() {
   const p = new URLSearchParams(location.search);
   const h = new URLSearchParams(location.hash.slice(1));
   const get = (k) => p.get(k) ?? h.get(k);
-  if (get("view")) state.view = get("view") === "compare" ? "compare" : "city";
+  if (get("view")) state.view = { compare: "compare", places: "places" }[get("view")] || "city";
   if (get("city")) state.city = get("city");
   state.pinned = names(p.get("pin") ?? h.get("q")).slice(0, MAX_PINNED);
   if (get("cq") != null) state.compareQuest = get("cq");
   state.releases = get("rel") !== "0";
+  if (p.get("place")) { state.view = "places"; state.place = p.get("place"); state.placeIn = p.get("in") || ""; }
   urlSelection = { base: SEL_BASES.includes(p.get("base")) ? p.get("base") : "app", on: names(p.get("on")), off: names(p.get("off")) };
 }
 
@@ -121,12 +125,17 @@ function selectionParams() {
   return best;
 }
 
-function writeURL() {
+// The query string of a view; s is the state, or a copy of it with another place in it (place links).
+// A place link names the place and its region file only; the city is left out, so the link stays short.
+function queryString(s = state) {
   const p = new URLSearchParams();
   const data = new URLSearchParams(location.search).get("data");
   if (data) p.set("data", data);
-  if (state.view !== "city") p.set("view", state.view);
-  p.set("city", state.city);
+  if (s.view === "places" && s.place) {
+    p.set("place", s.place);
+    if (s.placeIn) p.set("in", s.placeIn);
+  } else if (s.view !== "city") p.set("view", s.view);
+  if (s.view !== "places") p.set("city", s.city);
   const sel = selectionParams();
   if (sel.base !== "app") p.set("base", sel.base);
   if (sel.on.length) p.set("on", sel.on.join(","));
@@ -134,8 +143,12 @@ function writeURL() {
   if (state.pinned.length) p.set("pin", state.pinned.join(","));
   if (state.compareQuest) p.set("cq", state.compareQuest);
   if (!state.releases) p.set("rel", "0");
+  return "?" + p.toString().replace(/%2C/g, ",").replace(/%2F/g, "/");
+}
+
+function writeURL() {
   // a relative "?query" drops the hash, which is where old links kept the state
-  window.history.replaceState(null, "", "?" + p.toString().replace(/%2C/g, ",").replace(/%2F/g, "/"));
+  window.history.replaceState(null, "", queryString());
 }
 
 // How the totals' subtitle names the selection.
@@ -569,7 +582,8 @@ function selectShown(on) {   // the header tick: every row the search box leaves
 
 function selectionChanged() {
   writeURL();
-  renderCity();
+  if (state.view === "places") renderPlaces();
+  else renderCity();
 }
 
 async function renderCity() {
@@ -658,6 +672,512 @@ async function renderCompare() {
   }));
 }
 
+// ---------- places view ----------
+// The name layer (DATA-FORMAT.md, "Places and parts"): places/index.json names every country and its
+// regions; places/<cc>/<region>.json holds a region's places as rows [id, name, st, parent, xmin, ymin,
+// xmax, ymax, en, counted], parents first. A region file is fetched when the reader opens a place in it,
+// and all of a country's when they search inside it or open the country; never the world's.
+// A place link is ?place=<id>&in=<cc>/<regionId>: countries and regions are found in the index, any
+// other place in the region file `in` names. Region ids and file names are the index's, used as given.
+
+const PLACES = "places";
+const ASK_URL = "https://github.com/skfd/sc-open-quests/issues";
+const SUBTYPE = ["country", "dependency", "region", "county", "local admin area", "locality", "borough",
+                 "macrohood", "neighbourhood", "microhood"];
+const SHOW_CHILDREN = 120;            // per subtype, before "Show all"
+const MAX_RESULTS = 50;
+const R = { id: 0, name: 1, st: 2, parent: 3, en: 8, counted: 9 };
+
+let placeIndex = null;                 // promise of places/index.json
+const shardCache = new Map();          // region file -> promise of its shard
+const optionalCache = new Map();       // path -> promise of JSON, or null when absent
+let placeSeq = 0;                      // the newest renderPlaces call; older ones stop where they are
+let searchSeq = 0;
+
+// JSON that may not be there (a 404 is null, not an error): parts names, a snapshot.
+function optionalJSON(url) {
+  if (!optionalCache.has(url)) {
+    optionalCache.set(url, fetch(url, { cache: "no-cache" }).then((r) => {
+      if (r.status === 404) return null;
+      if (!r.ok) throw new Error(`${url}: HTTP ${r.status}`);
+      return r.json();
+    }));
+  }
+  return optionalCache.get(url);
+}
+
+function placesIndex() {
+  if (!placeIndex) {
+    placeIndex = optionalJSON(`${PLACES}/index.json`);
+    placeIndex.catch(() => { placeIndex = null; });   // a failed fetch is tried again next time
+  }
+  return placeIndex;
+}
+
+// Accent- and case-blind, punctuation as spaces: "Saint-Jérôme" and "saint jerome" are one key.
+function fold(s) {
+  return (s || "").normalize("NFD").replace(/\p{M}/gu, "").toLowerCase()
+    .replace(/ß/g, "ss").replace(/æ/g, "ae").replace(/œ/g, "oe").replace(/ø/g, "o").replace(/ł/g, "l")
+    .replace(/đ/g, "d").replace(/ı/g, "i").replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+}
+
+// A region file with what browsing needs: rows by id, each row's children, the top rows (parent -1)
+// and the region's own row among them when it has one (a "_" file, places outside every region, has
+// none, so its top rows hang off the country).
+function loadShard(country, region) {
+  if (!shardCache.has(region.file)) {
+    const p = fetch(`${PLACES}/${region.file}`, { cache: "no-cache" }).then((r) => {
+      if (!r.ok) throw new Error(`${PLACES}/${region.file}: HTTP ${r.status}`);
+      return r.json();
+    }).then((f) => {
+      const rows = f.places || [];
+      const kids = rows.map(() => []), top = [], byId = new Map();
+      let self = -1;
+      rows.forEach((row, i) => {
+        byId.set(row[R.id], i);
+        if (row[R.parent] >= 0) kids[row[R.parent]].push(i);
+        else if (self < 0 && region.id !== "_" && (row[R.id] === region.id || row[R.st] === 2)) self = i;
+        else top.push(i);
+      });
+      return { country, region, rows, kids, top, self, byId,
+               keys: rows.map((row) => [fold(row[R.name]), row[R.en] ? fold(row[R.en]) : null]) };
+    });
+    p.catch(() => shardCache.delete(region.file));
+    shardCache.set(region.file, p);
+  }
+  return shardCache.get(region.file);
+}
+
+// Every region file of a country, for a search inside it or its roll-up. Files that fail are skipped.
+async function loadCountry(country) {
+  const got = await Promise.allSettled(country.regions.map((r) => loadShard(country, r)));
+  return got.filter((g) => g.status === "fulfilled").map((g) => g.value);
+}
+
+// A place is a ref: { kind: "country" | "region" | "row", country, region, shard, i }.
+const refName = (ref) => ref.kind === "country" ? ref.country.name : ref.kind === "region" ? ref.region.name : ref.shard.rows[ref.i][R.name];
+const refId = (ref) => ref.kind === "country" ? ref.country.id : ref.kind === "region" ? ref.region.id : ref.shard.rows[ref.i][R.id];
+const refEn = (ref) => ref.kind === "row" ? ref.shard.rows[ref.i][R.en] : null;
+const refSt = (ref) => ref.kind === "country" ? 0 : ref.kind === "region" ? 2 : ref.shard.rows[ref.i][R.st];
+const refIn = (ref) => ref.kind === "row" ? `${ref.country.cc}/${ref.region.id}` : "";
+function refCounted(ref) {
+  if (ref.kind === "row") return ref.shard.rows[ref.i][R.counted];
+  if (ref.kind === "region" && ref.shard && ref.shard.self >= 0) return ref.shard.rows[ref.shard.self][R.counted];
+  return null;
+}
+function rowRef(shard, i) {
+  return i === shard.self ? { kind: "region", country: shard.country, region: shard.region, shard }
+                          : { kind: "row", country: shard.country, region: shard.region, shard, i };
+}
+
+// From the place up to its country: [ref, parent, ..., country].
+function chain(ref) {
+  const out = [ref];
+  if (ref.kind === "row") {
+    let i = ref.shard.rows[ref.i][R.parent];
+    while (i >= 0) { out.push(rowRef(ref.shard, i)); i = ref.shard.rows[i][R.parent]; }
+    if (ref.region.id !== "_" && last(out).kind !== "region") out.push({ kind: "region", country: ref.country, region: ref.region, shard: ref.shard });
+  }
+  if (ref.kind !== "country") out.push({ kind: "country", country: ref.country });
+  return out;
+}
+
+// "Annex · Toronto · Ontario · Canada": a name repeated by its parent (Toronto the county, Toronto the
+// city) is said once.
+// With upTo, the chain stops below that place (a roll-up's list need not repeat where it is).
+function chainText(ref, from = 1, upTo = null) {
+  let up = chain(ref).slice(from);
+  const stop = upTo ? up.findIndex((r) => r.kind === upTo.kind && refId(r) === refId(upTo)) : -1;
+  if (stop >= 0) up = up.slice(0, stop);
+  return up.map(refName).filter((n, i, a) => n && n !== a[i - 1]).join(" · ");
+}
+
+async function resolvePlace(id, hint) {
+  const idx = await placesIndex();
+  if (!idx) return null;
+  for (const country of idx.countries) {
+    if (country.id === id) return { kind: "country", country };
+    const region = country.regions.find((r) => r.id === id && r.id !== "_");
+    if (region) return { kind: "region", country, region, shard: await loadShard(country, region) };
+  }
+  const [cc, rid] = (hint || "").split("/");
+  const country = idx.countries.find((c) => c.cc === cc);
+  const region = country && country.regions.find((r) => r.id === rid);
+  if (!region) return null;
+  const shard = await loadShard(country, region);
+  const i = shard.byId.get(id);
+  return i == null ? null : rowRef(shard, i);
+}
+
+function placeHref(ref) {
+  return queryString({ ...state, view: "places", place: ref ? refId(ref) : "", placeIn: ref ? refIn(ref) : "" });
+}
+
+function goPlace(ref) {
+  state.view = "places";
+  state.place = ref ? refId(ref) : "";
+  state.placeIn = ref ? refIn(ref) : "";
+  writeURL();
+  render();
+  window.scrollTo({ top: 0 });
+}
+
+// A link that opens a place here, and in a new tab with a modifier.
+function placeLink(ref, text = refName(ref)) {
+  return el("a", { href: placeHref(ref), onclick: (e) => {
+    if (e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    e.preventDefault();
+    goPlace(ref);
+  } }, text);
+}
+
+function cityLink(c, text) {
+  return el("a", { href: queryString({ ...state, view: "city", city: c.id }), onclick: (e) => {
+    if (e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    e.preventDefault();
+    state.city = c.id;
+    $("#city").value = c.id;
+    renderFooter();
+    setView("city");
+    window.scrollTo({ top: 0 });
+  } }, text);
+}
+
+const cityById = (id) => cities.cities.find((c) => c.id === id);
+
+// ---- search ----
+
+function fillScope(idx) {
+  const sel = $("#place-scope");
+  if (!sel.options.length) {
+    sel.append(el("option", { value: "" }, "Countries and regions"),
+      ...idx.countries.map((c) => el("option", { value: c.cc }, c.name)));
+  }
+  sel.value = state.placeScope;
+}
+
+// 0 the whole name, 1 its start, 2 a word's start, 3 anywhere; null no match.
+function matchRank(key, q) {
+  if (!key) return null;
+  if (key === q) return 0;
+  if (key.startsWith(q)) return 1;
+  if ((" " + key).includes(" " + q)) return 2;
+  return key.includes(q) ? 3 : null;
+}
+
+async function runSearch() {
+  const seq = ++searchSeq;
+  const q = fold($("#place-search").value);
+  const box = $("#place-results"), note = $("#place-search-note");
+  if (!q) { box.replaceChildren(); note.textContent = ""; return; }
+  const idx = await placesIndex();
+  if (!idx || seq !== searchSeq) return;
+  const country = idx.countries.find((c) => c.cc === state.placeScope);
+  if (country) {
+    const n = country.regions.reduce((s, r) => s + (r.n || 0), 0);
+    const pending = country.regions.some((r) => !shardCache.has(r.file));
+    if (pending) { note.textContent = `Loading ${country.name}'s ${nf.format(n)} place names…`; box.setAttribute("aria-busy", "true"); }
+    await loadCountry(country);
+    box.removeAttribute("aria-busy");
+    if (seq !== searchSeq) return;
+  }
+  const hits = [];
+  const offer = (ref, keys, counted) => {
+    let rank = null;
+    for (const k of keys) { const r = matchRank(k, q); if (r != null && (rank == null || r < rank)) rank = r; }
+    if (rank != null) hits.push({ ref, rank, counted: !!counted, st: refSt(ref), name: refName(ref) });
+  };
+  for (const c of idx.countries) {
+    offer({ kind: "country", country: c }, [fold(c.name)]);
+    for (const r of c.regions) if (r.id !== "_" && r.name) offer({ kind: "region", country: c, region: r }, [fold(r.name)]);
+  }
+  // every region file loaded so far: the chosen country's, and any the reader browsed
+  const shards = await Promise.all([...shardCache.values()].map((p) => p.catch(() => null)));
+  if (seq !== searchSeq) return;
+  for (const sh of shards) {
+    if (!sh) continue;
+    for (let i = 0; i < sh.rows.length; i++) if (i !== sh.self) offer(rowRef(sh, i), sh.keys[i], sh.rows[i][R.counted]);
+  }
+  hits.sort((a, b) => a.rank - b.rank || b.counted - a.counted || a.st - b.st ||
+    a.name.length - b.name.length || a.name.localeCompare(b.name));
+  box.replaceChildren(...hits.slice(0, MAX_RESULTS).map((h) => {
+    const en = refEn(h.ref);
+    return el("li", {}, placeLink(h.ref, refName(h.ref) + (en ? ` (${en})` : "")),
+      h.counted ? el("span", { class: "chip counted" }, "counted") : null,
+      el("span", { class: "place-kind" }, SUBTYPE[h.st] || ""),
+      el("span", { class: "place-chain" }, chainText(h.ref)));
+  }));
+  const where = country ? `${country.name}'s places and every country and region` :
+    "country and region names (choose a country to search its towns and neighbourhoods)";
+  note.textContent = !hits.length ? `Nothing found among ${where}.` :
+    hits.length > MAX_RESULTS ? `The first ${MAX_RESULTS} of ${nf.format(hits.length)} matches among ${where}; type more to narrow.` :
+    `${hits.length} match${hits.length > 1 ? "es" : ""} among ${where}.`;
+}
+
+// ---- the page ----
+
+async function renderPlaces() {
+  const seq = ++placeSeq;
+  const page = $("#place-page");
+  const idx = await placesIndex();
+  if (seq !== placeSeq) return;
+  if (!idx) {
+    page.replaceChildren(el("p", { class: "notice" }, "Place names are not published yet."));
+    return;
+  }
+  fillScope(idx);
+  if (!state.place) { page.replaceChildren(countriesCard(idx)); return; }
+  page.replaceChildren(el("p", { class: "notice" }, "Loading…"));
+  const ref = await resolvePlace(state.place, state.placeIn);
+  if (seq !== placeSeq) return;
+  if (!ref) {
+    page.replaceChildren(el("p", { class: "notice" }, `This link names a place the site cannot find (${state.place}). ` +
+      "Try the search above."));
+    return;
+  }
+  if (state.placeScope !== ref.country.cc) { state.placeScope = ref.country.cc; $("#place-scope").value = ref.country.cc; }
+  const head = placeHead(ref);
+  const slot = el("div", {}, el("p", { class: "notice" }, ref.kind === "country" ? `Loading ${ref.country.name}'s places…` : "Loading…"));
+  page.replaceChildren(head, slot);
+  const sections = await placeSections(ref);
+  if (seq !== placeSeq) return;
+  slot.replaceChildren(...sections.filter(Boolean));
+}
+
+function countriesCard(idx) {
+  return el("article", { class: "card" },
+    el("h2", {}, "Countries"),
+    el("p", { class: "sub" }, "Every named place, from Overture Maps' divisions. Choose a country, then a region, " +
+      "and on down; places this site counts link to their numbers, and any other can be asked for."),
+    el("ul", { class: "place-grid" }, idx.countries.map((c) => el("li", {},
+      placeLink({ kind: "country", country: c }),
+      el("span", { class: "place-n" }, nf.format(c.regions.reduce((s, r) => s + (r.n || 0), 0)))))));
+}
+
+function placeHead(ref) {
+  const up = chain(ref).reverse();
+  const en = refEn(ref);
+  return el("article", { class: "card place-head" },
+    el("nav", { class: "crumbs", "aria-label": "Where it is" },
+      placeLink(null, "All countries"),
+      ...up.slice(0, -1).flatMap((r) => [el("span", { class: "sep", "aria-hidden": "true" }, "›"), placeLink(r)])),
+    el("h2", {}, refName(ref), en ? el("span", { class: "en" }, ` (${en})`) : null,
+      el("span", { class: "place-kind" }, SUBTYPE[refSt(ref)] || "")));
+}
+
+// Everything inside a place, below it: its descendants' row indices, per shard.
+function descendants(ref, shards) {
+  if (ref.kind === "country") return shards.map((sh) => ({ sh, idx: sh.rows.map((_, i) => i).filter((i) => i !== sh.self) }));
+  const out = [], stack = ref.kind === "region" ? [...childRows(ref)] : [...ref.shard.kids[ref.i]];
+  while (stack.length) { const i = stack.pop(); out.push(i); stack.push(...ref.shard.kids[i]); }
+  return [{ sh: ref.shard, idx: out }];
+}
+
+function childRows(ref) {
+  const sh = ref.shard;
+  if (ref.kind === "region") return [...(sh.self >= 0 ? sh.kids[sh.self] : []), ...sh.top];
+  return sh.kids[ref.i];
+}
+
+async function placeSections(ref) {
+  const counted = refCounted(ref);
+  const out = [];
+  if (ref.kind === "country") {
+    const shards = await loadCountry(ref.country);
+    out.push(rollupCard(ref, shards));
+    out.push(childrenCard(ref, [
+      ...ref.country.regions.filter((r) => r.id !== "_").map((r) => ({ ref: { kind: "region", country: ref.country, region: r }, n: r.n })),
+      ...shards.filter((sh) => sh.region.id === "_").flatMap((sh) => sh.top.map((i) => ({ ref: rowRef(sh, i) }))),
+    ]));
+    return out;
+  }
+  if (counted && !counted.includes("/")) out.push(cityCard(ref, counted), await partsCard(counted, ref, null));
+  else if (counted) out.push(...await partCards(ref, counted));
+  else if (ref.kind === "region") out.push(rollupCard(ref, [ref.shard]));
+  else {
+    out.push(askCard(ref));
+    const inside = descendants(ref, null);
+    if (inside[0].idx.some((i) => ref.shard.rows[i][R.counted])) out.push(rollupCard(ref, [ref.shard]));
+  }
+  out.push(childrenCard(ref, childRows(ref).map((i) => ({ ref: rowRef(ref.shard, i) }))));
+  return out;
+}
+
+// A region or country is the sum of nothing: it says how many of its places are counted and lists them.
+function rollupCard(ref, shards) {
+  const inside = descendants(ref, shards);
+  let m = 0;
+  const found = [];
+  for (const { sh, idx } of inside) {
+    m += idx.length;
+    for (const i of idx) if (sh.rows[i][R.counted]) found.push({ sh, i, c: sh.rows[i][R.counted] });
+  }
+  const cityIds = new Set(found.filter((f) => !f.c.includes("/")).map((f) => f.c));
+  const partsOf = new Map();
+  for (const f of found) {
+    const city = f.c.includes("/") ? f.c.split("/")[0] : null;
+    if (city && cityIds.has(city)) partsOf.set(city, (partsOf.get(city) || 0) + 1);
+  }
+  // a city's parts are on its own page; parts whose city is outside this place are listed here
+  const listed = found.filter((f) => !f.c.includes("/") || !cityIds.has(f.c.split("/")[0]));
+  listed.sort((a, b) => a.sh.rows[a.i][R.name].localeCompare(b.sh.rows[b.i][R.name]));
+  const name = refName(ref);
+  return el("article", { class: "card" },
+    el("h2", {}, `${nf.format(found.length)} of ${nf.format(m)} places counted`),
+    el("p", { class: "sub" }, found.length
+      ? `${name} itself is not counted: the numbers are each counted place's own, and they do not add up to ${name}.`
+      : `Nothing in ${name} is counted yet. Open a place to ask for it.`),
+    listed.length ? el("ul", { class: "counted-list" }, listed.map((f) => {
+      const r = rowRef(f.sh, f.i), city = !f.c.includes("/") && cityById(f.c), parts = partsOf.get(f.c);
+      return el("li", {}, placeLink(r),
+        el("span", { class: "place-kind" }, SUBTYPE[refSt(r)] || ""),
+        city ? el("span", { class: "num" }, `${nf.format(city.open)} open`) : null,
+        parts ? el("span", { class: "place-chain" }, `${parts} part${parts > 1 ? "s" : ""} counted`) : null,
+        el("span", { class: "place-chain" }, chainText(r, 1, ref)));
+    })) : null,
+    cityIds.size ? el("p", { class: "sub" }, `Open quests as of each city's newest count, with the quests the app turns on by default.`) : null);
+}
+
+function childrenCard(ref, items) {
+  if (!items.length) return null;
+  const groups = new Map();
+  for (const it of items) {
+    const st = refSt(it.ref);
+    if (!groups.has(st)) groups.set(st, []);
+    groups.get(st).push(it);
+  }
+  const body = el("div", {});
+  for (const st of [...groups.keys()].sort((a, b) => a - b)) {
+    const list = groups.get(st).sort((a, b) => refName(a.ref).localeCompare(refName(b.ref)));
+    const ul = el("ul", { class: "place-grid" });
+    const fill = (n) => ul.replaceChildren(...list.slice(0, n).map((it) => {
+      const c = refCounted(it.ref);
+      const kids = it.ref.kind === "row" ? it.ref.shard.kids[it.ref.i].length : 0;
+      return el("li", {}, placeLink(it.ref), c ? el("span", { class: "chip counted" }, "counted") : null,
+        it.n != null ? el("span", { class: "place-n" }, nf.format(it.n)) : kids ? el("span", { class: "place-n" }, nf.format(kids)) : null);
+    }));
+    fill(SHOW_CHILDREN);
+    const more = list.length > SHOW_CHILDREN
+      ? el("button", { type: "button", class: "btn", onclick: (e) => { fill(list.length); e.target.remove(); } }, `Show all ${nf.format(list.length)}`)
+      : null;
+    body.append(el("h3", {}, `${SUBTYPE[st] || "other"} (${nf.format(list.length)})`), ul, more);
+  }
+  return el("article", { class: "card" }, el("h2", {}, `Inside ${refName(ref)}`),
+    el("p", { class: "sub" }, "The number beside a place is how many places it holds."), body);
+}
+
+function askCard(ref) {
+  const name = refName(ref), id = refId(ref);
+  const path = chain(ref).reverse().map(refName).filter(Boolean).join(" / ");
+  const p = new URLSearchParams({ template: "place-request.yml", title: `Count ${name} (${ref.country.name})`,
+                                  "place-id": id, "place-name": name, "place-path": path });
+  const search = new URLSearchParams({ q: `is:issue label:"place request" ${id}` });
+  return el("article", { class: "card ask" },
+    el("h2", {}, "Not counted yet"),
+    el("p", {}, `This site does not count the quests in ${name} yet. Places are added when someone asks.`),
+    el("p", {}, el("a", { class: "btn primary", href: `${ASK_URL}/new?${p}` }, "Ask for this place"),
+      " ", el("span", { class: "sub" }, "opens a short GitHub form with the place filled in.")),
+    el("p", { class: "sub" }, "Someone may have asked already: ",
+      el("a", { href: `${ASK_URL}?${search}` }, "look for a request"), ", and a 👍 on it is a vote."));
+}
+
+function cityCard(ref, cityId) {
+  const c = cityById(cityId);
+  if (!c) return el("article", { class: "card" }, el("h2", {}, "Counted"),
+    el("p", { class: "sub" }, `${refName(ref)} is counted; its numbers arrive with the next published count.`));
+  return el("article", { class: "card" },
+    el("div", { class: "tiles" },
+      tile("Open quests", nf.format(c.open), el("div", { class: "note" }, `as of ${c.asOfDate}, the app's default quests`), true),
+      tile("Aged, need resurvey", nf.format(c.agedOnly), el("div", { class: "note" }, c.open ? `${Math.round((100 * c.agedOnly) / c.open)}% of open` : "")),
+      tile("Per km² of land", ratio(c.open, c.landAreaKm2), el("div", { class: "note" }, c.landAreaKm2 ? `${nf1.format(c.landAreaKm2)} km²` : "area unknown"))),
+    el("p", {}, cityLink(c, `Open ${c.name}: every quest, ticks, pins and the chart over time →`)));
+}
+
+// The newest snapshot of a city: the parts are in it (cities.<id>.parts).
+function snapshotOf(c) { return optionalJSON(`${DATA}/${c.region}/snapshots/${c.asOfDate}.json`); }
+function partNames(cityId) { return optionalJSON(`${DATA}/parts/${encodeURIComponent(cityId)}.json`); }
+
+const partTotal = (counts) => Object.entries(counts || {}).reduce((s, [q, n]) => s + (selected(q) ? n : 0), 0);
+
+// The city's parts with their totals over the ticked quests; null when it has none published.
+async function partsCard(cityId, ref, current) {
+  const c = cityById(cityId);
+  if (!c) return null;
+  // the snapshot first: a city without parts has no names file to ask for
+  const snap = await snapshotOf(c).catch(() => null);
+  const counts = snap && snap.cities && snap.cities[cityId] && snap.cities[cityId].parts;
+  const names = counts && Object.keys(counts).length ? await partNames(cityId).catch(() => null) : null;
+  if (!names || !names.parts || !names.parts.length) return null;
+  const sh = ref.shard;
+  const rows = names.parts.map((p) => ({ p, open: counts[p.id] ? partTotal(counts[p.id]) : null }))
+    .sort((a, b) => (b.open ?? -1) - (a.open ?? -1) || a.p.name.localeCompare(b.p.name));
+  return el("article", { class: "card" },
+    el("h2", {}, `Parts of ${c.name}`),
+    el("p", { class: "sub" }, `Open quests inside each part's OpenStreetMap boundary, counting ${selectionText()}. ` +
+      "Parts overlap and leave gaps, so they do not add up to the city."),
+    el("div", { class: "table-wrap" }, el("table", { class: "data" },
+      el("thead", {}, el("tr", {}, el("th", { scope: "col" }, "Part"), el("th", { scope: "col" }, "Kind"), el("th", { scope: "col", class: "num" }, "Open"))),
+      el("tbody", {}, rows.map(({ p, open }) => {
+        const i = sh.byId.get(p.id);
+        const label = p.name + (p.en ? ` (${p.en})` : "");
+        return el("tr", { class: p.id === current ? "picked" : null },
+          el("td", {}, i != null ? placeLink(rowRef(sh, i), label) : label),
+          el("td", {}, p.subtype === "neighborhood" ? "neighbourhood" : p.subtype),
+          el("td", { class: "num" }, open == null ? "—" : nf.format(open)));
+      })))));
+}
+
+// A counted part: its open quests per type from the city's newest snapshot, the ticked ones summed.
+async function partCards(ref, counted) {
+  const [cityId, pid] = [counted.slice(0, counted.indexOf("/")), counted.slice(counted.indexOf("/") + 1)];
+  const c = cityById(cityId);
+  const snap = c ? await snapshotOf(c).catch(() => null) : null;
+  const sc = snap && snap.cities && snap.cities[cityId];
+  const counts = sc && sc.parts && sc.parts[pid];
+  const cityName = c ? c.name : cityId;
+  if (!counts) {
+    return [el("article", { class: "card" }, el("h2", {}, `Counted as part of ${cityName}`),
+      el("p", { class: "sub" }, `${refName(ref)}'s numbers arrive with ${cityName}'s next count.`),
+      c ? el("p", {}, cityLink(c, `Open ${c.name} →`)) : null)];
+  }
+  const total = partTotal(counts);
+  const cityTotal = Object.entries(sc.quests).reduce((s, [q, v]) => s + (selected(q) ? v.open : 0), 0);
+  const rows = quests.quests.filter((q) => counts[q.name])
+    .sort((a, b) => selected(b.name) - selected(a.name) || counts[b.name] - counts[a.name] || a.order - b.order);
+  const none = quests.quests.filter((q) => q.status && q.status[cityId] === "counted" && !counts[q.name]).length;
+  const card = el("article", { class: "card" },
+    el("div", { class: "tiles" },
+      tile("Open quests", nf.format(total), el("div", { class: "note" }, `as of ${snap.asOfDate}`), true),
+      tile(`Share of ${cityName}'s`, cityTotal ? `${rate((100 * total) / cityTotal)}%` : "—",
+        el("div", { class: "note" }, `${nf.format(cityTotal)} open in ${cityName}`)),
+      tile("Quest types open here", nf.format(rows.length), el("div", { class: "note" }, `${none} counted types have none`))),
+    el("p", { class: "sub" }, `Counted in ${cityName}'s own run: the quests whose position is inside ${refName(ref)}'s ` +
+      `OpenStreetMap boundary, counting ${selectionText()}. Parts have no aged split or history yet, only the newest count ` +
+      "with the app's default resurvey setting."),
+    el("div", { class: "card-head" }, el("h2", {}, `Quests in ${refName(ref)}`),
+      el("button", { type: "button", class: "btn", title: "Tick the quests the app turns on by default, untick the rest",
+                     onclick: () => { state.selected = baseSet("app"); selectionChanged(); } }, "App defaults")),
+    el("div", { class: "table-wrap" }, el("table", { class: "data" },
+      el("thead", {}, el("tr", {},
+        el("th", { scope: "col", class: "c-pick" }, el("span", { class: "visually-hidden" }, "Counted")),
+        el("th", { scope: "col" }, "Quest"), el("th", { scope: "col", class: "num" }, "Open"),
+        el("th", { scope: "col", class: "num" }, `In ${cityName}`))),
+      el("tbody", {}, rows.map((q) => {
+        const sel = selected(q.name), name = questTitle(q.name);
+        return el("tr", { class: sel ? null : "unselected" },
+          el("td", { class: "c-pick" }, el("input", { type: "checkbox", checked: sel, "aria-label": `Count ${name} in the totals`,
+                                                      onchange: () => toggleSelect(q.name) })),
+          el("td", {}, el("div", { class: "quest-cell" }, questIcon(q.name),
+            el("div", {}, q.wikiLink ? el("a", { href: `https://wiki.openstreetmap.org/wiki/${q.wikiLink}` }, name) : el("span", {}, name),
+              q.defaultDisabled ? el("span", { class: "chip", title: "Off by default in the app" }, "off by default") : null,
+              el("span", { class: "code" }, q.name)))),
+          el("td", { class: "num" }, nf.format(counts[q.name])),
+          el("td", { class: "num" }, sc.quests[q.name] ? nf.format(sc.quests[q.name].open) : "—"));
+      })))),
+    el("p", {}, cityLink(c, `Open ${cityName}: the whole city, over time →`)));
+  return [card, await partsCard(cityId, ref, pid)];
+}
+
 // ---------- wiring ----------
 
 function setStatus(msg) { const s = $("#status"); s.textContent = msg; s.hidden = !msg; }
@@ -675,8 +1195,11 @@ async function render() {
   }
   $("#view-city").hidden = state.view !== "city";
   $("#view-compare").hidden = state.view !== "compare";
+  $("#view-places").hidden = state.view !== "places";
+  $("#city-filters").style.display = state.view === "places" ? "none" : "";   // a place page has no city picker
   try {
     if (state.view === "city") await renderCity();
+    else if (state.view === "places") await renderPlaces();
     else await renderCompare();
   } catch (e) {
     setStatus(`Could not load data: ${e.message}`);
@@ -747,6 +1270,13 @@ async function main() {
   $("#compare-quest").addEventListener("change", (e) => { state.compareQuest = e.target.value; writeURL(); renderCompare(); });
   for (const t of document.querySelectorAll(".tab"))
     t.addEventListener("click", (e) => { e.preventDefault(); setView(t.dataset.view); });
+
+  let searchTimer = 0;
+  $("#place-search").addEventListener("input", () => { clearTimeout(searchTimer); searchTimer = setTimeout(runSearch, 120); });
+  $("#place-scope").addEventListener("change", (e) => { state.placeScope = e.target.value; runSearch(); });
+  $("#place-results").addEventListener("click", (e) => {   // a result picked: the search has done its job
+    if (e.target.closest("a") && e.defaultPrevented) { $("#place-search").value = ""; runSearch(); }
+  });
 
   sortHandler("#quest-table", () => state.questSort, () => renderQuestTable(hist));
   sortHandler("#compare-table", () => state.compareSort, renderCompare);
