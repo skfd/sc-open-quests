@@ -36,7 +36,8 @@ class SnapshotReproductionTest {
         val snapshot = Json.parseToJsonElement(snapshotFile.readText()).jsonObject
         val notesSha = (snapshot["notes"] as? kotlinx.serialization.json.JsonObject)?.get("sha256")?.jsonPrimitive?.content
         val clip = notesSha?.let { sha ->
-            File("data/notes").listFiles { f -> f.name.endsWith(".jsonl") }.orEmpty()
+            // every region has a clip of the same dump: take Ontario's
+            File("data/notes").listFiles { f -> f.name.endsWith("-ontario.jsonl") }.orEmpty()
                 .firstOrNull { f -> f.bufferedReader().use { it.readLine() }.contains("\"sha256\":\"$sha\"") }
                 .also { assumeTrue(it != null, "no clip of the notes dump $sha in data/notes") }
         }
