@@ -939,6 +939,7 @@ async function renderPlaces() {
   const head = placeHead(ref);
   const slot = el("div", {}, el("p", { class: "notice" }, ref.kind === "country" ? `Loading ${ref.country.name}'s places…` : "Loading…"));
   page.replaceChildren(head, slot);
+  if (ref.kind === "country") page.append(countryChildren(ref, []) || "");
   const sections = await placeSections(ref);
   if (seq !== placeSeq) return;
   slot.replaceChildren(...sections.filter(Boolean));
@@ -967,7 +968,7 @@ function placeHead(ref) {
 
 // Everything inside a place, below it: its descendants' row indices, per shard.
 function descendants(ref, shards) {
-  if (ref.kind === "country") return shards.map((sh) => ({ sh, idx: sh.rows.map((_, i) => i).filter((i) => i !== sh.self) }));
+  if (ref.kind === "country") return shards.map((sh) => ({ sh, idx: sh.rows.map((_, i) => i) }));
   const out = [], stack = ref.kind === "region" ? [...childRows(ref)] : [...ref.shard.kids[ref.i]];
   while (stack.length) { const i = stack.pop(); out.push(i); stack.push(...ref.shard.kids[i]); }
   return [{ sh: ref.shard, idx: out }];
@@ -984,11 +985,11 @@ async function placeSections(ref) {
   const out = [];
   if (ref.kind === "country") {
     const shards = await loadCountry(ref.country);
-    out.push(rollupCard(ref, shards));
-    out.push(childrenCard(ref, [
-      ...ref.country.regions.filter((r) => r.id !== "_").map((r) => ({ ref: { kind: "region", country: ref.country, region: r }, n: r.n })),
-      ...shards.filter((sh) => sh.region.id === "_").flatMap((sh) => sh.top.map((i) => ({ ref: rowRef(sh, i) }))),
-    ]));
+    const card = countryChildren(ref, shards);
+    const old = $("#place-page > .card.children");
+    if (old && card) old.replaceWith(card);
+    else if (card) out.push(card);
+    out.unshift(rollupCard(ref, shards));
     return out;
   }
   if (counted && !counted.includes("/")) out.push(cityCard(ref, counted), await partsCard(counted, ref, null));
@@ -1001,6 +1002,16 @@ async function placeSections(ref) {
   }
   out.push(childrenCard(ref, childRows(ref).map((i) => ({ ref: rowRef(ref.shard, i) }))));
   return out;
+}
+
+// A country's regions from the index (with their files once loaded, so a counted region shows it), and
+// the places of its "_" file, outside every region.
+function countryChildren(ref, shards) {
+  const shardOf = (r) => shards.find((sh) => sh.region === r);
+  return childrenCard(ref, [
+    ...ref.country.regions.filter((r) => r.id !== "_").map((r) => ({ ref: { kind: "region", country: ref.country, region: r, shard: shardOf(r) }, n: r.n })),
+    ...shards.filter((sh) => sh.region.id === "_").flatMap((sh) => sh.top.map((i) => ({ ref: rowRef(sh, i) }))),
+  ]);
 }
 
 // A region or country is the sum of nothing: it says how many of its places are counted and lists them.
@@ -1062,7 +1073,7 @@ function childrenCard(ref, items) {
       : null;
     body.append(el("h3", {}, `${SUBTYPE[st] || "other"} (${nf.format(list.length)})`), ul, more);
   }
-  return el("article", { class: "card" }, el("h2", {}, `Inside ${refName(ref)}`),
+  return el("article", { class: "card children" }, el("h2", {}, `Inside ${refName(ref)}`),
     el("p", { class: "sub" }, "The number beside a place is how many places it holds."), body);
 }
 

@@ -20,6 +20,7 @@ PAGES = [   # name, query, text that must be on the page
     ("compare-unchanged", "view=compare&city=ottawa", "Cities compared"),
     ("places-root", "view=places", "Countries"),
     ("country-canada", "place=d5654a875adf", "places counted"),
+    ("country-germany", "place=567d16987209", "Berlin\nregion"),     # a region that is a counted city
     ("region-ontario", "place=eb1eed766420", "places counted"),
     ("city-toronto", f"place=9fc3a6b4bdda&in={ON}", "Parts of Toronto"),
     ("part-annex", f"place=b9ec4292cfec&in={ON}", "Quests in Annex"),
@@ -49,6 +50,14 @@ with sync_playwright() as p:
         print(("ok  " if ok else "FAIL"), name, page.url.split("?")[1], "| places files:", shards)
         for e in errors:
             print("     page error:", e)
+        if name == "not-counted":   # the form's prefill keys are its field ids
+            href = page.get_attribute("a.btn.primary", "href")
+            ok = all(k in href for k in ("template=place-request.yml", "title=Count+North+Toronto+%28Canada%29",
+                                         "place-id=bac51b596c88", "place-name=North+Toronto", "place-path=Canada+%2F+"))
+            failed |= not ok
+            print(("ok  " if ok else "FAIL"), "ask link", href)
+        if name == "country-germany":
+            print("     ", text[text.find("places counted") - 12:][:200].replace("\n", " / "))
     # search: index names with no country chosen, then a country's places (accent-blind)
     page.goto(f"{BASE}?data=data&view=places", wait_until="networkidle")
     page.fill("#place-search", "ontar")
