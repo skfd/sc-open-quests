@@ -124,7 +124,8 @@ counted weekly from one planet file (DESIGN.md, same section); disk is the owner
 whether land outside cities counts. Independent of the answer: GitHub Pages' 1 GB cap is about nine
 months away at today's size, so the publish format has to change anyway.
 
-**Taken by the measuring session (2026-10-24 evening), all independent of how places are named:**
+**Done by the measuring session (2026-10-24 evening), all independent of how places are named; merged on
+main, not pushed (the 13:15 run pushes it):**
 the publish format for the Pages cap (newest snapshot per region in `docs/`, the archive outside it, a
 small per-quest compare file; done on its branch, DESIGN.md "Publish format: newest snapshot only"); every SC country_metadata file bundled and a missing one an error; a
 region's extract separate from its id, so several runs can share one extract; the notes clip in one
@@ -142,3 +143,13 @@ regions and countries are roll-ups labelled "N of M counted". The owner's answer
 our 115 cities found by relation, 1.08M named places with a polygon worldwide, about 175 MB as a name layer.
 Next: the name layer's shards and the request form, once the measuring session's publish format has
 landed.
+
+Merged and checked the same night: the publish format (docs/ 333 MB to 20 MB; 1,497 files moved into
+`data/archive/`, which is not backed up), the engine (515 country files, no city cap, Ontario recount
+identical, SnapshotReproductionTest fixed to take Ontario's own notes clip), shared extracts and the
+one-pass notes clip (Bremen and Berlin recounted with the new clip: no quest moves, only `notes.open`).
+A rehearsal of `backfill` and `history` skipped all 67 stored extracts and changed no file. Watch the
+first 13:15 run after it (`logs/scheduler.log`): its push carries the 1,473 snapshot deletions.
+Left for the weekly planet pipeline: the planet source (download weekly, or the history file kept current;
+DESIGN.md, "Planet history kept current with diffs"), which waits on disk; and the place list, which is
+the breakdown session's. Optional: the engine's `-Xmx40g` could be about 20 GB (Ontario runs in 16).
