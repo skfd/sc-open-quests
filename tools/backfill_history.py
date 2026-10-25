@@ -1,7 +1,8 @@
 """Monthly history backfill from the planet full-history file. Python standard library + Docker.
 
-Geofabrik keeps no old dailies, so past months come from ~/Code/.osm-data/planet/history-<YYMMDD>.osm.pbf:
-clip it to a region once, then cut one snapshot per month with `osmium time-filter` and count it with the
+Geofabrik keeps no old dailies, so past months come from the planet history file in
+~/Code/.osm-data/planet/: history-<YYMMDD>.osm.pbf as the planet site publishes it, or history-<YYMMDD>.osh.pbf,
+the one `osm-extracts fetch planet-history` keeps current with replication diffs. Clip it to a region once, then cut one snapshot per month with `osmium time-filter` and count it with the
 engine, as run.py counts a Geofabrik extract. The counts use today's quest registry on past data: they
 answer "what would this SC version have shown then", not "what did the app of that time show". Every
 subcommand takes --region (config/regions.json; default ontario); `clip` takes several and reads the
@@ -16,8 +17,11 @@ planet once for all of them.
   merge    copy the staged and recounted snapshots into data/archive/<region>/snapshots/ (then run
            `run.py history`, which publishes each region's newest)
 
-Every subcommand also takes --planet history-<YYMMDD> (default: the newest history-*.osm.pbf in the store's
-planet/ folder); clips, slices and their metas carry its name.
+Every subcommand also takes --planet history-<YYMMDD> (default: the newest history-<YYMMDD>.osm.pbf or .osh.pbf
+in the store's planet/ folder, by date); clips, slices and their metas carry its name, so a newer history file
+means new clips. `months --to` defaults to the last month whose 1st, 12:00Z, the history file reaches.
+`run.py weekly` runs clip, months and a slice at the history file's own timestamp for the regions with
+"cadence": "weekly" (weekly(), below).
 
 Slices and staged snapshots live in data/backfill/<region>/ (gitignored). The daily pipeline never sees
 them until merge. osmium runs in the name-ru-repair-osmium image (osmium-tool 1.18, built by
@@ -28,25 +32,34 @@ from __future__ import annotations
 import argparse
 import contextlib
 import os
+import re
 import shutil
 import subprocess
 import sys
 import time
-from datetime import date, datetime, time as dtime, timezone
+from datetime import date, datetime, time as dtime, timedelta, timezone
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import run  # noqa: E402
 
-# The planet full-history file, "history-<YYMMDD>" in the store's planet/ folder; set by main() (--planet,
-# default the newest there) before any Region is made.
+# The planet full-history file, "history-<YYMMDD>" in the store's planet/ folder; set by set_planet()
+# (--planet, default the newest there) before any Region is made. PLANET_FILE is its file name: .osm.pbf for
+# the dump the planet site publishes (PLANET_URL is where it came from), .osh.pbf for one osm-extracts
+# brought up to date with diffs (no URL; PLANET_DERIVED_FROM, from its meta, says what it was made from).
 PLANET = ""
-PLANET_URL = ""
+PLANET_FILE = ""
+PLANET_URL: str | None = ""
+PLANET_DERIVED_FROM = None
+HISTORY_FILE = re.compile(r"(history-\d{6})\.(osm|osh)\.pbf")
+FIRST_MONTH = "2017-01"  # the monthly history starts here (DESIGN.md, "Monthly history")
 IMAGE = "name-ru-repair-osmium"
 
 BACKFILL = run.ROOT / "data" / "backfill"
 
-# The scheduled update runs at 13:15 and takes a few minutes; don't start an engine run across it.
+# The scheduled update runs at 13:15 and takes a few minutes; don't start an engine run across it, nor a
+# longer step (the weekly job's planet clip) that would still run then.
 QUIET = ((12, 55), (13, 50))  # 12 regions and a 3.4 GB download since 2026-10-21; an Ontario month takes 5 min
 
 
@@ -61,6 +74,7 @@ class Region:
         self.config = regions[region_id]
         self.history_dir = run.OSM_DATA_DIR / f"{region_id}-history"
         self.history = self.history_dir / f"{region_id}-{PLANET}.osh.pbf"
+        self.history_meta = self.history.with_name(self.history.name + ".meta.json")
         self.poly = self.history_dir / f"{region_id}.poly"  # a copy of config's: osmium sees only /osm
         self.backfill = BACKFILL / region_id
         self.staged = self.backfill / "snapshots"
@@ -68,25 +82,71 @@ class Region:
         self.published = run.ARCHIVE_DIR / region_id / "snapshots"  # every snapshot, not only docs/data's newest
 
 
+def planet_files(planet_dir: Path | None = None) -> dict[str, str]:
+    """The planet history files in the store's planet/ folder: {"history-<YYMMDD>": file name}. Of a date
+    present under both suffixes, the .osh.pbf (osm-extracts' own) wins."""
+    planet_dir = planet_dir or run.OSM_DATA_DIR / "planet"
+    found: dict[str, str] = {}
+    for p in sorted(planet_dir.glob("history-*.pbf")):
+        m = HISTORY_FILE.fullmatch(p.name)
+        if m and (m.group(1) not in found or m.group(2) == "osh"):
+            found[m.group(1)] = p.name
+    return found
+
+
 def newest_planet(planet_dir: Path | None = None) -> str:
     """The newest planet history file in the shared store, as "history-<YYMMDD>" (the name sorts by date)."""
     planet_dir = planet_dir or run.OSM_DATA_DIR / "planet"
-    files = sorted(planet_dir.glob("history-[0-9][0-9][0-9][0-9][0-9][0-9].osm.pbf"))
+    files = planet_files(planet_dir)
     if not files:
-        raise SystemExit(f"no history-<YYMMDD>.osm.pbf in {planet_dir}; pass --planet")
-    return files[-1].name.removesuffix(".osm.pbf")
+        raise SystemExit(f"no history-<YYMMDD>.osm.pbf or .osh.pbf in {planet_dir}; pass --planet")
+    return max(files)
+
+
+def planet_meta() -> dict:
+    """planet/<PLANET>.meta.json, or {} once the file is retired (its clips still slice)."""
+    path = run.OSM_DATA_DIR / "planet" / f"{PLANET}.meta.json"
+    return run.read_json(path) if path.exists() else {}
 
 
 def set_planet(name: str | None) -> str:
     """Use this planet history file (a name, history-261005, or its file name); None: the newest."""
-    global PLANET, PLANET_URL
-    PLANET = Path(name).name.removesuffix(".osm.pbf") if name else newest_planet()
-    PLANET_URL = f"https://planet.openstreetmap.org/pbf/full-history/{PLANET}.osm.pbf"
+    global PLANET, PLANET_FILE, PLANET_URL, PLANET_DERIVED_FROM
+    if name:
+        m = HISTORY_FILE.fullmatch(Path(name).name)
+        PLANET = m.group(1) if m else Path(name).name
+    else:
+        PLANET = newest_planet()
+    PLANET_FILE = planet_files().get(PLANET, f"{PLANET}.osm.pbf")
+    PLANET_DERIVED_FROM = planet_meta().get("derived_from")
+    original = PLANET_FILE.endswith(".osm.pbf") and not PLANET_DERIVED_FROM
+    PLANET_URL = f"https://planet.openstreetmap.org/pbf/full-history/{PLANET}.osm.pbf" if original else None
     return PLANET
 
 
+def planet_timestamp(r: Region | None = None) -> datetime:
+    """How far the history file reaches: its replication timestamp, from the planet's meta, else (the
+    planet file retired) from the region's clip."""
+    stamp = planet_meta().get("replication_timestamp")
+    if not stamp and r is not None and r.history_meta.exists():
+        stamp = run.read_json(r.history_meta).get("replication_timestamp")
+    if not stamp:
+        raise SystemExit(f"no replication_timestamp for {PLANET}: planet/{PLANET}.meta.json is missing")
+    return datetime.fromisoformat(stamp.replace("Z", "+00:00"))
+
+
+def last_month(t: datetime) -> str:
+    """"YYYY-MM" of the last month whose 1st, 12:00 UTC (a monthly slice's time), is not after t."""
+    y, m = t.year, t.month
+    if t < datetime(y, m, 1, 12, tzinfo=timezone.utc):
+        y, m = (y, m - 1) if m > 1 else (y - 1, 12)
+    return f"{y:04d}-{m:02d}"
+
+
 def osmium(script: str) -> None:
-    """Run a shell line in the osmium image, with the shared store at /osm and data/backfill at /out."""
+    """Run a shell line in the osmium image, with the shared store at /osm and data/backfill at /out. Like
+    the engine, it waits while memory is busy (run.engine_heap_gb: the owner's rule for heavy jobs)."""
+    run.engine_heap_gb()
     BACKFILL.mkdir(parents=True, exist_ok=True)
     cmd = ["docker", "run", "--rm", "--entrypoint", "sh",
            "-v", f"{run.OSM_DATA_DIR}:/osm", "-v", f"{BACKFILL}:/out", IMAGE, "-c", script]
@@ -111,20 +171,31 @@ def clip(regions: list[Region]) -> None:
         run.write_json(run.OSM_DATA_DIR / name, config)
         moves = " && ".join(f"mv {r.history_dir.name}/{r.history.name}.part {r.history_dir.name}/{r.history.name}"
                             for r in todo)
-        run.log(f"clipping planet/{PLANET}.osm.pbf to {', '.join(r.id for r in todo)} (an hour or more)")
-        osmium(f"cd /osm && osmium extract --with-history -s complete_ways -c {name} planet/{PLANET}.osm.pbf "
+        run.log(f"clipping planet/{PLANET_FILE} to {', '.join(r.id for r in todo)} (an hour or more)")
+        osmium(f"cd /osm && osmium extract --with-history -s complete_ways -c {name} planet/{PLANET_FILE} "
                f"--overwrite && {moves} && rm {name}")
     for r in regions:
-        meta = r.history.with_name(r.history.name + ".meta.json")
-        if not meta.exists():
+        if not r.history_meta.exists():
             planet = run.read_json(run.OSM_DATA_DIR / "planet" / f"{PLANET}.meta.json")
-            run.write_json(meta, {
+            stamp = planet.get("replication_timestamp")
+            run.write_json(r.history_meta, {
                 "made_by": f"osmium extract --with-history -s complete_ways -p {r.poly.name} (Geofabrik's poly), "
                            "sc-open-quests tools/backfill_history.py clip",
-                "region": r.history_dir.name, "data_date": planet.get("data_date"),
-                "replication_timestamp": planet.get("replication_timestamp"),
-                "derived_from": f"planet/{PLANET}.osm.pbf", "bytes": r.history.stat().st_size,
-                "made_at": datetime.now(timezone.utc).isoformat()})
+                "region": r.history_dir.name, "data_date": planet.get("data_date") or (stamp or "")[:10] or None,
+                "replication_timestamp": stamp,
+                **({"replication_sequence": planet["replication_sequence"]} if "replication_sequence" in planet else {}),
+                "derived_from": f"planet/{PLANET_FILE}",
+                **({"planet_derived_from": PLANET_DERIVED_FROM} if PLANET_DERIVED_FROM else {}),
+                "bytes": r.history.stat().st_size, "made_at": datetime.now(timezone.utc).isoformat()})
+
+
+def prune_clips(r: Region) -> None:
+    """Delete the region's clips of older planet history files: the current one holds all they do."""
+    for old in r.history_dir.glob(f"{r.id}-history-*.osh.pbf"):
+        if old != r.history and HISTORY_FILE.fullmatch(old.name.removeprefix(f"{r.id}-")):
+            run.log(f"deleting {old.name}, superseded by {r.history.name}")
+            old.unlink()
+            old.with_name(old.name + ".meta.json").unlink(missing_ok=True)
 
 
 def iso(t: datetime) -> str:
@@ -145,14 +216,22 @@ def slice_at(r: Region, t: datetime) -> tuple[Path, Path]:
         osmium(f"osmium time-filter /osm/{r.history_dir.name}/{r.history.name} {stamp} -o {out}.part -f pbf "
                f"--output-header=osmosis_replication_timestamp={stamp} --overwrite && mv {out}.part {out}")
     run.write_json(meta, {"region": r.id, "source_url": PLANET_URL, "file": f"{r.history.name}@{stamp}",
-                          "replication_timestamp": stamp, "derived_from": f"planet/{PLANET}.osm.pbf"})
+                          "replication_timestamp": stamp, "derived_from": f"planet/{PLANET_FILE}",
+                          **({"planet_derived_from": PLANET_DERIVED_FROM} if PLANET_DERIVED_FROM else {})})
     return pbf, meta
 
 
-def wait_for_quiet() -> None:
-    start, end = (dtime(*hm) for hm in QUIET)
+def in_quiet(now: datetime, ahead_minutes: int = 0) -> bool:
+    """True if now (local time) falls in the scheduled update's window, or ahead_minutes before it."""
+    now = now.replace(tzinfo=None)
+    start, end = (datetime.combine(now.date(), dtime(*hm)) for hm in QUIET)
+    return start - timedelta(minutes=ahead_minutes) <= now < end
+
+
+def wait_for_quiet(ahead_minutes: int = 0) -> None:
+    """Wait out the scheduled update's window; with ahead_minutes, also a step that long would reach it."""
     while True:
-        if not start <= datetime.now().time() < end:
+        if not in_quiet(datetime.now(), ahead_minutes):
             return
         run.log("waiting out the scheduled update window")
         time.sleep(300)
@@ -248,8 +327,13 @@ def month_starts(first: str, last: str, step: int) -> list[date]:
     return out
 
 
+def counted_dates(r: Region) -> set[str]:
+    """The dates the region has a snapshot of, staged or in the archive."""
+    return {p.stem for p in r.staged.glob("*.json")} | {p.stem for p in r.published.glob("*.json")}
+
+
 def months(r: Region, first: str, last: str, step: int, keep: bool) -> None:
-    have = {p.stem for p in r.staged.glob("*.json")} | {p.stem for p in r.published.glob("*.json")}
+    have = counted_dates(r)
     for d in month_starts(first, last, step):
         if d.isoformat() in have:
             run.log(f"{r.id} {d} already counted")
@@ -260,6 +344,39 @@ def months(r: Region, first: str, last: str, step: int, keep: bool) -> None:
         if not keep:
             pbf.unlink()
         run.log(f"{r.id} {snap.name} in {time.monotonic() - t0:.0f} s")
+
+
+def count_at(r: Region, t: datetime) -> Path | None:
+    """Slice the region at t, count it into data/backfill/<region>/snapshots/ and delete the slice; None
+    (and nothing done) if the region already has a snapshot of t's date in its time zone."""
+    day = t.astimezone(ZoneInfo(r.config["timeZone"])).date().isoformat()
+    if day in counted_dates(r):
+        run.log(f"{r.id} {day} already counted")
+        return None
+    pbf, meta = slice_at(r, t)
+    snap = count(r, pbf, meta, r.backfill)
+    pbf.unlink()
+    run.log(f"{r.id} {snap.name}: the history file at {iso(t)}")
+    return snap
+
+
+def weekly(region_ids: list[str]) -> datetime:
+    """The weekly regions' counting from the newest planet history file: clip them all in one pass (their
+    older clips deleted), count each 1st of the month since FIRST_MONTH not yet counted, then a slice at the
+    history file's own timestamp. Everything lands in data/backfill/<region>/; merge() then copies it into
+    the archive. Returns the history file's timestamp."""
+    set_planet(None)
+    t = planet_timestamp()
+    regions = [Region(i) for i in region_ids]
+    wait_for_quiet(ahead_minutes=90)  # a planet clip takes an hour or more
+    clip(regions)
+    for r in regions:
+        prune_clips(r)
+    for r in regions:
+        # the months first: a history file ending on a 1st must not take that date from its 12:00Z slice
+        months(r, FIRST_MONTH, last_month(t), 1, keep=False)
+        count_at(r, t)
+    return t
 
 
 def recount(r: Region) -> None:
@@ -315,8 +432,9 @@ def main(argv: list[str] | None = None) -> int:
     c = sub.add_parser("check", parents=[common])
     c.add_argument("--extract", help="a dated extract in the shared store (default: the region's oldest)")
     m = sub.add_parser("months", parents=[common])
-    m.add_argument("--from", dest="first", default="2017-01")
-    m.add_argument("--to", dest="last", default="2026-10")  # the planet history ends 2026-10-05
+    m.add_argument("--from", dest="first", default=FIRST_MONTH)
+    m.add_argument("--to", dest="last", help="YYYY-MM (default: the last month whose 1st, 12:00Z, the history "
+                   "file reaches; 2026-10 for history-261005)")
     m.add_argument("--step", type=int, default=1, help="months between slices (12 = a yearly spine)")
     m.add_argument("--keep", action="store_true", help="keep the slices")
     rc = sub.add_parser("recount", parents=[common])
@@ -335,7 +453,7 @@ def main(argv: list[str] | None = None) -> int:
     elif a.cmd == "check":
         check(r, a.extract)
     elif a.cmd == "months":
-        months(r, a.first, a.last, a.step, a.keep)
+        months(r, a.first, a.last or last_month(planet_timestamp(r)), a.step, a.keep)
     else:
         merge(r)
     return 0
