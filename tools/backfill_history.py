@@ -144,9 +144,7 @@ def last_month(t: datetime) -> str:
 
 
 def osmium(script: str) -> None:
-    """Run a shell line in the osmium image, with the shared store at /osm and data/backfill at /out. Like
-    the engine, it waits while memory is busy (run.engine_heap_gb: the owner's rule for heavy jobs)."""
-    run.engine_heap_gb()
+    """Run a shell line in the osmium image, with the shared store at /osm and data/backfill at /out."""
     BACKFILL.mkdir(parents=True, exist_ok=True)
     cmd = ["docker", "run", "--rm", "--entrypoint", "sh",
            "-v", f"{run.OSM_DATA_DIR}:/osm", "-v", f"{BACKFILL}:/out", IMAGE, "-c", script]
@@ -172,6 +170,7 @@ def clip(regions: list[Region]) -> None:
         moves = " && ".join(f"mv {r.history_dir.name}/{r.history.name}.part {r.history_dir.name}/{r.history.name}"
                             for r in todo)
         run.log(f"clipping planet/{PLANET_FILE} to {', '.join(r.id for r in todo)} (an hour or more)")
+        run.engine_heap_gb()  # a pass over the planet is a heavy job: like the engine, wait while memory is busy
         osmium(f"cd /osm && osmium extract --with-history -s complete_ways -c {name} planet/{PLANET_FILE} "
                f"--overwrite && {moves} && rm {name}")
     for r in regions:
