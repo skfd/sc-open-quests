@@ -14,10 +14,10 @@ import java.util.concurrent.ConcurrentHashMap
  * SC's country metadata for a position, as the app hands it to the quest registry
  * (`{ countryInfos.get(countryBoundaries, it) }` in AndroidModule2): the region ids SC's
  * countryboundaries data gives for the position (smallest first, e.g. CA-ON, CA; in Germany only DE),
- * each region's yml in country_metadata/ (a region without one is skipped), then default.yml.
- * CountryInfos, CountryBoundaries and the data files are SC's own (vendored by sync-sc.ps1; only the
- * CA-ON, CA, DE and default yml are bundled, so a position outside Ontario and Germany reads
- * default.yml only, and no quest there is counted).
+ * each region's yml in country_metadata/ (a region SC has no file for is skipped), then default.yml.
+ * CountryInfos, CountryBoundaries and the data files are SC's own, vendored by sync-sc.ps1: all 515
+ * country_metadata files SC v64.0 ships, so any position on Earth reads what the app reads. A file SC
+ * ships but the bundle lacks is an error (the Res.readBytesOrNull stub), not a silent default.yml.
  *
  * CountryInfos caches in a plain HashMap; calls are serialized per id list, then cached here.
  */

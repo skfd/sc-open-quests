@@ -1,0 +1,11 @@
+# Do not edit. Data is from res/country/metadata and https://github.com/streetcomplete/countrymetadata
+atmOperators: [Itaú, Banco Continental, Itau, Banco Itaú, Banco Itau, BNF, Banco Nacional de Fomento, BBVA, Sudameris Bank, Sudameris, Banco Sudameris, BNF - Dinelco, Ueno Bank, Itaú - Infonet, ITAU, Dinelco, Continental, Bancop]
+centerLineStyle: yellow
+chargingStationOperators: [Petropar]
+defaultSpeedLimitHasUrbanOrRural: true
+domesticSocketTypes: [universal_abco, universal_ac, typec, typeb, typea, typen]
+mobileCountryCode: 744
+noParkingSignStyle: mutcd latin
+noStoppingSignStyle: mutcd latin
+officialLanguages: [es, gug]
+orchardProduces: [mate, tung_nut, banana, pineapple, guava, mango, mangosteen, avocado, orange, tomato, papaya, grapefruit, chilli_pepper, sweet_pepper, lemon, lime, strawberry, grape, coffee]

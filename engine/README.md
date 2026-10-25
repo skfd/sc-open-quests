@@ -70,7 +70,8 @@ dated file, not `ontario-latest.osm.pbf`. The store keeps 14 days of extracts, p
 4. **Country gating** per city from `countryCodes` (`["CA","CA-ON"]`), as SC's `CountryBoundariesImpl.
    isInAny`: `NoCountriesExcept(codes)` is on if a code equals one of the city's ids,
    `AllCountriesExcept(codes)` if none does. SC's countryboundaries data gives an Ontario position the
-   ids `CA-ON` and `CA` (checked by a test against SC's `boundaries.ser` for 47 of the 48 cities), so
+   ids `CA-ON` and `CA` (a test checks every city's `countryCodes` against what SC's `boundaries.ser`
+   gives at the city, whatever the country: `US-TX`, `US` in Houston, `JP` in Tokyo), so
    a quest listing only `CA-ON` is on and one excluding `CA` is off. 11 filter quests are off in every
    city. SC also skips a quest type when the download bbox does not intersect its countries; that is
    redundant for cities wholly inside CA-ON. A German position gets only the id `DE` (SC's data has no
@@ -84,7 +85,8 @@ dated file, not `ontario-latest.osm.pbf`. The store keeps 14 days of extracts, p
    Relation geometry uses member **ways** only, skipping missing ones (`allowIncomplete = true`, as in
    `MapDataControllerImpl`); node and sub-relation members are ignored, as in SC.
 6. **Cities**: bbox prefilter, then even-odd point-in-polygon on the boundary from `config/cities.json`
-   (Overpass `out geom` relation). An element whose bounding box misses every city's is skipped before its
+   (Overpass `out geom` relation). A grid of at most 512 x 512 cells over the cities' boxes (`BoxGrid`)
+   gives the boxes to test for a point, so a run takes any number of cities. An element whose bounding box misses every city's is skipped before its
    geometry is built (its centroid or midpoint cannot be inside). A quest counts in a city if its position
    is inside the city polygon and the quest is enabled there.
 7. **Denominators**: `taggedNodes` and `taggedWays` are tagged elements whose quest position is in the
@@ -186,7 +188,9 @@ download:
   city's polygon, and the quest is enabled there. A quest that returns an element twice (AddMaxHeight)
   gives one quest, as the app keys quests by element.
 - **agedOnly**: each map data is run again with the clock at 1900; results that disappear are agedOnly.
-- Cities run one after the other, the quests of a city in parallel.
+- Cities run one after the other, the quests of a city in parallel. Which padded city boxes hold an
+  element is one Int, the id of an interned set of cities (`CitySets`; it was a 64-bit mask, so at most 64
+  cities a run until 2026-10-24).
 - **Fast twins** (`openquests/fast/`). Three quests compare everything with everything in SC's code, which
   is fine on the app's small downloads and not on a whole city: AddMaxHeight (every road with every
   bridge; Mississauga 231 s; all cities did not finish in 30 minutes), AddIsAmenityIndoor (every node with every
@@ -209,10 +213,12 @@ download:
   (`CA-ON.yml`, `CA.yml`; `CA-QC.yml`, `CA.yml`; `DE.yml`) and then `default.yml`, each field from the first file that sets it,
   with kaml 0.104.0, as SC does. SC v63.4 has no `DE-*.yml`.
 
-`sync-sc.ps1` bundles `boundaries.ser`, `default.yml`, `CA.yml`, `DE.yml` and the 13 `CA-*.yml` files SC
-ships, one per province and territory (since 2026-10-21, when the other provinces joined). A position
-outside Canada and Germany (Michigan) reads `default.yml` only, but no quest is counted there. The values
-the three quests read are:
+`sync-sc.ps1` bundles `boundaries.ser` and every `country_metadata/*.yml` SC ships (515 at v64.0, since
+2026-10-24; 16 before), and writes their codes to `sc/country_metadata.index`. An id SC has no file for
+(most subdivisions; there is no `JP-13.yml`) is skipped, as in the app; a file SC ships but the bundle lacks is an error (the
+`Res.readBytesOrNull` stub), not a silent fall back to `default.yml`. `CountryMetadataTest` checks the
+bundle against the SC checkout byte for byte, against the sha256s in SC-VERSION.txt, and decodes every
+file. The values the three quests read in Canada and Germany are:
 - `roofsAreUsuallyFlat`: false (default.yml; neither CA nor DE sets it), so AddRoofShape asks for every
   building with levels;
 - the cycleway-ambiguity fields: `hasAdvisoryCycleLane` is false in Ontario (default.yml) but true in
@@ -305,7 +311,7 @@ All counted quests are marked `supported`: none of the differences below is spec
   relations such as `public_transport=stop_area`, relations of sub-relations). SC gives them no geometry
   either, so they get no quest in the app; this is not an engine gap.
 - **Country gating** is evaluated per city, not per element position. Exact while every city lies inside
-  one region (CA-ON, or DE).
+  one region (CA-ON, DE, US-TX, ...); a city across a border would need per-position gating.
 - **Default-disabled quests** (30 filter quests) are counted like the others; the site leaves them out of
   headline totals (`defaultDisabled` in quests.json). The resurvey multiplier is the app default, 1.
 
@@ -315,6 +321,10 @@ Ontario 2026-10-11, 24 threads, area pass per city: total about 216 s (ways 6.4 
 city, 37.4M nodes; then the cities one by one, Toronto 43 s with map data 5.8 s for 7.9M nodes and 1.07M
 ways, Mississauga 17 s, Ottawa 13 s). Peak heap 30-33 GB (sum of pool peaks; 33 GB
 under `-Xmx32g`, so close to the cap); the launcher's default is `-Xmx40g`. Per z16 tile (`--area-unit tiles`) it was about 115 s and 22 GB.
+
+Ontario 2026-10-23, 53 cities: pass 188 s under `-Xmx40g` (the published run); under `JAVA_OPTS=-Xmx16g`
+(which overrides the launcher's) 261-271 s, and 282 s for the engine before the city grid, so the small
+heap costs about 80 s and the grid and city set ids cost nothing (DESIGN.md, 2026-10-24).
 
 Main pass alone (Ontario 2026-07-16, 967 MB):
 
