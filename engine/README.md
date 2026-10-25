@@ -340,6 +340,11 @@ Ontario 2026-10-23, 53 cities: pass 188 s under `-Xmx40g` (the published run); u
 (which overrides the launcher's) 261-271 s, and 282 s for the engine before the city grid, so the small
 heap costs about 80 s and the grid and city set ids cost nothing (DESIGN.md, 2026-10-24).
 
+Parts (2026-10-24, the 2026-10-23 extracts, `-Xmx16g` Ontario, `-Xmx8g` Berlin): Ontario with its 790
+parts (Toronto 218) 216 s pass and 21.9 GB peak heap, without 208 s and 20.1 GB (a first, cold run
+without took 371 s); Berlin with 461 parts 55 s / 9.6 GB, without 56 s / 9.4 GB. Both snapshots equal
+the runs without parts and the published ones apart from `parts`, `runSeconds` and `engineCommit`.
+
 Main pass alone (Ontario 2026-07-16, 967 MB):
 
 | stage | time |
