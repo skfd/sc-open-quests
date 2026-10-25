@@ -580,3 +580,24 @@ Berlin, and the size of a name shard per country, extrapolated to the world.
   that the published `cities.json` has (a fresh clone, a deleted `data/`), instead of rebuilding a
   shorter history. The snapshots up to 2026-10-24 can be restored from git history; of later ones git
   has only each day's published newest, so the archive is the one copy of the rest (not backed up).
+
+## Planet history kept current with diffs: measured (2026-10-24)
+
+- **It works.** `osmium apply-changes -H` takes the history file plus daily diffs
+  (`replication/day/000/005/NNN.osc.gz`, sequence 5137 is the first after the 2026-10-05 dump; 5136 +
+  days since 2026-10-05) and writes a new history file. Re-applying a diff changes nothing, and
+  apply-changes sorts the diffs itself. Never use `merge-changes --simplify` on history: it keeps only
+  the last version.
+- **Always pass `-H`.** The store's file is named `.osm.pbf`, not `.osh.pbf`; without `-H` osmium exits
+  0 and silently collapses the history (Ontario: 232.9M node versions to 184.7M).
+- **The cost is the rewrite, not the diffs.** Ontario's 1.98 GB clip plus two diffs: 66 s, the same as a
+  plain `osmium cat`; memory about 3.4 GB plus 0.85 GB per daily diff (a week is about 10 GB). For the
+  163 GB planet that predicts about 1-1.5 h a week, plus about 1 h to clip the counted places' envelopes,
+  and a week of diffs is 0.75 GB to download (1-2 minutes here).
+- **Disk decides it.** The update cannot work in place: it needs a full second copy, about 165 GB free.
+  C: has 150 GB. The history file also has a second hard link (`name-ru-repair\data\planet\`), so the
+  old copy frees no space until both links go. A weekly `planet-latest.osm.pbf` download (about 85 GB,
+  about 4 h) fits today, but the history then stays frozen at 2026-10-05.
+- **What tips it:** whether a place first requested later (say 2027-06) must get monthly points from
+  2026-11 on. If so the history has to stay current (weekly, or monthly plus a weekly planet). Disk is
+  the owner's (see the owner's direction above).
