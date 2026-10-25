@@ -153,3 +153,11 @@ first 13:15 run after it (`logs/scheduler.log`): its push carries the 1,473 snap
 Left for the weekly planet pipeline: the planet source (download weekly, or the history file kept current;
 DESIGN.md, "Planet history kept current with diffs"), which waits on disk; and the place list, which is
 the breakdown session's. Optional: the engine's `-Xmx40g` could be about 20 GB (Ontario runs in 16).
+
+**Archive backup (2026-10-24, night):** `data/archive/` (1,497 files, 306 MB) is copied to
+`.backup/archive-2026-10-24/` (gitignored, checksums identical). Same disk, so it guards against a bad
+run or a wrong delete, not a dead disk. **Delete it once the first 13:15 run with the new publish format
+has gone well** (2026-10-25: `logs/scheduler.log` ends in "update done", the push with the 1,473
+snapshot deletions went through, the site still loads every city, and `data/archive/` still holds 1,497+
+files): `rm -rf .backup/archive-2026-10-24`.
+
