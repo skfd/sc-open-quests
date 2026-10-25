@@ -1,0 +1,12 @@
+{"schema": 1, "city": "abbotsford", "overture": "2026-10-21.0", "parts": [
+  {"id": "9a0d06cfe633", "gers": "9a0d06cf-e633-4772-9004-f5df6f5dd1b5", "name": "Abbotsford Centre", "en": null, "subtype": "macrohood", "osm": "r12842904", "geometry": "data/boundaries/parts/abbotsford/r12842904.geojson"},
+  {"id": "6e5b29d1fb2c", "gers": "6e5b29d1-fb2c-4fca-8fe1-36372a784d49", "name": "Brickyard", "en": null, "subtype": "neighborhood", "osm": "w1414543135", "geometry": "data/boundaries/parts/abbotsford/w1414543135.geojson"},
+  {"id": "24baabd0a3ab", "gers": "24baabd0-a3ab-4b5c-b9b1-c8c5b76d725f", "name": "Clayburn Village", "en": null, "subtype": "neighborhood", "osm": "w884501323", "geometry": "data/boundaries/parts/abbotsford/w884501323.geojson"},
+  {"id": "af2393d818b6", "gers": "af2393d8-18b6-4d55-8284-b2d48b4788f8", "name": "Hillside", "en": null, "subtype": "neighborhood", "osm": "w1414543131", "geometry": "data/boundaries/parts/abbotsford/w1414543131.geojson"},
+  {"id": "d740696ccb67", "gers": "d740696c-cb67-4c2a-bbb9-feef85b23dfd", "name": "McMillan", "en": null, "subtype": "macrohood", "osm": "r14241235", "geometry": "data/boundaries/parts/abbotsford/r14241235.geojson"},
+  {"id": "faee76e2661e", "gers": "faee76e2-661e-4f28-a005-bcfcf7f1b162", "name": "Mill Lake", "en": null, "subtype": "macrohood", "osm": "w294778937", "geometry": "data/boundaries/parts/abbotsford/w294778937.geojson"},
+  {"id": "b70b4c89ef19", "gers": "b70b4c89-ef19-4da4-830c-94b86a34eead", "name": "Rail Plaza", "en": null, "subtype": "neighborhood", "osm": "w1414543133", "geometry": "data/boundaries/parts/abbotsford/w1414543133.geojson"},
+  {"id": "a4e26b556a87", "gers": "a4e26b55-6a87-43ba-935d-532a3607fe79", "name": "Railside", "en": null, "subtype": "neighborhood", "osm": "w1414543132", "geometry": "data/boundaries/parts/abbotsford/w1414543132.geojson"},
+  {"id": "1edf156e9c0f", "gers": "1edf156e-9c0f-4301-b02e-055315f09787", "name": "Ridgeline", "en": null, "subtype": "neighborhood", "osm": "w1414543134", "geometry": "data/boundaries/parts/abbotsford/w1414543134.geojson"},
+  {"id": "fd32673992ff", "gers": "fd326739-92ff-4699-b1a5-aa2cd743957f", "name": "UDistrict", "en": null, "subtype": "neighborhood", "osm": "w666440560", "geometry": "data/boundaries/parts/abbotsford/w666440560.geojson"}
+]}

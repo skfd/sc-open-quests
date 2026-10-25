@@ -1,0 +1,4 @@
+{"schema": 1, "city": "aurora", "overture": "2026-10-21.0", "parts": [
+  {"id": "8a3d8f57d6f5", "gers": "8a3d8f57-d6f5-43b7-a5a3-bb7326914762", "name": "Aurora Highlands", "en": null, "subtype": "neighborhood", "osm": "w1391506229", "geometry": "data/boundaries/parts/aurora/w1391506229.geojson"},
+  {"id": "c24c3a5274c0", "gers": "c24c3a52-74c0-4ff5-978c-3305da9bf7b3", "name": "Regency Acres", "en": null, "subtype": "neighborhood", "osm": "r18587644", "geometry": "data/boundaries/parts/aurora/r18587644.geojson"}
+]}

@@ -1,0 +1,3 @@
+{"schema": 1, "city": "peterborough", "overture": "2026-10-21.0", "parts": [
+  {"id": "3b027856e533", "gers": "3b027856-e533-44b3-9f3e-9fab602ce45e", "name": "Quaker Foods City Square", "en": null, "subtype": "microhood", "osm": "w1025706790", "geometry": "data/boundaries/parts/peterborough/w1025706790.geojson"}
+]}

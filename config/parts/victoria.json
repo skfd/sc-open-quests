@@ -1,0 +1,18 @@
+{"schema": 1, "city": "victoria", "overture": "2026-10-21.0", "parts": [
+  {"id": "446dd5175ea3", "gers": "446dd517-5ea3-4335-b8ec-21d2c7e5107c", "name": "Burnside", "en": null, "subtype": "neighborhood", "osm": "r3431130", "geometry": "data/boundaries/parts/victoria/r3431130.geojson"},
+  {"id": "8d45562bbd7f", "gers": "8d45562b-bd7f-4797-a1aa-c65e0bb98259", "name": "Downtown", "en": null, "subtype": "neighborhood", "osm": "r3431131", "geometry": "data/boundaries/parts/victoria/r3431131.geojson"},
+  {"id": "748c3dbe9c29", "gers": "748c3dbe-9c29-4e95-8208-696e09be8324", "name": "Fairfield", "en": null, "subtype": "neighborhood", "osm": "r3431132", "geometry": "data/boundaries/parts/victoria/r3431132.geojson"},
+  {"id": "abb921f593de", "gers": "abb921f5-93de-4f1a-a291-1da914206594", "name": "Fernwood", "en": null, "subtype": "neighborhood", "osm": "r3431133", "geometry": "data/boundaries/parts/victoria/r3431133.geojson"},
+  {"id": "f63def9b7ea0", "gers": "f63def9b-7ea0-4568-a457-3218b66508b6", "name": "Fernwood Square", "en": null, "subtype": "microhood", "osm": "w27054999", "geometry": "data/boundaries/parts/victoria/w27054999.geojson"},
+  {"id": "bbc63aa9292a", "gers": "bbc63aa9-292a-4bec-84ed-db7fd9bdaf99", "name": "Gonzales", "en": null, "subtype": "neighborhood", "osm": "r3431134", "geometry": "data/boundaries/parts/victoria/r3431134.geojson"},
+  {"id": "095559ff083f", "gers": "095559ff-083f-4e81-b3ad-85e6fc56ff1a", "name": "Harris Green", "en": null, "subtype": "neighborhood", "osm": "r3431135", "geometry": "data/boundaries/parts/victoria/r3431135.geojson"},
+  {"id": "dab100b20f13", "gers": "dab100b2-0f13-4de1-8a83-b654c6a24424", "name": "Hillside/Quadra", "en": null, "subtype": "neighborhood", "osm": "r3431136", "geometry": "data/boundaries/parts/victoria/r3431136.geojson"},
+  {"id": "ec1208357db1", "gers": "ec120835-7db1-45fa-887d-35832af7d340", "name": "James Bay", "en": null, "subtype": "neighborhood", "osm": "r3431137", "geometry": "data/boundaries/parts/victoria/r3431137.geojson"},
+  {"id": "abd031a70029", "gers": "abd031a7-0029-4efa-845c-f1c248a5a9a3", "name": "Jubilee", "en": null, "subtype": "neighborhood", "osm": "r18556334", "geometry": "data/boundaries/parts/victoria/r18556334.geojson"},
+  {"id": "96dabe774f6d", "gers": "96dabe77-4f6d-4468-8af8-67c35957596c", "name": "North Jubilee", "en": null, "subtype": "neighborhood", "osm": "r3431138", "geometry": "data/boundaries/parts/victoria/r3431138.geojson"},
+  {"id": "97c66f1ae85c", "gers": "97c66f1a-e85c-4263-b010-e707cca7e51d", "name": "North Park", "en": null, "subtype": "neighborhood", "osm": "r3431139", "geometry": "data/boundaries/parts/victoria/r3431139.geojson"},
+  {"id": "562be80329fa", "gers": "562be803-29fa-42cf-a025-65ab677acc25", "name": "Oaklands", "en": null, "subtype": "neighborhood", "osm": "r3431140", "geometry": "data/boundaries/parts/victoria/r3431140.geojson"},
+  {"id": "c948810c612a", "gers": "c948810c-612a-430f-9573-33dab10fb979", "name": "Rockland", "en": null, "subtype": "neighborhood", "osm": "r3431141", "geometry": "data/boundaries/parts/victoria/r3431141.geojson"},
+  {"id": "51fc103fcffe", "gers": "51fc103f-cffe-49ed-a2d6-34a971638c32", "name": "South Jubilee", "en": null, "subtype": "neighborhood", "osm": "r3431142", "geometry": "data/boundaries/parts/victoria/r3431142.geojson"},
+  {"id": "0043e7cf4871", "gers": "0043e7cf-4871-43e6-b92d-e4353c724f40", "name": "Victoria West", "en": null, "subtype": "neighborhood", "osm": "r3431143", "geometry": "data/boundaries/parts/victoria/r3431143.geojson"}
+]}

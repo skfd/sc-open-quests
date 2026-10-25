@@ -1,0 +1,19 @@
+{"schema": 1, "city": "richmond", "overture": "2026-10-21.0", "parts": [
+  {"id": "0ed44bc0b9f2", "gers": "0ed44bc0-b9f2-4098-83ee-d9d1751223b6", "name": "Blundell", "en": null, "subtype": "macrohood", "osm": "r11681677", "geometry": "data/boundaries/parts/richmond/r11681677.geojson"},
+  {"id": "677527d77693", "gers": "677527d7-7693-44a2-afb9-42e6bfe374ad", "name": "Bridgeport", "en": null, "subtype": "macrohood", "osm": "r11683428", "geometry": "data/boundaries/parts/richmond/r11683428.geojson"},
+  {"id": "0ceddfdd5b6e", "gers": "0ceddfdd-5b6e-483e-bf2c-eeaa31deb340", "name": "Broadmoor", "en": null, "subtype": "macrohood", "osm": "r11681689", "geometry": "data/boundaries/parts/richmond/r11681689.geojson"},
+  {"id": "62c7317eba59", "gers": "62c7317e-ba59-4abc-bed7-14d151fc77f3", "name": "Burkeville", "en": null, "subtype": "neighborhood", "osm": "r11680232", "geometry": "data/boundaries/parts/richmond/r11680232.geojson"},
+  {"id": "4df8bbab9dde", "gers": "4df8bbab-9dde-4da0-a161-8eacdc9fe77e", "name": "City Centre", "en": null, "subtype": "macrohood", "osm": "r11683389", "geometry": "data/boundaries/parts/richmond/r11683389.geojson"},
+  {"id": "4047a81b1d69", "gers": "4047a81b-1d69-494a-aee3-e14297667bff", "name": "East Cambie", "en": null, "subtype": "macrohood", "osm": "r11683495", "geometry": "data/boundaries/parts/richmond/r11683495.geojson"},
+  {"id": "1a9e3ee3d145", "gers": "1a9e3ee3-d145-4b2c-ac48-02aeba98f8e6", "name": "East Richmond", "en": null, "subtype": "macrohood", "osm": "r11683627", "geometry": "data/boundaries/parts/richmond/r11683627.geojson"},
+  {"id": "7d734dc895ba", "gers": "7d734dc8-95ba-4516-8a65-8cd384cbdec1", "name": "Fraser Lands", "en": null, "subtype": "macrohood", "osm": "r11683628", "geometry": "data/boundaries/parts/richmond/r11683628.geojson"},
+  {"id": "e5299e2ff2d2", "gers": "e5299e2f-f2d2-48f2-83ff-6692ee30ef91", "name": "Gilmore", "en": null, "subtype": "macrohood", "osm": "r11681713", "geometry": "data/boundaries/parts/richmond/r11681713.geojson"},
+  {"id": "7e657e0a4a56", "gers": "7e657e0a-4a56-4b14-80b0-a7f33057e202", "name": "Hamilton", "en": null, "subtype": "macrohood", "osm": "r11678219", "geometry": "data/boundaries/parts/richmond/r11678219.geojson"},
+  {"id": "3a0fe6333519", "gers": "3a0fe633-3519-4484-b203-8a100d3f5caa", "name": "Sea Island", "en": null, "subtype": "neighborhood", "osm": "r11680016", "geometry": "data/boundaries/parts/richmond/r11680016.geojson"},
+  {"id": "1d1482d9f567", "gers": "1d1482d9-f567-40ca-af8c-8835088873e1", "name": "Seafair", "en": null, "subtype": "macrohood", "osm": "r11680323", "geometry": "data/boundaries/parts/richmond/r11680323.geojson"},
+  {"id": "e6f44c30f097", "gers": "e6f44c30-f097-4f8a-b57b-dc5f20d273df", "name": "Shellmont", "en": null, "subtype": "macrohood", "osm": "r11683271", "geometry": "data/boundaries/parts/richmond/r11683271.geojson"},
+  {"id": "c1ee3a1e53f7", "gers": "c1ee3a1e-53f7-4913-9c07-9443e27e758b", "name": "South Arm Islands", "en": null, "subtype": "macrohood", "osm": "r11681768", "geometry": "data/boundaries/parts/richmond/r11681768.geojson"},
+  {"id": "8934f0a35c4a", "gers": "8934f0a3-5c4a-4850-9b95-8a5d775d55b8", "name": "Steveston", "en": null, "subtype": "macrohood", "osm": "r11681639", "geometry": "data/boundaries/parts/richmond/r11681639.geojson"},
+  {"id": "4b9281809fc1", "gers": "4b928180-9fc1-46eb-b743-71937fc3652a", "name": "Thompson", "en": null, "subtype": "macrohood", "osm": "r11680243", "geometry": "data/boundaries/parts/richmond/r11680243.geojson"},
+  {"id": "13dfe9462515", "gers": "13dfe946-2515-4371-ae39-08fa2f4e5b06", "name": "West Cambie", "en": null, "subtype": "macrohood", "osm": "r11683494", "geometry": "data/boundaries/parts/richmond/r11683494.geojson"}
+]}

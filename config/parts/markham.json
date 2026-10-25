@@ -1,0 +1,11 @@
+{"schema": 1, "city": "markham", "overture": "2026-10-21.0", "parts": [
+  {"id": "2233995bccd7", "gers": "2233995b-ccd7-430c-9eb8-17d34f14a7b4", "name": "Angus Glen", "en": null, "subtype": "neighborhood", "osm": "r16785125", "geometry": "data/boundaries/parts/markham/r16785125.geojson"},
+  {"id": "633ba9d66cf0", "gers": "633ba9d6-6cf0-4f68-9cc9-f29142004fd2", "name": "Benjamin Thorne Parkette", "en": null, "subtype": "microhood", "osm": "w992038196", "geometry": "data/boundaries/parts/markham/w992038196.geojson"},
+  {"id": "2b2f50b7b96c", "gers": "2b2f50b7-b96c-40e9-ab28-bdf6f127df96", "name": "Berczy Glen", "en": null, "subtype": "neighborhood", "osm": "r16751439", "geometry": "data/boundaries/parts/markham/r16751439.geojson"},
+  {"id": "301ef4942a3c", "gers": "301ef494-2a3c-4035-805d-c3a06303d809", "name": "Berczy Village", "en": null, "subtype": "neighborhood", "osm": "r16836906", "geometry": "data/boundaries/parts/markham/r16836906.geojson"},
+  {"id": "3281a8ca74bf", "gers": "3281a8ca-74bf-45dc-a25a-3b80db8a81f7", "name": "Greensborough", "en": null, "subtype": "neighborhood", "osm": "r16836908", "geometry": "data/boundaries/parts/markham/r16836908.geojson"},
+  {"id": "a9fe273a5181", "gers": "a9fe273a-5181-4545-b3a4-e7d739e5acaa", "name": "Robinson Glen", "en": null, "subtype": "neighborhood", "osm": "r16785171", "geometry": "data/boundaries/parts/markham/r16785171.geojson"},
+  {"id": "21cd8a9eab44", "gers": "21cd8a9e-ab44-45fa-bb20-95c70fea14ab", "name": "Veterans Square", "en": null, "subtype": "microhood", "osm": "w935619857", "geometry": "data/boundaries/parts/markham/w935619857.geojson"},
+  {"id": "a0da9bdbf73b", "gers": "a0da9bdb-f73b-497e-a952-0329553870b3", "name": "Victoria Glen", "en": null, "subtype": "neighborhood", "osm": "r16785964", "geometry": "data/boundaries/parts/markham/r16785964.geojson"},
+  {"id": "f9f67fec318a", "gers": "f9f67fec-318a-4e16-a32d-88933e713695", "name": "Wismer Commons", "en": null, "subtype": "neighborhood", "osm": "r16836907", "geometry": "data/boundaries/parts/markham/r16836907.geojson"}
+]}

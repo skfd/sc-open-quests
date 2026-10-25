@@ -1,0 +1,4 @@
+{"schema": 1, "city": "oakville", "overture": "2026-10-21.0", "parts": [
+  {"id": "4b440f597b45", "gers": "4b440f59-7b45-4913-89d9-2c1c58b14103", "name": "Bronte Village", "en": null, "subtype": "neighborhood", "osm": "w1029166108", "geometry": "data/boundaries/parts/oakville/w1029166108.geojson"},
+  {"id": "7a9ca92934c0", "gers": "7a9ca929-34c0-4f30-8b51-1fe061065c00", "name": "Centennial Square", "en": null, "subtype": "microhood", "osm": "w1107006152", "geometry": "data/boundaries/parts/oakville/w1107006152.geojson"}
+]}

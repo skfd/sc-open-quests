@@ -1,0 +1,22 @@
+{"schema": 1, "city": "windsor", "overture": "2026-10-21.0", "parts": [
+  {"id": "66176831a65b", "gers": "66176831-a65b-4dd9-8a7b-020149a2c1e3", "name": "City Centre", "en": null, "subtype": "neighborhood", "osm": "r18655360", "geometry": "data/boundaries/parts/windsor/r18655360.geojson"},
+  {"id": "4dbf1def221c", "gers": "4dbf1def-221c-4f35-9c0e-36e36856dfae", "name": "Devonshire", "en": null, "subtype": "neighborhood", "osm": "r18655528", "geometry": "data/boundaries/parts/windsor/r18655528.geojson"},
+  {"id": "81c9990fc15c", "gers": "81c9990f-c15c-4fd8-b0b8-4720de825c7b", "name": "East Riverside", "en": null, "subtype": "neighborhood", "osm": "r18659238", "geometry": "data/boundaries/parts/windsor/r18659238.geojson"},
+  {"id": "f234e98985e3", "gers": "f234e989-85e3-4db1-86d8-5a08f3daeb7d", "name": "East Windsor", "en": null, "subtype": "neighborhood", "osm": "r18655766", "geometry": "data/boundaries/parts/windsor/r18655766.geojson"},
+  {"id": "61b32e0b5267", "gers": "61b32e0b-5267-4813-ae83-b728044df65f", "name": "Fontainebleau", "en": null, "subtype": "neighborhood", "osm": "r18655807", "geometry": "data/boundaries/parts/windsor/r18655807.geojson"},
+  {"id": "5ab4be6ed151", "gers": "5ab4be6e-d151-4cab-b507-b9a00bf9e0f5", "name": "Forest Glade", "en": null, "subtype": "neighborhood", "osm": "r18656154", "geometry": "data/boundaries/parts/windsor/r18656154.geojson"},
+  {"id": "424d67847881", "gers": "424d6784-7881-4084-b115-2579a895e1ba", "name": "Malden", "en": null, "subtype": "neighborhood", "osm": "r18654988", "geometry": "data/boundaries/parts/windsor/r18654988.geojson"},
+  {"id": "8bf0a2d471d6", "gers": "8bf0a2d4-71d6-49de-8678-7dce2e6b0bfc", "name": "Ojibway", "en": null, "subtype": "neighborhood", "osm": "r18654864", "geometry": "data/boundaries/parts/windsor/r18654864.geojson"},
+  {"id": "881144f78d7c", "gers": "881144f7-8d7c-4de6-9522-a8a6bdb89cd4", "name": "Remington Park", "en": null, "subtype": "neighborhood", "osm": "r18655482", "geometry": "data/boundaries/parts/windsor/r18655482.geojson"},
+  {"id": "913ac66cb951", "gers": "913ac66c-b951-47c6-97e3-c076ed0a951f", "name": "RiverWest", "en": null, "subtype": "neighborhood", "osm": "r18655044", "geometry": "data/boundaries/parts/windsor/r18655044.geojson"},
+  {"id": "baf44402d07e", "gers": "baf44402-d07e-4d9c-b8f7-4b53693dae12", "name": "Riverside", "en": null, "subtype": "neighborhood", "osm": "r18659206", "geometry": "data/boundaries/parts/windsor/r18659206.geojson"},
+  {"id": "b86b55402049", "gers": "b86b5540-2049-4296-b1fc-4155f0b3fa9c", "name": "Roseland", "en": null, "subtype": "neighborhood", "osm": "r18655242", "geometry": "data/boundaries/parts/windsor/r18655242.geojson"},
+  {"id": "f76fbde2038f", "gers": "f76fbde2-038f-40de-99e1-29e4c6d33f13", "name": "Sandwich", "en": null, "subtype": "neighborhood", "osm": "r18655028", "geometry": "data/boundaries/parts/windsor/r18655028.geojson"},
+  {"id": "256cb08eb835", "gers": "256cb08e-b835-40d3-a265-430aa9faeb0e", "name": "Sandwich South", "en": null, "subtype": "neighborhood", "osm": "r18655973", "geometry": "data/boundaries/parts/windsor/r18655973.geojson"},
+  {"id": "7e4b8ca98296", "gers": "7e4b8ca9-8296-4c8d-b58d-cbf41bdc60b8", "name": "South Cameron", "en": null, "subtype": "neighborhood", "osm": "r18655070", "geometry": "data/boundaries/parts/windsor/r18655070.geojson"},
+  {"id": "e5f83d71a28a", "gers": "e5f83d71-a28a-48ad-93f2-0f4cb439196d", "name": "South Central", "en": null, "subtype": "neighborhood", "osm": "r18655440", "geometry": "data/boundaries/parts/windsor/r18655440.geojson"},
+  {"id": "ad379af66380", "gers": "ad379af6-6380-47a4-8b52-fd48e8a92527", "name": "South Walkerville", "en": null, "subtype": "neighborhood", "osm": "r18655629", "geometry": "data/boundaries/parts/windsor/r18655629.geojson"},
+  {"id": "7ad4b486b95e", "gers": "7ad4b486-b95e-4b68-aa58-4e7b63822c54", "name": "South Windsor", "en": null, "subtype": "neighborhood", "osm": "r18655155", "geometry": "data/boundaries/parts/windsor/r18655155.geojson"},
+  {"id": "36ccab04c6f8", "gers": "36ccab04-c6f8-4e16-a8a8-76437bb25721", "name": "Walker Farm", "en": null, "subtype": "neighborhood", "osm": "r18655876", "geometry": "data/boundaries/parts/windsor/r18655876.geojson"},
+  {"id": "e5a84da3c26f", "gers": "e5a84da3-c26f-4f2f-9ee3-f6d00bccdefd", "name": "Walkerville", "en": null, "subtype": "neighborhood", "osm": "r18655553", "geometry": "data/boundaries/parts/windsor/r18655553.geojson"}
+]}

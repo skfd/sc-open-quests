@@ -1,0 +1,20 @@
+{"schema": 1, "city": "burnaby", "overture": "2026-10-21.0", "parts": [
+  {"id": "32b8681c95aa", "gers": "32b8681c-95aa-4c5e-ad31-a6ef0f1cbc1a", "name": "Bainbridge", "en": null, "subtype": "neighborhood", "osm": "r21357789", "geometry": "data/boundaries/parts/burnaby/r21357789.geojson"},
+  {"id": "7c84d645e7c1", "gers": "7c84d645-e7c1-4c88-b15e-172311b76c7e", "name": "Big Bend", "en": null, "subtype": "neighborhood", "osm": "r13628135", "geometry": "data/boundaries/parts/burnaby/r13628135.geojson"},
+  {"id": "be8ae1bb2eaf", "gers": "be8ae1bb-2eaf-493f-bc6b-1b5dac1d8acd", "name": "Brentwood", "en": null, "subtype": "macrohood", "osm": "r21063594", "geometry": "data/boundaries/parts/burnaby/r21063594.geojson"},
+  {"id": "de806b0b79ba", "gers": "de806b0b-79ba-4fd5-90c5-8e8e9ccf9e5a", "name": "Broadview", "en": null, "subtype": "neighborhood", "osm": "r21363990", "geometry": "data/boundaries/parts/burnaby/r21363990.geojson"},
+  {"id": "ecab110dfc66", "gers": "ecab110d-fc66-488d-b52e-2b87030c09db", "name": "Buckingham Heights", "en": null, "subtype": "neighborhood", "osm": "r21363964", "geometry": "data/boundaries/parts/burnaby/r21363964.geojson"},
+  {"id": "9178d92247a0", "gers": "9178d922-47a0-45b0-aa02-f90e2ad695fe", "name": "Burnaby Mountain", "en": null, "subtype": "neighborhood", "osm": "r21282778", "geometry": "data/boundaries/parts/burnaby/r21282778.geojson"},
+  {"id": "b59a18bde553", "gers": "b59a18bd-e553-4b95-849f-58efe7a05c27", "name": "Central Valley", "en": null, "subtype": "neighborhood", "osm": "r21364016", "geometry": "data/boundaries/parts/burnaby/r21364016.geojson"},
+  {"id": "a4b329bb2fa0", "gers": "a4b329bb-2fa0-4849-8655-3ad188c20e0a", "name": "Deer Lake", "en": null, "subtype": "neighborhood", "osm": "r21357847", "geometry": "data/boundaries/parts/burnaby/r21357847.geojson"},
+  {"id": "0b978f2c1a16", "gers": "0b978f2c-1a16-4259-8787-b369769833c5", "name": "Edmonds", "en": null, "subtype": "macrohood", "osm": "r20690016", "geometry": "data/boundaries/parts/burnaby/r20690016.geojson"},
+  {"id": "44d3bc362c91", "gers": "44d3bc36-2c91-449e-9b44-1c9f437e4573", "name": "Garden Village", "en": null, "subtype": "neighborhood", "osm": "r21363989", "geometry": "data/boundaries/parts/burnaby/r21363989.geojson"},
+  {"id": "9ffc99bd4867", "gers": "9ffc99bd-4867-4a20-b305-98641896c019", "name": "Holdom", "en": null, "subtype": "neighborhood", "osm": "r21357787", "geometry": "data/boundaries/parts/burnaby/r21357787.geojson"},
+  {"id": "4528589a8ffe", "gers": "4528589a-8ffe-4b88-8e9c-f3b17cc06ef9", "name": "Lake City", "en": null, "subtype": "neighborhood", "osm": "r21357790", "geometry": "data/boundaries/parts/burnaby/r21357790.geojson"},
+  {"id": "8aa1e84bc922", "gers": "8aa1e84b-c922-4916-9f06-ab0dbbfa11f9", "name": "Lochdale", "en": null, "subtype": "neighborhood", "osm": "r21284603", "geometry": "data/boundaries/parts/burnaby/r21284603.geojson"},
+  {"id": "59f51b2b50cd", "gers": "59f51b2b-50cd-4089-86f8-8c8d4ba5575d", "name": "Lougheed", "en": null, "subtype": "macrohood", "osm": "r21285886", "geometry": "data/boundaries/parts/burnaby/r21285886.geojson"},
+  {"id": "f00a6a0812f7", "gers": "f00a6a08-12f7-48d4-948f-a0be1815f390", "name": "Metrotown", "en": null, "subtype": "macrohood", "osm": "r20678353", "geometry": "data/boundaries/parts/burnaby/r20678353.geojson"},
+  {"id": "564e4ea8edce", "gers": "564e4ea8-edce-4fd0-b2ff-2efcb2903706", "name": "Montecito", "en": null, "subtype": "neighborhood", "osm": "r21357788", "geometry": "data/boundaries/parts/burnaby/r21357788.geojson"},
+  {"id": "f368828cd6d0", "gers": "f368828c-d6d0-4426-a588-930ed6c9242a", "name": "Royal Oak", "en": null, "subtype": "neighborhood", "osm": "r20690057", "geometry": "data/boundaries/parts/burnaby/r20690057.geojson"},
+  {"id": "0f4cb5fb51b7", "gers": "0f4cb5fb-51b7-4929-81ee-39d0123405e8", "name": "South Slope", "en": null, "subtype": "neighborhood", "osm": "r20786526", "geometry": "data/boundaries/parts/burnaby/r20786526.geojson"}
+]}

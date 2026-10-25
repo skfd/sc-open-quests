@@ -1,0 +1,3 @@
+{"schema": 1, "city": "granby", "overture": "2026-10-21.0", "parts": [
+  {"id": "4cdce560fbe8", "gers": "4cdce560-fbe8-4ad5-b054-2c747b57d6d6", "name": "Place Jan-O-Brosseau", "en": null, "subtype": "microhood", "osm": "w1352751577", "geometry": "data/boundaries/parts/granby/w1352751577.geojson"}
+]}

@@ -1,0 +1,3 @@
+{"schema": 1, "city": "welland", "overture": "2026-10-21.0", "parts": [
+  {"id": "684564d20602", "gers": "684564d2-0602-497f-a208-982831497e74", "name": "Welland Civic Square", "en": null, "subtype": "microhood", "osm": "w659222169", "geometry": "data/boundaries/parts/welland/w659222169.geojson"}
+]}

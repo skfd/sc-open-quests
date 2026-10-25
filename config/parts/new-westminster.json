@@ -1,0 +1,13 @@
+{"schema": 1, "city": "new-westminster", "overture": "2026-10-21.0", "parts": [
+  {"id": "1c808b3feb95", "gers": "1c808b3f-eb95-4e6e-8721-af37e1f17541", "name": "Brow of the Hill", "en": null, "subtype": "neighborhood", "osm": "r11687422", "geometry": "data/boundaries/parts/new-westminster/r11687422.geojson"},
+  {"id": "12ed712eb66b", "gers": "12ed712e-b66b-4bb6-a595-4017d31cfdca", "name": "Connaught Heights", "en": null, "subtype": "neighborhood", "osm": "r11655093", "geometry": "data/boundaries/parts/new-westminster/r11655093.geojson"},
+  {"id": "f4efe3f34e82", "gers": "f4efe3f3-4e82-4478-b91c-a2d10ebfaeb2", "name": "Downtown", "en": null, "subtype": "neighborhood", "osm": "r11687544", "geometry": "data/boundaries/parts/new-westminster/r11687544.geojson"},
+  {"id": "119032e3c1a6", "gers": "119032e3-c1a6-4a39-bdb7-94f4a06781f1", "name": "Glenbrooke North", "en": null, "subtype": "neighborhood", "osm": "r11687408", "geometry": "data/boundaries/parts/new-westminster/r11687408.geojson"},
+  {"id": "2010fa6a44f2", "gers": "2010fa6a-44f2-4b60-b2d9-d6d10c62652d", "name": "Massey Victory Heights", "en": null, "subtype": "neighborhood", "osm": "r11687632", "geometry": "data/boundaries/parts/new-westminster/r11687632.geojson"},
+  {"id": "e8740abb58c1", "gers": "e8740abb-58c1-4964-868d-1ac824af0026", "name": "McBride Sapperton", "en": null, "subtype": "neighborhood", "osm": "r11687633", "geometry": "data/boundaries/parts/new-westminster/r11687633.geojson"},
+  {"id": "e98ec16b4300", "gers": "e98ec16b-4300-4a38-8004-a31d1959677d", "name": "Moody Park", "en": null, "subtype": "neighborhood", "osm": "r11678197", "geometry": "data/boundaries/parts/new-westminster/r11678197.geojson"},
+  {"id": "454d1d144230", "gers": "454d1d14-4230-4b82-9e9b-8ad757a504b0", "name": "Quayside", "en": null, "subtype": "neighborhood", "osm": "r11687591", "geometry": "data/boundaries/parts/new-westminster/r11687591.geojson"},
+  {"id": "74d0206bb235", "gers": "74d0206b-b235-4d4e-b527-b69418836ed3", "name": "Queens Park", "en": null, "subtype": "neighborhood", "osm": "r11687543", "geometry": "data/boundaries/parts/new-westminster/r11687543.geojson"},
+  {"id": "cd26e2dd7c83", "gers": "cd26e2dd-7c83-460c-be62-d84995bdeff7", "name": "Queensborough", "en": null, "subtype": "neighborhood", "osm": "r11654974", "geometry": "data/boundaries/parts/new-westminster/r11654974.geojson"},
+  {"id": "e5ff7ed89fd8", "gers": "e5ff7ed8-9fd8-4541-875c-4f6cffb39327", "name": "West End", "en": null, "subtype": "neighborhood", "osm": "r11657046", "geometry": "data/boundaries/parts/new-westminster/r11657046.geojson"}
+]}

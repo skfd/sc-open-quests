@@ -1,0 +1,18 @@
+{"schema": 1, "city": "laval", "overture": "2026-10-21.0", "parts": [
+  {"id": "1531b350b392", "gers": "1531b350-b392-49dc-8aad-b6d08f298e04", "name": "Auteuil", "en": null, "subtype": "macrohood", "osm": "r8797238", "geometry": "data/boundaries/parts/laval/r8797238.geojson"},
+  {"id": "7a17878bb5de", "gers": "7a17878b-b5de-4208-a11d-99ad158d88d5", "name": "Chomedey", "en": null, "subtype": "macrohood", "osm": "r8797542", "geometry": "data/boundaries/parts/laval/r8797542.geojson"},
+  {"id": "302e7d3e089b", "gers": "302e7d3e-089b-4416-9fd1-d54b8b81b5b4", "name": "Duvernay", "en": null, "subtype": "macrohood", "osm": "r8797370", "geometry": "data/boundaries/parts/laval/r8797370.geojson"},
+  {"id": "39b47c17ba96", "gers": "39b47c17-ba96-47c6-8380-a7ed9ebbf072", "name": "Fabreville", "en": null, "subtype": "macrohood", "osm": "r8797076", "geometry": "data/boundaries/parts/laval/r8797076.geojson"},
+  {"id": "4019b30184e6", "gers": "4019b301-84e6-4a9e-8cbf-343091cb3276", "name": "Laval-Ouest", "en": null, "subtype": "macrohood", "osm": "r2798654", "geometry": "data/boundaries/parts/laval/r2798654.geojson"},
+  {"id": "94a68ec060fc", "gers": "94a68ec0-60fc-46db-91be-8565c5de3a3d", "name": "Laval-des-Rapides", "en": null, "subtype": "macrohood", "osm": "r8797481", "geometry": "data/boundaries/parts/laval/r8797481.geojson"},
+  {"id": "c417edb4a9d8", "gers": "c417edb4-a9d8-4ecc-914a-8f8d84f4a858", "name": "Laval-sur-le-Lac", "en": null, "subtype": "macrohood", "osm": "r2812709", "geometry": "data/boundaries/parts/laval/r2812709.geojson"},
+  {"id": "3b64177bdead", "gers": "3b64177b-dead-4122-99de-898ce55314fc", "name": "Le Boisé Champêtre", "en": null, "subtype": "neighborhood", "osm": "w1162303175", "geometry": "data/boundaries/parts/laval/w1162303175.geojson"},
+  {"id": "2c0d8581545f", "gers": "2c0d8581-545f-4227-a262-b6c9b0700e96", "name": "Place Claude-Léveillée", "en": null, "subtype": "microhood", "osm": "w724036288", "geometry": "data/boundaries/parts/laval/w724036288.geojson"},
+  {"id": "ebf9ca4e928d", "gers": "ebf9ca4e-928d-44a0-9144-c455435fee0a", "name": "Pont-Viau", "en": null, "subtype": "macrohood", "osm": "r8797405", "geometry": "data/boundaries/parts/laval/r8797405.geojson"},
+  {"id": "d36ae44b06bd", "gers": "d36ae44b-06bd-43c3-ac05-2c91566e5e30", "name": "Saint-François", "en": null, "subtype": "macrohood", "osm": "r8797273", "geometry": "data/boundaries/parts/laval/r8797273.geojson"},
+  {"id": "a2ff0f5aa082", "gers": "a2ff0f5a-a082-46d8-ae3a-4ea44b4905b9", "name": "Saint-Vincent-de-Paul", "en": null, "subtype": "neighborhood", "osm": "r13983280", "geometry": "data/boundaries/parts/laval/r13983280.geojson"},
+  {"id": "44fac10d7143", "gers": "44fac10d-7143-4757-9d18-cfc0102d78a4", "name": "Sainte-Dorothée", "en": null, "subtype": "macrohood", "osm": "r8797549", "geometry": "data/boundaries/parts/laval/r8797549.geojson"},
+  {"id": "02e41daacf28", "gers": "02e41daa-cf28-4125-abba-dbcaeac07668", "name": "Sainte-Rose", "en": null, "subtype": "macrohood", "osm": "r8797185", "geometry": "data/boundaries/parts/laval/r8797185.geojson"},
+  {"id": "bfb52dbebd2c", "gers": "bfb52dbe-bd2c-4576-b914-22a72c93f3d6", "name": "Vimont", "en": null, "subtype": "macrohood", "osm": "r8797316", "geometry": "data/boundaries/parts/laval/r8797316.geojson"},
+  {"id": "2e924b4d17e1", "gers": "2e924b4d-17e1-4d1f-b95b-c2973c88bd13", "name": "Îles-Laval", "en": null, "subtype": "macrohood", "osm": "r8796997", "geometry": "data/boundaries/parts/laval/r8796997.geojson"}
+]}

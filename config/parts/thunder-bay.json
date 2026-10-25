@@ -1,0 +1,9 @@
+{"schema": 1, "city": "thunder-bay", "overture": "2026-10-21.0", "parts": [
+  {"id": "ea677465af80", "gers": "ea677465-af80-4fca-9285-c591e79e1581", "name": "Current River", "en": null, "subtype": "neighborhood", "osm": "r19601942", "geometry": "data/boundaries/parts/thunder-bay/r19601942.geojson"},
+  {"id": "18d43875925a", "gers": "18d43875-925a-4715-9a93-8db3ff251dc2", "name": "McIntyre", "en": null, "subtype": "neighborhood", "osm": "r19601941", "geometry": "data/boundaries/parts/thunder-bay/r19601941.geojson"},
+  {"id": "9634d903fc60", "gers": "9634d903-fc60-4805-a2c2-a455adcd7973", "name": "McKellar", "en": null, "subtype": "neighborhood", "osm": "r19601939", "geometry": "data/boundaries/parts/thunder-bay/r19601939.geojson"},
+  {"id": "852c48d2eb10", "gers": "852c48d2-eb10-4268-9f4d-e5f9771ac9bd", "name": "Neebing", "en": null, "subtype": "neighborhood", "osm": "r19601943", "geometry": "data/boundaries/parts/thunder-bay/r19601943.geojson"},
+  {"id": "e026931aad3a", "gers": "e026931a-ad3a-4a01-857e-fb6e7c7407d1", "name": "Northwood", "en": null, "subtype": "neighborhood", "osm": "r19601937", "geometry": "data/boundaries/parts/thunder-bay/r19601937.geojson"},
+  {"id": "5a6408dbbf6e", "gers": "5a6408db-bf6e-4f91-88b0-3f79948da12b", "name": "Red River", "en": null, "subtype": "neighborhood", "osm": "r19601938", "geometry": "data/boundaries/parts/thunder-bay/r19601938.geojson"},
+  {"id": "9df33a846411", "gers": "9df33a84-6411-4bf8-90eb-b10b4544e14b", "name": "Westfort", "en": null, "subtype": "neighborhood", "osm": "r19601940", "geometry": "data/boundaries/parts/thunder-bay/r19601940.geojson"}
+]}

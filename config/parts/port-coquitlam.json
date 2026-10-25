@@ -1,0 +1,3 @@
+{"schema": 1, "city": "port-coquitlam", "overture": "2026-10-21.0", "parts": [
+  {"id": "61e1fc0d4c71", "gers": "61e1fc0d-4c71-4e16-a25e-24f1fc524584", "name": "Leigh Square", "en": null, "subtype": "microhood", "osm": "r20065720", "geometry": "data/boundaries/parts/port-coquitlam/r20065720.geojson"}
+]}

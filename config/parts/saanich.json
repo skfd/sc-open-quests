@@ -1,0 +1,14 @@
+{"schema": 1, "city": "saanich", "overture": "2026-10-21.0", "parts": [
+  {"id": "2289a851ca3e", "gers": "2289a851-ca3e-4bec-b8ba-a9a4822bb8ac", "name": "Blenkinsop", "en": null, "subtype": "neighborhood", "osm": "r19889502", "geometry": "data/boundaries/parts/saanich/r19889502.geojson"},
+  {"id": "b3c1502a4156", "gers": "b3c1502a-4156-4322-b92e-14520316a5c7", "name": "Cadboro Bay", "en": null, "subtype": "neighborhood", "osm": "r19889500", "geometry": "data/boundaries/parts/saanich/r19889500.geojson"},
+  {"id": "49673ee4f8d1", "gers": "49673ee4-f8d1-45c7-b4fa-8bef3fc39e44", "name": "Carey", "en": null, "subtype": "neighborhood", "osm": "r19889505", "geometry": "data/boundaries/parts/saanich/r19889505.geojson"},
+  {"id": "843bb2fbb754", "gers": "843bb2fb-b754-4106-b4e1-109e92b096d3", "name": "Cordova Bay", "en": null, "subtype": "neighborhood", "osm": "r19889499", "geometry": "data/boundaries/parts/saanich/r19889499.geojson"},
+  {"id": "9f0a428a05eb", "gers": "9f0a428a-05eb-42ed-b80c-2dec186aca03", "name": "Gordon Head", "en": null, "subtype": "neighborhood", "osm": "r19889501", "geometry": "data/boundaries/parts/saanich/r19889501.geojson"},
+  {"id": "916cb725fd71", "gers": "916cb725-fd71-4380-805c-10b5d2d67ecb", "name": "North Quadra", "en": null, "subtype": "neighborhood", "osm": "r19889504", "geometry": "data/boundaries/parts/saanich/r19889504.geojson"},
+  {"id": "4de3e71a4ea6", "gers": "4de3e71a-4ea6-42bb-b3c6-196f314bbfdd", "name": "Quadra", "en": null, "subtype": "neighborhood", "osm": "r19889506", "geometry": "data/boundaries/parts/saanich/r19889506.geojson"},
+  {"id": "04cc8e8210fd", "gers": "04cc8e82-10fd-4772-a481-f115908302c5", "name": "Royal Oak", "en": null, "subtype": "neighborhood", "osm": "r19889503", "geometry": "data/boundaries/parts/saanich/r19889503.geojson"},
+  {"id": "c5ae73652760", "gers": "c5ae7365-2760-4d28-ba5e-e74d5dd161d1", "name": "Rural Saanich", "en": null, "subtype": "neighborhood", "osm": "r19889498", "geometry": "data/boundaries/parts/saanich/r19889498.geojson"},
+  {"id": "45249d57630e", "gers": "45249d57-630e-4ad2-960c-447f8ac8c282", "name": "Saanich Core", "en": null, "subtype": "neighborhood", "osm": "r19889508", "geometry": "data/boundaries/parts/saanich/r19889508.geojson"},
+  {"id": "adfa8eb9a78b", "gers": "adfa8eb9-a78b-4079-acd1-ab538e486b96", "name": "Shelbourne", "en": null, "subtype": "neighborhood", "osm": "r19889507", "geometry": "data/boundaries/parts/saanich/r19889507.geojson"},
+  {"id": "8bbcf0921273", "gers": "8bbcf092-1273-4c9e-a104-badb6de41eb0", "name": "Tillicum", "en": null, "subtype": "neighborhood", "osm": "r19889509", "geometry": "data/boundaries/parts/saanich/r19889509.geojson"}
+]}

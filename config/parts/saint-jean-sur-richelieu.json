@@ -1,0 +1,9 @@
+{"schema": 1, "city": "saint-jean-sur-richelieu", "overture": "2026-10-21.0", "parts": [
+  {"id": "bf4989e4b25f", "gers": "bf4989e4-b25f-439c-a61d-48a89f0eb250", "name": "Iberville", "en": null, "subtype": "macrohood", "osm": "r2217520", "geometry": "data/boundaries/parts/saint-jean-sur-richelieu/r2217520.geojson"},
+  {"id": "18b3b32ec9b8", "gers": "18b3b32e-c9b8-44e3-9334-be8b7c0568cb", "name": "L'Acadie", "en": null, "subtype": "macrohood", "osm": "r11320312", "geometry": "data/boundaries/parts/saint-jean-sur-richelieu/r11320312.geojson"},
+  {"id": "092e67137f59", "gers": "092e6713-7f59-4a1b-babc-841b38e88b94", "name": "Quartier Sacré-Coeur", "en": null, "subtype": "neighborhood", "osm": "r11319903", "geometry": "data/boundaries/parts/saint-jean-sur-richelieu/r11319903.geojson"},
+  {"id": "303368c47c97", "gers": "303368c4-7c97-498c-b341-9c3b3fa0cd5f", "name": "Saiint-Jean", "en": null, "subtype": "neighborhood", "osm": "r11320315", "geometry": "data/boundaries/parts/saint-jean-sur-richelieu/r11320315.geojson"},
+  {"id": "a760cfc7a8ad", "gers": "a760cfc7-a8ad-45d0-b7ff-f175d2a04136", "name": "Saint-Athanase", "en": null, "subtype": "neighborhood", "osm": "r11319902", "geometry": "data/boundaries/parts/saint-jean-sur-richelieu/r11319902.geojson"},
+  {"id": "b05c55a75369", "gers": "b05c55a7-5369-4db6-b11b-a8d3fbc4b478", "name": "Saint-Luc", "en": null, "subtype": "macrohood", "osm": "r11319904", "geometry": "data/boundaries/parts/saint-jean-sur-richelieu/r11319904.geojson"},
+  {"id": "576bc6d55ee8", "gers": "576bc6d5-5ee8-4806-86f3-4a60e66f5920", "name": "Île Sainte-Thérèse", "en": null, "subtype": "neighborhood", "osm": "r11321612", "geometry": "data/boundaries/parts/saint-jean-sur-richelieu/r11321612.geojson"}
+]}

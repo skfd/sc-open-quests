@@ -1,0 +1,9 @@
+{"schema": 1, "city": "gatineau", "overture": "2026-10-21.0", "parts": [
+  {"id": "51c4afc61442", "gers": "51c4afc6-1442-435b-bd42-e1ac12543530", "name": "Aylmer", "en": null, "subtype": "macrohood", "osm": "r5379614", "geometry": "data/boundaries/parts/gatineau/r5379614.geojson"},
+  {"id": "50ac10b818ac", "gers": "50ac10b8-18ac-488c-96f8-8b6749b5ccc3", "name": "Buckingham", "en": null, "subtype": "macrohood", "osm": "r5379615", "geometry": "data/boundaries/parts/gatineau/r5379615.geojson"},
+  {"id": "56e697336f11", "gers": "56e69733-6f11-407c-af06-c9d73aa06939", "name": "Gatineau", "en": null, "subtype": "macrohood", "osm": "r5379616", "geometry": "data/boundaries/parts/gatineau/r5379616.geojson"},
+  {"id": "702c4dc37f4e", "gers": "702c4dc3-7f4e-4087-8763-5e5f3b7dae93", "name": "Hull", "en": null, "subtype": "macrohood", "osm": "r5379617", "geometry": "data/boundaries/parts/gatineau/r5379617.geojson"},
+  {"id": "b69406019d12", "gers": "b6940601-9d12-49ca-91cf-7b104c7e80ad", "name": "Masson-Angers", "en": null, "subtype": "macrohood", "osm": "r5379618", "geometry": "data/boundaries/parts/gatineau/r5379618.geojson"},
+  {"id": "dc1d87750ab3", "gers": "dc1d8775-0ab3-4c89-9652-39bed756f013", "name": "Place Aubry", "en": null, "subtype": "microhood", "osm": "w806213907", "geometry": "data/boundaries/parts/gatineau/w806213907.geojson"},
+  {"id": "89017174e553", "gers": "89017174-e553-42ad-b186-4a45ec9ae8dd", "name": "Place de la Maison-du-Citoyen", "en": null, "subtype": "microhood", "osm": "w645789779", "geometry": "data/boundaries/parts/gatineau/w645789779.geojson"}
+]}

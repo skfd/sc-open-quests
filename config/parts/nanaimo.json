@@ -1,0 +1,21 @@
+{"schema": 1, "city": "nanaimo", "overture": "2026-10-21.0", "parts": [
+  {"id": "3a8a54ab868a", "gers": "3a8a54ab-868a-48a9-9cc3-47ee3fcaafbd", "name": "Chase River", "en": null, "subtype": "neighborhood", "osm": "r17393585", "geometry": "data/boundaries/parts/nanaimo/r17393585.geojson"},
+  {"id": "e2b48f5e426e", "gers": "e2b48f5e-426e-42a3-95f2-69105068aed8", "name": "Departure Bay", "en": null, "subtype": "neighborhood", "osm": "r17393575", "geometry": "data/boundaries/parts/nanaimo/r17393575.geojson"},
+  {"id": "c5b426701022", "gers": "c5b42670-1022-4b37-959e-45c32a623814", "name": "Diver Lake", "en": null, "subtype": "neighborhood", "osm": "r17393568", "geometry": "data/boundaries/parts/nanaimo/r17393568.geojson"},
+  {"id": "e1d0f9170a45", "gers": "e1d0f917-0a45-45c4-a01e-2fca81cc5d65", "name": "Dover", "en": null, "subtype": "neighborhood", "osm": "r17393566", "geometry": "data/boundaries/parts/nanaimo/r17393566.geojson"},
+  {"id": "8bd0004dce43", "gers": "8bd0004d-ce43-4482-a4ab-8f51b24c55c0", "name": "Downtown / Old City", "en": null, "subtype": "neighborhood", "osm": "r17393582", "geometry": "data/boundaries/parts/nanaimo/r17393582.geojson"},
+  {"id": "0f6d8782c192", "gers": "0f6d8782-c192-49de-b6ec-5a14201c457a", "name": "Duke Point", "en": null, "subtype": "neighborhood", "osm": "r17393586", "geometry": "data/boundaries/parts/nanaimo/r17393586.geojson"},
+  {"id": "1e841d5b3f39", "gers": "1e841d5b-3f39-4a80-bcce-731041754753", "name": "Hammond Bay", "en": null, "subtype": "neighborhood", "osm": "r17393572", "geometry": "data/boundaries/parts/nanaimo/r17393572.geojson"},
+  {"id": "5df76541f229", "gers": "5df76541-f229-4dca-9160-1b95351325b3", "name": "Harewood", "en": null, "subtype": "neighborhood", "osm": "r17393583", "geometry": "data/boundaries/parts/nanaimo/r17393583.geojson"},
+  {"id": "cd24f647e585", "gers": "cd24f647-e585-472b-b7fc-e3917bc5c65e", "name": "Linley Valley", "en": null, "subtype": "neighborhood", "osm": "r17393573", "geometry": "data/boundaries/parts/nanaimo/r17393573.geojson"},
+  {"id": "772ad73bfe2b", "gers": "772ad73b-fe2b-4e27-b868-03fa26c37303", "name": "Newcastle and Brechin", "en": null, "subtype": "neighborhood", "osm": "r17393579", "geometry": "data/boundaries/parts/nanaimo/r17393579.geojson"},
+  {"id": "dfcac687b182", "gers": "dfcac687-b182-4d5e-bbb2-c832e79bf46f", "name": "North Slope", "en": null, "subtype": "neighborhood", "osm": "r17393570", "geometry": "data/boundaries/parts/nanaimo/r17393570.geojson"},
+  {"id": "9610fb12b1ce", "gers": "9610fb12-b1ce-4ddb-8bf1-20cc7439abce", "name": "Northfield", "en": null, "subtype": "neighborhood", "osm": "r17393577", "geometry": "data/boundaries/parts/nanaimo/r17393577.geojson"},
+  {"id": "a2d2bf83d343", "gers": "a2d2bf83-d343-4ca9-8d24-356f25e087e0", "name": "Pleasant Valley", "en": null, "subtype": "neighborhood", "osm": "r17393567", "geometry": "data/boundaries/parts/nanaimo/r17393567.geojson"},
+  {"id": "4ff4daf486d1", "gers": "4ff4daf4-86d1-400b-a0fb-35b2a7b9351d", "name": "Protection Island", "en": null, "subtype": "neighborhood", "osm": "r17393565", "geometry": "data/boundaries/parts/nanaimo/r17393565.geojson"},
+  {"id": "c44a265fc7c8", "gers": "c44a265f-c7c8-4975-844d-fc4443d417f9", "name": "Rutherford", "en": null, "subtype": "neighborhood", "osm": "r17393569", "geometry": "data/boundaries/parts/nanaimo/r17393569.geojson"},
+  {"id": "4951c505a2a5", "gers": "4951c505-a2a5-45c4-a54e-3ac187218178", "name": "South End", "en": null, "subtype": "neighborhood", "osm": "r17393584", "geometry": "data/boundaries/parts/nanaimo/r17393584.geojson"},
+  {"id": "b4aebb3ddf02", "gers": "b4aebb3d-df02-44d4-839f-eaf71b883493", "name": "Townsite", "en": null, "subtype": "neighborhood", "osm": "r17393578", "geometry": "data/boundaries/parts/nanaimo/r17393578.geojson"},
+  {"id": "23a06a7d0456", "gers": "23a06a7d-0456-479b-a214-5b311345a012", "name": "University District", "en": null, "subtype": "neighborhood", "osm": "r17393581", "geometry": "data/boundaries/parts/nanaimo/r17393581.geojson"},
+  {"id": "b6275d28bd61", "gers": "b6275d28-bd61-4eb0-bec0-dd57cf1115f6", "name": "Westwood", "en": null, "subtype": "neighborhood", "osm": "r17393576", "geometry": "data/boundaries/parts/nanaimo/r17393576.geojson"}
+]}

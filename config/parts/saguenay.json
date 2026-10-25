@@ -1,0 +1,7 @@
+{"schema": 1, "city": "saguenay", "overture": "2026-10-21.0", "parts": [
+  {"id": "4ad79aa29b7e", "gers": "4ad79aa2-9b7e-45a5-b33b-63981222a7fb", "name": "Arrondissement de Chicoutimi", "en": null, "subtype": "macrohood", "osm": "r8158185", "geometry": "data/boundaries/parts/saguenay/r8158185.geojson"},
+  {"id": "8beae361ffd9", "gers": "8beae361-ffd9-43ed-a60a-f01aecedd8d0", "name": "Arrondissement de Jonquière", "en": null, "subtype": "macrohood", "osm": "r8158250", "geometry": "data/boundaries/parts/saguenay/r8158250.geojson"},
+  {"id": "e2e92d241ee4", "gers": "e2e92d24-1ee4-4630-a248-96b651d91bf0", "name": "Arrondissement de La Baie", "en": null, "subtype": "macrohood", "osm": "r8158184", "geometry": "data/boundaries/parts/saguenay/r8158184.geojson"},
+  {"id": "e9f577cd9d92", "gers": "e9f577cd-9d92-44be-b00d-ec5b6380300c", "name": "Espace vert Chesnier/Saint-Dominique", "en": null, "subtype": "microhood", "osm": "w1547049738", "geometry": "data/boundaries/parts/saguenay/w1547049738.geojson"},
+  {"id": "106454be6b40", "gers": "106454be-6b40-4f16-8d50-4b6968fc550a", "name": "Quartier Hamel-et-Fradette", "en": null, "subtype": "neighborhood", "osm": "w348110716", "geometry": "data/boundaries/parts/saguenay/w348110716.geojson"}
+]}

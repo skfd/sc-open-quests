@@ -1,0 +1,4 @@
+{"schema": 1, "city": "waterloo", "overture": "2026-10-21.0", "parts": [
+  {"id": "4208a1ea8742", "gers": "4208a1ea-8742-4480-ba48-0cde79dac075", "name": "Civic Common", "en": null, "subtype": "neighborhood", "osm": "r18419291", "geometry": "data/boundaries/parts/waterloo/r18419291.geojson"},
+  {"id": "3ac2d88ec3ed", "gers": "3ac2d88e-c3ed-460c-bbab-9873110a827d", "name": "Waterloo Public Square", "en": null, "subtype": "microhood", "osm": "w62299949", "geometry": "data/boundaries/parts/waterloo/w62299949.geojson"}
+]}

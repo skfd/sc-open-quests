@@ -284,6 +284,20 @@ refuses a dump whose newest comment is older than asOf.
 - Snapshots record the dump in `notes`; without `--notes` it is null, nothing is hidden and the note
   quest is `unsupported`.
 
+## Parts (neighbourhoods)
+
+`--parts <dir>` (run.py passes `config/parts` when it exists) reads `<dir>/<cityId>.json`, the parts
+registry `tools/add_parts.py` writes (DATA-FORMAT.md, "Places and parts"), and each part's GeoJSON
+polygon (`Polygon.fromGeoJson`: every ring as loose segments, even-odd, as a city boundary). A part has
+no map data of its own: wherever a quest is counted open at resurvey x1 in a city (main pass, area pass,
+the note quest), after the notes hide test and the city's polygon and country gating, it is also counted
+in each of that city's parts whose polygon holds the quest position. Parts overlap, so a quest can count
+in several; a part never counts more than its city. Each city with parts has a `PolygonIndex` (the
+`BoxGrid` the cities use) over them; the main pass looks the parts up once per element and city, lazily,
+when a quest first counts there. The snapshot gets `cities.<id>.parts`; a city without a registry gets no
+key, and no other byte of the snapshot, quests.json or the grid changes (checked on Ontario and Berlin,
+see the timings below). `PartsTest` checks a synthetic run by hand.
+
 ## Resurvey settings and tile grids
 
 - **The app's three resurvey settings.** `RelativeDate.MULTIPLIER` (SC's ResurveyIntervals: 0.5 "more

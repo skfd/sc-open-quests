@@ -1,0 +1,11 @@
+{"schema": 1, "city": "prince-george", "overture": "2026-10-21.0", "parts": [
+  {"id": "4995c8a7b492", "gers": "4995c8a7-b492-4761-8e3d-a38e4222b736", "name": "Canoe Court", "en": null, "subtype": "neighborhood", "osm": "w1347595675", "geometry": "data/boundaries/parts/prince-george/w1347595675.geojson"},
+  {"id": "6f29d1d029ed", "gers": "6f29d1d0-29ed-4e2e-9431-0f9ec8f46977", "name": "College Heights Residential Park", "en": null, "subtype": "neighborhood", "osm": "w104428797", "geometry": "data/boundaries/parts/prince-george/w104428797.geojson"},
+  {"id": "d701fd5d95d1", "gers": "d701fd5d-95d1-4dee-afae-6058616c0d74", "name": "Heritage Park", "en": null, "subtype": "neighborhood", "osm": "w1347595739", "geometry": "data/boundaries/parts/prince-george/w1347595739.geojson"},
+  {"id": "dddafd9f9907", "gers": "dddafd9f-9907-4ecf-804b-618cd80c675e", "name": "McGill Village", "en": null, "subtype": "neighborhood", "osm": "w912240754", "geometry": "data/boundaries/parts/prince-george/w912240754.geojson"},
+  {"id": "8bb15005112a", "gers": "8bb15005-112a-45b5-843f-5b831e7e2ddd", "name": "Ospika Landing", "en": null, "subtype": "neighborhood", "osm": "w1347371651", "geometry": "data/boundaries/parts/prince-george/w1347371651.geojson"},
+  {"id": "53ef34af669c", "gers": "53ef34af-669c-4cd3-94f6-558dd9fa78b9", "name": "Parklane Garden Apartments", "en": null, "subtype": "neighborhood", "osm": "w1347595663", "geometry": "data/boundaries/parts/prince-george/w1347595663.geojson"},
+  {"id": "a6f02206143c", "gers": "a6f02206-143c-4d4e-9fff-06e54fd923c3", "name": "Tabor Estates", "en": null, "subtype": "neighborhood", "osm": "w1347595614", "geometry": "data/boundaries/parts/prince-george/w1347595614.geojson"},
+  {"id": "cae918540dc2", "gers": "cae91854-0dc2-4f34-9d82-23849f750cbf", "name": "Tabor Villa", "en": null, "subtype": "neighborhood", "osm": "w1347595713", "geometry": "data/boundaries/parts/prince-george/w1347595713.geojson"},
+  {"id": "63fc2a1e8168", "gers": "63fc2a1e-8168-4897-a018-4bd57ca2277f", "name": "Vida Townhomes", "en": null, "subtype": "neighborhood", "osm": "w1347595740", "geometry": "data/boundaries/parts/prince-george/w1347595740.geojson"}
+]}

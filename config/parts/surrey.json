@@ -1,0 +1,15 @@
+{"schema": 1, "city": "surrey", "overture": "2026-10-21.0", "parts": [
+  {"id": "3a07272ea162", "gers": "3a07272e-a162-4f25-9f3e-b096749fbead", "name": "Aloha Estates", "en": null, "subtype": "neighborhood", "osm": "w1202211230", "geometry": "data/boundaries/parts/surrey/w1202211230.geojson"},
+  {"id": "3c1ba3982555", "gers": "3c1ba398-2555-4d12-b7ec-36ffce84f3b2", "name": "Anderson Walk", "en": null, "subtype": "neighborhood", "osm": "w814360962", "geometry": "data/boundaries/parts/surrey/w814360962.geojson"},
+  {"id": "5ab6d5ac4fd7", "gers": "5ab6d5ac-4fd7-4570-8461-5a6eccebb9c2", "name": "City Centre", "en": null, "subtype": "neighborhood", "osm": "r11758302", "geometry": "data/boundaries/parts/surrey/r11758302.geojson"},
+  {"id": "c4499f7e6f79", "gers": "c4499f7e-6f79-4899-9ad8-1d3f5e87d8a3", "name": "Cloverdale", "en": null, "subtype": "macrohood", "osm": "r11693835", "geometry": "data/boundaries/parts/surrey/r11693835.geojson"},
+  {"id": "44992aa36614", "gers": "44992aa3-6614-45e2-9d95-c79df3f8c1c8", "name": "Fleetwood", "en": null, "subtype": "macrohood", "osm": "r11758356", "geometry": "data/boundaries/parts/surrey/r11758356.geojson"},
+  {"id": "90d2c133506c", "gers": "90d2c133-506c-42aa-84dd-bf259302a13f", "name": "Guildford", "en": null, "subtype": "macrohood", "osm": "r11750467", "geometry": "data/boundaries/parts/surrey/r11750467.geojson"},
+  {"id": "c67b1128b626", "gers": "c67b1128-b626-443e-a3e0-4621c42c5620", "name": "Hawthorne Square", "en": null, "subtype": "microhood", "osm": "w875375112", "geometry": "data/boundaries/parts/surrey/w875375112.geojson"},
+  {"id": "fc730bc02f32", "gers": "fc730bc0-2f32-411a-9ae9-6d053758de19", "name": "Newton", "en": null, "subtype": "macrohood", "osm": "r11758366", "geometry": "data/boundaries/parts/surrey/r11758366.geojson"},
+  {"id": "efbba257bfe0", "gers": "efbba257-bfe0-478b-8edb-636622915644", "name": "Provinceton", "en": null, "subtype": "neighborhood", "osm": "w1212138546", "geometry": "data/boundaries/parts/surrey/w1212138546.geojson"},
+  {"id": "d95a116865eb", "gers": "d95a1168-65eb-45c8-88ac-b4420c71c5a3", "name": "Rosewood Park", "en": null, "subtype": "neighborhood", "osm": "w1202110751", "geometry": "data/boundaries/parts/surrey/w1202110751.geojson"},
+  {"id": "e7046dd0976b", "gers": "e7046dd0-976b-4c3d-9cb8-a178efd1bacc", "name": "South Surrey", "en": null, "subtype": "macrohood", "osm": "r11657070", "geometry": "data/boundaries/parts/surrey/r11657070.geojson"},
+  {"id": "84b27b0bef5c", "gers": "84b27b0b-ef5c-461f-b6c6-e16e39b9fb9b", "name": "Sunrise Estates", "en": null, "subtype": "neighborhood", "osm": "w1202110750", "geometry": "data/boundaries/parts/surrey/w1202110750.geojson"},
+  {"id": "9ad58cf11f40", "gers": "9ad58cf1-1f40-4eab-96d9-1534c7cedc92", "name": "Whalley", "en": null, "subtype": "macrohood", "osm": "r11758304", "geometry": "data/boundaries/parts/surrey/r11758304.geojson"}
+]}

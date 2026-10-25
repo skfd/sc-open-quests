@@ -1,0 +1,23 @@
+{"schema": 1, "city": "oshawa", "overture": "2026-10-21.0", "parts": [
+  {"id": "4ee2168a4222", "gers": "4ee2168a-4222-45bc-836f-f6bc1b080db5", "name": "Beaton", "en": null, "subtype": "neighborhood", "osm": "r17733436", "geometry": "data/boundaries/parts/oshawa/r17733436.geojson"},
+  {"id": "ec849a19c1d9", "gers": "ec849a19-c1d9-40ec-b10b-29962c23d3d7", "name": "Centennial", "en": null, "subtype": "neighborhood", "osm": "r18255148", "geometry": "data/boundaries/parts/oshawa/r18255148.geojson"},
+  {"id": "c9b65a0b3918", "gers": "c9b65a0b-3918-4a06-bdca-3bfc33e6b1dd", "name": "Central", "en": null, "subtype": "neighborhood", "osm": "r17733441", "geometry": "data/boundaries/parts/oshawa/r17733441.geojson"},
+  {"id": "07f6cc903934", "gers": "07f6cc90-3934-4d9c-b93e-e02f2eb345e3", "name": "Columbus", "en": null, "subtype": "neighborhood", "osm": "r18556373", "geometry": "data/boundaries/parts/oshawa/r18556373.geojson"},
+  {"id": "5239e818ca88", "gers": "5239e818-ca88-4a80-b078-b21a0e480774", "name": "Donevan", "en": null, "subtype": "neighborhood", "osm": "r17733442", "geometry": "data/boundaries/parts/oshawa/r17733442.geojson"},
+  {"id": "c56e73d4fa6a", "gers": "c56e73d4-fa6a-4f19-8be4-1525539c5288", "name": "Eastdale", "en": null, "subtype": "neighborhood", "osm": "r17733445", "geometry": "data/boundaries/parts/oshawa/r17733445.geojson"},
+  {"id": "d27d21c87104", "gers": "d27d21c8-7104-4470-8cdb-791d5fd4b2b6", "name": "Farewell", "en": null, "subtype": "neighborhood", "osm": "r17733439", "geometry": "data/boundaries/parts/oshawa/r17733439.geojson"},
+  {"id": "be1ebf2c67c6", "gers": "be1ebf2c-67c6-4a5c-9a08-5df8daa0e6fa", "name": "Kedron", "en": null, "subtype": "neighborhood", "osm": "r18556164", "geometry": "data/boundaries/parts/oshawa/r18556164.geojson"},
+  {"id": "f06cfa4d5052", "gers": "f06cfa4d-5052-4f99-9b51-7c0b95ce800c", "name": "Lakeview", "en": null, "subtype": "neighborhood", "osm": "r17733437", "geometry": "data/boundaries/parts/oshawa/r17733437.geojson"},
+  {"id": "2146bc466cb9", "gers": "2146bc46-6cb9-4cda-a864-21309005d0c7", "name": "McLaughlin", "en": null, "subtype": "neighborhood", "osm": "r17733443", "geometry": "data/boundaries/parts/oshawa/r17733443.geojson"},
+  {"id": "9395e7bdc235", "gers": "9395e7bd-c235-451a-9ce0-53a105e0ba01", "name": "Northglen", "en": null, "subtype": "neighborhood", "osm": "r18255147", "geometry": "data/boundaries/parts/oshawa/r18255147.geojson"},
+  {"id": "ec7d712feb4a", "gers": "ec7d712f-eb4a-45ec-8278-a6f006e72d33", "name": "Northwood", "en": null, "subtype": "neighborhood", "osm": "r18556359", "geometry": "data/boundaries/parts/oshawa/r18556359.geojson"},
+  {"id": "229448ee68d2", "gers": "229448ee-68d2-469f-8a8d-4c3ddadb0495", "name": "O'Neill", "en": null, "subtype": "neighborhood", "osm": "r17733444", "geometry": "data/boundaries/parts/oshawa/r17733444.geojson"},
+  {"id": "8d93958a38dd", "gers": "8d93958a-38dd-40fa-a045-40e57a21dd7a", "name": "Oshawa Civic Square", "en": null, "subtype": "microhood", "osm": "w361304121", "geometry": "data/boundaries/parts/oshawa/w361304121.geojson"},
+  {"id": "d014d1dc48db", "gers": "d014d1dc-48db-42c1-9884-a83d40c94344", "name": "Pinecrest", "en": null, "subtype": "neighborhood", "osm": "r18255149", "geometry": "data/boundaries/parts/oshawa/r18255149.geojson"},
+  {"id": "5bfd260b3205", "gers": "5bfd260b-3205-44e9-afc6-adc1e3ec63f7", "name": "Rural Area", "en": null, "subtype": "neighborhood", "osm": "r18556404", "geometry": "data/boundaries/parts/oshawa/r18556404.geojson"},
+  {"id": "6cb310b219e8", "gers": "6cb310b2-19e8-46e9-92fc-16bd9db96272", "name": "Samac", "en": null, "subtype": "neighborhood", "osm": "r18556367", "geometry": "data/boundaries/parts/oshawa/r18556367.geojson"},
+  {"id": "c72546df43ea", "gers": "c72546df-43ea-4fea-80d0-7cf58f142175", "name": "Stevenson", "en": null, "subtype": "neighborhood", "osm": "r17733438", "geometry": "data/boundaries/parts/oshawa/r17733438.geojson"},
+  {"id": "dbfd05e28951", "gers": "dbfd05e2-8951-4254-8718-dc09fcc11f10", "name": "Taunton", "en": null, "subtype": "neighborhood", "osm": "r18255150", "geometry": "data/boundaries/parts/oshawa/r18255150.geojson"},
+  {"id": "ca1fddf39802", "gers": "ca1fddf3-9802-45d9-97b0-4f799ecca0e1", "name": "Vanier", "en": null, "subtype": "neighborhood", "osm": "r17733440", "geometry": "data/boundaries/parts/oshawa/r17733440.geojson"},
+  {"id": "f568bed6f8f2", "gers": "f568bed6-f8f2-4519-9afb-af4f25660af4", "name": "Windfields", "en": null, "subtype": "neighborhood", "osm": "r18556324", "geometry": "data/boundaries/parts/oshawa/r18556324.geojson"}
+]}

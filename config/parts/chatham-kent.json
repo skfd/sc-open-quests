@@ -1,0 +1,5 @@
+{"schema": 1, "city": "chatham-kent", "overture": "2026-10-21.0", "parts": [
+  {"id": "973184ce9d59", "gers": "973184ce-9d59-4e87-9b72-c02c15b6dbe2", "name": "Bothwell", "en": null, "subtype": "locality", "osm": "r17260303", "geometry": "data/boundaries/parts/chatham-kent/r17260303.geojson"},
+  {"id": "64c1186a223c", "gers": "64c1186a-223c-4468-a233-190aa8d03305", "name": "Chatham", "en": null, "subtype": "locality", "osm": "w1442581529", "geometry": "data/boundaries/parts/chatham-kent/w1442581529.geojson"},
+  {"id": "45888f28d4a5", "gers": "45888f28-d4a5-433c-b6ba-302cedbd8ee2", "name": "Thamesville", "en": null, "subtype": "locality", "osm": "r17260304", "geometry": "data/boundaries/parts/chatham-kent/r17260304.geojson"}
+]}

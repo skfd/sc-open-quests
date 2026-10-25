@@ -1,0 +1,5 @@
+{"schema": 1, "city": "barrie", "overture": "2026-10-21.0", "parts": [
+  {"id": "9a98d8b194fd", "gers": "9a98d8b1-94fd-44f1-a123-556679c5ef53", "name": "Ardagh Bluffs", "en": null, "subtype": "neighborhood", "osm": "r9639335", "geometry": "data/boundaries/parts/barrie/r9639335.geojson"},
+  {"id": "2d0524d2ea3a", "gers": "2d0524d2-ea3a-4e17-9b07-3bc79b169d7e", "name": "Holly", "en": null, "subtype": "macrohood", "osm": "r9634339", "geometry": "data/boundaries/parts/barrie/r9634339.geojson"},
+  {"id": "6cf5aef2f1ea", "gers": "6cf5aef2-f1ea-40ea-98c3-350ac8f4ff23", "name": "Letitia Heights", "en": null, "subtype": "neighborhood", "osm": "r9686388", "geometry": "data/boundaries/parts/barrie/r9686388.geojson"}
+]}
