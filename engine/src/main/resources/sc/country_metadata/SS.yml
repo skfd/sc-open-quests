@@ -1,0 +1,7 @@
+# Do not edit. Data is from res/country/metadata and https://github.com/streetcomplete/countrymetadata
+defaultSpeedLimitHasUrbanOrRural: true
+domesticSocketTypes: [typeg, typed, typec, universal_abcdefgio]
+mobileCountryCode: 659
+noStoppingSignStyle: vienna
+officialLanguages: [en]
+orchardProduces: [chilli_pepper, sweet_pepper, orange, pineapple]

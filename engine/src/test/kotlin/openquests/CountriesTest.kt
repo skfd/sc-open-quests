@@ -39,7 +39,7 @@ class CountriesTest {
     @Test fun allCountriesExceptElsewhere() =
         assertTrue(Countries.AllExcept(listOf("JP")).isEnabledIn(ontario))
 
-    @Test fun `SC's countryboundaries data gives CA-<province> and CA, or DE, for every city`() {
+    @Test fun `every city's countryCodes are the ids SC's countryboundaries data gives at the city`() {
         val file = File(System.getProperty("openquests.scBoundaries") ?: "")
         assumeTrue(file.isFile, "SC boundaries.ser not found at $file")
         val boundaries = SystemFileSystem.source(Path(file.path)).buffered().use { CountryBoundaries.deserializeFrom(it) }
@@ -49,12 +49,11 @@ class CountriesTest {
             val p = city.polygon
             val lat = (p.minLat + p.maxLat) / 2; val lon = (p.minLon + p.maxLon) / 2
             if (!p.contains(lat, lon)) continue
+            // whatever SC's data has there: CA-ON and CA in Ontario, DE alone in Germany (no German
+            // subdivisions), US-TX and US in Texas; the gating model compares a quest's codes with these
             val ids = boundaries.getIds(longitude = lon, latitude = lat)
-            // a Canadian province (CA-ON, CA-QC, ...) and CA, or Germany (SC's data has no German
-            // subdivisions, so DE alone)
-            val canada = ids.size == 2 && "CA" in ids && ids.any { it.matches(Regex("CA-[A-Z]{2}")) }
-            assertTrue(canada || ids.toSet() == setOf("DE"), "${city.id} at $lat,$lon: $ids")
-            assertEquals(city.countryCodes.toSet(), ids.toSet(), "${city.id}: countryCodes in config")
+            assertTrue(ids.isNotEmpty(), "${city.id} at $lat,$lon: no region id")
+            assertEquals(city.countryCodes.toSet(), ids.toSet(), "${city.id} at $lat,$lon: countryCodes in config")
             checked++
         }
         println("countryboundaries ids checked for $checked cities")

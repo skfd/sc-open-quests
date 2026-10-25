@@ -175,29 +175,16 @@ $resources = @(
     'osmfeatures/default/presets.json'
     'osmfeatures/default/en.json'
     'osmfeatures/default/en-CA.json'
-    # SC's country boundaries and the country metadata positions in Canada and the German city-states
-    # (Berlin, Hamburg, Bremen) read: CA-<province>, CA, DE, then default. SC has a file for each of
-    # the 13 provinces and territories; it has no DE-* metadata, and its boundaries give German
-    # positions only the id DE. Positions elsewhere (US) get only default.yml here; quests there are
-    # not counted.
+    # SC's country boundaries: the region ids of a position, for getCountryInfoByLocation and quest gating
     'boundaries.ser'
-    'country_metadata/default.yml'
-    'country_metadata/CA.yml'
-    'country_metadata/CA-AB.yml'
-    'country_metadata/CA-BC.yml'
-    'country_metadata/CA-MB.yml'
-    'country_metadata/CA-NB.yml'
-    'country_metadata/CA-NL.yml'
-    'country_metadata/CA-NS.yml'
-    'country_metadata/CA-NT.yml'
-    'country_metadata/CA-NU.yml'
-    'country_metadata/CA-ON.yml'
-    'country_metadata/CA-PE.yml'
-    'country_metadata/CA-QC.yml'
-    'country_metadata/CA-SK.yml'
-    'country_metadata/CA-YT.yml'
-    'country_metadata/DE.yml'
 )
+# Then every country_metadata/*.yml SC ships (515 at v64.0: default.yml, countries, and subdivisions
+# such as CA-ON, US-TX, AU-NSW). A position reads the yml of each region id SC's boundaries give it,
+# smallest first (CA-ON, CA; DE alone, as SC has no German subdivisions), then default.yml; an id
+# without a file is skipped, as in the app. The codes also go into sc/country_metadata.index, so that
+# the engine can tell an id SC has no file for (fine) from a file missing from the bundle (an error;
+# see the Res.readBytesOrNull stub).
+$countryMetadata = 'country_metadata'
 
 # Custom quests hold Compose UI code next to their logic, so they are not vendored: their
 # applicability logic is transcribed into src/main/kotlin/openquests/custom/ or generated into
@@ -333,6 +320,21 @@ foreach ($f in $resources) {
     Copy-Item $src $target
     $lines += "  $(Get-Sha256 $target)  $f"
 }
+# ordinal order, so that SC-VERSION.txt and the index do not depend on the culture
+[string[]]$metadataFiles = @(Get-ChildItem -File -Filter '*.yml' (Join-Path $composeFiles $countryMetadata) |
+    ForEach-Object { $_.Name })
+[Array]::Sort($metadataFiles, [StringComparer]::Ordinal)
+if ($metadataFiles -notcontains 'default.yml') { throw "Missing in SC checkout: $countryMetadata/default.yml" }
+New-Item -ItemType Directory -Force (Join-Path $resDest $countryMetadata) | Out-Null
+foreach ($name in $metadataFiles) {
+    $f = "$countryMetadata/$name"
+    $target = Join-Path $resDest $f
+    Copy-Item (Join-Path $composeFiles $f) $target
+    $lines += "  $(Get-Sha256 $target)  $f"
+}
+$codes = @($metadataFiles | ForEach-Object { $_.Substring(0, $_.Length - '.yml'.Length) })
+[System.IO.File]::WriteAllText((Join-Path $resDest 'country_metadata.index'), (($codes -join "`n") + "`n"),
+    (New-Object System.Text.UTF8Encoding $false))
 
 $lines += "ported custom quests (sha256 of the commonMain file with LF line endings; logic in src/main/kotlin/openquests/custom/ and src/main/kotlin/ported/):"
 $lines += $portLines
