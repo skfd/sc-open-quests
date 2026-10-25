@@ -16,6 +16,9 @@ planet once for all of them.
   merge    copy the staged and recounted snapshots into data/archive/<region>/snapshots/ (then run
            `run.py history`, which publishes each region's newest)
 
+Every subcommand also takes --planet history-<YYMMDD> (default: the newest history-*.osm.pbf in the store's
+planet/ folder); clips, slices and their metas carry its name.
+
 Slices and staged snapshots live in data/backfill/<region>/ (gitignored). The daily pipeline never sees
 them until merge. osmium runs in the name-ru-repair-osmium image (osmium-tool 1.18, built by
 ../name-ru-repair/tools).
@@ -35,8 +38,10 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import run  # noqa: E402
 
-PLANET = "history-261005"
-PLANET_URL = f"https://planet.openstreetmap.org/pbf/full-history/{PLANET}.osm.pbf"
+# The planet full-history file, "history-<YYMMDD>" in the store's planet/ folder; set by main() (--planet,
+# default the newest there) before any Region is made.
+PLANET = ""
+PLANET_URL = ""
 IMAGE = "name-ru-repair-osmium"
 
 BACKFILL = run.ROOT / "data" / "backfill"
@@ -61,6 +66,23 @@ class Region:
         self.staged = self.backfill / "snapshots"
         self.recount = self.backfill / "recount"
         self.published = run.ARCHIVE_DIR / region_id / "snapshots"  # every snapshot, not only docs/data's newest
+
+
+def newest_planet(planet_dir: Path | None = None) -> str:
+    """The newest planet history file in the shared store, as "history-<YYMMDD>" (the name sorts by date)."""
+    planet_dir = planet_dir or run.OSM_DATA_DIR / "planet"
+    files = sorted(planet_dir.glob("history-[0-9][0-9][0-9][0-9][0-9][0-9].osm.pbf"))
+    if not files:
+        raise SystemExit(f"no history-<YYMMDD>.osm.pbf in {planet_dir}; pass --planet")
+    return files[-1].name.removesuffix(".osm.pbf")
+
+
+def set_planet(name: str | None) -> str:
+    """Use this planet history file (a name, history-261005, or its file name); None: the newest."""
+    global PLANET, PLANET_URL
+    PLANET = Path(name).name.removesuffix(".osm.pbf") if name else newest_planet()
+    PLANET_URL = f"https://planet.openstreetmap.org/pbf/full-history/{PLANET}.osm.pbf"
+    return PLANET
 
 
 def osmium(script: str) -> None:
@@ -201,7 +223,7 @@ def diff(a: Path, b: Path, top: int = 25) -> None:
 
 def check(r: Region, extract: str | None) -> None:
     if extract:
-        pbf = run.OSM_DATA_DIR / r.id / f"{extract}.osm.pbf"
+        pbf = run.OSM_DATA_DIR / run.region_extract(r.config) / f"{extract}.osm.pbf"
         meta = run.extract_meta(pbf)
     else:
         pbf, meta = run.dated_extracts(r.config)[0]
@@ -285,21 +307,24 @@ def merge(r: Region) -> None:
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    common = argparse.ArgumentParser(add_help=False)
+    common.add_argument("--planet", help="history-<YYMMDD> in the store's planet/ folder (default: the newest)")
     sub = ap.add_subparsers(dest="cmd", required=True)
-    cl = sub.add_parser("clip")
+    cl = sub.add_parser("clip", parents=[common])
     cl.add_argument("--region", dest="regions", action="append", help="repeatable; default ontario")
-    c = sub.add_parser("check")
+    c = sub.add_parser("check", parents=[common])
     c.add_argument("--extract", help="a dated extract in the shared store (default: the region's oldest)")
-    m = sub.add_parser("months")
+    m = sub.add_parser("months", parents=[common])
     m.add_argument("--from", dest="first", default="2017-01")
     m.add_argument("--to", dest="last", default="2026-10")  # the planet history ends 2026-10-05
     m.add_argument("--step", type=int, default=1, help="months between slices (12 = a yearly spine)")
     m.add_argument("--keep", action="store_true", help="keep the slices")
-    rc = sub.add_parser("recount")
-    mg = sub.add_parser("merge")
+    rc = sub.add_parser("recount", parents=[common])
+    mg = sub.add_parser("merge", parents=[common])
     for p in (c, m, rc, mg):
         p.add_argument("--region", default="ontario")
     a = ap.parse_args(argv)
+    set_planet(a.planet)
     if a.cmd == "clip":
         clip([Region(r) for r in a.regions or ["ontario"]])
         return 0

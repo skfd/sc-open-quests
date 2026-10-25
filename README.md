@@ -39,7 +39,7 @@ the JSON.
 ## Usage
 
 ```bash
-python run.py download   # osm-extracts fetch <region> for every region (it skips an unchanged extract)
+python run.py download   # osm-extracts fetch <extract> once per distinct extract (it skips an unchanged one)
 python run.py count      # engine on each region's newest extract -> data/archive/<region>/snapshots/ (skipped if counted)
 python run.py backfill   # count every dated extract still in the store
 python run.py history    # archive -> docs/data/history/<city>.json, cities.json, compare/<quest>.json, newest snapshots

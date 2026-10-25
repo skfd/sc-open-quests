@@ -1,8 +1,8 @@
 """Daily pipeline for sc-open-quests. Python standard library only.
 
 Subcommands:
-  download   refresh each region's shared extract and the planet notes dump via ~/Code/osm-extracts
-             (it skips unchanged ones)
+  download   refresh each distinct shared extract of the regions and the planet notes dump via
+             ~/Code/osm-extracts (it skips unchanged ones)
   count      run the engine on each region's newest shared extract
              -> data/archive/<region>/snapshots/<asOfDate>.json + quests.json (skipped when a snapshot
              of this extract already exists, unless it lacks notes and a notes dump now reaches it).
@@ -18,12 +18,13 @@ Subcommands:
              (once; see REPIN.md) and refresh docs/data/sc-releases.json. Network and `gh` failures
              are logged, never fatal.
 
-Regions are config/regions.json, one Geofabrik extract each; a city names its region in
-config/cities.json. Extracts and notes dumps live in the shared store (~/Code/.osm-data, see
-~/Code/osm-extracts/README.md); this project never downloads them itself. A notes dump is clipped to
-each region once, into data/notes/. Every snapshot is kept in data/archive/ (not committed); docs/data,
-which GitHub Pages publishes, holds only the newest per region. The contract between engine, pipeline
-and site is DATA-FORMAT.md.
+Regions are config/regions.json; a city names its region in config/cities.json. A region is one engine
+run (one time zone) over one shared extract: its "extract" key, default its id; several regions may share
+one, and an extract osm-extracts does not know by name comes with a "url". Extracts and notes dumps live
+in the shared store (~/Code/.osm-data, see ~/Code/osm-extracts/README.md); this project never downloads
+them itself. A notes dump is clipped to every region in one pass, into data/notes/. Every snapshot is kept
+in data/archive/<region>/ (not committed); docs/data, which GitHub Pages publishes, holds only the newest
+per region. The contract between engine, pipeline and site is DATA-FORMAT.md.
 """
 from __future__ import annotations
 
@@ -31,6 +32,7 @@ import argparse
 import contextlib
 import glob
 import json
+import math
 import os
 import re
 import subprocess
@@ -138,8 +140,27 @@ def pipeline_lock():
 # --- regions --------------------------------------------------------------------------------------
 
 def regions(path: Path = REGIONS_CONFIG) -> list[dict]:
-    """config/regions.json: {id, name, group, timeZone, poly, source}, one per Geofabrik extract."""
+    """config/regions.json: {id, name, group, timeZone, poly, source[, extract][, url]}. A region is one
+    engine run: one time zone, its own cities and output folder. Several regions may share an extract."""
     return read_json(path)["regions"]
+
+
+def region_extract(region: dict) -> str:
+    """The shared-store extract a region is counted from: its "extract" key, default its id. It names
+    the store folder (~/Code/.osm-data/<extract>/) and the osm-extracts fetch."""
+    return region.get("extract") or region["id"]
+
+
+def extract_fetches(regs: list[dict]) -> list[tuple[str, str | None]]:
+    """(extract, url) to fetch for these regions: each distinct extract once, in config order. url is
+    None for an extract osm-extracts knows by name. Regions sharing an extract must agree on its url."""
+    urls: dict[str, str | None] = {}
+    for r in regs:
+        ex, url = region_extract(r), r.get("url")
+        if ex in urls and urls[ex] != url:
+            raise ValueError(f"regions disagree on the url of extract {ex}: {urls[ex]} and {url}")
+        urls[ex] = url
+    return list(urls.items())
 
 
 def region_cities(region: dict) -> Path:
@@ -155,18 +176,19 @@ def region_cities(region: dict) -> Path:
 # --- extracts (shared store) ---------------------------------------------------------------------
 
 def download() -> None:
-    """Ask osm-extracts to refresh each region's shared extract. It HEAD-checks Geofabrik and holds
+    """Ask osm-extracts to refresh each distinct shared extract once. It HEAD-checks the source and holds
     its own fetch lock, so sibling projects refreshing at the same time don't both download."""
-    for region in regions():
-        log(f"refreshing shared extract: {OSM_EXTRACTS_TOOL} fetch {region['id']}")
-        subprocess.run([sys.executable, str(OSM_EXTRACTS_TOOL), "fetch", region["id"]], check=True)
+    for extract, url in extract_fetches(regions()):
+        cmd = [sys.executable, str(OSM_EXTRACTS_TOOL), "fetch", extract] + (["--url", url] if url else [])
+        log(f"refreshing shared extract: {' '.join(cmd[1:])}")
+        subprocess.run(cmd, check=True)
     log(f"refreshing notes dump: {OSM_EXTRACTS_TOOL} fetch notes")
     subprocess.run([sys.executable, str(OSM_EXTRACTS_TOOL), "fetch", "notes"], check=True)
 
 
 def latest_extract(region: dict) -> tuple[Path, Path]:
-    """(pbf, meta) for a region's newest extract, by its dated name; never the <region>-latest hardlink."""
-    region_dir = OSM_DATA_DIR / region["id"]
+    """(pbf, meta) for a region's newest extract, by its dated name; never the <extract>-latest hardlink."""
+    region_dir = OSM_DATA_DIR / region_extract(region)
     latest = read_json(region_dir / "latest.json")
     pbf = region_dir / latest["file"]
     return pbf, extract_meta(pbf)
@@ -174,8 +196,8 @@ def latest_extract(region: dict) -> tuple[Path, Path]:
 
 def dated_extracts(region: dict) -> list[tuple[Path, Path]]:
     """Every dated extract of a region in the store, oldest first."""
-    region_dir = OSM_DATA_DIR / region["id"]
-    files = sorted(region_dir.glob(f"{region['id']}-????-??-??.osm.pbf"))
+    extract = region_extract(region)
+    files = sorted((OSM_DATA_DIR / extract).glob(f"{extract}-????-??-??.osm.pbf"))
     return [(p, extract_meta(p)) for p in files]
 
 
@@ -188,21 +210,75 @@ def extract_meta(pbf: Path) -> Path:
 
 # --- notes ----------------------------------------------------------------------------------------
 
-def notes_clip(region: dict) -> Path | None:
-    """A region's clip of the newest notes dump in the shared store, made on first use. None if the
-    store has no notes dump. Older clips are deleted: each dump holds every note's whole history."""
+NOTE_BOX_PADDING_M = 1000.0  # the engine's AREA_PADDING_M (AreaPass.kt): what it sees around a city
+
+
+def notes_dump() -> Path | None:
+    """The newest planet notes dump in the shared store, or None."""
     latest_path = OSM_DATA_DIR / "notes" / "latest.json"
     if not latest_path.exists():
         return None
-    dump = OSM_DATA_DIR / "notes" / read_json(latest_path)["file"]
-    poly = ROOT / region["poly"]
-    clip = NOTES_DIR / (dump.name.removesuffix(".osn.bz2") + f"-{region['id']}.jsonl")
+    return OSM_DATA_DIR / "notes" / read_json(latest_path)["file"]
+
+
+def clip_path(dump: Path, region: dict) -> Path:
+    return NOTES_DIR / (dump.name.removesuffix(".osn.bz2") + f"-{region['id']}.jsonl")
+
+
+def city_bbox(boundary: Path, relation: int) -> tuple[float, float, float, float]:
+    """(minLon, minLat, maxLon, maxLat) of a city boundary file: its way members' geometry, which is the
+    engine's polygon (Polygon.fromOverpassJson), and Overpass's "bounds", whichever reaches further."""
+    root = read_json(boundary)
+    rel = next(e for e in root.get("elements", [root]) if e.get("type") == "relation" and e.get("id") == relation)
+    lats = [p["lat"] for m in rel["members"] if m["type"] == "way" for p in m["geometry"]]
+    lons = [p["lon"] for m in rel["members"] if m["type"] == "way" for p in m["geometry"]]
+    if b := rel.get("bounds"):
+        lats += [b["minlat"], b["maxlat"]]
+        lons += [b["minlon"], b["maxlon"]]
+    return min(lons), min(lats), max(lons), max(lats)
+
+
+def note_boxes(region: dict) -> list[list[float]]:
+    """The region's cities' bounding boxes padded by NOTE_BOX_PADDING_M, as the engine pads them: the
+    notes clip keeps every note in them even where a city sticks out of the region's simplified poly."""
+    boxes = []
+    for c in read_json(CITIES_CONFIG)["cities"]:
+        if c["region"] != region["id"]:
+            continue
+        w, s, e, n = city_bbox(ROOT / c["boundary"], c["relation"])
+        d_lat = NOTE_BOX_PADDING_M / 111_320.0
+        d_lon = NOTE_BOX_PADDING_M / (111_320.0 * math.cos(math.radians(max(abs(s), abs(n)))))
+        boxes.append([round(w - d_lon, 7), round(s - d_lat, 7), round(e + d_lon, 7), round(n + d_lat, 7)])
+    return boxes
+
+
+def notes_clips(dump: Path, regs: list[dict]) -> None:
+    """Clip the dump to all these regions in one pass (tools/clip_notes.py --config)."""
+    config = NOTES_DIR / (dump.name.removesuffix(".osn.bz2") + ".clips.json")
+    write_json(config, {"clips": [{"poly": str(ROOT / r["poly"]), "out": str(clip_path(dump, r)),
+                                   "boxes": note_boxes(r)} for r in regs]})
+    log(f"clipping {dump.name} to {len(regs)} region(s): {', '.join(r['id'] for r in regs)}")
+    try:
+        subprocess.run([sys.executable, str(CLIP_NOTES), str(dump), "--config", str(config)], check=True)
+    finally:
+        config.unlink(missing_ok=True)
+
+
+def notes_clip(region: dict) -> Path | None:
+    """A region's clip of the newest notes dump in the shared store, made on first use. None if the
+    store has no notes dump. The first region to need a clip of a dump makes it for every configured
+    region that lacks one, in one pass over the dump. Older clips are deleted: each dump holds every
+    note's whole history."""
+    dump = notes_dump()
+    if dump is None:
+        return None
+    clip = clip_path(dump, region)
     if not clip.exists():
-        log(f"clipping {dump.name} to {poly.name}")
-        subprocess.run([sys.executable, str(CLIP_NOTES), str(dump), "--poly", str(poly), "--out", str(clip)],
-                       check=True)
+        todo = [r for r in regions() if r["id"] != region["id"] and not clip_path(dump, r).exists()]
+        notes_clips(dump, [region, *todo])
+    stale = re.compile(r"planet-notes-\d{6}-" + re.escape(region["id"]) + r"\.jsonl")
     for old in NOTES_DIR.glob(f"planet-notes-*-{region['id']}.jsonl"):
-        if old != clip:
+        if old != clip and stale.fullmatch(old.name):
             old.unlink()
     return clip
 
