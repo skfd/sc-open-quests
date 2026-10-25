@@ -27,10 +27,14 @@ This is the contract between the engine (writes snapshots), the pipeline (keeps 
 
 ## Engine output: one snapshot per extract
 
-`docs/data/<region>/snapshots/<asOfDate>.json`, where `asOfDate` is the extract's replication date in the
-cities' time zone (`YYYY-MM-DD`). The engine runs once per region, with `--out docs/data/<region>`, so each
-region has its own snapshot of a date, holding only its cities. It also writes
-`docs/data/<region>/quests.json` (not committed), which `run.py history` merges into `docs/data/quests.json`.
+`data/archive/<region>/snapshots/<asOfDate>.json` (not committed), where `asOfDate` is the extract's
+replication date in the cities' time zone (`YYYY-MM-DD`). The engine runs once per region, with
+`--out data/archive/<region>`, so each region has its own snapshot of a date, holding only its cities. It
+also writes `data/archive/<region>/quests.json`, which `run.py history` merges into `docs/data/quests.json`.
+The archive keeps every snapshot and is what `run.py history` reads; `docs/data/<region>/snapshots/` holds
+the region's newest one only, a byte-for-byte copy. Until 2026-10-24 every snapshot was in `docs/data`;
+`run.py migrate-archive` (also run by `count` and `history`) moves any left there into the archive, and
+the snapshots published until then stay in git history.
 
 ```jsonc
 {
@@ -145,7 +149,7 @@ by name, cells by x then y; a quest with nothing counted is absent.
 
 ## Series for the site
 
-`docs/data/history/<cityId>.json` is rebuilt from all regions' snapshots on every run:
+`docs/data/history/<cityId>.json` is rebuilt from all regions' snapshots in the archive on every run:
 
 ```jsonc
 { "city": "toronto", "name": "Toronto",
@@ -180,8 +184,16 @@ under that SC version, or new in a later one) is `null` at that index, never 0. 
 } ] }
 ```
 
-Per-quest comparisons across cities read each city's newest snapshot directly
-(`<region>/snapshots/<asOfDate>.json`).
+`docs/data/compare/<quest>.json` holds one quest's open count in every city, each from the city's newest
+snapshot (the one `cities.json`'s `asOfDate` names), for the compare view's per-quest ranking:
+
+```jsonc
+{ "quest": "AddBenchBackrest", "open": { "toronto": 3186, "victoria": 732 } }   // keyed by city id, sorted
+```
+
+A city whose newest snapshot lacks the quest is absent; a quest in no city's newest snapshot has no file,
+which the site reads as no count anywhere. About 2 KB per quest at 115 cities; the compare view fetches
+the picked quest's file only. Written by `run.py history` like the history files, stale ones deleted.
 
 Rerunning on the same extract rewrites the same snapshot file byte for byte, apart from `runSeconds` and
 `engineCommit`.

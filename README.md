@@ -14,9 +14,10 @@ This project is **read-only**: it never edits OpenStreetMap.
 2. **The engine** (`engine/`, Kotlin on the JVM, running StreetComplete's own filter code) reads each
    region's Geofabrik extract (`config/regions.json`: the provinces, the German city-states) and counts
    each quest per city polygon (`config/cities.json`, 115 municipalities). It writes one snapshot per
-   extract to `docs/data/<region>/snapshots/<asOfDate>.json`.
-3. **`run.py history`** rebuilds the per-city time series in `docs/data/history/` and the city index
-   `docs/data/cities.json` from all snapshots.
+   extract to the archive, `data/archive/<region>/snapshots/<asOfDate>.json` (not committed).
+3. **`run.py history`** rebuilds the per-city time series in `docs/data/history/`, the city index
+   `docs/data/cities.json` and the per-quest comparison `docs/data/compare/` from all snapshots, and
+   publishes each region's newest snapshot in `docs/data/<region>/snapshots/`.
 4. **The site** (`docs/index.html`, no build step) reads that JSON.
 
 Quests the app shows but this site can't count yet are listed on the page, greyed, with their status.
@@ -39,9 +40,9 @@ the JSON.
 
 ```bash
 python run.py download   # osm-extracts fetch <region> for every region (it skips an unchanged extract)
-python run.py count      # engine on each region's newest extract -> docs/data/<region>/snapshots/ (skipped if counted)
+python run.py count      # engine on each region's newest extract -> data/archive/<region>/snapshots/ (skipped if counted)
 python run.py backfill   # count every dated extract still in the store
-python run.py history    # snapshots -> docs/data/history/<city>.json + docs/data/cities.json
+python run.py history    # archive -> docs/data/history/<city>.json, cities.json, compare/<quest>.json, newest snapshots
 python run.py update     # all three, then commit "data <asOfDate>" and push
 ```
 

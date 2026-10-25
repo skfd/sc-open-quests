@@ -11,10 +11,10 @@ planet once for all of them.
   check    slice at an existing daily extract's replication time, count both, print the differences
   months   slice and count the 1st of each month (12:00Z) into data/backfill/<region>/snapshots/, deleting
            each slice
-  recount  recount the published snapshots (all but the newest) with today's engine into
+  recount  recount the archived snapshots (all but the newest) with today's engine into
            data/backfill/<region>/recount/
-  merge    copy the staged and recounted snapshots into docs/data/<region>/snapshots/ (then run
-           `run.py history`)
+  merge    copy the staged and recounted snapshots into data/archive/<region>/snapshots/ (then run
+           `run.py history`, which publishes each region's newest)
 
 Slices and staged snapshots live in data/backfill/<region>/ (gitignored). The daily pipeline never sees
 them until merge. osmium runs in the name-ru-repair-osmium image (osmium-tool 1.18, built by
@@ -60,7 +60,7 @@ class Region:
         self.backfill = BACKFILL / region_id
         self.staged = self.backfill / "snapshots"
         self.recount = self.backfill / "recount"
-        self.published = run.DATA_DIR / region_id / "snapshots"
+        self.published = run.ARCHIVE_DIR / region_id / "snapshots"  # every snapshot, not only docs/data's newest
 
 
 def osmium(script: str) -> None:
@@ -304,6 +304,7 @@ def main(argv: list[str] | None = None) -> int:
         clip([Region(r) for r in a.regions or ["ontario"]])
         return 0
     r = Region(a.region)
+    run.migrate_archive()  # snapshots published before 2026-10-24 still in docs/data count as published
     if a.cmd == "recount":
         recount(r)
     elif a.cmd == "check":

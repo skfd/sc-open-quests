@@ -86,6 +86,81 @@ class HistoryTest(unittest.TestCase):
         run.history(self.data, self.config)
         self.assertFalse((self.data / "history" / "gone.json").exists())
 
+    def test_compare_has_each_citys_newest_open_per_quest(self):
+        self.assertEqual(self.load("compare/AddA.json"), {"quest": "AddA", "open": {"ottawa": 2, "toronto": 8}})
+        self.assertEqual(self.load("compare/AddD.json")["open"], {"toronto": 6})   # default-disabled too
+        # counted on 07-17 only: in no city's newest snapshot, so no file (the site reads that as no count)
+        self.assertFalse((self.data / "compare" / "AddC.json").exists())
+        (self.data / "compare" / "AddGone.json").write_text("{}", encoding="utf-8")
+        run.history(self.data, self.config)
+        self.assertFalse((self.data / "compare" / "AddGone.json").exists())
+
+
+class ArchiveTest(unittest.TestCase):
+    """docs/data published every snapshot until 2026-10-24; now the archive holds them and the
+    published data dir the newest per region."""
+
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp())
+        self.data, self.archive = self.tmp / "docs-data", self.tmp / "archive"
+        shutil.copytree(FIXTURE, self.data)   # the old layout: every snapshot under the data dir
+        self.config = self.data / "cities-config.json"
+        self.reference = self.tmp / "reference"
+        shutil.copytree(FIXTURE, self.reference)
+        run.history(self.reference, self.config)
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp)
+
+    def test_migration_moves_snapshots_and_keeps_the_newest_published(self):
+        run.history(self.data, self.config, self.archive)
+        self.assertEqual(sorted(p.name for p in (self.archive / "ontario" / "snapshots").glob("*.json")),
+                         ["2026-07-16.json", "2026-07-17.json", "2026-07-18.json"])
+        self.assertTrue((self.archive / "ontario" / "quests.json").exists())
+        self.assertEqual(sorted(p.name for p in (self.data / "ontario").rglob("*.json")), ["2026-07-18.json"])
+        self.assertEqual((self.data / "ontario" / "snapshots" / "2026-07-18.json").read_bytes(),
+                         (FIXTURE / "ontario" / "snapshots" / "2026-07-18.json").read_bytes())
+
+    def test_moving_the_source_changes_no_output_byte(self):
+        run.history(self.data, self.config, self.archive)
+        for rel in ["cities.json", "quests.json", "history/toronto.json", "history/ottawa.json", "compare/AddA.json"]:
+            self.assertEqual((self.data / rel).read_bytes(), (self.reference / rel).read_bytes(), rel)
+
+    def test_migration_is_idempotent(self):
+        run.history(self.data, self.config, self.archive)
+        before = {p: p.read_bytes() for p in self.tmp.rglob("*.json")}
+        self.assertEqual(run.migrate_archive(self.data, self.archive), 0)
+        self.assertEqual(run.history(self.data, self.config, self.archive), 0)
+        self.assertEqual(before, {p: p.read_bytes() for p in self.tmp.rglob("*.json")})
+
+    def test_a_newer_snapshot_replaces_the_published_one(self):
+        run.history(self.data, self.config, self.archive)
+        newer = json.loads((self.archive / "ontario" / "snapshots" / "2026-07-18.json").read_text(encoding="utf-8"))
+        newer["asOfDate"] = "2026-07-19"
+        run.write_json(self.archive / "ontario" / "snapshots" / "2026-07-19.json", newer)
+        run.history(self.data, self.config, self.archive)
+        self.assertEqual(sorted(p.name for p in (self.data / "ontario" / "snapshots").glob("*.json")),
+                         ["2026-07-19.json"])
+        self.assertEqual(len(list((self.archive / "ontario" / "snapshots").glob("*.json"))), 4)
+
+    def test_a_recount_of_the_newest_is_published_not_migrated(self):
+        run.history(self.data, self.config, self.archive)
+        newest = self.archive / "ontario" / "snapshots" / "2026-07-18.json"
+        recount = json.loads(newest.read_text(encoding="utf-8"))
+        recount["runSeconds"] = 99.9
+        run.write_json(newest, recount)
+        self.assertEqual(run.migrate_archive(self.data, self.archive), 0)
+        run.history(self.data, self.config, self.archive)
+        self.assertEqual((self.data / "ontario" / "snapshots" / "2026-07-18.json").read_bytes(), newest.read_bytes())
+
+    def test_an_archive_missing_published_dates_is_refused(self):
+        run.history(self.data, self.config, self.archive)
+        before = (self.data / "history" / "toronto.json").read_bytes()
+        (self.archive / "ontario" / "snapshots" / "2026-07-16.json").unlink()
+        with self.assertRaises(RuntimeError):
+            run.history(self.data, self.config, self.archive)
+        self.assertEqual((self.data / "history" / "toronto.json").read_bytes(), before)
+
 
 class HelpersTest(unittest.TestCase):
     def test_newest_quests_file_compares_versions_numerically(self):
