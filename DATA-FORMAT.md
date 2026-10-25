@@ -207,3 +207,46 @@ the picked quest's file only. Written by `run.py history` like the history files
 
 Rerunning on the same extract rewrites the same snapshot file byte for byte, apart from `runSeconds` and
 `engineCommit`.
+
+## Places and parts (contract, 2026-10-24; being built)
+
+The name layer and the neighbourhood counts (DESIGN.md, "Places: naming the world, counting on
+request"). Agreed before the work was split, so the builders, the engine and the site meet here.
+
+- **Place id**: the first 12 hex digits of the Overture GERS id, dashes removed
+  (`087cbb33-e54d-...` → `087cbb33e54d`). The build fails if two places share one. The same id is the
+  name shards' key, the `?place=` of the site, the issue form's field and a part's key in a snapshot.
+  The full GERS id is kept where the place is defined (shard field `g` is not stored; the parts registry
+  stores it).
+- **Overture release** is pinned like the SC version: `config/places.json`
+  `{ "overture": "2026-10-21.0" }`; moving it is a deliberate commit, not an automatic one.
+- **Name layer**, `docs/places/` (committed, published). Only divisions that have a `division_area`.
+  - `docs/places/index.json`: `{ "schema": 1, "overture": "2026-10-21.0", "countries": [ { "id", "name",
+    "cc", "bbox": [xmin, ymin, xmax, ymax], "regions": [ { "id", "name", "file": "<cc>/<id>.json",
+    "n": <places in the file> } ] } ] }`, countries by name, regions by name. Places a country has
+    outside every region (or a country without regions) are in a region entry with `"id": "_"` and
+    `"name": null`, file `<cc>/_.json`.
+  - `docs/places/<cc>/<regionId>.json`: `{ "schema": 1, "region": "<id>", "places": [ [id, name, st,
+    parent, xmin, ymin, xmax, ymax, en, counted] ] }`. `st` the subtype code: 0 country, 1 dependency,
+    2 region, 3 county, 4 localadmin, 5 locality, 6 borough, 7 macrohood, 8 neighborhood, 9 microhood.
+    `parent` the index of the parent in this file's `places`, or -1 for the region itself (the nearest
+    ancestor that has an area, from `hierarchies`, when `parent_division_id` has none). bbox rounded to
+    4 decimals. `en` the English name when it differs from `names.primary`, else null. `counted` the
+    city id in config/cities.json when the place is a counted city, `"<city>/<placeId>"` when it is a
+    counted part, else null. Parents come before children.
+- **Parts registry**, `config/parts/<city>.json` (committed): `{ "schema": 1, "city": "<id>", "overture":
+  "2026-10-21.0", "parts": [ { "id": "<placeId>", "gers": "<full id>", "name", "en", "subtype",
+  "osm": "r123" | "w456", "geometry": "data/boundaries/parts/<city>/<osm>.geojson" } ] }`.
+  A part is an Overture division under the city in `hierarchies`, of subtype borough, locality,
+  macrohood, neighborhood or microhood, **whose source is an OSM relation or way** (the owner chose OSM
+  only: Esri Community Maps parts are left out). The geometry comes from OSM itself, cut from the
+  region's own extract (osmium, Docker image `name-ru-repair-osmium`), not Overture's copy.
+- **Part counts in a snapshot**: inside the city, `cities.<id>.parts`: `{ "<placeId>": { "<Quest>":
+  <open> } }`, open quests at resurvey ×1 only (the `open` of the city's quest), quests with 0 left out,
+  parts with nothing open kept as `{}`. A quest counts in a part when its position (the same centre
+  the city test uses) is inside the part's polygon; parts overlap, so a quest can count in several.
+  Area quests and the note quest the same way, from the city's own run: a part has no map data of its
+  own. Adding parts changes no number outside `parts`.
+- **Published part names**: `docs/data/parts/<city>.json`: `{ "schema": 1, "city", "parts": [ { "id",
+  "name", "en", "subtype", "bbox" } ] }`, written by `run.py history` from the registry.
+- No monthly history for parts yet: the newest snapshot only, until a backfill recounts with parts.
