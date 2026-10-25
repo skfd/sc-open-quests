@@ -10,7 +10,7 @@ For each city of config/cities.json (DATA-FORMAT.md, "Places and parts"):
 1. **The city's place** in Overture `division.parquet`: the division whose own OpenStreetMap source
    (`sources[]` with property "") is the city's relation, `r<relation>@<version>`. Where none is (Laval and
    Markham are mapped in Overture from another relation or a way), the division of the city's name, of
-   subtype locality, localadmin or county, with an area, whose bbox overlaps the city boundary's bbox
+   subtype locality, localadmin or county, whose area's bbox overlaps the city boundary's bbox
    most (intersection over union at least 0.5).
 2. **Its parts**: divisions whose `hierarchies` contain the place, of subtype borough, locality,
    macrohood, neighborhood or microhood, that have a `division_area`, and whose own source is an OSM
