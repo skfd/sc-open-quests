@@ -223,7 +223,7 @@ def diff(a: Path, b: Path, top: int = 25) -> None:
 
 def check(r: Region, extract: str | None) -> None:
     if extract:
-        pbf = run.OSM_DATA_DIR / r.id / f"{extract}.osm.pbf"
+        pbf = run.OSM_DATA_DIR / run.region_extract(r.config) / f"{extract}.osm.pbf"
         meta = run.extract_meta(pbf)
     else:
         pbf, meta = run.dated_extracts(r.config)[0]
