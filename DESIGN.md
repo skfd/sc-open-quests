@@ -542,6 +542,11 @@ Proposal from the breakdown session; nothing built. Sources are in the session's
 - **Disputed areas** (Kashmir, Crimea, ...): Overture carries perspectives; pick one policy before the
   first such country.
 
+**The owner's answers (2026-10-24, late evening):** names from Overture `divisions`, counting on OSM
+geometry, as proposed. Neighbourhoods from **OSM only**: where neither OSM nor Overture has one, the
+city has none; no municipal open data, so no per-source licence checks. Requests through a **GitHub
+issue form** (players without an account cannot ask; accepted). The spike below runs that night.
+
 **Next, a spike before any building:** pull Overture divisions for Canada and Germany with DuckDB (not
 installed; `pip install duckdb` in the .venv) and measure: features per subtype, the share with an OSM
 relation, whether the 115 counted cities are found by relation id, neighbourhoods inside Toronto and
