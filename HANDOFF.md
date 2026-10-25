@@ -123,3 +123,13 @@ including whether Wandrer's regions can be the data source. History is monthly s
 counted weekly from one planet file (DESIGN.md, same section); disk is the owner's, later. Still open:
 whether land outside cities counts. Independent of the answer: GitHub Pages' 1 GB cap is about nine
 months away at today's size, so the publish format has to change anyway.
+
+**Taken by the measuring session (2026-10-24 evening), all independent of how places are named:**
+the publish format for the Pages cap (newest snapshot per region in `docs/`, the archive outside it, a
+small per-quest compare file); every SC country_metadata file bundled and a missing one an error; a
+region's extract separate from its id, so several runs can share one extract; the notes clip in one
+pass for many polygons; Unicode-safe city ids; and whether `osmium apply-changes --with-history` can keep
+the planet history file current. Not taken: the place breakdown, the city list, any planet download.
+For the breakdown session: sub-city counts (neighbourhoods) should sum quest positions inside the
+city's run (the z14 grid or finer), not run neighbourhoods as small cities; a smaller map data changes
+the area quests' counts (DESIGN.md, "Area unit: the whole city").
