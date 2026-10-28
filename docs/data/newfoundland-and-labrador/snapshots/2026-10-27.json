@@ -1,20 +1,20 @@
 {
   "schema": 1,
-  "asOf": "2026-10-25T21:21:21Z",
-  "asOfDate": "2026-10-25",
+  "asOf": "2026-10-27T21:23:59Z",
+  "asOfDate": "2026-10-27",
   "timeZone": "America/St_Johns",
-  "extractTimestamp": "2026-10-25T21:21:21Z",
+  "extractTimestamp": "2026-10-27T21:23:59Z",
   "scVersion": "64.0",
   "scCommit": "6c88a654cad86a149583c7cb6b409e021f76b9c5",
   "resurveyMultiplier": 1,
   "areaUnit": "city",
-  "engineCommit": "39409e6e4eced53de3213abeafb943a5a2d9c604",
-  "source": { "url": "https://download.geofabrik.de/north-america/canada/newfoundland-and-labrador-latest.osm.pbf", "lastModified": "2026-10-26T05:40:27Z", "sha256": "d978e154d94c042e889d69ef981b21cfa12a618d7b44ce72d9740870651d819d", "file": "newfoundland-and-labrador-2026-10-25.osm.pbf" },
-  "notes": { "dump": "planet-notes-261026.osn.bz2", "sha256": "5c6176c28c795d15ff55ef7c710a2a96ab45346de86221af5f62cb5cba5758d3", "until": "2026-10-26T04:28:06Z", "open": 90, "showAllNotes": false },
-  "runSeconds": 18.1,
+  "engineCommit": "808bb751347809f5a92b9eb02fabf69eb9477fdc",
+  "source": { "url": "https://download.geofabrik.de/north-america/canada/newfoundland-and-labrador-latest.osm.pbf", "lastModified": "2026-10-28T00:30:44Z", "sha256": "2be3ce553e48027ac4d3cab5005ce3111b6063d5a3158e812af45bf285e4d3b0", "file": "newfoundland-and-labrador-2026-10-27.osm.pbf" },
+  "notes": { "dump": "planet-notes-261028.osn.bz2", "sha256": "4c9381266c0a4e578f218f32c9b6ef70ea273a92b265d200f6216231447443ce", "until": "2026-10-28T04:14:01Z", "open": 92, "showAllNotes": false },
+  "runSeconds": 17.5,
   "cities": {
     "st-johns": {
-      "denominators": { "landAreaKm2": 522.7, "population": 110525, "taggedNodes": 38634, "taggedWays": 52920, "highwayKm": 1314.217 },
+      "denominators": { "landAreaKm2": 522.7, "population": 110525, "taggedNodes": 38634, "taggedWays": 52921, "highwayKm": 1314.313 },
       "quests": {
         "AddAcceptsCards": { "open": 507, "nodes": 400, "ways": 107, "relations": 0, "agedOnly": 0 },
         "AddAccessPointRef": { "open": 0, "nodes": 0, "ways": 0, "relations": 0, "agedOnly": 0 },
@@ -147,7 +147,7 @@
         "AddReligionToWaysideShrine": { "open": 0, "nodes": 0, "ways": 0, "relations": 0, "agedOnly": 0 },
         "AddRoadName": { "open": 89, "nodes": 0, "ways": 89, "relations": 0, "agedOnly": 0 },
         "AddRoadSmoothness": { "open": 2492, "nodes": 0, "ways": 2492, "relations": 0, "agedOnly": 3, "open05": 2494, "aged05": 5, "open2": 2489, "aged2": 0 },
-        "AddRoadSurface": { "open": 5516, "nodes": 0, "ways": 5516, "relations": 0, "agedOnly": 73, "open05": 5875, "aged05": 432, "open2": 5444, "aged2": 1 },
+        "AddRoadSurface": { "open": 5517, "nodes": 0, "ways": 5517, "relations": 0, "agedOnly": 73, "open05": 5876, "aged05": 432, "open2": 5445, "aged2": 1 },
         "AddRoadWidth": { "open": 149, "nodes": 0, "ways": 149, "relations": 0, "agedOnly": 0 },
         "AddRoofShape": { "open": 8062, "nodes": 0, "ways": 8054, "relations": 8, "agedOnly": 0 },
         "AddSanitaryDumpStation": { "open": 2, "nodes": 2, "ways": 0, "relations": 0, "agedOnly": 0 },
@@ -157,7 +157,7 @@
         "AddShelterCapacity": { "open": 0, "nodes": 0, "ways": 0, "relations": 0, "agedOnly": 0 },
         "AddSidewalk": { "open": 2109, "nodes": 0, "ways": 2109, "relations": 0, "agedOnly": 0 },
         "AddSidewalkSurface": { "open": 56, "nodes": 0, "ways": 56, "relations": 0, "agedOnly": 0, "open05": 56, "aged05": 0, "open2": 56, "aged2": 0 },
-        "AddSmoking": { "open": 212, "nodes": 158, "ways": 54, "relations": 0, "agedOnly": 4, "open05": 217, "aged05": 9, "open2": 208, "aged2": 0 },
+        "AddSmoking": { "open": 213, "nodes": 159, "ways": 54, "relations": 0, "agedOnly": 5, "open05": 217, "aged05": 9, "open2": 208, "aged2": 0 },
         "AddSport": { "open": 14, "nodes": 0, "ways": 14, "relations": 0, "agedOnly": 0 },
         "AddStepCount": { "open": 323, "nodes": 0, "ways": 323, "relations": 0, "agedOnly": 0 },
         "AddStepCountStile": { "open": 0, "nodes": 0, "ways": 0, "relations": 0, "agedOnly": 0 },
@@ -192,7 +192,7 @@
         "DetermineRecyclingGlass": { "open": 1, "nodes": 1, "ways": 0, "relations": 0, "agedOnly": 0 },
         "MarkCompletedBuildingConstruction": { "open": 5, "nodes": 0, "ways": 5, "relations": 0, "agedOnly": 5, "open05": 5, "aged05": 5, "open2": 5, "aged2": 5 },
         "MarkCompletedHighwayConstruction": { "open": 50, "nodes": 0, "ways": 50, "relations": 0, "agedOnly": 50, "open05": 50, "aged05": 50, "open2": 50, "aged2": 50 },
-        "OsmNoteQuestType": { "open": 2, "nodes": 0, "ways": 0, "relations": 0, "agedOnly": 0, "openAllNotes": 21 },
+        "OsmNoteQuestType": { "open": 2, "nodes": 0, "ways": 0, "relations": 0, "agedOnly": 0, "openAllNotes": 22 },
         "SpecifyShopType": { "open": 11, "nodes": 11, "ways": 0, "relations": 0, "agedOnly": 0 }
       }
     }
