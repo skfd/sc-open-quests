@@ -1,0 +1,33 @@
+name: Count a place
+description: Ask for open StreetComplete quests to be counted in a town, city or neighbourhood.
+title: "Count <place> (<country>)"
+labels: ["place request"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for asking! The place page on the site fills in the fields below for you.
+        If someone has asked for this place already, a 👍 on their request is a vote; no need for a second one.
+  - type: input
+    id: place-id
+    attributes:
+      label: Place id
+      description: The 12-character id from the place's page on the site.
+      placeholder: 21381221fa00
+    validations:
+      required: true
+  - type: input
+    id: place-name
+    attributes:
+      label: Place name
+      placeholder: The Annex
+  - type: input
+    id: place-path
+    attributes:
+      label: Where it is
+      placeholder: Canada / Ontario / Toronto / The Annex
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything we should know?
+      description: Optional. Do you map there? Is its OpenStreetMap boundary missing or wrong?

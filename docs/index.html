@@ -33,12 +33,13 @@
     <nav class="tabs" aria-label="View">
       <a href="#" data-view="city" class="tab">One city</a>
       <a href="#" data-view="compare" class="tab">Compare cities</a>
+      <a href="#" data-view="places" class="tab">Places</a>
     </nav>
   </div>
 </header>
 
 <main>
-  <div class="filters" role="group" aria-label="Filters">
+  <div class="filters" id="city-filters" role="group" aria-label="Filters">
     <label class="field">City
       <select id="city"></select>
     </label>
@@ -124,6 +125,26 @@
       </div>
     </article>
   </section>
+
+  <section id="view-places" hidden>
+    <article class="card">
+      <div class="card-head">
+        <h2>Find a place</h2>
+        <div class="table-tools">
+          <label class="field">Search in
+            <select id="place-scope"></select>
+          </label>
+          <label class="field search">
+            <span class="visually-hidden">Place name</span>
+            <input type="search" id="place-search" placeholder="Town or neighbourhood" autocomplete="off">
+          </label>
+        </div>
+      </div>
+      <p class="sub" id="place-search-note" aria-live="polite"></p>
+      <ol class="place-results" id="place-results"></ol>
+    </article>
+    <div id="place-page"></div>
+  </section>
 </main>
 
 <footer class="page-foot" id="foot">
@@ -135,7 +156,8 @@
     Code under <a href="https://www.gnu.org/licenses/gpl-3.0.html">GPL-3.0</a>, built on StreetComplete's own quest code.
   </p>
   <p>Map data © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>, ODbL.
-    Extract by <a href="https://download.geofabrik.de/">Geofabrik</a>.</p>
+    Extract by <a href="https://download.geofabrik.de/">Geofabrik</a>. Place names from
+    <a href="https://docs.overturemaps.org/guides/divisions/">Overture Maps divisions</a>, ODbL.</p>
   <p>Quest icons and the app icon are StreetComplete's, © Tobias Zwick and
     <a href="icons/authors.txt">contributors</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC-BY-SA 4.0</a>;
     quest titles are the app's own English strings. Release dates from <a href="https://github.com/streetcomplete/StreetComplete/releases">GitHub</a>.</p>

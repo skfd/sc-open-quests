@@ -1,0 +1,486 @@
+{
+ "schema": 1,
+ "city": "toronto",
+ "parts": [
+  {
+   "id": "dbb37f753302",
+   "name": "Agincourt North",
+   "en": null,
+   "subtype": "neighborhood",
+   "bbox": [
+    -79.2913,
+    43.7891,
+    -79.2421,
+    43.819
+   ]
+  },
+  {
+   "id": "e2947f6e5365",
+   "name": "Agincourt South-Malvern West",
+   "en": null,
+   "subtype": "neighborhood",
+   "bbox": [
+    -79.2917,
+    43.775,
+    -79.2353,
+    43.8038
+   ]
+  },
+  {
+   "id": "1c8f9cd979b5",
+   "name": "Alderwood",
+   "en": null,
+   "subtype": "neighborhood",
+   "bbox": [
+    -79.5598,
+    43.5902,
+    -79.525,
+    43.6172
+   ]
+  },
+  {
+   "id": "1f0e1ccf9f21",
+   "name": "Algonquin Island",
+   "en": null,
+   "subtype": "neighborhood",
+   "bbox": [
+    -79.3632,
+    43.6247,
+    -79.3572,
+    43.6304
+   ]
+  },
+  {
+   "id": "b9ec4292cfec",
+   "name": "Annex",
+   "en": null,
+   "subtype": "neighborhood",
+   "bbox": [
+    -79.4219,
+    43.6636,
+    -79.3868,
+    43.6811
+   ]
+  },
+  {
+   "id": "3722a5898662",
+   "name": "Art Centre Square",
+   "en": null,
+   "subtype": "microhood",
+   "bbox": [
+    -79.4139,
+    43.7657,
+    -79.4133,
+    43.7662
+   ]
+  },
+  {
+   "id": "f7c894017e7b",
+   "name": "Avondale",
+   "en": null,
+   "subtype": "neighborhood",
+   "bbox": [
+    -79.4109,
+    43.7536,
+    -79.3871,
+    43.7666
+   ]
+  },
+  {
+   "id": "d1699b226496",
+   "name": "Banbury-Don Mills",
+   "en": null,
+   "subtype": "neighborhood",
+   "bbox": [
+    -79.3827,
+    43.7162,
+    -79.3187,
+    43.7565
+   ]
+  },
+  {
+   "id": "1dfacd6160d6",
+   "name": "Bathurst Manor",
+   "en": null,
+   "subtype": "neighborhood",
+   "bbox": [
+    -79.4702,
+    43.7504,
+    -79.43,
+    43.7879
+   ]
+  },
+  {
+   "id": "1adf67d98b13",
+   "name": "Bay-Cloverhill",
+   "en": null,
+   "subtype": "neighborhood",
+   "bbox": [
+    -79.3941,
+    43.6599,
+    -79.3831,
+    43.6702
+   ]
+  },
+  {
+   "id": "c0c99193cdd2",
+   "name": "Bayview Village",
+   "en": null,
+   "subtype": "neighborhood",
+   "bbox": [
+    -79.3922,
+    43.7633,
+    -79.3596,
+    43.7901
+   ]
+  },
+  {
+   "id": "44854df0cba8",
+   "name": "Bayview Woods-Steeles",
+   "en": null,
+   "subtype": "neighborhood",
+   "bbox": [
+    -79.3963,
+    43.785,
+    -79.3681,
+    43.8087
+   ]
+  },
+  {
+   "id": "344aa93eb645",
+   "name": "Bayview Woods-Steeles",
+   "en": null,
+   "subtype": "neighborhood",
+   "bbox": [
+    -79.3963,
+    43.785,
+    -79.3681,
+    43.8085
+   ]
+  },
+  {
+   "id": "5757a9a5966e",
+   "name": "Beaches—East York",
+   "en": null,
+   "subtype": "microhood",
+   "bbox": [
+    -79.3331,
+    43.6494,
+    -79.2785,
+    43.7197
+   ]
+  },
+  {
+   "id": "0adf10f13f7c",
+   "name": "Bedford Park-Nortown",
+   "en": null,
+   "subtype": "neighborhood",
+   "bbox": [
+    -79.4337,
+    43.7083,
+    -79.4049,
+    43.7536
+   ]
+  },
+  {
+   "id": "b70b03680494",
+   "name": "Beechborough-Greenbrook",
+   "en": null,
+   "subtype": "neighborhood",
+   "bbox": [
+    -79.498,
+    43.6875,
+    -79.4646,
+    43.6997
+   ]
+  },
+  {
+   "id": "a4d3639a2d52",
+   "name": "Bendale South",
+   "en": null,
+   "subtype": "neighborhood",
+   "bbox": [
+    -79.2683,
+    43.7417,
+    -79.2376,
+    43.756
+   ]
+  },
+  {
+   "id": "daa1217d78c5",
+   "name": "Bendale-Glen Andrew",
+   "en": null,
+   "subtype": "neighborhood",
+   "bbox": [
+    -79.2748,
+    43.7515,
+    -79.2453,
+    43.7813
+   ]
+  },
+  {
+   "id": "6869faf3c01f",
+   "name": "Birchcliffe-Cliffside",
+   "en": null,
+   "subtype": "neighborhood",
+   "bbox": [
+    -79.2876,
+    43.6697,
+    -79.244,
+    43.7188
+   ]
+  },
+  {
+   "id": "30dd1dcc6b76",
+   "name": "Black Creek",
+   "en": null,
+   "subtype": "neighborhood",
+   "bbox": [
+    -79.5348,
+    43.7545,
+    -79.5049,
+    43.7755
+   ]
+  },
+  {
+   "id": "80bb3882e45f",
+   "name": "Blake-Jones",
+   "en": null,
+   "subtype": "neighborhood",
+   "bbox": [
+    -79.3448,
+    43.6692,
+    -79.3367,
+    43.6799
+   ]
+  },
+  {
+   "id": "6721dd514a0b",
+   "name": "Briar Hill-Belgravia",
+   "en": null,
+   "subtype": "neighborhood",
+   "bbox": [
+    -79.4671,
+    43.6922,
+    -79.4388,
+    43.7056
+   ]
+  },
+  {
+   "id": "97762b711234",
+   "name": "Bridle Path-Sunnybrook-York Mills",
+   "en": null,
+   "subtype": "neighborhood",
+   "bbox": [
+    -79.4065,
+    43.7114,
+    -79.3499,
+    43.7488
+   ]
+  },
+  {
+   "id": "b346d65171e3",
+   "name": "Broadview North",
+   "en": null,
+   "subtype": "neighborhood",
+   "bbox": [
+    -79.3664,
+    43.6792,
+    -79.3463,
+    43.6994
+   ]
+  },
+  {
+   "id": "3f2594bd0fad",
+   "name": "Brockton Village",
+   "en": null,
+   "subtype": "neighborhood",
+   "bbox": [
+    -79.4452,
+    43.6499,
+    -79.4325,
+    43.6599
+   ]
+  },
+  {
+   "id": "92d9fd26dde2",
+   "name": "Brookhaven-Amesbury",
+   "en": null,
+   "subtype": "neighborhood",
+   "bbox": [
+    -79.5083,
+    43.693,
+    -79.4671,
+    43.7108
+   ]
+  },
+  {
+   "id": "8ec0fcf0b3ad",
+   "name": "Cabbagetown-South St.James Town",
+   "en": null,
+   "subtype": "neighborhood",
+   "bbox": [
+    -79.3783,
+    43.6619,
+    -79.3563,
+    43.6754
+   ]
+  },
+  {
+   "id": "1f5e9e035214",
+   "name": "Caledonia-Fairbank",
+   "en": null,
+   "subtype": "neighborhood",
+   "bbox": [
+    -79.4646,
+    43.6816,
+    -79.4458,
+    43.6957
+   ]
+  },
+  {
+   "id": "02a7d5cf2058",
+   "name": "Casa Loma",
+   "en": null,
+   "subtype": "neighborhood",
+   "bbox": [
+    -79.4183,
+    43.674,
+    -79.3979,
+    43.6908
+   ]
+  },
+  {
+   "id": "e843b6cdc177",
+   "name": "Centennial Scarborough",
+   "en": null,
+   "subtype": "neighborhood",
+   "bbox": [
+    -79.1753,
+    43.7638,
+    -79.1331,
+    43.7989
+   ]
+  },
+  {
+   "id": "2e6a3157fd14",
+   "name": "Church-Wellesley",
+   "en": null,
+   "subtype": "neighborhood",
+   "bbox": [
+    -79.3868,
+    43.6613,
+    -79.3767,
+    43.6716
+   ]
+  },
+  {
+   "id": "4d8758a3920a",
+   "name": "Clairlea-Birchmount",
+   "en": null,
+   "subtype": "neighborhood",
+   "bbox": [
+    -79.3026,
+    43.6961,
+    -79.2543,
+    43.7301
+   ]
+  },
+  {
+   "id": "c88554172755",
+   "name": "Clanton Park",
+   "en": null,
+   "subtype": "neighborhood",
+   "bbox": [
+    -79.4597,
+    43.7281,
+    -79.4337,
+    43.7555
+   ]
+  },
+  {
+   "id": "a7925b1f11db",
+   "name": "Cliffcrest",
+   "en": null,
+   "subtype": "neighborhood",
+   "bbox": [
+    -79.2543,
+    43.6984,
+    -79.2115,
+    43.7415
+   ]
+  },
+  {
+   "id": "3bf51fa24787",
+   "name": "Corner Commons",
+   "en": null,
+   "subtype": "microhood",
+   "bbox": [
+    -79.5174,
+    43.7567,
+    -79.5169,
+    43.7571
+   ]
+  },
+  {
+   "id": "e17a6d3fdca7",
+   "name": "Corso Italia-Davenport",
+   "en": null,
+   "subtype": "neighborhood",
+   "bbox": [
+    -79.4602,
+    43.671,
+    -79.4338,
+    43.6849
+   ]
+  },
+  {
+   "id": "d2b6716a8c29",
+   "name": "Danforth",
+   "en": null,
+   "subtype": "neighborhood",
+   "bbox": [
+    -79.3463,
+    43.679,
+    -79.3128,
+    43.6892
+   ]
+  },
+  {
+   "id": "5a2aabbe59b0",
+   "name": "Danforth East York",
+   "en": null,
+   "subtype": "neighborhood",
+   "bbox": [
+    -79.3488,
+    43.6827,
+    -79.3131,
+    43.6964
+   ]
+  },
+  {
+   "id": "765f0e1ac6de",
+   "name": "Davenport",
+   "en": null,
+   "subtype": "microhood",
+   "bbox": [
+    -79.4706,
+    43.6406,
+    -79.4208,
+    43.6957
+   ]
+  },
+  {
+   "id": "3c185a1b9cb2",
+   "name": "Distillery District",
+   "en": null,
+   "subtype": "neighborhood",
+   "bbox": [
+    -79.362,
+    43.6494,
+    -79.3569,
+    43.6512
+   ]
+  }
+ ]
+}
