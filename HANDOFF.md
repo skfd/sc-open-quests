@@ -166,3 +166,11 @@ files): `rm -rf .backup/archive-2026-10-24`.
 (DESIGN.md, "Weekly planet job"). No region is weekly yet, so it only runs `osm-extracts fetch
 planet-history`. To do at merge: register it with `.\schedule-weekly-add.ps1` (Mondays 07:30) once
 osm-extracts has `fetch planet-history`; until then the weekly run logs the failed fetch and stops.
+**2026-10-28:** osm-extracts has `fetch planet-history` now (bd9dfb9), and the store holds
+`planet/history-261005.osm.pbf` (163 GB). Not registered yet: C: has about 101 GB free and an update
+writes a second file of that size beside the first, so the owner's disk comes first.
+
+**Runs since the publish format (checked 2026-10-28):** 10-26 and 10-28 counted, committed and pushed;
+the site serves all 115 cities at 2026-10-27, `data/archive/` holds 1,521 files. The backup's
+conditions are met. Snapshots come every other day because Geofabrik's extracts did (10-27's run found
+every extract unchanged since 10-26 05:44 UTC), not because of the notes dump.
