@@ -158,7 +158,7 @@ the breakdown session's. Optional: the engine's `-Xmx40g` could be about 20 GB (
 run or a wrong delete, not a dead disk. **Delete it once the first 13:15 run with the new publish format
 has gone well** (2026-10-25: `logs/scheduler.log` ends in "update done", the push with the 1,473
 snapshot deletions went through, the site still loads every city, and `data/archive/` still holds 1,497+
-files): `rm -rf .backup/archive-2026-10-24`.
+files): `rm -rf .backup/archive-2026-10-24`. **Deleted by the owner on 2026-10-28**, the conditions met.
 
 
 **Weekly planet job (2026-10-24, night):** `python run.py weekly` and `"cadence": "weekly"` per region
