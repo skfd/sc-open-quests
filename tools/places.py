@@ -282,6 +282,7 @@ def main(argv=None):
     ap.add_argument("--out", default=str(ROOT / "docs" / "places"))
     ap.add_argument("--report", help="write the city matching report here too")
     a = ap.parse_args(argv)
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # place names on a cp1252 console
     overture = json.loads((ROOT / "config" / "places.json").read_text(encoding="utf-8"))["overture"]
     cities = json.loads((ROOT / "config" / "cities.json").read_text(encoding="utf-8"))["cities"]
     rows = read_divisions(a.src)
