@@ -184,7 +184,8 @@ Merged into main as they were, then:
 - **What the 13:15 run changes:** every newly counted snapshot gets `cities.<id>.parts`. Bremen's
   snapshot goes from 45 KB to 307 KB; across 4,217 parts roughly 7 MB more raw JSON a day in the
   published newest snapshots (git delta-compresses them, so watch `.git` rather than guess).
-  Until then a part page says its numbers arrive with the city's next count.
+  Until then a part page says its numbers arrive with the city's next count. Ontario with its 790
+  parts was measured at 216 s and 21.9 GB peak heap (208 s, 20.1 GB without; engine/README.md).
 - Left: five cities have a part named as the city (Bremen r2088648 holds 3,242 of the city's 3,251
   AddHousenumber; Halifax, Gatineau, Fredericton, Saint John): near-duplicates, worth dropping in
   `add_parts.py` when a part covers nearly all its city. The issue form goes live with the push.
