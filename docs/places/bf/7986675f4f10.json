@@ -1,0 +1,18 @@
+{"schema":1,"region":"7986675f4f10","places":[
+["7986675f4f10","Centre",2,-1,-1.8269,12.0501,-1.0636,12.6851,null,null],
+["53d740bdb5e8","Kadiogo",3,0,-1.8269,12.0501,-1.0636,12.6851,"Kadiogo Province",null],
+["1f095cb64f6c","Komki-Ipala",4,1,-1.8269,12.0915,-1.6496,12.2362,"de Komki-Ipala Department",null],
+["83865e7ed96a","Komsilga",4,1,-1.7234,12.0501,-1.4468,12.2813,"de Komsilga Department",null],
+["51b889d1bb96","Koubri",4,1,-1.4879,12.1061,-1.0636,12.3543,"de Koubri Department",null],
+["59194765ab06","Ouagadougou",4,1,-1.6543,12.2512,-1.4076,12.4911,null,null],
+["cef59c079964","Kologh-Naba",5,5,-1.5535,12.3755,-1.5351,12.3879,null,null],
+["7b333a9c7ed0","Larlé",5,5,-1.547,12.3712,-1.5355,12.3786,null,null],
+["15a9b4e9996d","1200 Logements",7,5,-1.5008,12.3558,-1.4938,12.376,null,null],
+["3b30dda39efd","Nonsin",7,5,-1.5694,12.3699,-1.556,12.382,null,null],
+["bf156e0acc88","Karpala",8,5,-1.4984,12.3226,-1.4708,12.34,null,null],
+["ea86ff03d921","Nemnin",8,5,-1.5352,12.3772,-1.5263,12.386,null,null],
+["897d39840466","Paspanga",8,5,-1.526,12.3763,-1.5144,12.3818,null,null],
+["df9c9994ee2d","Pabré",4,1,-1.7284,12.431,-1.4471,12.6851,"de Pabré Department",null],
+["b8dd400f7485","Saaba",4,1,-1.4456,12.2657,-1.2467,12.5105,"de Saaba Department",null],
+["ec8d9954edbf","Tanghin-Dassouri",4,1,-1.8175,12.2112,-1.625,12.4334,"de Tanghin-Dassouri Department",null]
+]}

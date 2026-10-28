@@ -1,0 +1,23 @@
+{"schema":1,"region":"501577c22db0","places":[
+["501577c22db0","Canton Diekirch",2,-1,5.9702,49.7854,6.3143,49.9553,"Diekirch Canton",null],
+["e3f592dfd9b7","Bettendorf",3,0,6.1557,49.8422,6.252,49.8933,null,null],
+["06e7e12c3934","Bourscheid",3,0,6.0113,49.8652,6.1317,49.9553,null,null],
+["7b9d3c5fc2e9","Place Gen. Norman D. Cota",9,2,6.0648,49.9098,6.065,49.91,null,null],
+["d201b56c089e","Diekirch",3,0,6.1175,49.835,6.1807,49.8987,null,null],
+["601ec4890b2e","Place Dominique",9,4,6.1608,49.868,6.1609,49.8681,null,null],
+["25b4112c6b99","Place Joseph Bech",9,4,6.1607,49.869,6.161,49.8693,null,null],
+["dc1bd70ed304","Place Joseph Bech",9,4,6.1607,49.869,6.161,49.8693,null,null],
+["732aa8798ebb","Erpeldange-sur-Sûre",3,0,6.0717,49.835,6.1535,49.9032,null,null],
+["2a10205cc4ef","Ettelbruck",3,0,6.0381,49.8244,6.1167,49.8772,null,null],
+["7534619de96a","Feulen",3,0,5.9855,49.8326,6.069,49.8914,null,null],
+["f5775c186ba1","Niederfeulen",8,10,5.9923,49.8343,6.069,49.8914,null,null],
+["08df020975ff","Oberfeulen",8,10,5.9855,49.8326,6.0495,49.873,null,null],
+["e2fb4ca1ae14","Mertzig",3,0,5.9702,49.8168,6.0416,49.8574,null,null],
+["d4f2c7146bbc","Reisdorf",3,0,6.2287,49.8463,6.3143,49.8991,null,null],
+["e81d49511860","Scheedheck",5,14,6.3088,49.8596,6.311,49.8612,null,null],
+["09a4aaefdbda","Schieren",3,0,6.0724,49.8104,6.1472,49.8434,null,null],
+["a1798b4712eb","Vali's Plaz",9,16,6.0971,49.8325,6.0978,49.8332,null,null],
+["d801204cb42b","Vallée de l'Ernz",3,0,6.1427,49.7854,6.2715,49.8575,null,null],
+["1a1ea5d68b3b","Ermsdorf",8,18,6.1427,49.8157,6.2715,49.8575,null,null],
+["ffbbc99a52e5","Medernach",8,18,6.1877,49.7854,6.2704,49.8269,null,null]
+]}

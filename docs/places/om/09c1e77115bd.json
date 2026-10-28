@@ -1,0 +1,10 @@
+{"schema":1,"region":"09c1e77115bd","places":[
+["09c1e77115bd","محافظة جنوب الباطنة",2,-1,57.0074,23.119,58.0766,23.8399,"Al Batinah South Governorate",null],
+["268b7c1c0020","WILAYAT AL AWABI",3,0,57.4632,23.151,57.6952,23.428,null,null],
+["aa24748230d6","WILAYAT AL MUSANAAH",3,0,57.4251,23.5354,57.721,23.8314,null,null],
+["865ea2416a82","WILAYAT AR RUSTAQ",3,0,57.0074,23.151,57.6455,23.6847,null,null],
+["70fd8ddff329","WILAYAT BARKA",3,0,57.6455,23.5354,58.1741,23.863,null,null],
+["d7b49a950009","حلبان",5,4,58.0041,23.5458,58.0839,23.633,"Halban",null],
+["22c88618e868","WILAYAT NAKHAL",3,0,57.5861,23.119,58.0817,23.593,null,null],
+["31c814523b83","WILAYAT WADI AL MAAWIL",3,0,57.6712,23.1444,57.9924,23.592,null,null]
+]}

@@ -1,0 +1,19 @@
+{"schema":1,"region":"5ee938d05b35","places":[
+["5ee938d05b35","Tunceli",2,-1,38.7319,38.7632,40.4038,39.615,null,null],
+["ac7a88dcb2c6","Hozat",3,0,38.916,38.9801,39.3581,39.2488,null,null],
+["689b260db2b6","Mazgirt",3,0,39.5104,38.7993,39.902,39.0787,null,null],
+["1cbc4c212dbb","Nazımiye",3,0,39.7261,39.0537,40.0422,39.3382,"Nazmiye",null],
+["d0a169e2d837","Ovacık",3,0,38.7947,39.2005,39.6942,39.5232,null,null],
+["f362e33c25e5","Pertek",3,0,39.0042,38.7632,39.6084,39.0418,null,null],
+["3c3a717f0420","Camikebir Mahallesi",7,5,39.2926,38.8291,39.3462,38.8591,null,null],
+["965917412b68","Derebaşı Mahallesi",7,5,39.3222,38.8278,39.3703,38.8528,null,null],
+["5b092e31d165","İstiklal Mahallesi",7,5,39.3113,38.8485,39.3354,38.878,null,null],
+["8fbc4f314023","Kaledibi Mahallesi",7,5,39.2739,38.84,39.3029,38.8697,null,null],
+["370772468f35","Soğukpınar Mahallesi",7,5,39.2869,38.852,39.3234,38.8775,null,null],
+["6b4d7ab80131","Pülümür",3,0,39.6141,39.3017,40.4038,39.615,null,null],
+["5e507bf911ec","Tunceli Merkez",3,0,39.3096,38.9003,39.7871,39.3717,null,null],
+["f3cef0652626","Alibaba Mahallesi",7,12,39.5343,39.1045,39.5483,39.1192,null,null],
+["4f287b9d99c9","Cumhuriyet Mahallesi",7,12,39.5256,39.0956,39.5536,39.1172,null,null],
+["c825cfcc20ff","Moğultay Mahallesi",7,12,39.5447,39.1017,39.5523,39.1113,null,null],
+["c04b81738e89","Çemişgezek",3,0,38.7319,38.8623,39.125,39.2259,null,null]
+]}

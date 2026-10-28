@@ -1,0 +1,21 @@
+{"schema":1,"region":"643efb9b8d60","places":[
+["643efb9b8d60","จังหวัดราชบุรี",2,-1,99.1636,13.1488,100.0715,13.9576,"Ratchaburi Province",null],
+["cf830ae0833c","Ban Kha",3,0,99.1871,13.1488,99.5415,13.5146,null,null],
+["165816f3d3d8","Ban Pong",3,0,99.6064,13.7473,99.9708,13.9612,null,null],
+["74b660fffd84","Bang Phae",3,0,99.893,13.6124,100.0686,13.7544,null,null],
+["387dd0ba2d6b","ตำบลโพหัก",5,3,99.9952,13.6027,100.0715,13.6763,"Pho Hak Subdistrict",null],
+["c4bf6a07e5aa","เทศบาลตำบลโพหัก",5,3,99.9952,13.6027,100.0715,13.6763,"Pho Hak Subdistrict Municipality",null],
+["ec59871a930d","Chom Bueng",3,0,99.3156,13.418,99.741,13.8067,null,null],
+["54dcdfcd36f6","Damnoen Saduak",3,0,99.881,13.4855,100.046,13.6442,null,null],
+["91fbc4609e38","ตำบลขุนพิทักษ์",5,7,99.9679,13.4919,100.0328,13.5282,null,null],
+["fade6e844b06","ตำบลประสาทสิทธิ์",5,7,100.0163,13.5309,100.0447,13.5836,"Prasat Sit Subdistrict",null],
+["6268d1daef1a","เทศบาลตำบลดำเนินสะดวก",5,7,99.9402,13.5055,99.9719,13.5326,"Damnoen Saduak Subdistrict Municipality",null],
+["3ddb3c780ad2","เทศบาลตำบลบัวงาม",5,7,99.9866,13.5729,100.0433,13.6435,"Bua Ngam Subdistict Municipality",null],
+["a1d8f042d383","ตำบลบัวงาม",5,11,99.9866,13.5729,100.0433,13.6435,"Bua Ngam Subdistrict",null],
+["e7bb8c7a74d3","เทศบาลตำบลประสาทสิทธิ์",5,7,100.0163,13.5309,100.0447,13.5836,"Prasat Sit Subdistrict Municipality",null],
+["14e416aaa2f5","Mueang Ratchaburi",3,0,99.5777,13.4454,99.9191,13.6438,null,null],
+["71781fc349d4","Pak Tho",3,0,99.4986,13.1977,99.8837,13.5149,null,null],
+["015124ba9430","Photharam",3,0,99.533,13.609,99.9482,13.7964,null,null],
+["cc549dbb9f2c","Suan Phueng",3,0,99.1636,13.3008,99.4934,13.7771,null,null],
+["2f9f19173596","Wat Phleng",3,0,99.8395,13.4049,99.8919,13.4953,null,null]
+]}

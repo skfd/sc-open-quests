@@ -1,0 +1,17 @@
+{"schema":1,"region":"7522a1622170","places":[
+["7522a1622170","Herrera",2,-1,-80.9636,7.5403,-80.3829,8.1464,null,null],
+["1138df12afd5","Chitré",3,0,-80.512,7.9324,-80.3867,8.0278,"Chitré District",null],
+["ab01912cd6bf","Chitré",5,1,-80.4565,7.9362,-80.4108,7.97,null,null],
+["174fa8840fe1","La Arena",5,1,-80.512,7.9324,-80.448,7.9951,null,null],
+["bd0da3f21936","Llano Bonito",5,1,-80.432,7.9679,-80.3867,8.0101,null,null],
+["6bc87394854f","Villa Rosario",8,4,-80.4182,7.976,-80.4174,7.9772,null,null],
+["fac36c96654b","Las Minas",3,0,-80.9611,7.5707,-80.6866,7.8665,"Las Minas District",null],
+["856ea252c873","Los Pozos",3,0,-80.7811,7.5403,-80.5568,7.8437,"Los Pozos District",null],
+["25d2aeba234a","Ocú",3,0,-80.9636,7.7661,-80.6503,8.0722,"Ocú District",null],
+["e934f21fd666","Parita",3,0,-80.7191,7.9474,-80.4487,8.124,"Parita District",null],
+["4f241d6d97c9","Pesé",3,0,-80.7298,7.8049,-80.5002,7.9808,"Pesé District",null],
+["5be4e4795fa5","Santa María",3,0,-80.8206,8.0418,-80.5559,8.1464,"Santa María District",null],
+["5632d9d58173","Divisa",5,11,-80.6908,8.1232,-80.6865,8.1288,null,null],
+["706cc75aab14","Los Canelos",5,11,-80.7093,8.1206,-80.7011,8.1271,null,null],
+["79b999c85102","Nueva Esperanza",5,11,-80.7182,8.1202,-80.7146,8.1264,null,null]
+]}

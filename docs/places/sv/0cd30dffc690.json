@@ -1,0 +1,21 @@
+{"schema":1,"region":"0cd30dffc690","places":[
+["0cd30dffc690","Cuscatlán",2,-1,-89.1686,13.6398,-88.8585,14.0778,"Cuscatlán Department",null],
+["5e6ac7117223","Candelaria",3,0,-89.0016,13.6764,-88.9476,13.7264,null,null],
+["a5471852cd14","Cojutepeque",3,0,-88.9788,13.7094,-88.911,13.7852,null,null],
+["7da370a6fef0","El Carmen",3,0,-88.932,13.7237,-88.8749,13.795,null,null],
+["a9d78d6c4d1e","El Rosario",3,0,-88.9284,13.7683,-88.8907,13.8061,null,null],
+["a03e780d4ea0","Jerusalen",3,0,-88.9425,13.6394,-88.8959,13.6871,null,null],
+["5c33899d6379","Monte San Juan",3,0,-88.9817,13.7442,-88.9239,13.8187,null,null],
+["c9e02d951c93","Oratorio de Concepcion",3,0,-89.0859,13.8125,-89.0371,13.8622,null,null],
+["e2356840db84","San Bartolome Perulapia",3,0,-89.0755,13.7601,-89.0448,13.8236,null,null],
+["9d571e941336","San Cristobal",3,0,-88.9235,13.6853,-88.8727,13.7295,null,null],
+["9b6d3364fc54","San Jose Guayabal",3,0,-89.1586,13.8114,-89.0594,13.9011,null,null],
+["399158e52ba7","San Pedro Perulapan",3,0,-89.058,13.7118,-88.9807,13.8714,null,null],
+["0b51b03f2824","San Rafael Cedros",3,0,-88.9039,13.7384,-88.8664,13.7958,null,null],
+["bbd9d615f915","San Ramon",3,0,-88.9503,13.6787,-88.9173,13.7241,null,null],
+["08e02c5cccc0","Colonia Santa Lucía",8,13,-88.9288,13.7182,-88.9268,13.7215,null,null],
+["1fbf1a571929","Santa Cruz Analquito",3,0,-88.9883,13.6564,-88.9378,13.6876,null,null],
+["b6c6747ce152","Santa Cruz Michapa",3,0,-88.996,13.7236,-88.9569,13.7962,null,null],
+["dc1fe525f7a5","Suchitoto",3,0,-89.1729,13.8586,-88.9851,14.0606,null,null],
+["4d63510cdc9e","Tenancingo",3,0,-89.0183,13.7975,-88.9307,13.8865,null,null]
+]}

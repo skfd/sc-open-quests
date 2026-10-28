@@ -1,0 +1,15 @@
+{"schema":1,"region":"30f11b56a746","places":[
+["30f11b56a746","Callao",2,-1,-77.2516,-12.1207,-77.0767,-11.8178,"constitucional del Callao Province",null],
+["cdc29798db9e","Callao",3,0,-77.2516,-12.1207,-77.0767,-11.8178,"Callao Province",null],
+["dd90200616a3","Bellavista",5,1,-77.1342,-12.0678,-77.0871,-12.0517,null,null],
+["6147b7b3843a","Callao",5,1,-77.1584,-12.0707,-77.0767,-11.9368,null,null],
+["5ab2cc8deb51","Plaza Galvez",9,3,-77.1461,-12.0611,-77.1454,-12.0605,null,null],
+["20b7524c188a","Plaza Matriz del Callao",9,3,-77.1469,-12.0599,-77.1465,-12.0595,null,null],
+["0fef59478b0c","Carmen de La Legua-Reynoso",5,1,-77.0993,-12.0484,-77.0816,-12.0363,null,null],
+["bc392400038f","La Perla",5,1,-77.133,-12.08,-77.1039,-12.0631,null,null],
+["951a242a9df7","La Punta",5,1,-77.1709,-12.0753,-77.1564,-12.0664,null,null],
+["4b16c5cca55b","Mi Perú",5,1,-77.1304,-11.8654,-77.1107,-11.8417,null,null],
+["6bee43eeb52a","Plaza de Mi Perú",9,9,-77.1237,-11.8556,-77.1232,-11.8548,null,null],
+["737374054984","Ventanilla",5,1,-77.188,-11.9501,-77.0899,-11.8178,null,null],
+["d2d3970f22a6","Plaza de Armas Villa los Reyes",9,11,-77.1234,-11.8281,-77.1227,-11.8274,null,null]
+]}

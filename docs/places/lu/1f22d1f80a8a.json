@@ -1,0 +1,21 @@
+{"schema":1,"region":"1f22d1f80a8a","places":[
+["1f22d1f80a8a","Canton Grevenmacher",2,-1,6.167,49.59,6.5171,49.7557,"Grevenmacher Canton",null],
+["117ccbcc3a92","Betzdorf",3,0,6.2773,49.6363,6.3779,49.7042,null,null],
+["c55b772f1908","Biwer",3,0,6.3076,49.6769,6.4093,49.7382,null,null],
+["e589b46881dd","Flaxweiler",3,0,6.3032,49.6071,6.4236,49.6784,null,null],
+["4641da174fdb","Grevenmacher",3,0,6.3602,49.6541,6.4611,49.6998,null,null],
+["5492121cc77f","Junglinster",3,0,6.167,49.675,6.3328,49.7497,null,null],
+["4841d13ec307","Altlinster",8,5,6.1849,49.7109,6.2331,49.7364,null,null],
+["5e551a394b1c","Beidweiler",8,5,6.2817,49.7105,6.3328,49.7412,null,null],
+["020793f20457","Bourglinster",8,5,6.1948,49.685,6.232,49.7139,null,null],
+["c814b16959af","Eisenborn",8,5,6.167,49.6827,6.1986,49.6973,null,null],
+["adb2d4e0f800","Eschweiler",8,5,6.2772,49.7013,6.3244,49.7225,null,null],
+["7716983c48a9","Godbrange",8,5,6.2209,49.7227,6.2516,49.7497,null,null],
+["1eff0f3868e8","Gonderange",8,5,6.2147,49.6834,6.277,49.7033,null,null],
+["6cce8d97427f","Imbringen",8,5,6.1821,49.6912,6.2059,49.7132,null,null],
+["5c894f25028c","Junglinster",8,5,6.2233,49.6978,6.2889,49.7456,null,null],
+["63258c76074c","Rodenbourg",8,5,6.2556,49.675,6.303,49.7041,null,null],
+["e090fb31b553","Manternach",3,0,6.3621,49.6878,6.4617,49.7557,null,null],
+["29767700c1e9","Mertert",3,0,6.4448,49.6923,6.5171,49.7427,null,null],
+["5d13bd82db74","Wormeldange",3,0,6.3526,49.59,6.4399,49.664,null,null]
+]}

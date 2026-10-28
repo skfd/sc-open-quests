@@ -1,0 +1,18 @@
+{"schema":1,"region":"42dff6962b91","places":[
+["42dff6962b91","Plateau-Central",2,-1,-2.083,11.8738,-0.4113,12.9331,"Central-Plateau",null],
+["4433c2996b35","Ganzourgou",3,0,-1.1237,11.8738,-0.4113,12.7055,"Ganzourgou Province",null],
+["b6770d0d8e71","Kourwéogo",3,0,-2.083,12.2948,-1.5968,12.9055,"Kourwéogo Province",null],
+["f91d317a69e8","Boussé",4,2,-1.9388,12.5767,-1.5968,12.8254,"de Boussé Department",null],
+["929e676c13cf","Laye",4,2,-1.8441,12.4798,-1.7154,12.6176,"de Laye Department",null],
+["2b01b175dcf8","Niou",4,2,-1.9773,12.6782,-1.6883,12.9055,"de Niou Department",null],
+["fd5732083ccc","Sourgoubila",4,2,-2.083,12.2948,-1.686,12.4952,"de Sourgoubila Department",null],
+["48635d107af7","Toéghin",4,2,-1.7752,12.6837,-1.6386,12.8795,"de Toéghin Department",null],
+["79bcdddd60e4","Oubritenga",3,0,-1.7242,12.2604,-0.8734,12.9331,"de l'Oubritenga Province",null],
+["32182b981e19","Absouya",4,8,-1.1115,12.4935,-0.8734,12.6924,"d'Absouya Department",null],
+["17b4f0890223","Dapélogo",4,8,-1.7242,12.5453,-1.3427,12.9331,"de Dapélogo Department",null],
+["f67f19a4c1a9","Loumbila",4,8,-1.4857,12.4655,-1.3147,12.6023,"de Loumbila Department",null],
+["01fc410cada1","Nagréongo",4,8,-1.2796,12.2604,-1.0802,12.5496,"de Nagréongo Department",null],
+["98470906a133","Ourgou-Manèga",4,8,-1.5821,12.6563,-1.3414,12.9158,"d'Ourgou-Manèga Department",null],
+["a6973d157370","Ziniaré",4,8,-1.3859,12.491,-1.0671,12.6777,"de Ziniaré Department",null],
+["a358ad1da749","Zitenga",4,8,-1.3952,12.6561,-1.1208,12.8397,"de Zitenga Department",null]
+]}

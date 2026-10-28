@@ -1,0 +1,15 @@
+{"schema":1,"region":"d04430df0241","places":[
+["d04430df0241","Cabañas",2,-1,-88.9881,13.7422,-88.4917,14.0245,"Cabañas Department",null],
+["c04f78080200","Cinquera",3,0,-88.9944,13.8592,-88.9423,13.9369,null,null],
+["047f8460b8f1","Ciudad Ilobasco",3,0,-88.931,13.7777,-88.7341,13.9364,null,null],
+["acc3fc681cb0","Dolores",3,0,-88.6528,13.7478,-88.4917,13.9006,null,null],
+["2c70dd316a2a","Guacoteci",3,0,-88.6924,13.8463,-88.635,13.911,null,null],
+["85cc27260b95","Guacotecti",5,4,-88.6528,13.8684,-88.6378,13.882,null,null],
+["a571562e4332","Jutiapa",3,0,-88.953,13.8851,-88.7964,13.9677,null,null],
+["ff4c2587e788","San Isidro",3,0,-88.7594,13.7937,-88.6528,13.8881,null,null],
+["5f39afc868fb","Sensuntepeque",3,0,-88.812,13.8075,-88.4977,14.0065,null,null],
+["f26db684be3f","Sensuntepeque",5,8,-88.6392,13.8648,-88.6189,13.8906,null,null],
+["4ca234f8ecd5","Parque Central de Sensuntepeque",9,9,-88.6272,13.8758,-88.6266,13.8764,null,null],
+["3c81f27d9e39","Teujutepeque",3,0,-88.9521,13.8228,-88.8731,13.915,null,null],
+["35f1e84ff0f5","Victoria",3,0,-88.7273,13.9177,-88.5708,14.0245,null,null]
+]}

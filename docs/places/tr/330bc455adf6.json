@@ -1,0 +1,22 @@
+{"schema":1,"region":"330bc455adf6","places":[
+["330bc455adf6","Bayburt",2,-1,39.6471,39.9272,40.7078,40.5684,null,null],
+["6bbe6addff8a","Aydıntepe",3,0,39.9359,40.3383,40.2766,40.5684,null,null],
+["728ab371ffad","Bayburt Merkez",3,0,39.802,39.9945,40.7078,40.5556,"Bayburt",null],
+["e70027f3a062","Camiikebir Mahallesi",8,2,40.2243,40.2603,40.2275,40.2622,null,null],
+["ee0ccf8e2602","Erenli Köyü",8,2,40.2327,40.2356,40.3079,40.2787,null,null],
+["b87bbf8d1f5e","Esentepe Mahallesi",8,2,40.2085,40.246,40.2255,40.2573,null,null],
+["5322ebe8741c","Gençosman Mahallesi",8,2,40.2003,40.2186,40.254,40.2544,null,null],
+["d6bb6763ef03","Halfikale Mahallesi",8,2,40.2264,40.2606,40.2921,40.3113,null,null],
+["e4e97952c4a8","Kadızade Mahallesi",8,2,40.226,40.2604,40.2297,40.2633,null,null],
+["07f9aa28d6bf","Karasakal Mahallesi",8,2,40.2278,40.2591,40.2325,40.2617,null,null],
+["4b71b7681ed9","Mehmet Çelebi Mahallesi",8,2,40.2244,40.2617,40.2286,40.2668,null,null],
+["0d7818d8c5c4","Tuzcuzade Mahallesi",8,2,40.1595,40.2226,40.2266,40.2636,null,null],
+["7de8d1c93a0a","Uzungazi Mahallesi",8,2,40.2196,40.2591,40.2251,40.2637,null,null],
+["4656bbb8be4f","Velişaban Mahallesi",8,2,40.2272,40.2584,40.2294,40.2604,null,null],
+["add5f29e3336","Veysel Mahallesi",8,2,40.2289,40.2569,40.2383,40.2625,null,null],
+["fd4ca69d1db8","Zahit Mahallesi",8,2,40.2259,40.2268,40.2576,40.2597,null,null],
+["0f4a2c73ff08","Şeyhhayran Mahallesi",8,2,40.222,40.2575,40.2278,40.2608,null,null],
+["4c504de8428c","Şingah Mahallesi",8,2,40.1719,40.258,40.2339,40.3104,null,null],
+["b692989ebf09","Demirözü",3,0,39.6471,39.9272,40.0234,40.2303,null,null],
+["872bec351819","Yelpınar",8,18,39.9673,40.1724,40.0234,40.2136,null,null]
+]}

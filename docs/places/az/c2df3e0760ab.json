@@ -1,0 +1,16 @@
+{"schema":1,"region":"c2df3e0760ab","places":[
+["c2df3e0760ab","Gəncə İnzibati Ərazisi",2,-1,46.2514,40.6023,46.5089,40.7556,"Ganja City",null],
+["212f007255cd","Gəncə",5,0,46.2532,40.6048,46.4419,40.7515,"Ganja",null],
+["d87975ded72a","Kəpəz rayonu",5,0,46.2514,40.6049,46.4119,40.7556,"Kapaz Raion",null],
+["ec08ba56502b","Quşqara",5,2,46.2866,40.7056,46.3109,40.7249,null,null],
+["ccfd446aa444","2-ci mikrorayon",8,2,46.3189,40.6686,46.3263,40.6752,"2nd microdistrict",null],
+["ff76abd4d6f9","Yeni Gəncə",8,2,46.3254,40.6737,46.3345,40.6869,null,null],
+["eb69476146e4","Nizami rayonu",5,0,46.3178,40.6023,46.5089,40.7163,"Nizami Raion",null],
+["c8d674112d4c","Bəstə qəsəbəsi",5,6,46.4462,40.662,46.4599,40.6738,null,null],
+["3ac6123d4821","1-ci mikrorayon",8,6,46.3713,40.6863,46.378,40.6901,"1st microdistrict",null],
+["381f8ccaaca7","3-cü mikrorayon",8,6,46.3746,40.694,46.385,40.7021,"3rd microdistrict",null],
+["1c1127ec33ce","4-cü mikrorayon",8,6,46.3785,40.6914,46.3876,40.6975,"4th microdistrict",null],
+["5c17b333c7ba","5-ci mikrorayon",8,6,46.374,40.7027,46.3822,40.7112,"5th microdistrict",null],
+["813f32d406e3","Gülüstan",8,6,46.3403,40.6377,46.3513,40.6483,null,null],
+["b85c3e93fee9","Mahrasa Bağı",8,6,46.3385,40.6717,46.3475,40.6791,null,null]
+]}

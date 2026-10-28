@@ -1,0 +1,17 @@
+{"schema":1,"region":"0a3b4c3759ce","places":[
+["0a3b4c3759ce","Kidal",2,-1,-2.056,17.7267,4.2671,21.8853,null,null],
+["b361bae1042a","Cercle d'Abeïbara",3,0,1.3719,18.9773,3.2666,20.6698,"Abeïbara Cercle",null],
+["5f6dee1e4a44","Boghassa",5,1,2.2547,20.0154,2.2614,20.0198,null,null],
+["6f86404142ac","Talhandak",5,1,1.783,20.2516,1.807,20.2798,null,null],
+["579a16408b09","Tin Ezeman",5,1,1.8669,19.5582,1.8686,19.5596,null,null],
+["31bef8c699e5","Tin Zaouatine",5,1,2.9586,19.9391,2.9791,19.9515,"Tinzaouaten",null],
+["699f5aa936f7","Cercle de Kidal",3,0,0.4717,17.7267,1.98,19.3909,"Kidal Cercle",null],
+["df47e6433071","Anéfif",5,6,0.5975,18.0413,0.6158,18.052,null,null],
+["70973fcdb3c1","Inbogitane",5,6,0.6382,18.0769,0.6453,18.0838,null,null],
+["b08faa2e8729","Cercle de Tessalit",3,0,-2.056,18.149,1.4042,21.8853,"Tessalit Cercle",null],
+["19bd0d29a69c","Anoumalane",5,9,0.6541,19.0424,0.6562,19.0467,null,null],
+["2291e0cd0d86","ariadateme",5,9,0.3771,20.2545,0.3786,20.2562,null,null],
+["258bacb2db4a","tao tock idnane",5,9,0.0157,20.582,0.0205,20.5913,null,null],
+["e266cf3cff8e","Cercle de Tin-Essako",3,0,1.7704,18.0065,4.2671,19.1574,"Tin-Essako Cercle",null],
+["14e96e225287","Abiyou",5,13,2.1993,18.1942,2.2025,18.1958,null,null]
+]}

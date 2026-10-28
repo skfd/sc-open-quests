@@ -1,0 +1,20 @@
+{"schema":1,"region":"d81abf67031c","places":[
+["d81abf67031c","North Western Province",2,-1,-13.3021,8.2598,-11.8731,9.9402,"North West Province, Sierra Leone",null],
+["b62e0ec05152","Kambia District",3,0,-13.3021,8.8355,-12.3667,9.6075,null,null],
+["75e59a3dfcd9","Basia",5,1,-12.711,9.1776,-12.7097,9.178,null,null],
+["59b07aa93817","Ka-bailor",5,1,-12.6624,9.239,-12.6603,9.2414,null,null],
+["a2550bd8b08b","Kagboria-Kamafera",5,1,-12.6661,9.241,-12.662,9.2453,null,null],
+["17408dc01f34","Koboto",5,1,-12.6405,9.4053,-12.6368,9.4089,null,null],
+["c929b8346440","Soriemankaia",5,1,-12.6036,9.4377,-12.5999,9.4408,null,null],
+["a7a31a0e2db7","Moribaia section",8,1,-13.2562,8.9286,-13.1237,9.0906,null,null],
+["1a8b1454c3d4","Karene District",3,0,-12.7394,8.8895,-11.8731,9.9402,null,null],
+["c65e1e5edf09","Sanda Magbolonto Chiefdom",4,8,-12.7394,8.9991,-12.3985,9.2743,null,null],
+["9c2c663dce5d","Tambakha Chiefdom",4,8,-12.5882,9.4715,-11.8731,9.9402,null,null],
+["cff952a6f46d","Port Loko District",3,0,-13.2486,8.2598,-12.2847,9.0323,null,null],
+["5ff29d77674b","Buya Romende Chiefdom",4,11,-12.577,8.7027,-12.3187,8.9363,null,null],
+["09dedab7a5d5","Koya Chiefdom",4,11,-13.1378,8.2598,-12.6016,8.6005,null,null],
+["4b8dda1a4b95","Maforki Chiefdom",4,11,-12.9669,8.5517,-12.549,8.897,null,null],
+["97e6d2285be4","Marampa Chiefdom",4,11,-12.7753,8.5889,-12.3138,8.7623,null,null],
+["26436727b560","Kamba",5,15,-12.6728,8.6851,-12.6718,8.6861,null,null],
+["951d1550cacb","Masimera Chiefdom",4,11,-12.7154,8.433,-12.2847,8.6747,null,null]
+]}

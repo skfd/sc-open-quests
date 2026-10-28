@@ -1,0 +1,17 @@
+{"schema":1,"region":"a34329e2a55c","places":[
+["a34329e2a55c","จังหวัดนครปฐม",2,-1,99.8167,13.6486,100.3376,14.1791,"Nakhon Pathom Province",null],
+["d4ff7a48d7cb","Bang Len",3,0,100.0515,13.8903,100.2982,14.1793,null,null],
+["192997b73d37","Don Tum",3,0,100.0117,13.871,100.1763,14.0517,null,null],
+["c24110d11601","Kamphaeng Saen",3,0,99.8141,13.8846,100.0684,14.1536,null,null],
+["3b9f33307964","Mueang Nakhon Pathom",3,0,99.9009,13.6916,100.1319,13.9454,null,null],
+["d7a474cd47e9","ตำบลดอนยายหอม",5,4,100.0359,13.6762,100.1074,13.7702,"Donyaihom subdistrict municipality",null],
+["3547303731dd","องค์การบริหารตำบลดอนยายหอม",5,5,100.0359,13.6762,100.1074,13.7702,"Don Yai Hom Subdistrict Administrative Organisation",null],
+["1ceee9065831","เทศบาลตำบลดอนยายหอม",5,5,100.0665,13.7146,100.0877,13.7482,"Don Yai Hom Subdistrict Municipality",null],
+["ac2a08528b0d","เทศบาลนครนครปฐม",5,4,100.0283,13.8006,100.101,13.8329,"Nakhon Pathom City Municipality",null],
+["fb2d32b2e83c","Nakhon Chai Si",3,0,100.0984,13.7048,100.2674,13.9227,null,null],
+["6daa2d4e43c9","Phutthamonthon",3,0,100.2361,13.763,100.3339,13.9048,null,null],
+["6d4c4630b715","เทศบาลตำบลศาลายา",5,10,100.2973,13.7632,100.3336,13.8083,"Sala Ya Township Municipality",null],
+["f4ceb0ae6efd","Sam Phran",3,0,100.0603,13.6493,100.3375,13.8034,null,null],
+["9c8ec755a1bd","ตำบลตลาดจินดา",5,12,100.0628,13.6486,100.121,13.7048,null,null],
+["379f911ddbf0","องค์การบริหารส่วนตำบลตลาดจินดา",5,12,100.0628,13.6486,100.121,13.7048,"Talat Chinda Subdistrict Administrative Organization",null]
+]}

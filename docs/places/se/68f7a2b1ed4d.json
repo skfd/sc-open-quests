@@ -1,0 +1,15 @@
+{"schema":1,"region":"68f7a2b1ed4d","places":[
+["68f7a2b1ed4d","Gotlands län",2,-1,17.9564,56.9056,19.3499,58.3994,"Gotland County",null],
+["feb4051c3fc5","Gotlands kommun",3,0,17.9564,56.9056,19.3499,58.3994,null,null],
+["25a8e5d7ce59","Bollhage",5,1,18.4156,57.6713,18.4184,57.673,null,null],
+["fd14fcefde66","Enebo",5,1,18.2942,57.0255,18.2986,57.027,null,null],
+["243ad080e355","Gällungs",5,1,18.41,57.6735,18.4154,57.6757,null,null],
+["82bdf80ad1b7","Ojkare",5,1,18.4378,57.6655,18.4393,57.6668,null,null],
+["468d424c74f0","Stora Hästnäs",5,1,18.3602,57.6563,18.3688,57.6613,null,null],
+["0514a55cbb5a","Seg E",8,1,18.2154,57.3868,18.2246,57.3925,null,null],
+["abe1ae980891","Donners plats",9,1,18.2908,57.6387,18.2917,57.6392,null,null],
+["63e719edd917","Kinbergs plats",9,1,18.2918,57.6369,18.2927,57.6373,null,null],
+["9c052f7d66ed","Sankt Hansplan",9,1,18.2924,57.6384,18.2932,57.6387,null,null],
+["5dd913bb5846","Stora torget",9,1,18.2954,57.6403,18.2966,57.6409,null,null],
+["a97ab6d47dbb","Stora Torget",9,1,18.2954,57.6403,18.2966,57.6409,null,null]
+]}

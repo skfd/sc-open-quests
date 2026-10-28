@@ -1,0 +1,10 @@
+{"schema":1,"region":"093003535d19","places":[
+["093003535d19","Central Province",2,-1,80.4219,6.7512,81.0165,8.0123,null,null],
+["bae5a496a432","Kandy District",3,0,80.4219,6.9388,81.0165,7.4899,null,null],
+["562edc802d80","Matale District",3,0,80.4965,7.384,80.9947,8.0123,null,null],
+["ce84eb7edfa8","Nuwara Eliya District",3,0,80.4321,6.7512,80.9652,7.2739,null,null],
+["7e401e1a02da","middle division, watagoda",5,3,80.6404,6.9734,80.6442,6.9785,null,null],
+["2e4c63245907","North division, Meddecombra",5,3,80.6485,6.9917,80.6505,6.993,null,null],
+["71e011c228f2","upper division, north meddecombra",5,3,80.6466,6.9714,80.6514,6.9752,null,null],
+["bd2b6f0930d2","welampe",5,3,80.7848,7.1303,80.7878,7.1337,null,null]
+]}

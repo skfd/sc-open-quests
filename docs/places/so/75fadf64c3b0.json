@@ -1,0 +1,20 @@
+{"schema":1,"region":"75fadf64c3b0","places":[
+["75fadf64c3b0","Banaadir بنادر",2,-1,45.23,1.9714,45.4362,2.1008,"Banaadir",null],
+["d2f5bb123e1f","Boondheere بوندير",3,0,45.3358,2.0373,45.3459,2.0523,"Bondhere District",null],
+["fc1664ed9062","Cabdlcasiis عبد العزيز",3,0,45.3494,2.0306,45.3641,2.0454,"Abdiaziz District",null],
+["029ed91692e5","Daynile",3,0,45.2507,2.045,45.3016,2.1008,"Daynile District",null],
+["b6f9d6aeaf3e","Dharkenley دهاركنلي",3,0,45.23,1.9741,45.2835,2.045,"Dharkenley District",null],
+["f572a900da1b","Hamar Jabjab",3,0,45.321,2.0213,45.3417,2.0367,"Hamar Jabjab District",null],
+["19227a80a963","Taalada Dhagaxtuur تمثال ذغختور",9,5,45.3317,2.0357,45.3324,2.0362,null,null],
+["f46dd9787080","Hamar Weyne حي حمروين",3,0,45.3341,2.027,45.3437,2.0391,"Hamar Weyne District",null],
+["418ffc2db31a","Hawl Wadaag حول وداك",3,0,45.311,2.0329,45.3294,2.0641,"Hawle Wadag District",null],
+["260fa19be0f1","Heliwa حليلوا",3,0,45.3539,2.0593,45.433,2.1,"Huriwa District",null],
+["72d6f133abef","Hodan حودان",3,0,45.2827,2.0316,45.3192,2.0595,"Hodan District",null],
+["767aa7e2afd4","Karaan كاران",3,0,45.3526,2.0403,45.4336,2.0936,"Karan District",null],
+["99b3a6c20173","Shangaani شانكاني",3,0,45.3422,2.0319,45.3521,2.0408,"Shangani District",null],
+["0f6ff1eedb57","Shibis شيبيس",3,0,45.3442,2.0393,45.3615,2.0541,"Shibis District",null],
+["ba6d07c46f2a","Waaberi وابيري",3,0,45.2799,2.0006,45.3308,2.0367,"Waberi District",null],
+["ef36ec1ba08b","Wadajir وداجير مدينة",3,0,45.2564,1.9865,45.3107,2.0445,"Wadajir District",null],
+["e053ff9bfad0","Wardhiigleey وارديكليت",3,0,45.3201,2.0362,45.3396,2.0726,"Wardhigley District",null],
+["e750d33437a7","Yaaqshiid ياقشيد",3,0,45.3365,2.0515,45.364,2.0866,"Yaqshid District",null]
+]}
