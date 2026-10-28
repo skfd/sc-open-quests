@@ -214,7 +214,7 @@ the picked quest's file only. Written by `run.py history` like the history files
 Rerunning on the same extract rewrites the same snapshot file byte for byte, apart from `runSeconds` and
 `engineCommit`.
 
-## Places and parts (contract, 2026-10-24; being built)
+## Places and parts (contract, 2026-10-24; built, merged 2026-10-28)
 
 The name layer and the neighbourhood counts (DESIGN.md, "Places: naming the world, counting on
 request"). Agreed before the work was split, so the builders, the engine and the site meet here.

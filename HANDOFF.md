@@ -141,8 +141,7 @@ names come from Overture Maps `divisions` (ODbL, one world hierarchy, OSM relati
 stay on OSM geometry; neighbourhoods are sub-places counted by position inside their city's run;
 regions and countries are roll-ups labelled "N of M counted". The owner's answers and the Overture spike's result are in the same section: 113 of
 our 115 cities found by relation, 1.08M named places with a polygon worldwide, about 175 MB as a name layer.
-Next: the name layer's shards and the request form, once the measuring session's publish format has
-landed.
+Built the same night on three agent branches, merged only on 2026-10-28 (below).
 
 Merged and checked the same night: the publish format (docs/ 333 MB to 20 MB; 1,497 files moved into
 `data/archive/`, which is not backed up), the engine (515 country files, no city cap, Ontario recount
@@ -169,6 +168,26 @@ osm-extracts has `fetch planet-history`; until then the weekly run logs the fail
 **2026-10-28:** osm-extracts has `fetch planet-history` now (bd9dfb9), and the store holds
 `planet/history-261005.osm.pbf` (163 GB). Not registered yet: C: has about 101 GB free and an update
 writes a second file of that size beside the first, so the owner's disk comes first.
+
+**Places merged (2026-10-28).** The breakdown session built the name layer, the parts and the site's
+place pages on 2026-10-24 on three agent branches and never merged them; nothing in this file said so.
+Merged into main as they were, then:
+- the name layer rebuilt (`tools/places.py build`, same Overture pull) so the 4,217 counted parts carry
+  their `"<city>/<placeId>"` mark; no other field moved. `docs/places/`: 4,202 files, 93 MB raw, 33 MB
+  gzip, LF pinned in `.gitattributes`. DESIGN.md asked for "well under 100 MB": it is under, not well.
+- two site bugs from building against a fixture: the real index has `"cc": "CA"` where the fixture had
+  `"ca"`, so a typed `?in=ca/...` link found nothing; and a stray "null" under a short children list.
+- checked: 91 pytest, every engine test (PartsTest, SnapshotReproductionTest, ManyCitiesTest); Bremen
+  recounted with `--parts`: snapshot, quests.json and grid identical outside `parts`; `run.py history`
+  adds `docs/data/parts/` (81 files) and changes nothing else; in the browser, Canada (3,526 of 12,208
+  counted), Germany (806 of 40,520), Toronto's parts, a part page, and Blind River's request link.
+- **What the 13:15 run changes:** every newly counted snapshot gets `cities.<id>.parts`. Bremen's
+  snapshot goes from 45 KB to 307 KB; across 4,217 parts roughly 7 MB more raw JSON a day in the
+  published newest snapshots (git delta-compresses them, so watch `.git` rather than guess).
+  Until then a part page says its numbers arrive with the city's next count.
+- Left: five cities have a part named as the city (Bremen r2088648 holds 3,242 of the city's 3,251
+  AddHousenumber; Halifax, Gatineau, Fredericton, Saint John): near-duplicates, worth dropping in
+  `add_parts.py` when a part covers nearly all its city. The issue form goes live with the push.
 
 **Runs since the publish format (checked 2026-10-28):** 10-26 and 10-28 counted, committed and pushed;
 the site serves all 115 cities at 2026-10-27, `data/archive/` holds 1,521 files. The backup's
