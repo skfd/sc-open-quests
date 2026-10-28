@@ -759,7 +759,7 @@ const refName = (ref) => ref.kind === "country" ? ref.country.name : ref.kind ==
 const refId = (ref) => ref.kind === "country" ? ref.country.id : ref.kind === "region" ? ref.region.id : ref.shard.rows[ref.i][R.id];
 const refEn = (ref) => ref.kind === "row" ? ref.shard.rows[ref.i][R.en] : null;
 const refSt = (ref) => ref.kind === "country" ? 0 : ref.kind === "region" ? 2 : ref.shard.rows[ref.i][R.st];
-const refIn = (ref) => ref.kind === "row" ? `${ref.country.cc}/${ref.region.id}` : "";
+const refIn = (ref) => ref.kind === "row" ? `${ref.country.cc.toLowerCase()}/${ref.region.id}` : "";
 function refCounted(ref) {
   if (ref.kind === "row") return ref.shard.rows[ref.i][R.counted];
   if (ref.kind === "region" && ref.shard && ref.shard.self >= 0) return ref.shard.rows[ref.shard.self][R.counted];
@@ -800,8 +800,8 @@ async function resolvePlace(id, hint) {
     const region = country.regions.find((r) => r.id === id && r.id !== "_");
     if (region) return { kind: "region", country, region, shard: await loadShard(country, region) };
   }
-  const [cc, rid] = (hint || "").split("/");
-  const country = idx.countries.find((c) => c.cc === cc);
+  const [cc, rid] = (hint || "").toLowerCase().split("/");   // the index has "CA", links and files "ca"
+  const country = idx.countries.find((c) => c.cc.toLowerCase() === cc);
   const region = country && country.regions.find((r) => r.id === rid);
   if (!region) return null;
   const shard = await loadShard(country, region);
@@ -1071,7 +1071,8 @@ function childrenCard(ref, items) {
     const more = list.length > SHOW_CHILDREN
       ? el("button", { type: "button", class: "btn", onclick: (e) => { fill(list.length); e.target.remove(); } }, `Show all ${nf.format(list.length)}`)
       : null;
-    body.append(el("h3", {}, `${SUBTYPE[st] || "other"} (${nf.format(list.length)})`), ul, more);
+    body.append(el("h3", {}, `${SUBTYPE[st] || "other"} (${nf.format(list.length)})`), ul);
+    if (more) body.append(more);   // append(null) would write "null"
   }
   return el("article", { class: "card children" }, el("h2", {}, `Inside ${refName(ref)}`),
     el("p", { class: "sub" }, "The number beside a place is how many places it holds."), body);
