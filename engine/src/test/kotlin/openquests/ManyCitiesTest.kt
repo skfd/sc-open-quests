@@ -129,7 +129,7 @@ class ManyCitiesTest {
     private fun relationId(r: Int, c: Int) = 1000L + r * 100 + c
 
     /** rows x cols adjacent squares of [step] degrees from (lat0, lon0), boundaries written next to [file] */
-    private fun syntheticCities(file: File, rows: Int, cols: Int): File {
+    internal fun syntheticCities(file: File, rows: Int, cols: Int): File {
         val b = File(file.parentFile, "b").also { it.mkdirs() }
         val cells = (0 until rows).flatMap { r -> (0 until cols).map { c -> r to c } }
         for ((r, c) in cells) {
@@ -148,7 +148,7 @@ class ManyCitiesTest {
      * at a shared node, and a bench; every other column a road that runs on into the next city, so
      * that a way lies in two cities' areas. Every city's area overlaps its neighbours' (1 km padding).
      */
-    private fun writeSyntheticPbf(file: File, rows: Int, cols: Int) {
+    internal fun writeSyntheticPbf(file: File, rows: Int, cols: Int) {
         class N(val id: Long, val lat: Double, val lon: Double, val tags: Map<String, String> = emptyMap())
         class W(val id: Long, val refs: List<Long>, val tags: Map<String, String>)
         val nodes = ArrayList<N>(); val ways = ArrayList<W>()

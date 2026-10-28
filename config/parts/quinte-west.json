@@ -1,0 +1,7 @@
+{"schema": 1, "city": "quinte-west", "overture": "2026-10-21.0", "parts": [
+  {"id": "8d493bf46365", "gers": "8d493bf4-6365-4f02-a333-0cc1ea75e60d", "name": "Country Club Village", "en": null, "subtype": "neighborhood", "osm": "r15882048", "geometry": "data/boundaries/parts/quinte-west/r15882048.geojson"},
+  {"id": "17db301accf3", "gers": "17db301a-ccf3-44f3-a19b-435aa6f916e6", "name": "Frankford", "en": null, "subtype": "neighborhood", "osm": "r19455611", "geometry": "data/boundaries/parts/quinte-west/r19455611.geojson"},
+  {"id": "22a0d7ed5fcc", "gers": "22a0d7ed-5fcc-4dc0-8c60-c97700c1ad87", "name": "Murray", "en": null, "subtype": "neighborhood", "osm": "r19455613", "geometry": "data/boundaries/parts/quinte-west/r19455613.geojson"},
+  {"id": "b731c0a7f567", "gers": "b731c0a7-f567-49a5-9025-c9fa96cc30ed", "name": "Sidney", "en": null, "subtype": "neighborhood", "osm": "r19455612", "geometry": "data/boundaries/parts/quinte-west/r19455612.geojson"},
+  {"id": "5700c0f1bb9e", "gers": "5700c0f1-bb9e-499d-ac19-702a368c4887", "name": "Trenton", "en": null, "subtype": "macrohood", "osm": "r19455614", "geometry": "data/boundaries/parts/quinte-west/r19455614.geojson"}
+]}

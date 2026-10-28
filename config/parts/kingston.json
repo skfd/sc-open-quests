@@ -1,0 +1,9 @@
+{"schema": 1, "city": "kingston", "overture": "2026-10-21.0", "parts": [
+  {"id": "692e1ea3e8d4", "gers": "692e1ea3-e8d4-4b7c-8a84-e71595d9f896", "name": "Barriefield", "en": null, "subtype": "neighborhood", "osm": "w308933866", "geometry": "data/boundaries/parts/kingston/w308933866.geojson"},
+  {"id": "0fa49f0e1d27", "gers": "0fa49f0e-1d27-4b6d-bd99-c873197b853b", "name": "Greenwood Park West", "en": null, "subtype": "neighborhood", "osm": "w30637259", "geometry": "data/boundaries/parts/kingston/w30637259.geojson"},
+  {"id": "552385954c61", "gers": "55238595-4c61-464d-a58e-8372516e2395", "name": "Medical Quadrangle", "en": null, "subtype": "microhood", "osm": "w1168833293", "geometry": "data/boundaries/parts/kingston/w1168833293.geojson"},
+  {"id": "17b0a690e2dc", "gers": "17b0a690-e2dc-42a9-a96c-f0f14209f256", "name": "Parade Square", "en": null, "subtype": "microhood", "osm": "w26700815", "geometry": "data/boundaries/parts/kingston/w26700815.geojson"},
+  {"id": "0719fde06f23", "gers": "0719fde0-6f23-411a-9058-f1fd2d4872a4", "name": "Purdy's Mill", "en": null, "subtype": "neighborhood", "osm": "r19247186", "geometry": "data/boundaries/parts/kingston/r19247186.geojson"},
+  {"id": "534916345e14", "gers": "53491634-5e14-480a-8401-8959af2aa004", "name": "River Park", "en": null, "subtype": "neighborhood", "osm": "w308960397", "geometry": "data/boundaries/parts/kingston/w308960397.geojson"},
+  {"id": "1a31dde860a5", "gers": "1a31dde8-60a5-48b5-aabe-e147b919a82e", "name": "West Village", "en": null, "subtype": "neighborhood", "osm": "w689767209", "geometry": "data/boundaries/parts/kingston/w689767209.geojson"}
+]}

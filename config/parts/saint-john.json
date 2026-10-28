@@ -1,0 +1,9 @@
+{"schema": 1, "city": "saint-john", "overture": "2026-10-21.0", "parts": [
+  {"id": "4aad9523433e", "gers": "4aad9523-433e-4ff3-86b8-1433f1ef1c96", "name": "Belmont", "en": null, "subtype": "neighborhood", "osm": "w983253028", "geometry": "data/boundaries/parts/saint-john/w983253028.geojson"},
+  {"id": "733939e8ba08", "gers": "733939e8-ba08-4e17-aab8-1491c5f2dcac", "name": "Manawagonish Island", "en": null, "subtype": "neighborhood", "osm": "r9699160", "geometry": "data/boundaries/parts/saint-john/r9699160.geojson"},
+  {"id": "c74c4fd11331", "gers": "c74c4fd1-1331-4fac-98ae-17fe75980191", "name": "Martinon", "en": null, "subtype": "neighborhood", "osm": "r1835368", "geometry": "data/boundaries/parts/saint-john/r1835368.geojson"},
+  {"id": "dce6dcbd0eec", "gers": "dce6dcbd-0eec-4a1a-a0af-ee0fbd0379af", "name": "Midwood", "en": null, "subtype": "neighborhood", "osm": "w1027498518", "geometry": "data/boundaries/parts/saint-john/w1027498518.geojson"},
+  {"id": "1d8281eebc67", "gers": "1d8281ee-bc67-45f1-851b-faafb55c718a", "name": "Saint John", "en": null, "subtype": "neighborhood", "osm": "r19758481", "geometry": "data/boundaries/parts/saint-john/r19758481.geojson"},
+  {"id": "5e0afb0c72e6", "gers": "5e0afb0c-72e6-4084-a09f-b730cd5a45d2", "name": "Saint Johns Parish", "en": null, "subtype": "locality", "osm": "r19872688", "geometry": "data/boundaries/parts/saint-john/r19872688.geojson"},
+  {"id": "609efbae4926", "gers": "609efbae-4926-43ac-9349-63695928ecef", "name": "Thumb Cap", "en": null, "subtype": "neighborhood", "osm": "r9699165", "geometry": "data/boundaries/parts/saint-john/r9699165.geojson"}
+]}

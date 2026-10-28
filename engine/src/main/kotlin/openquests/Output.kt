@@ -112,7 +112,23 @@ fun snapshotJson(meta: SnapshotMeta, engine: Engine): String {
             sb.append(" }")
             sb.append(if (k < counted.size - 1) ",\n" else "\n")
         }
-        sb.append("      }\n")
+        val parts = engine.partsOfCity[c].map { engine.parts[it] }.sortedBy { it.id }
+        if (parts.isEmpty()) sb.append("      }\n")
+        else {
+            // DATA-FORMAT.md, "Places and parts": open at resurvey x1, quests with 0 left out
+            sb.append("      },\n")
+            sb.append("      \"parts\": {\n")
+            parts.forEachIndexed { k, part ->
+                val open = counted.filter { engine.partOpen[part.index * engine.quests.size + it] > 0 }
+                sb.append("        ${jsonString(part.id)}: {")
+                sb.append(open.joinToString(", ", " ", " ") {
+                    "${jsonString(engine.quests[it].name)}: ${engine.partOpen[part.index * engine.quests.size + it]}"
+                }.takeIf { open.isNotEmpty() } ?: "")
+                sb.append("}")
+                sb.append(if (k < parts.size - 1) ",\n" else "\n")
+            }
+            sb.append("      }\n")
+        }
         sb.append(if (ci < cities.size - 1) "    },\n" else "    }\n")
     }
     sb.append("  }\n")

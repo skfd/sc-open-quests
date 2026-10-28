@@ -1,0 +1,4 @@
+{"schema": 1, "city": "greater-sudbury", "overture": "2026-10-21.0", "parts": [
+  {"id": "8a44fca59e52", "gers": "8a44fca5-9e52-4d1a-9d1c-a7e97aee7fdb", "name": "Copper Cliff", "en": null, "subtype": "neighborhood", "osm": "r3060850", "geometry": "data/boundaries/parts/greater-sudbury/r3060850.geojson"},
+  {"id": "bbd821755ed1", "gers": "bbd82175-5ed1-4f8f-9e28-2b3ddae7df73", "name": "Sudbury", "en": null, "subtype": "neighborhood", "osm": "r3904538", "geometry": "data/boundaries/parts/greater-sudbury/r3904538.geojson"}
+]}

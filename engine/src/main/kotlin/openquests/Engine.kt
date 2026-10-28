@@ -127,9 +127,29 @@ class PassStats {
  * the ids of their member ways; then nodes (kept as an id -> position index); then ways (member ways
  * of tagged relations keep their node positions); then relations.
  */
-class Engine(val registry: Registry, val cities: List<City>) {
+class Engine(val registry: Registry, val cities: List<City>, val parts: List<Part> = emptyList()) {
     val quests: List<QuestDef> = registry.countedQuests
     private val cityIndex = CityIndex(cities)
+
+    /** each city's parts (indices into [parts]) and an index over their polygons (null for a city without) */
+    val partsOfCity: Array<IntArray> = Array(cities.size) { c -> parts.filter { it.city == c }.map { it.index }.toIntArray() }
+    private val partIndex: Array<PolygonIndex?> = Array(cities.size) { c ->
+        partsOfCity[c].takeIf { it.isNotEmpty() }?.let { ps -> PolygonIndex(ps.map { parts[it].polygon }) }
+    }
+    /** per (part, quest): the open quests at resurvey x1 whose position is in the part, as the city counts them */
+    val partOpen = AtomicLongArray(parts.size * quests.size)
+
+    /** the parts of city [c] whose polygon contains [p] (indices into [parts]) */
+    private fun partsAt(c: Int, p: LatLon): IntArray {
+        val index = partIndex[c] ?: return CityIndex.NONE
+        val local = index.at(p.latitude, p.longitude)
+        return if (local.isEmpty()) local else IntArray(local.size) { partsOfCity[c][local[it]] }
+    }
+
+    /** one open quest [qi] counted in a city: count it in [hits], the parts of that city holding its position */
+    private fun countParts(qi: Int, hits: IntArray) {
+        for (part in hits) partOpen.incrementAndGet(part * quests.size + qi)
+    }
     /** enabled[city][quest] */
     val enabled: Array<BooleanArray> = Array(cities.size) { c ->
         BooleanArray(quests.size) { quests[it].countries.isEnabledIn(cities[c].countryCodes) }
@@ -209,6 +229,7 @@ class Engine(val registry: Registry, val cities: List<City>) {
         val type = e.type.ordinal
         counts.add(c, qi, type, mask)
         if (mask and M_NOW == 0) return
+        if (partIndex[c] != null) countParts(qi, partsAt(c, center))
         grid?.add(qi, center)
         val aged = mask and M_AGED != 0
         if (quests[qi].name in dumpQuests) {
@@ -232,6 +253,8 @@ class Engine(val registry: Registry, val cities: List<City>) {
 
     private fun offer(e: Element, type: Int, cityIdx: IntArray, center: LatLon) {
         if (dumpElementsCity >= 0 && dumpElementsCity in cityIdx) elementLines += elementJson(e, type, center)
+        // the parts holding the position, per city of cityIdx; looked up once, when a quest first counts there
+        var partHits: Array<IntArray?>? = null
         for (qi in questsByType[type]) {
             var anyEnabled = false
             for (c in cityIdx) if (enabled[c][qi]) { anyEnabled = true; break }
@@ -244,9 +267,14 @@ class Engine(val registry: Registry, val cities: List<City>) {
             if (notes?.hides(center) == true) { if (mask and M_NOW != 0) stats.hiddenByNotes.incrementAndGet(); continue }
             val aged = mask and M_AGED != 0
             if (mask and M_NOW != 0) grid?.add(qi, center)
-            for (c in cityIdx) {
+            for (k in cityIdx.indices) {
+                val c = cityIdx[k]
                 if (!enabled[c][qi]) continue
                 counts.add(c, qi, type, mask)
+                if (mask and M_NOW != 0 && partIndex[c] != null) {
+                    val hits = (partHits ?: arrayOfNulls<IntArray>(cityIdx.size).also { partHits = it })
+                    countParts(qi, hits[k] ?: partsAt(c, center).also { hits[k] = it })
+                }
                 if (mask and M_NOW != 0 && q.name in dumpQuests) {
                     dumpLines += "${q.name}\t${TYPE_NAMES[type]}\t${e.id}\t${e.version}\t${e.timestampEdited}\t" +
                         "${cities[c].id}\t${center.latitude}\t${center.longitude}\t$aged"
@@ -313,7 +341,10 @@ class Engine(val registry: Registry, val cities: List<City>) {
         for (note in notes.quests) {
             val p = note.position
             val inCities = cityIndex.citiesAt(p.latitude, p.longitude).filter { enabled[it][qi] }
-            for (c in inCities) counts.perQuest.incrementAndGet(counts.slot(c, qi, NOTE))
+            for (c in inCities) {
+                counts.perQuest.incrementAndGet(counts.slot(c, qi, NOTE))
+                if (partIndex[c] != null) countParts(qi, partsAt(c, p))
+            }
             if (inCities.isNotEmpty()) grid?.add(qi, p)
         }
         // the app's other setting, "show all notes": every open note is a quest

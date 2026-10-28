@@ -1,0 +1,14 @@
+{"schema": 1, "city": "mirabel", "overture": "2026-10-21.0", "parts": [
+  {"id": "80fd87a1e1ea", "gers": "80fd87a1-e1ea-4964-b8e2-ecd69a050cfc", "name": "Domaine-Vert Nord", "en": null, "subtype": "microhood", "osm": "r18170041", "geometry": "data/boundaries/parts/mirabel/r18170041.geojson"},
+  {"id": "35e24b975bff", "gers": "35e24b97-5bff-4648-83ed-4166ea1cefbb", "name": "Domaine-Vert Sud", "en": null, "subtype": "microhood", "osm": "r18169978", "geometry": "data/boundaries/parts/mirabel/r18169978.geojson"},
+  {"id": "6973a0ea61ab", "gers": "6973a0ea-61ab-40fe-8d94-d5fb5ae872a7", "name": "Mirabel-en-Haut", "en": null, "subtype": "neighborhood", "osm": "r18193826", "geometry": "data/boundaries/parts/mirabel/r18193826.geojson"},
+  {"id": "72ff49b41626", "gers": "72ff49b4-1626-4e1f-b886-4af637d92d4c", "name": "Petit Saint-Charles", "en": null, "subtype": "microhood", "osm": "r18153329", "geometry": "data/boundaries/parts/mirabel/r18153329.geojson"},
+  {"id": "09c13c60ef26", "gers": "09c13c60-ef26-45cd-b717-dea5d1024953", "name": "Saint-Antoine-des-Laurentides", "en": null, "subtype": "neighborhood", "osm": "r18174209", "geometry": "data/boundaries/parts/mirabel/r18174209.geojson"},
+  {"id": "aa98cfb02f6b", "gers": "aa98cfb0-2f6b-4100-b916-b94c5f59d5e6", "name": "Saint-Augustin", "en": null, "subtype": "macrohood", "osm": "r18166328", "geometry": "data/boundaries/parts/mirabel/r18166328.geojson"},
+  {"id": "f08c96acd7ec", "gers": "f08c96ac-d7ec-4ff7-b0ad-8b875c506495", "name": "Saint-Benoît", "en": null, "subtype": "neighborhood", "osm": "r18166009", "geometry": "data/boundaries/parts/mirabel/r18166009.geojson"},
+  {"id": "350415f11212", "gers": "350415f1-1212-4c6a-a91f-c3fd4fc52ac2", "name": "Saint-Canut", "en": null, "subtype": "macrohood", "osm": "r18194136", "geometry": "data/boundaries/parts/mirabel/r18194136.geojson"},
+  {"id": "37c1a1f88047", "gers": "37c1a1f8-8047-4494-8709-f45513ba0553", "name": "Saint-Hermas", "en": null, "subtype": "neighborhood", "osm": "r18152901", "geometry": "data/boundaries/parts/mirabel/r18152901.geojson"},
+  {"id": "8682378c080d", "gers": "8682378c-080d-431b-9da0-b24d5668e25c", "name": "Saint-Jérusalem", "en": null, "subtype": "neighborhood", "osm": "r18152428", "geometry": "data/boundaries/parts/mirabel/r18152428.geojson"},
+  {"id": "e2650d20bdfb", "gers": "e2650d20-bdfb-4f5d-b843-b9fff417bbaf", "name": "Sainte-Monique", "en": null, "subtype": "neighborhood", "osm": "r18194633", "geometry": "data/boundaries/parts/mirabel/r18194633.geojson"},
+  {"id": "cc1ea830c937", "gers": "cc1ea830-c937-488e-ab38-1678b429110e", "name": "Sainte-Scholastique", "en": null, "subtype": "neighborhood", "osm": "r18194643", "geometry": "data/boundaries/parts/mirabel/r18194643.geojson"}
+]}

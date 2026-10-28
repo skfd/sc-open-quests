@@ -284,6 +284,20 @@ refuses a dump whose newest comment is older than asOf.
 - Snapshots record the dump in `notes`; without `--notes` it is null, nothing is hidden and the note
   quest is `unsupported`.
 
+## Parts (neighbourhoods)
+
+`--parts <dir>` (run.py passes `config/parts` when it exists) reads `<dir>/<cityId>.json`, the parts
+registry `tools/add_parts.py` writes (DATA-FORMAT.md, "Places and parts"), and each part's GeoJSON
+polygon (`Polygon.fromGeoJson`: every ring as loose segments, even-odd, as a city boundary). A part has
+no map data of its own: wherever a quest is counted open at resurvey x1 in a city (main pass, area pass,
+the note quest), after the notes hide test and the city's polygon and country gating, it is also counted
+in each of that city's parts whose polygon holds the quest position. Parts overlap, so a quest can count
+in several; a part never counts more than its city. Each city with parts has a `PolygonIndex` (the
+`BoxGrid` the cities use) over them; the main pass looks the parts up once per element and city, lazily,
+when a quest first counts there. The snapshot gets `cities.<id>.parts`; a city without a registry gets no
+key, and no other byte of the snapshot, quests.json or the grid changes (checked on Ontario and Berlin,
+see the timings below). `PartsTest` checks a synthetic run by hand.
+
 ## Resurvey settings and tile grids
 
 - **The app's three resurvey settings.** `RelativeDate.MULTIPLIER` (SC's ResurveyIntervals: 0.5 "more
@@ -325,6 +339,11 @@ under `-Xmx32g`, so close to the cap); the launcher's default is `-Xmx40g`. Per 
 Ontario 2026-10-23, 53 cities: pass 188 s under `-Xmx40g` (the published run); under `JAVA_OPTS=-Xmx16g`
 (which overrides the launcher's) 261-271 s, and 282 s for the engine before the city grid, so the small
 heap costs about 80 s and the grid and city set ids cost nothing (DESIGN.md, 2026-10-24).
+
+Parts (2026-10-24, the 2026-10-23 extracts, `-Xmx16g` Ontario, `-Xmx8g` Berlin): Ontario with its 790
+parts (Toronto 218) 216 s pass and 21.9 GB peak heap, without 208 s and 20.1 GB (a first, cold run
+without took 371 s); Berlin with 461 parts 55 s / 9.6 GB, without 56 s / 9.4 GB. Both snapshots equal
+the runs without parts and the published ones apart from `parts`, `runSeconds` and `engineCommit`.
 
 Main pass alone (Ontario 2026-07-16, 967 MB):
 

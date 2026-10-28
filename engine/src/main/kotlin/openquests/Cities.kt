@@ -45,17 +45,52 @@ fun loadCities(file: File, baseDir: File): List<City> {
     return cities
 }
 
+/** A neighbourhood of a city (config/parts/<city>.json): counted from the city's quests whose
+ *  position is inside [polygon], nothing of its own. [index] is its place among all parts of the run. */
+class Part(val index: Int, val id: String, val city: Int, val polygon: Polygon)
+
+/** The parts of [cities] from `<dir>/<cityId>.json` where that file exists (DATA-FORMAT.md, "Places
+ *  and parts"); geometry paths are relative to [baseDir]. In city order, each city's in registry order. */
+fun loadParts(dir: File, cities: List<City>, baseDir: File): List<Part> {
+    val parts = ArrayList<Part>()
+    for (city in cities) {
+        val file = File(dir, "${city.id}.json")
+        if (!file.isFile) continue
+        val root = Json.parseToJsonElement(file.readText()).jsonObject
+        require(root.str("city") == city.id) { "${file.path} is the registry of ${root.str("city")}, not ${city.id}" }
+        val seen = HashSet<String>()
+        for (e in root["parts"]!!.jsonArray) {
+            val p = e.jsonObject
+            val id = p.str("id")!!
+            require(seen.add(id)) { "${file.path}: part $id twice" }
+            parts += Part(parts.size, id, city.index, Polygon.fromGeoJson(File(baseDir, p.str("geometry")!!)))
+        }
+    }
+    return parts
+}
+
 /** Finds the cities whose polygon contains a point: bounding boxes first (through a [BoxGrid]), then
  *  the polygons. */
-class CityIndex(val cities: List<City>) {
-    private val minLat = DoubleArray(cities.size) { cities[it].polygon.minLat }
-    private val maxLat = DoubleArray(cities.size) { cities[it].polygon.maxLat }
-    private val minLon = DoubleArray(cities.size) { cities[it].polygon.minLon }
-    private val maxLon = DoubleArray(cities.size) { cities[it].polygon.maxLon }
+class CityIndex(val cities: List<City>) : PolygonIndex(cities.map { it.polygon }) {
+    /** Indices of the cities containing the point, ascending; [NONE] if there are none. */
+    fun citiesAt(lat: Double, lon: Double): IntArray = at(lat, lon)
+
+    companion object {
+        val NONE = IntArray(0)
+    }
+}
+
+/** Finds the polygons that contain a point: bounding boxes first (through a [BoxGrid]), then the
+ *  polygons. */
+open class PolygonIndex(private val polygons: List<Polygon>) {
+    private val minLat = DoubleArray(polygons.size) { polygons[it].minLat }
+    private val maxLat = DoubleArray(polygons.size) { polygons[it].maxLat }
+    private val minLon = DoubleArray(polygons.size) { polygons[it].minLon }
+    private val maxLon = DoubleArray(polygons.size) { polygons[it].maxLon }
     // floor() is monotone, so a point inside a box has its cell inside the box's cells
     private val grid = BoxGrid(
-        IntArray(cities.size) { deg7(minLat[it]) }, IntArray(cities.size) { deg7(minLon[it]) },
-        IntArray(cities.size) { deg7(maxLat[it]) }, IntArray(cities.size) { deg7(maxLon[it]) })
+        IntArray(polygons.size) { deg7(minLat[it]) }, IntArray(polygons.size) { deg7(minLon[it]) },
+        IntArray(polygons.size) { deg7(maxLat[it]) }, IntArray(polygons.size) { deg7(maxLon[it]) })
 
     /** Whether the box could hold a point of some city. A polygon centroid lies in its convex hull
      *  and a polyline midpoint on the line, so an element whose bbox misses every city's bbox
@@ -63,24 +98,20 @@ class CityIndex(val cities: List<City>) {
     fun bboxMayHit(south: Double, west: Double, north: Double, east: Double): Boolean {
         fun hits(i: Int) = north >= minLat[i] && south <= maxLat[i] && east >= minLon[i] && west <= maxLon[i]
         val cells = grid.cellsIn(deg7(south), deg7(west), deg7(north), deg7(east))
-        if (cells == null) { for (i in cities.indices) if (hits(i)) return true; return false }
+        if (cells == null) { for (i in polygons.indices) if (hits(i)) return true; return false }
         for (cell in cells) for (i in grid.candidatesInCell(cell) ?: continue) if (hits(i)) return true
         return false
     }
 
-    /** Indices of the cities containing the point, ascending; [NONE] if there are none. */
-    fun citiesAt(lat: Double, lon: Double): IntArray {
-        val candidates = grid.candidates(deg7(lat), deg7(lon)) ?: return NONE
-        var result = NONE
+    /** Indices of the polygons containing the point, ascending; an empty array if there are none. */
+    fun at(lat: Double, lon: Double): IntArray {
+        val candidates = grid.candidates(deg7(lat), deg7(lon)) ?: return CityIndex.NONE
+        var result = CityIndex.NONE
         for (i in candidates) {
             if (lat < minLat[i] || lat > maxLat[i] || lon < minLon[i] || lon > maxLon[i]) continue
-            if (cities[i].polygon.contains(lat, lon)) result = result + i
+            if (polygons[i].contains(lat, lon)) result = result + i
         }
         return result
-    }
-
-    companion object {
-        val NONE = IntArray(0)
     }
 }
 

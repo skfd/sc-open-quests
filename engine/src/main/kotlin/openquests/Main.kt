@@ -21,7 +21,7 @@ private const val USAGE = """usage: sc-open-quests-engine count --pbf <file.osm.
            --cities <config/cities.json> --out <docs/data> [--source-meta <meta.json>]
            [--today <ISO instant or date>] [--dump-matches <file.tsv> --dump-quests <Name,Name>]
            [--dump-elements <file.jsonl> --dump-city <cityId>] [--area-unit tiles|city]
-           [--notes <clip.jsonl>] [--grid <dir>] [--resurvey-multiplier 0.5|1|2]
+           [--notes <clip.jsonl>] [--grid <dir>] [--resurvey-multiplier 0.5|1|2] [--parts <dir>]
 
 Writes <out>/snapshots/<asOfDate>.json and <out>/quests.json (see DATA-FORMAT.md). Age filters are
 evaluated at the extract's osmosis_replication_timestamp; --today overrides that (tests). A bare date
@@ -34,7 +34,9 @@ the app's smallest download.
 hide the quests at their positions, and the note quest is counted. Without it, neither.
 Age quests are also counted at the app's other resurvey settings (0.5 and 2: open05/aged05, open2/aged2 in
 the snapshot); --resurvey-multiplier sets the default the run counts at instead of 1 (checks only).
---grid writes <dir>/<asOfDate>.json.gz: counted quests per z14 tile, for heatmaps."""
+--grid writes <dir>/<asOfDate>.json.gz: counted quests per z14 tile, for heatmaps.
+--parts: the parts registries (config/parts); a city with <dir>/<cityId>.json gets the open quests of
+each of its parts in the snapshot, counted from the city's own quests by position. Nothing else changes."""
 
 class CountOptions(
     val pbf: File,
@@ -51,6 +53,7 @@ class CountOptions(
     val notes: File? = null,
     val grid: File? = null,
     val resurveyMultiplier: Float = 1f,
+    val parts: File? = null,
     val baseDir: File = File("."),
 )
 
@@ -78,7 +81,7 @@ fun parseArgs(args: List<String>): CountOptions {
         m[k.removePrefix("--")] = args[i + 1]
         i += 2
     }
-    val known = setOf("pbf", "quests", "cities", "out", "source-meta", "today", "dump-matches", "dump-quests", "dump-elements", "dump-city", "area-unit", "notes", "grid", "resurvey-multiplier")
+    val known = setOf("pbf", "quests", "cities", "out", "source-meta", "today", "dump-matches", "dump-quests", "dump-elements", "dump-city", "area-unit", "notes", "grid", "resurvey-multiplier", "parts")
     require(m.keys.all { it in known }) { "unknown option(s) ${m.keys - known}\n$USAGE" }
     fun req(k: String) = File(m[k] ?: throw IllegalArgumentException("--$k is required\n$USAGE"))
     return CountOptions(
@@ -98,6 +101,7 @@ fun parseArgs(args: List<String>): CountOptions {
         resurveyMultiplier = m["resurvey-multiplier"]?.toFloat()?.also {
             require(it in setOf(0.5f, 1f, 2f)) { "--resurvey-multiplier: the app offers 0.5, 1 and 2" }
         } ?: 1f,
+        parts = m["parts"]?.let(::File),
     ).also { require((it.dumpElements == null) == (it.dumpCity == null)) { "--dump-elements and --dump-city go together" } }
 }
 
@@ -126,7 +130,8 @@ fun count(opts: CountOptions): CountResult {
         "the JVM runs in locale $language; start it with -Duser.language=en -Duser.country=CA (feature presets are bundled for ${ScFeatures.LANGUAGE})"
     }
 
-    val engine = Engine(registry, cities)
+    val parts = opts.parts?.let { loadParts(it, cities, opts.baseDir) }.orEmpty()
+    val engine = Engine(registry, cities, parts)
     if (opts.grid != null) engine.grid = TileGrid()
     engine.dumpQuests = opts.dumpQuests
     engine.areaUnit = opts.areaUnit
@@ -135,7 +140,8 @@ fun count(opts: CountOptions): CountResult {
     }
     log("${registry.quests.size} quests in ${opts.quests.path} (${engine.quests.size} counted: " +
         "${registry.filterQuests.size} filter, ${engine.quests.count { it.custom != null || it.area != null }} ported custom" +
-        "${if (opts.notes != null) ", the note quest" else ""}), ${cities.size} cities; " +
+        "${if (opts.notes != null) ", the note quest" else ""}), ${cities.size} cities" +
+        (if (opts.parts != null) " (${parts.size} parts in ${parts.map { it.city }.distinct().size})" else "") + "; " +
         "threads=${Runtime.getRuntime().availableProcessors()} maxHeap=${Runtime.getRuntime().maxMemory() shr 20} MB")
 
     var t0 = System.nanoTime()

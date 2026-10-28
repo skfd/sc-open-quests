@@ -9,7 +9,8 @@ Subcommands:
              Needs a notes dump that reaches the extract.
   backfill   count every dated extract of every region still in the shared store
   history    rebuild docs/data/history/<cityId>.json, cities.json, quests.json and compare/<quest>.json
-             from the archive of all regions, and copy each region's newest snapshot into docs/data
+             from the archive of all regions, and copy each region's newest snapshot into docs/data;
+             docs/data/parts/<cityId>.json from the parts registry (config/parts)
   migrate-archive  move snapshots published before 2026-10-24 (docs/data/<region>/snapshots/) into
              data/archive/; count and history do it too, so it is idempotent and needs no flag
   update     download + backfill + history, then commit "data <asOfDate>" and push; last, check-release
@@ -62,6 +63,7 @@ ARCHIVE_DIR = ROOT / "data" / "archive"  # every snapshot, <region>/snapshots/<a
 NOTES_DIR = ROOT / "data" / "notes"
 GRID_DIR = ROOT / "data" / "grid"  # counted quests per z14 tile, <region>/<asOfDate>.json.gz; not committed
 REGION_CITIES_DIR = ROOT / "data" / "cities"  # the engine's cities file per region; not committed
+PARTS_CONFIG = ROOT / "config" / "parts"  # the parts registry, <cityId>.json (tools/add_parts.py)
 CLIP_NOTES = ROOT / "tools" / "clip_notes.py"
 
 ENGINE_DIR = ROOT / "engine"
@@ -445,6 +447,11 @@ def build_engine() -> None:
                    env=engine_env(), check=True)
 
 
+def parts_args(parts_dir: Path = PARTS_CONFIG) -> list[str]:
+    """The engine's --parts, when there is a parts registry; without one the snapshot has no parts."""
+    return ["--parts", str(parts_dir.relative_to(ROOT))] if parts_dir.is_dir() else []
+
+
 def count(region: dict, force: bool = False, extract: tuple[Path, Path] | None = None) -> Path | None:
     """Run the engine on one extract of a region (default: its newest). Returns the snapshot, or
     None if skipped."""
@@ -489,6 +496,7 @@ def count(region: dict, force: bool = False, extract: tuple[Path, Path] | None =
                "--source-meta", str(meta_path),
                "--notes", str(clip.relative_to(ROOT)),
                "--grid", str((GRID_DIR / region["id"]).relative_to(ROOT))]
+        cmd += parts_args()
         log("running engine: " + " ".join(cmd[1:]))
         subprocess.run(cmd, cwd=ROOT, env=engine_env(region["timeZone"], heap=True), check=True)
         snap = snapshot_for_sha(sha, out)
@@ -710,18 +718,58 @@ def publish_newest(data_dir: Path, archive: Path) -> int:
     return changed
 
 
-def history(data_dir: Path = DATA_DIR, cities_config: Path = CITIES_CONFIG, archive: Path | None = None) -> int:
-    """Rewrite history/*.json, cities.json, quests.json and compare/*.json under data_dir from the
-    snapshots in archive (default: ARCHIVE_DIR for docs/data, else data_dir itself, as the test fixtures
-    have it). With a separate archive, first migrate anything published the old way, then publish each
+def geojson_bbox(path: Path) -> list[float]:
+    """[xmin, ymin, xmax, ymax] of a GeoJSON Feature's Polygon or MultiPolygon, rounded to 4 decimals."""
+    geometry = read_json(path)["geometry"]
+    polygons = [geometry["coordinates"]] if geometry["type"] == "Polygon" else geometry["coordinates"]
+    xs = [p[0] for poly in polygons for ring in poly for p in ring]
+    ys = [p[1] for poly in polygons for ring in poly for p in ring]
+    return [round(min(xs), 4), round(min(ys), 4), round(max(xs), 4), round(max(ys), 4)]
+
+
+def publish_parts(data_dir: Path, cities: list[dict], parts_dir: Path) -> int:
+    """data_dir/parts/<cityId>.json from the registry (DATA-FORMAT.md, "Places and parts"): each part's
+    id, name, en, subtype and bbox, for every city in cities that has a registry; other files there are
+    deleted. Returns the number of files changed."""
+    changed = 0
+    base = parts_dir.parent.parent  # geometry paths are relative to the repository root
+    out_dir = data_dir / "parts"
+    written = set()
+    for city in cities:
+        registry = parts_dir / f"{city['id']}.json"
+        if not registry.exists():
+            continue
+        reg = read_json(registry)
+        parts = [{"id": p["id"], "name": p["name"], "en": p["en"], "subtype": p["subtype"],
+                  "bbox": geojson_bbox(base / p["geometry"])} for p in reg["parts"]]
+        changed += write_json(out_dir / f"{city['id']}.json", {"schema": 1, "city": city["id"], "parts": parts},
+                              compact=True)
+        written.add(city["id"])
+    for stale in out_dir.glob("*.json") if out_dir.is_dir() else []:
+        if stale.stem not in written:
+            stale.unlink()
+            changed += 1
+    return changed
+
+
+def history(data_dir: Path = DATA_DIR, cities_config: Path = CITIES_CONFIG, archive: Path | None = None,
+            parts_dir: Path | None = None) -> int:
+    """Rewrite history/*.json, cities.json, quests.json, compare/*.json and parts/*.json under data_dir
+    from the snapshots in archive (default: ARCHIVE_DIR for docs/data, else data_dir itself, as the test
+    fixtures have it) and the parts registry in parts_dir (default: PARTS_CONFIG for docs/data, else
+    none). With a separate archive, first migrate anything published the old way, then publish each
     region's newest snapshot. Returns the number of files changed."""
-    archive = archive or (ARCHIVE_DIR if data_dir.resolve() == DATA_DIR.resolve() else data_dir)
+    default = data_dir.resolve() == DATA_DIR.resolve()
+    archive = archive or (ARCHIVE_DIR if default else data_dir)
+    parts_dir = parts_dir or (PARTS_CONFIG if default else None)
     separate = archive.resolve() != data_dir.resolve()
     changed = migrate_archive(data_dir, archive) if separate else 0
+    if parts_dir is not None:
+        changed += publish_parts(data_dir, read_json(cities_config)["cities"], parts_dir)
     snapshots = load_snapshots(archive)
     if not snapshots:
         log(f"no snapshots in {archive}/*/snapshots; nothing to do")
-        return 0
+        return changed
     published = data_dir / "cities.json"
     if published.exists():
         lost = set(read_json(published).get("dates") or []) - {s["asOfDate"] for s in snapshots}

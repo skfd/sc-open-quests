@@ -1,0 +1,6 @@
+{"schema": 1, "city": "langley", "overture": "2026-10-21.0", "parts": [
+  {"id": "10484e559286", "gers": "10484e55-9286-48ca-b57c-52ba2b2ca078", "name": "Aldergrove", "en": null, "subtype": "macrohood", "osm": "r11696269", "geometry": "data/boundaries/parts/langley/r11696269.geojson"},
+  {"id": "0d27a19c7489", "gers": "0d27a19c-7489-4178-8a0c-54c1bf0983b8", "name": "Brookswood-Fernridge", "en": null, "subtype": "neighborhood", "osm": "r11693805", "geometry": "data/boundaries/parts/langley/r11693805.geojson"},
+  {"id": "481a370ca41c", "gers": "481a370c-a41c-4d80-bdff-21dc75263dca", "name": "Fort Langley", "en": null, "subtype": "macrohood", "osm": "r11696288", "geometry": "data/boundaries/parts/langley/r11696288.geojson"},
+  {"id": "1f2f1c0d72d8", "gers": "1f2f1c0d-72d8-4b8e-9dc2-7f67257ff4a1", "name": "Murrayville", "en": null, "subtype": "macrohood", "osm": "r11696253", "geometry": "data/boundaries/parts/langley/r11696253.geojson"}
+]}

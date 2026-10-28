@@ -1,0 +1,13 @@
+{"schema": 1, "city": "delta", "overture": "2026-10-21.0", "parts": [
+  {"id": "dcf9f39f1373", "gers": "dcf9f39f-1373-4854-851e-10ed9037e176", "name": "East Ladner", "en": null, "subtype": "neighborhood", "osm": "r11687712", "geometry": "data/boundaries/parts/delta/r11687712.geojson"},
+  {"id": "e45f6520faa8", "gers": "e45f6520-faa8-437c-8f45-f0896a27ae50", "name": "Forest-by-the-Bay", "en": null, "subtype": "neighborhood", "osm": "w714336699", "geometry": "data/boundaries/parts/delta/w714336699.geojson"},
+  {"id": "02adaf1aeb22", "gers": "02adaf1a-eb22-4cec-bc7f-7c18ef588b01", "name": "Imperial Village", "en": null, "subtype": "neighborhood", "osm": "w898632967", "geometry": "data/boundaries/parts/delta/w898632967.geojson"},
+  {"id": "3a6892817c66", "gers": "3a689281-7c66-483a-aaa7-c87c520f9e44", "name": "Ladner", "en": null, "subtype": "macrohood", "osm": "r11687878", "geometry": "data/boundaries/parts/delta/r11687878.geojson"},
+  {"id": "33707f62bd96", "gers": "33707f62-bd96-4863-904f-bca6122f81da", "name": "North Delta", "en": null, "subtype": "macrohood", "osm": "r11693712", "geometry": "data/boundaries/parts/delta/r11693712.geojson"},
+  {"id": "0a8b7ca4c5d3", "gers": "0a8b7ca4-c5d3-4705-8cf6-3927fac48c95", "name": "Riverside", "en": null, "subtype": "neighborhood", "osm": "r11693686", "geometry": "data/boundaries/parts/delta/r11693686.geojson"},
+  {"id": "14434c7672fc", "gers": "14434c76-72fc-42eb-9d2e-25611026aa81", "name": "Rotary Square", "en": null, "subtype": "microhood", "osm": "r19272808", "geometry": "data/boundaries/parts/delta/r19272808.geojson"},
+  {"id": "bcc68c330af6", "gers": "bcc68c33-0af6-4187-8c05-b97e5f565bd3", "name": "The Terrace", "en": null, "subtype": "neighborhood", "osm": "w714336701", "geometry": "data/boundaries/parts/delta/w714336701.geojson"},
+  {"id": "4c99c4b68463", "gers": "4c99c4b6-8463-416b-89b9-79ee57a325a9", "name": "The Village", "en": null, "subtype": "neighborhood", "osm": "r13492857", "geometry": "data/boundaries/parts/delta/r13492857.geojson"},
+  {"id": "fe412636adc0", "gers": "fe412636-adc0-4222-81ca-de18c0664f6b", "name": "Tsawwassen", "en": null, "subtype": "macrohood", "osm": "r11687900", "geometry": "data/boundaries/parts/delta/r11687900.geojson"},
+  {"id": "919dd339cd8a", "gers": "919dd339-cd8a-42d5-ad05-b98e475194f6", "name": "Tsawwassen Springs", "en": null, "subtype": "neighborhood", "osm": "w898629579", "geometry": "data/boundaries/parts/delta/w898629579.geojson"}
+]}

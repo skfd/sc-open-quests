@@ -1,0 +1,7 @@
+{"schema": 1, "city": "wood-buffalo", "overture": "2026-10-21.0", "parts": [
+  {"id": "4f456d16c66b", "gers": "4f456d16-c66b-4403-8e5d-29ffe3d49ef4", "name": "Conklin", "en": null, "subtype": "locality", "osm": "w417295426", "geometry": "data/boundaries/parts/wood-buffalo/w417295426.geojson"},
+  {"id": "88aab67f91ec", "gers": "88aab67f-91ec-4774-850d-aa897aa9fb82", "name": "Fort McKay", "en": null, "subtype": "locality", "osm": "r13382345", "geometry": "data/boundaries/parts/wood-buffalo/r13382345.geojson"},
+  {"id": "205191aa833d", "gers": "205191aa-833d-40e9-8548-5040f27cbe02", "name": "Fort McMurray", "en": null, "subtype": "locality", "osm": "r7549298", "geometry": "data/boundaries/parts/wood-buffalo/r7549298.geojson"},
+  {"id": "98e99d6e9602", "gers": "98e99d6e-9602-4265-8096-0d947d4fac4b", "name": "Hamlet of Gregoire Lake Estates", "en": null, "subtype": "locality", "osm": "r11195262", "geometry": "data/boundaries/parts/wood-buffalo/r11195262.geojson"},
+  {"id": "2bb83bc6e642", "gers": "2bb83bc6-e642-46f8-b475-719289073c07", "name": "Janvier", "en": null, "subtype": "locality", "osm": "r9498894", "geometry": "data/boundaries/parts/wood-buffalo/r9498894.geojson"}
+]}

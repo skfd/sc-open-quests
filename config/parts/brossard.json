@@ -1,0 +1,16 @@
+{"schema": 1, "city": "brossard", "overture": "2026-10-21.0", "parts": [
+  {"id": "ce984530f607", "gers": "ce984530-f607-406c-9087-e436a0da32d0", "name": "Domaine Louxor", "en": "Louxor Domain", "subtype": "neighborhood", "osm": "w432922678", "geometry": "data/boundaries/parts/brossard/w432922678.geojson"},
+  {"id": "61878ee9f20c", "gers": "61878ee9-f20c-4c38-8e19-2ebb0f1b4b85", "name": "Domaines de la Rive-Sud", "en": null, "subtype": "neighborhood", "osm": "w25974619", "geometry": "data/boundaries/parts/brossard/w25974619.geojson"},
+  {"id": "1e209118d101", "gers": "1e209118-d101-4781-8307-e8d4e015eaf1", "name": "Les Domaines du Parc", "en": null, "subtype": "neighborhood", "osm": "w26003492", "geometry": "data/boundaries/parts/brossard/w26003492.geojson"},
+  {"id": "f5bd77abd324", "gers": "f5bd77ab-d324-41c9-8df2-c49fa8891919", "name": "Place de la Gare", "en": null, "subtype": "microhood", "osm": "w931459867", "geometry": "data/boundaries/parts/brossard/w931459867.geojson"},
+  {"id": "61aca51ed32b", "gers": "61aca51e-d32b-4c7b-8deb-7cdd5f360457", "name": "Quartier Sud", "en": null, "subtype": "neighborhood", "osm": "w216623610", "geometry": "data/boundaries/parts/brossard/w216623610.geojson"},
+  {"id": "1f2f999e478d", "gers": "1f2f999e-478d-4a98-bfa8-c1d9b2c666cc", "name": "Quartier du Ruisseau", "en": null, "subtype": "neighborhood", "osm": "w257957361", "geometry": "data/boundaries/parts/brossard/w257957361.geojson"},
+  {"id": "78ec9dcf346c", "gers": "78ec9dcf-346c-4927-bbcd-b09f27c649db", "name": "Secteur E", "en": null, "subtype": "neighborhood", "osm": "r19315578", "geometry": "data/boundaries/parts/brossard/r19315578.geojson"},
+  {"id": "07ee6bc319b1", "gers": "07ee6bc3-19b1-4674-8484-7b2f947a53aa", "name": "Secteur I", "en": null, "subtype": "neighborhood", "osm": "r19315256", "geometry": "data/boundaries/parts/brossard/r19315256.geojson"},
+  {"id": "9b7801b7a81a", "gers": "9b7801b7-a81a-4696-8fa9-1c51d9f73a27", "name": "Secteur J", "en": null, "subtype": "neighborhood", "osm": "r19315326", "geometry": "data/boundaries/parts/brossard/r19315326.geojson"},
+  {"id": "15c51416e1df", "gers": "15c51416-e1df-4223-9074-38567ae55fe9", "name": "Secteur L", "en": null, "subtype": "neighborhood", "osm": "r19315322", "geometry": "data/boundaries/parts/brossard/r19315322.geojson"},
+  {"id": "bd2ca2689de1", "gers": "bd2ca268-9de1-4e40-aee5-e270f6fe6525", "name": "Secteur M", "en": null, "subtype": "neighborhood", "osm": "r19312165", "geometry": "data/boundaries/parts/brossard/r19312165.geojson"},
+  {"id": "833a94de99f2", "gers": "833a94de-99f2-4029-b8ce-3157da87ffc3", "name": "Secteur N", "en": null, "subtype": "neighborhood", "osm": "r19314846", "geometry": "data/boundaries/parts/brossard/r19314846.geojson"},
+  {"id": "54d9f4cfe464", "gers": "54d9f4cf-e464-4c48-a381-89fa4d079590", "name": "Secteur O", "en": null, "subtype": "neighborhood", "osm": "r19315197", "geometry": "data/boundaries/parts/brossard/r19315197.geojson"},
+  {"id": "e815ebdeee80", "gers": "e815ebde-ee80-45fd-bd57-4dfbe48543a3", "name": "Secteur R", "en": null, "subtype": "neighborhood", "osm": "r19320346", "geometry": "data/boundaries/parts/brossard/r19320346.geojson"}
+]}

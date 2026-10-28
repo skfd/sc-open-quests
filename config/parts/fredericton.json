@@ -1,0 +1,7 @@
+{"schema": 1, "city": "fredericton", "overture": "2026-10-21.0", "parts": [
+  {"id": "899d826ef3d3", "gers": "899d826e-f3d3-4d93-b857-f75eb1fc9787", "name": "Barracks Square", "en": null, "subtype": "microhood", "osm": "w1183964800", "geometry": "data/boundaries/parts/fredericton/w1183964800.geojson"},
+  {"id": "db99e157634c", "gers": "db99e157-634c-41ad-95a3-5690b050c7b3", "name": "Fredericton", "en": null, "subtype": "neighborhood", "osm": "r19719044", "geometry": "data/boundaries/parts/fredericton/r19719044.geojson"},
+  {"id": "6f2c27120bd9", "gers": "6f2c2712-0bd9-4138-b745-a69e90faf949", "name": "Phoenix Square", "en": null, "subtype": "microhood", "osm": "w1342929855", "geometry": "data/boundaries/parts/fredericton/w1342929855.geojson"},
+  {"id": "9ffe19c002e7", "gers": "9ffe19c0-02e7-4525-a694-986c25ceffb4", "name": "Poets' Corner", "en": null, "subtype": "microhood", "osm": "w1267733482", "geometry": "data/boundaries/parts/fredericton/w1267733482.geojson"},
+  {"id": "f8584177efbc", "gers": "f8584177-efbc-4271-afda-d9238fa26291", "name": "Tannery Square", "en": null, "subtype": "microhood", "osm": "w1342768671", "geometry": "data/boundaries/parts/fredericton/w1342768671.geojson"}
+]}

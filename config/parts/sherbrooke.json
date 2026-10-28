@@ -1,0 +1,12 @@
+{"schema": 1, "city": "sherbrooke", "overture": "2026-10-21.0", "parts": [
+  {"id": "d0b4fb12aa22", "gers": "d0b4fb12-aa22-4ae9-92d0-178643644a84", "name": "Brompton", "en": null, "subtype": "macrohood", "osm": "r8813276", "geometry": "data/boundaries/parts/sherbrooke/r8813276.geojson"},
+  {"id": "b0871d3026d4", "gers": "b0871d30-26d4-44f1-b23e-23637ee226f6", "name": "Brompton–Rock Forest–Saint-Élie–Deauville", "en": null, "subtype": "neighborhood", "osm": "r18844420", "geometry": "data/boundaries/parts/sherbrooke/r18844420.geojson"},
+  {"id": "6dc6d6a0cc8c", "gers": "6dc6d6a0-cc8c-4549-9b6d-3a0acf907dc4", "name": "Fleurimont", "en": null, "subtype": "macrohood", "osm": "r8813297", "geometry": "data/boundaries/parts/sherbrooke/r8813297.geojson"},
+  {"id": "7d00a367d018", "gers": "7d00a367-d018-4fa8-b85c-ba880785c88d", "name": "Jacques-Cartier", "en": null, "subtype": "macrohood", "osm": "r8813665", "geometry": "data/boundaries/parts/sherbrooke/r8813665.geojson"},
+  {"id": "0bceb397e2a9", "gers": "0bceb397-e2a9-4012-b394-774414a25a93", "name": "Le Mont-Bellevue", "en": null, "subtype": "macrohood", "osm": "r8813666", "geometry": "data/boundaries/parts/sherbrooke/r8813666.geojson"},
+  {"id": "8fdedaa4fdb7", "gers": "8fdedaa4-fdb7-4e26-934a-a28d83076893", "name": "Lennoxville", "en": null, "subtype": "macrohood", "osm": "r8813574", "geometry": "data/boundaries/parts/sherbrooke/r8813574.geojson"},
+  {"id": "8b95b7664f91", "gers": "8b95b766-4f91-42af-82bf-971389faf787", "name": "Les Nations", "en": null, "subtype": "macrohood", "osm": "r12358779", "geometry": "data/boundaries/parts/sherbrooke/r12358779.geojson"},
+  {"id": "4531c15c9cd4", "gers": "4531c15c-9cd4-4a3e-84e1-d1bf5b6a996e", "name": "Place Kassiwi", "en": null, "subtype": "microhood", "osm": "w1125477538", "geometry": "data/boundaries/parts/sherbrooke/w1125477538.geojson"},
+  {"id": "0aaa92ba63f5", "gers": "0aaa92ba-63f5-485a-9160-4813d9535235", "name": "Place de la Cité", "en": null, "subtype": "microhood", "osm": "r11094169", "geometry": "data/boundaries/parts/sherbrooke/r11094169.geojson"},
+  {"id": "be3541ab1469", "gers": "be3541ab-1469-42e5-bcc4-f0e1c06a7133", "name": "Rock Forest–Saint-Élie–Deauville", "en": null, "subtype": "macrohood", "osm": "r8813668", "geometry": "data/boundaries/parts/sherbrooke/r8813668.geojson"}
+]}

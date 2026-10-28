@@ -12,9 +12,12 @@ import kotlin.math.floor
 /** Even-odd point-in-polygon test over a set of closed rings, given as loose segments.
  *  Outer and inner rings need no assembly: the crossing parity is right as long as the segments
  *  together form closed rings. Segments are bucketed into latitude bands for speed. */
-class Polygon(private val segs: DoubleArray /* lat1, lon1, lat2, lon2 repeated */) {
+class Polygon(
+    private val segs: DoubleArray, /* lat1, lon1, lat2, lon2 repeated */
+    /** latitude bands; a city boundary takes the default, a small part polygon fewer */
+    private val bandCount: Int = 4096,
+) {
     val minLat: Double; val maxLat: Double; val minLon: Double; val maxLon: Double
-    private val bandCount = 4096
     private val bandHeight: Double
     private val bands: Array<IntArray>
 
@@ -75,6 +78,30 @@ class Polygon(private val segs: DoubleArray /* lat1, lon1, lat2, lon2 repeated *
             val open = endpointDegree.values.count { it % 2 == 1 }
             require(open == 0) { "relation $relationId: $open open ring ends" }
             return Polygon(segs.toDoubleArray())
+        }
+
+        /** Reads a GeoJSON Feature or bare geometry of type Polygon or MultiPolygon (`[lon, lat]`
+         *  positions, as `osmium export` writes them; tools/add_parts.py). Every ring, outer or inner,
+         *  becomes loose segments. */
+        fun fromGeoJson(file: File): Polygon {
+            val root = Json.parseToJsonElement(file.readText()).jsonObject
+            val geometry = root["geometry"]?.jsonObject ?: root
+            val coordinates = geometry["coordinates"]!!.jsonArray
+            val polygons = when (val type = geometry["type"]!!.jsonPrimitive.content) {
+                "Polygon" -> listOf(coordinates)
+                "MultiPolygon" -> coordinates.map { it.jsonArray }
+                else -> error("${file.path}: geometry $type, not a Polygon or MultiPolygon")
+            }
+            val segs = ArrayList<Double>()
+            for (polygon in polygons) for (ring in polygon) {
+                val pts = ring.jsonArray.map { val p = it.jsonArray; p[1].jsonPrimitive.double to p[0].jsonPrimitive.double }
+                require(pts.size >= 4 && pts.first() == pts.last()) { "${file.path}: a ring that is not closed" }
+                for (i in 0 until pts.size - 1) {
+                    segs += pts[i].first; segs += pts[i].second; segs += pts[i + 1].first; segs += pts[i + 1].second
+                }
+            }
+            require(segs.isNotEmpty()) { "${file.path}: no rings" }
+            return Polygon(segs.toDoubleArray(), bandCount = (segs.size / 16).coerceIn(1, 4096))
         }
     }
 }

@@ -1,0 +1,4 @@
+{"schema": 1, "city": "kawartha-lakes", "overture": "2026-10-21.0", "parts": [
+  {"id": "dc35bd793c12", "gers": "dc35bd79-3c12-4a36-8cac-46d0ca1b6fe8", "name": "Argyle", "en": null, "subtype": "neighborhood", "osm": "w846978424", "geometry": "data/boundaries/parts/kawartha-lakes/w846978424.geojson"},
+  {"id": "4882e4f29477", "gers": "4882e4f2-9477-4de8-8c3e-0e0f0520c805", "name": "Market Square", "en": null, "subtype": "microhood", "osm": "w1454044058", "geometry": "data/boundaries/parts/kawartha-lakes/w1454044058.geojson"}
+]}

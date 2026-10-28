@@ -1,0 +1,7 @@
+{"schema": 1, "city": "longueuil", "overture": "2026-10-21.0", "parts": [
+  {"id": "0bd31d224981", "gers": "0bd31d22-4981-404d-b38b-e2fb4c2216ea", "name": "Carré Saint-Jean-Baptiste", "en": null, "subtype": "microhood", "osm": "w598522210", "geometry": "data/boundaries/parts/longueuil/w598522210.geojson"},
+  {"id": "b35c81fa90bf", "gers": "b35c81fa-90bf-4575-9073-d3032884ad0a", "name": "Greenfield Park", "en": null, "subtype": "macrohood", "osm": "r19294939", "geometry": "data/boundaries/parts/longueuil/r19294939.geojson"},
+  {"id": "6596b5ebbeae", "gers": "6596b5eb-beae-4e4c-9d0f-ab7f111f62f1", "name": "Le Vieux-Longueuil", "en": null, "subtype": "neighborhood", "osm": "r19294938", "geometry": "data/boundaries/parts/longueuil/r19294938.geojson"},
+  {"id": "dbc241db4320", "gers": "dbc241db-4320-4618-988b-406e45cd1435", "name": "Place Charles-Le Moyne", "en": null, "subtype": "microhood", "osm": "w1208496320", "geometry": "data/boundaries/parts/longueuil/w1208496320.geojson"},
+  {"id": "302eebfc532e", "gers": "302eebfc-532e-446d-92cd-818bd4bb92ac", "name": "Saint-Hubert", "en": null, "subtype": "macrohood", "osm": "r19294937", "geometry": "data/boundaries/parts/longueuil/r19294937.geojson"}
+]}

@@ -1,0 +1,17 @@
+{"schema": 1, "city": "levis", "overture": "2026-10-21.0", "parts": [
+  {"id": "5fcef29ca313", "gers": "5fcef29c-a313-4987-9a84-166928a4f1f2", "name": "Charny", "en": null, "subtype": "macrohood", "osm": "r10491398", "geometry": "data/boundaries/parts/levis/r10491398.geojson"},
+  {"id": "053d491c7c7d", "gers": "053d491c-7c7d-413c-a373-55e013b34ac6", "name": "Desjardins", "en": null, "subtype": "neighborhood", "osm": "r10260649", "geometry": "data/boundaries/parts/levis/r10260649.geojson"},
+  {"id": "85bd2e6fa783", "gers": "85bd2e6f-a783-4d06-b560-0b4a8dce3f48", "name": "Les Chutes-de-la-Chaudière-Est", "en": null, "subtype": "neighborhood", "osm": "r10259346", "geometry": "data/boundaries/parts/levis/r10259346.geojson"},
+  {"id": "f932e3d00198", "gers": "f932e3d0-0198-4900-ba78-1d23fc2262b0", "name": "Les Chutes-de-la-Chaudière-Ouest", "en": null, "subtype": "neighborhood", "osm": "r10259232", "geometry": "data/boundaries/parts/levis/r10259232.geojson"},
+  {"id": "89c493d495b8", "gers": "89c493d4-95b8-4001-a2a3-7bd1c966ccd4", "name": "Lévis (quartier)", "en": null, "subtype": "neighborhood", "osm": "r10491736", "geometry": "data/boundaries/parts/levis/r10491736.geojson"},
+  {"id": "de27e82dd1a8", "gers": "de27e82d-d1a8-45e7-8a58-a36d55cdc6de", "name": "Pintendre", "en": null, "subtype": "macrohood", "osm": "r10492107", "geometry": "data/boundaries/parts/levis/r10492107.geojson"},
+  {"id": "4f50a6c2b42a", "gers": "4f50a6c2-b42a-4327-8496-6a7fea0afaf9", "name": "Place Monseigneur-Dézie", "en": null, "subtype": "microhood", "osm": "w463033383", "geometry": "data/boundaries/parts/levis/w463033383.geojson"},
+  {"id": "ef745d566936", "gers": "ef745d56-6936-451e-8320-6406779a7543", "name": "Placette Joseph-Hudon", "en": null, "subtype": "microhood", "osm": "w1352751575", "geometry": "data/boundaries/parts/levis/w1352751575.geojson"},
+  {"id": "85852effda25", "gers": "85852eff-da25-423d-8033-03c40ccdbbbf", "name": "Saint-Jean-Chrysostome", "en": null, "subtype": "macrohood", "osm": "r10491396", "geometry": "data/boundaries/parts/levis/r10491396.geojson"},
+  {"id": "29439da6bba4", "gers": "29439da6-bba4-4772-b75c-68cf9086bae0", "name": "Saint-Joseph-de-la-Pointe-De Lévy", "en": null, "subtype": "neighborhood", "osm": "r10492106", "geometry": "data/boundaries/parts/levis/r10492106.geojson"},
+  {"id": "24d7dafc0983", "gers": "24d7dafc-0983-4659-9ac6-b8fa32a09420", "name": "Saint-Nicolas", "en": null, "subtype": "macrohood", "osm": "r10491537", "geometry": "data/boundaries/parts/levis/r10491537.geojson"},
+  {"id": "2f49c0820620", "gers": "2f49c082-0620-47a3-a200-758174d40028", "name": "Saint-Romuald", "en": null, "subtype": "macrohood", "osm": "r10488300", "geometry": "data/boundaries/parts/levis/r10488300.geojson"},
+  {"id": "521f5a8f099d", "gers": "521f5a8f-099d-49c9-9e7e-bdcd3721da01", "name": "Saint-Rédempteur", "en": null, "subtype": "macrohood", "osm": "r10491476", "geometry": "data/boundaries/parts/levis/r10491476.geojson"},
+  {"id": "0a25a47b580a", "gers": "0a25a47b-580a-43f7-85aa-8b752433ff9d", "name": "Saint-Étienne-de-Lauzon", "en": null, "subtype": "macrohood", "osm": "r10491536", "geometry": "data/boundaries/parts/levis/r10491536.geojson"},
+  {"id": "5847f7c5e5bf", "gers": "5847f7c5-e5bf-42da-8b57-936b15d9d8c0", "name": "Sainte-Hélène-de-Breakeyville", "en": null, "subtype": "macrohood", "osm": "r10491397", "geometry": "data/boundaries/parts/levis/r10491397.geojson"}
+]}
