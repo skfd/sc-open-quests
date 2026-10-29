@@ -190,6 +190,22 @@ Merged into main as they were, then:
   AddHousenumber; Halifax, Gatineau, Fredericton, Saint John): near-duplicates, worth dropping in
   `add_parts.py` when a part covers nearly all its city. The issue form goes live with the push.
 
+**World building started (2026-10-29 evening).** The owner freed disk: C: has 338 GB free.
+- `kk-SCOpenQuests-weekly` is registered (Mondays 07:30, `logs/weekly.log`).
+- The docker image `name-ru-repair-osmium` had been pruned in the cleanup; rebuilt from
+  `../name-ru-repair/tools/Dockerfile` (osmium 1.18). The planet-history update, `osm-extracts`'
+  backfill clip and `add_parts.py` all need it.
+- The first `run.py weekly --no-push` downloaded all 24 diffs (5137-5160, 2.4 GB, in the store's
+  `planet/diffs/`) and was about to write `history-261029.osh.pbf` (one pass, memory estimate 23.8 GB)
+  when Docker Desktop was quit (`docker desktop stop`, 19:14). `history-261005.osm.pbf` is untouched;
+  the next run clears the `.part` and reuses the downloaded diffs. **Rerun with Docker up:**
+  `python run.py weekly --no-push >> logs/weekly.log 2>&1` (about 1.5-2 h). Docker must be running on
+  Monday mornings too, or the weekly logs a failed fetch and stops.
+- **The second hard link:** the owner chose to retarget name-ru-repair to the store
+  (its `tools/ukraine-history.sh` now reads `osm_extracts.py path planet`, b60303a there). Once the store
+  holds the new file, delete `../name-ru-repair/data/planet/` (the old 163 GB file and its .md5): until
+  then the update after this one fails the disk check by about 2 GB.
+
 **Runs since the publish format (checked 2026-10-28):** 10-26 and 10-28 counted, committed and pushed;
 the site serves all 115 cities at 2026-10-27, `data/archive/` holds 1,521 files. The backup's
 conditions are met. Snapshots come every other day because Geofabrik's extracts did (10-27's run found
