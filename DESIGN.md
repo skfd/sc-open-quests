@@ -823,3 +823,27 @@ lies outside the clip and was not edited. The diff does not carry that node, so 
 position. `osmium check-refs` counts such missing nodes each day. Berlin, Hamburg and Bremen are
 already counted daily from Geofabrik, so a week of both side by side gives exact answers to check
 against.
+
+**The owner's second answers (2026-10-30, early morning):**
+- **Test the clip-plus-diffs plan before building on it.**
+- **osm-extracts owns it:** a daily planet-diff fetch, and a current clip of given boxes kept up to
+  date by those diffs, as a store product. Other projects can use it. Only osm-extracts downloads into
+  the store, as before.
+- **Choose the European cities by StreetComplete edits:** rank them by StreetComplete changesets in
+  the last 12 months, from the changeset dump (every changeset carries `created_by` and
+  `StreetComplete:quest_type`). Show the owner the top 10-20 before counting.
+- **The seeded bar waits for the European pilot:** pick it from what a city really costs on disk, in
+  time and on the site.
+
+**The test, replayed rather than waited for.** The history file holds the true state of every past
+day, so a week need not pass in real time:
+1. Clip `history-261029` around Berlin, Hamburg and Bremen in one planet pass. Pad the clip about
+   20 km, so a padded `-s smart` cut taken from it equals a cut taken from the planet.
+2. Take the state at 2026-10-05T00:00Z from that clip and cut it to the counted places' padded
+   envelopes. That is the starting clip.
+3. Download diffs 5137-5160 again. They were deleted after the October update, so osm-extracts
+   fetches them: about 2.4 GB.
+4. For each day, apply its diff to the clip, re-clip, run `osmium check-refs`, and count. Compare
+   each day with the true slice of the history clip at the same moment.
+That gives 24 days of drift, close to the month a clip lives, and it can be done in one unattended
+run. The Geofabrik dailies of the same cities are a second check.

@@ -218,3 +218,19 @@ Merged into main as they were, then:
 the site serves all 115 cities at 2026-10-27, `data/archive/` holds 1,521 files. The backup's
 conditions are met. Snapshots come every other day because Geofabrik's extracts did (10-27's run found
 every extract unchanged since 10-26 05:44 UTC), not because of the notes dump.
+
+**The world, decided (2026-10-30, early morning):** DESIGN.md, "World: a seeded bar plus requests".
+In short: count big cities up front (bar chosen after a European pilot) plus any place with a polygon
+on request; the pilot is the European cities with the most StreetComplete changesets in 12 months;
+current numbers come from a clip kept up to date by the daily planet diffs, which osm-extracts owns.
+Next, in order:
+1. **The clip-plus-diffs test**, replayed over 2026-10-05 to 10-29 on Berlin, Hamburg and Bremen
+   against the history file's own slices (the plan is in that DESIGN.md section). Avoid the 13:15
+   window, and avoid Monday 2026-11-02 07:30, when the monthly job rewrites the planet file.
+2. If it holds: `fetch planet-diffs` and the current clip in osm-extracts.
+3. Rank European cities by StreetComplete changesets (the changeset dump through osm-extracts) and
+   show the owner the list.
+4. The step from a request to a counted region: place id to relation, country codes, time zone, a
+   region per time zone over the shared clip. `add_city.py` cannot do it today.
+Housekeeping still open: the weekly-to-monthly rename (above).
+
