@@ -73,12 +73,13 @@ The task is named `kk-SCOpenQuests`. It starts when available if the machine was
 is stopped after two hours.
 
 ```powershell
-.\schedule-weekly-add.ps1      # run.py weekly on Mondays at 07:30, appends to logs\weekly.log
+.\schedule-weekly-add.ps1      # run.py weekly on the first Monday of each month at 07:30, appends to logs\weekly.log
 .\schedule-weekly-remove.ps1
 ```
 
 `kk-SCOpenQuests-weekly` starts when available and is stopped after ten hours. It never holds the
-pipeline lock across the daily 13:15 run (DESIGN.md, "Weekly planet job").
+pipeline lock across the daily 13:15 run (DESIGN.md, "Weekly planet job"). It runs monthly while no
+region is counted from the planet (DESIGN.md, "Planet job: monthly while nothing counts from it").
 
 ## Licence and attribution
 

@@ -191,7 +191,11 @@ Merged into main as they were, then:
   `add_parts.py` when a part covers nearly all its city. The issue form goes live with the push.
 
 **World building started (2026-10-29 evening).** The owner freed disk: C: has 338 GB free.
-- `kk-SCOpenQuests-weekly` is registered (Mondays 07:30, `logs/weekly.log`).
+- `kk-SCOpenQuests-weekly` is registered, **monthly since 2026-10-30**: first Monday of each month,
+  07:30, `logs/weekly.log` (DESIGN.md, "Planet job: monthly while nothing counts from it"). Its first run,
+  2026-11-02, has only four diffs but still rewrites the whole file.
+  Next, when the owner wants it: daily counts from the planet diff on a small extract, checked a week
+  side by side with Geofabrik (same section).
 - The docker image `name-ru-repair-osmium` had been pruned in the cleanup; rebuilt from
   `../name-ru-repair/tools/Dockerfile` (osmium 1.18). The planet-history update, `osm-extracts`'
   backfill clip and `add_parts.py` all need it.
