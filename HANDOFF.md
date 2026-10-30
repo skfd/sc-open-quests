@@ -236,7 +236,7 @@ Next, in order:
    `apply-changes` keeps deleted objects, and counts drift by 1-2 a day. With it, both days were exact.
    **Result (12:02): it holds.** All 72 region-days counted the same as the fresh cut. One edge case:
    Hamburg's clip lacked 17 nodes of one way for 22 days, and no count moved. The planet pass took
-   3.2 h. DESIGN.md, "The test's result". `data/backfill/replay*` (about 3 GB) can be deleted.
+   3.2 h. DESIGN.md, "The test's result". `data/backfill/replay*` (19 GB: every day's clip and cut) can be deleted.
    Docker Desktop was found stopped at 14:06 (not by the test); the monthly job on Monday 2026-11-02
    07:30 needs it running.
 2. Now: `fetch planet-diffs` and the current clip in osm-extracts.
