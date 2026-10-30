@@ -202,11 +202,8 @@ Merged into main as they were, then:
   downloaded diffs. Docker must be running on Monday mornings, or the weekly logs a failed fetch and stops.
 - **The second hard link:** the owner chose to retarget name-ru-repair to the store (its
   `tools/ukraine-history.sh` now reads `osm_extracts.py path planet`, and resolves to the new file). The
-  store retired its link to `history-261005.osm.pbf`; `../name-ru-repair/data/planet/` alone keeps those
-  152 GB. **Delete it** (the auto-mode classifier refused the delete; the owner's to do):
-  `rm -r ~/Code/name-ru-repair/data/planet`. C: has 202 GB free before it. The next update needs about
-  170 GB (158.8 x 1.03 + 5 + diffs), so it passes without the delete, but leaves about 30 GB for
-  everything else while it writes.
+  store retired its link to `history-261005.osm.pbf`, and `../name-ru-repair/data/planet/` was deleted on
+  2026-10-30 at the owner's word. C: has 354 GB free; a weekly update needs about 170 GB.
 
 **Runs since the publish format (checked 2026-10-28):** 10-26 and 10-28 counted, committed and pushed;
 the site serves all 115 cities at 2026-10-27, `data/archive/` holds 1,521 files. The backup's
