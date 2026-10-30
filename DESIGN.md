@@ -795,3 +795,31 @@ the place list is the breakdown session's.
   history file stays monthly). The second also fits moving the 115 Geofabrik cities to one daily diff
   (4.7 GB of extracts a day today). Its open risk is edges (a way joined to nodes outside the clip); the
   check is a week side by side with the Geofabrik counts of the same cities. Not built.
+
+## World: a seeded bar plus requests (2026-10-30)
+
+The owner's answers to "are we ready to build all the places in the world":
+
+- **Both roads.** The biggest cities of some countries are counted up front, chosen by a bar, and
+  any other place is counted when a player asks for it. This replaces "only requested places get
+  counted" from 2026-10-24. The bar and the countries are still open.
+- **Any place with a polygon can be requested:** a town, a village or a county. No population floor.
+- **The first planet-counted places are actively mapped European cities.**
+- **Current numbers come from the daily planet diffs.** The history file is still rewritten once a
+  month, but the daily diffs are downloaded every day and used for the current counts. How to do that
+  cheaply is still being discussed (below).
+- **Not built yet:** nothing turns a place id from the request form into a counted region.
+  `add_city.py` needs a Geofabrik extract id, country codes and a time zone typed by hand.
+
+**Proposal for the current counts (under discussion).** Once a month, right after the history
+rewrite, cut a *current clip* from the new history file: its last state inside the counted places'
+envelopes, padded, with `-s smart` so multipolygons keep far members. Every day, apply that day's
+diff to the clip (`osmium apply-changes`, no `-H`), re-clip it to the envelopes (the diff carries the
+whole world's edits), and count. Ontario's 1.98 GB clip took 66 s with two diffs, so a European
+city set should take a few minutes a day. The next month's cut from the history file throws the clip
+away, so errors last a month at most.
+The risk is the clip's edge. Say a diff moves a way inside our envelope and the way uses a node that
+lies outside the clip and was not edited. The diff does not carry that node, so we lack its
+position. `osmium check-refs` counts such missing nodes each day. Berlin, Hamburg and Bremen are
+already counted daily from Geofabrik, so a week of both side by side gives exact answers to check
+against.
