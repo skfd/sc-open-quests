@@ -194,6 +194,11 @@ Merged into main as they were, then:
 - `kk-SCOpenQuests-weekly` is registered, **monthly since 2026-10-30**: first Monday of each month,
   07:30, `logs/weekly.log` (DESIGN.md, "Planet job: monthly while nothing counts from it"). Its first run,
   2026-11-02, has only four diffs but still rewrites the whole file.
+  **To do: rename "weekly" to "monthly" (or "planet")** wherever it names this job: the task
+  `kk-SCOpenQuests-weekly`, `schedule-weekly-add.ps1` / `-remove.ps1`, `run.py weekly`, `logs/weekly.log`,
+  `backfill_history.weekly()`, the README and DESIGN.md. Re-register the task under the new name and
+  unregister the old one. Leave the `"cadence": "weekly"` value until it is decided what a planet-counted
+  region's cadence means.
   Next, when the owner wants it: daily counts from the planet diff on a small extract, checked a week
   side by side with Geofabrik (same section).
 - The docker image `name-ru-repair-osmium` had been pruned in the cleanup; rebuilt from
