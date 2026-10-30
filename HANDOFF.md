@@ -225,7 +225,8 @@ on request; the pilot is the European cities with the most StreetComplete change
 current numbers come from a clip kept up to date by the daily planet diffs, which osm-extracts owns.
 Next, in order:
 1. **The clip-plus-diffs test**, replayed over 2026-10-05 to 10-29 on Berlin, Hamburg and Bremen
-   against the history file's own slices (the plan is in that DESIGN.md section). Avoid the 13:15
+   against the history file's own slices, each day's diff derived from the same file, nothing downloaded
+   (the plan is in that DESIGN.md section). Avoid the 13:15
    window, and avoid Monday 2026-11-02 07:30, when the monthly job rewrites the planet file.
 2. If it holds: `fetch planet-diffs` and the current clip in osm-extracts.
 3. Rank European cities by StreetComplete changesets (the changeset dump through osm-extracts) and

@@ -841,8 +841,11 @@ day, so a week need not pass in real time:
    20 km, so a padded `-s smart` cut taken from it equals a cut taken from the planet.
 2. Take the state at 2026-10-05T00:00Z from that clip and cut it to the counted places' padded
    envelopes. That is the starting clip.
-3. Download diffs 5137-5160 again. They were deleted after the October update, so osm-extracts
-   fetches them: about 2.4 GB.
+3. No download: each day's diff is derived from the history clip itself (`osmium derive-changes`
+   between the slices of day D-1 and day D). The owner's point: the history file already holds
+   every version. Like a real diff, a derived diff carries only what changed, so the clip's edge is
+   tested the same way. It lacks edits more than 20 km out, which cannot reach the counted area.
+   Real diffs are first used when this goes live, and are checked against Geofabrik then.
 4. For each day, apply its diff to the clip, re-clip, run `osmium check-refs`, and count. Compare
    each day with the true slice of the history clip at the same moment.
 That gives 24 days of drift, close to the month a clip lives, and it can be done in one unattended
