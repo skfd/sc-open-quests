@@ -850,3 +850,26 @@ day, so a week need not pass in real time:
    each day with the true slice of the history clip at the same moment.
 That gives 24 days of drift, close to the month a clip lives, and it can be done in one unattended
 run. The Geofabrik dailies of the same cities are a second check.
+
+**The test's result (2026-10-30, 04:30 to 12:02).** Berlin, Hamburg and Bremen, 24 days each
+(2026-10-05 to 10-29). Each day's diff was derived from the history file and applied to the clip, and
+the clip was compared with a fresh cut of the true state at the same moment
+(`.scratch/diff-replay/replay.py`, results in `data/backfill/replay/results.jsonl`):
+
+- **Every count matched, every day:** 72 region-days, all city × quest counts and denominators equal.
+  That is about 1.11M open quests in Berlin, 569k in Hamburg and 324k in Bremen.
+- **Objects:** Berlin (11.88M) and Bremen (4.26M) matched exactly on every day. Hamburg is the one
+  edge case. On 2026-10-06 at 23:33 an untagged way, 1125039855 (94 nodes, likely a multipolygon
+  member), was edited so that 17 of its nodes lay outside the clip. Those nodes were not edited
+  themselves, so the diff did not carry them. From 10-07 on, the clip lacked those 17 nodes; `check-refs`
+  reported "Nodes in ways missing: 17", the fresh cut had 0, and no count moved. The gap did not
+  grow over the next 22 days. It was fixed at the next monthly cut.
+- **So:** the plan holds. The one failure is rare, `check-refs` reports it, and it clears at the
+  monthly re-cut. To close it sooner, a day with missing nodes can fetch exactly those nodes
+  (`/api/0.6/nodes?nodes=...`, a handful), or the clip can keep a wider ring than it counts. Not built.
+- **Costs measured:** the planet pass took **3.2 hours** (11,608 s; three bbox clips `--with-history -s
+  complete_ways` of the 159 GB file), not the hour estimated. So cutting clips for requested places
+  must be batched, preferably with the monthly rewrite. Clips: Berlin 146 MB, Hamburg 159 MB, Bremen
+  49 MB. The derived diffs were only 0.3-0.7 MB a day, because they cover the 20 km ring only. A real
+  daily planet diff is about 100 MB of the whole world. Applying it to a small clip is unmeasured;
+  Ontario's 1.98 GB clip took 66 s with two diffs.

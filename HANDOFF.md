@@ -234,7 +234,12 @@ Next, in order:
    on where it stopped: `python .scratch/diff-replay/replay.py`. The Bremen pilot (`--pilot`, its
    261005 clip, 2 days) found one trap: `derive-changes` needs `--increment-version`. Without it,
    `apply-changes` keeps deleted objects, and counts drift by 1-2 a day. With it, both days were exact.
-2. If it holds: `fetch planet-diffs` and the current clip in osm-extracts.
+   **Result (12:02): it holds.** All 72 region-days counted the same as the fresh cut. One edge case:
+   Hamburg's clip lacked 17 nodes of one way for 22 days, and no count moved. The planet pass took
+   3.2 h. DESIGN.md, "The test's result". `data/backfill/replay*` (about 3 GB) can be deleted.
+   Docker Desktop was found stopped at 14:06 (not by the test); the monthly job on Monday 2026-11-02
+   07:30 needs it running.
+2. Now: `fetch planet-diffs` and the current clip in osm-extracts.
 3. Rank European cities by StreetComplete changesets (the changeset dump through osm-extracts) and
    show the owner the list.
 4. The step from a request to a counted region: place id to relation, country codes, time zone, a
