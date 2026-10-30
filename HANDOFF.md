@@ -228,6 +228,12 @@ Next, in order:
    against the history file's own slices, each day's diff derived from the same file, nothing downloaded
    (the plan is in that DESIGN.md section). Avoid the 13:15
    window, and avoid Monday 2026-11-02 07:30, when the monthly job rewrites the planet file.
+   **Started 2026-10-30 04:30**, detached: `.scratch/diff-replay/replay.py` (gitignored), log
+   `logs/diff-replay.log`, results in `data/backfill/replay/RESULT.md` and `results.jsonl`, a row per
+   region and day. First a planet pass (about an hour), then about 3 to 5 hours of days. A rerun goes
+   on where it stopped: `python .scratch/diff-replay/replay.py`. The Bremen pilot (`--pilot`, its
+   261005 clip, 2 days) found one trap: `derive-changes` needs `--increment-version`. Without it,
+   `apply-changes` keeps deleted objects, and counts drift by 1-2 a day. With it, both days were exact.
 2. If it holds: `fetch planet-diffs` and the current clip in osm-extracts.
 3. Rank European cities by StreetComplete changesets (the changeset dump through osm-extracts) and
    show the owner the list.
