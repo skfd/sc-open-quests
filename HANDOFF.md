@@ -195,16 +195,18 @@ Merged into main as they were, then:
 - The docker image `name-ru-repair-osmium` had been pruned in the cleanup; rebuilt from
   `../name-ru-repair/tools/Dockerfile` (osmium 1.18). The planet-history update, `osm-extracts`'
   backfill clip and `add_parts.py` all need it.
-- The first `run.py weekly --no-push` downloaded all 24 diffs (5137-5160, 2.4 GB, in the store's
-  `planet/diffs/`) and was about to write `history-261029.osh.pbf` (one pass, memory estimate 23.8 GB)
-  when Docker Desktop was quit (`docker desktop stop`, 19:14). `history-261005.osm.pbf` is untouched;
-  the next run clears the `.part` and reuses the downloaded diffs. **Rerun with Docker up:**
-  `python run.py weekly --no-push >> logs/weekly.log 2>&1` (about 1.5-2 h). Docker must be running on
-  Monday mornings too, or the weekly logs a failed fetch and stops.
-- **The second hard link:** the owner chose to retarget name-ru-repair to the store
-  (its `tools/ukraine-history.sh` now reads `osm_extracts.py path planet`, b60303a there). Once the store
-  holds the new file, delete `../name-ru-repair/data/planet/` (the old 163 GB file and its .md5): until
-  then the update after this one fails the disk check by about 2 GB.
+- **The planet history is current:** `history-261029.osh.pbf` (158.8 GB, diff 5160,
+  2026-10-29T00:00Z), written by `run.py weekly --no-push` in one pass of 24 diffs: 7,281 s, osmium peak
+  15.6 GB (the estimate was 23.8). Header checked (`osmium fileinfo`: with history, sequence and
+  timestamp). The first attempt failed at 19:14 because Docker Desktop was quit; the rerun reused the
+  downloaded diffs. Docker must be running on Monday mornings, or the weekly logs a failed fetch and stops.
+- **The second hard link:** the owner chose to retarget name-ru-repair to the store (its
+  `tools/ukraine-history.sh` now reads `osm_extracts.py path planet`, and resolves to the new file). The
+  store retired its link to `history-261005.osm.pbf`; `../name-ru-repair/data/planet/` alone keeps those
+  152 GB. **Delete it** (the auto-mode classifier refused the delete; the owner's to do):
+  `rm -r ~/Code/name-ru-repair/data/planet`. C: has 202 GB free before it. The next update needs about
+  170 GB (158.8 x 1.03 + 5 + diffs), so it passes without the delete, but leaves about 30 GB for
+  everything else while it writes.
 
 **Runs since the publish format (checked 2026-10-28):** 10-26 and 10-28 counted, committed and pushed;
 the site serves all 115 cities at 2026-10-27, `data/archive/` holds 1,521 files. The backup's
