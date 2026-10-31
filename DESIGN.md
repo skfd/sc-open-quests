@@ -905,3 +905,15 @@ the clip's size, not the diff's.
   site keeps them all).
 - **The `"cadence": "weekly"` key becomes unused:** a planet-counted region is daily from its clip.
   Left in place until the first clip region runs.
+
+**Built (osm-extracts 5c898c2, 2026-10-31):** `fetch planet-diffs`, `clip NAME --polygon`, `recut`,
+`fetch NAME` for a clip, and a rule that the monthly rewrite keeps every diff a clip still needs
+(the osm-extracts README). Tested on a Bremen clip from the replay's history cut: the recut equals the
+replay's cut object for object (4,257,302 same, 0 different); the fetch applied the real diffs
+5161-5162 in about 2 minutes, with no nodes in ways missing. Two changes from the plan:
+- **History cuts use `-s complete_ways`.** osmium 1.18 does not support `-s simple` on history files.
+- **A planet pass holds about 4 GB per clip** (8.1 GB for one, 12.1 GB for two). So a pass takes at
+  most 7 clips in docker's 43 GB, and each further group is another 3-hour read of the planet.
+  **So cities are not one clip each:** one clip's polygon holds every counted city's padded box, a
+  MultiPolygon, and the regions of `config/regions.json` share it (`"extract"`), one region per time
+  zone as now. One clip, one pass a month, however many cities.
