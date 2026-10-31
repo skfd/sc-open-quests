@@ -873,3 +873,35 @@ the clip was compared with a fresh cut of the true state at the same moment
   49 MB. The derived diffs were only 0.3-0.7 MB a day, because they cover the 20 km ring only. A real
   daily planet diff is about 100 MB of the whole world. Applying it to a small clip is unmeasured;
   Ontario's 1.98 GB clip took 66 s with two diffs.
+
+## Current clips in osm-extracts (2026-10-31)
+
+**Real diffs, measured.** Daily planet diffs 5161 and 5162 (117 and 108 MB, the whole world)
+applied to Berlin's replay clip of 2026-10-29 (146 MB): `apply-changes` (without `-H`) 31-105 s at
+about 0.85 GB peak per diff (1.4 GB for both at once); the result 182 MB; the `-s smart` re-cut back
+to the envelope 20-101 s at about 4 GB peak, giving a 138 MB clip with about 3,000 more nodes a day
+(the smaller file is just compression; objects were counted). `check-refs`: no nodes in ways
+missing. The spread in seconds is machine load. So a day costs a few minutes, and memory follows
+the clip's size, not the diff's.
+
+**The design**, which an agent builds in osm-extracts:
+- **A clip is a store folder with a `clip.json`:** its polygon (GeoJSON, copied into the folder),
+  the history file it was cut from, and the last diff applied. `osm_extracts.py clip <name>
+  --polygon FILE` registers it. `fetch <name>` sees `clip.json` and brings the clip up to date. It
+  never downloads a file of its own.
+- **The output follows the store's conventions:** `<name>-YYYY-MM-DD.osm.pbf`, dated by its
+  replication timestamp, with a meta (sha256, replication timestamp and sequence, `check-refs`
+  result), `latest.json`, prune. Both replication headers are written into the file, because the
+  engine refuses a file without them. sc-open-quests counts a clip like a Geofabrik extract
+  (`"extract": "<name>"` in `config/regions.json`), with no new code path.
+- **Diffs:** `fetch planet-diffs` downloads every daily diff after the history file into
+  `planet/diffs/`, which the monthly rewrite already reads. A clip fetch takes any diff it lacks the
+  same way and never deletes one. The rewrite deletes a diff only once every clip is past it.
+- **The monthly re-cut** (`recut`): one planet pass for all clips, each cut to its polygon's
+  bounding box padded 20 km. Each cut is kept as `<name>-history-YYMMDD.osh.pbf`, which also gives the
+  clip's monthly points since 2017, so the 3.2 h pass is paid once a month, not twice. A slice at the
+  history file's timestamp is then cut to the polygon with `-s smart`, and diffs are applied from
+  there. A daily fetch never re-cuts. It applies diffs, re-downloading any that are gone (the planet
+  site keeps them all).
+- **The `"cadence": "weekly"` key becomes unused:** a planet-counted region is daily from its clip.
+  Left in place until the first clip region runs.
