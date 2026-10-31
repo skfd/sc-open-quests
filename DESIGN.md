@@ -917,3 +917,19 @@ replay's cut object for object (4,257,302 same, 0 different); the fetch applied 
   **So cities are not one clip each:** one clip's polygon holds every counted city's padded box, a
   MultiPolygon, and the regions of `config/regions.json` share it (`"extract"`), one region per time
   zone as now. One clip, one pass a month, however many cities.
+
+## The first European cities: ranked by StreetComplete changesets (2026-10-31)
+
+`tools/rank_sc_cities.py` over the changeset dump of 2026-10-26 (`osm-extracts fetch changesets`,
+8.9 GB). In the 12 months to 2026-10-26 it found 3.76M StreetComplete changesets worldwide by 41,287
+mappers (715k of them from the StreetComplete_ee fork, counted in), 2.93M (78%) in Europe by 29,316.
+A changeset is counted where its bbox centre lies inside the city's land polygon (Overture 2026-10-21.0,
+a county or region where the city is only a point; London is OSM r175342, Greater London is no Overture
+division). The top 40 are exact for the 1,583 European cities and towns of 50,000 and over. The result
+is in `data/rank/sc-cities-europe-261026.md` and `.csv`. The top 10: Berlin 36,804 (counted), London
+30,709, Hamburg 24,788 (counted), München 20,189, Paris 19,599, Wien 19,510, Praha 17,455, Budapest
+15,325, Warszawa 13,942, Kraków 13,565. Bremen is 51st. Caveats: Albacete (21st) is 4 mappers, most of
+it the fork; Kyiv, Riga, Salzburg and Moscow have few mappers per changeset. Russia counts west of
+60°E and Turkey Istanbul plus Thrace; whether Russia and Belarus belong on the list is the owner's call.
+Scanning the dump takes 86 s: it is sorted by id, so a binary search finds the window's start and
+only the last 10% is decompressed, in 22 processes.

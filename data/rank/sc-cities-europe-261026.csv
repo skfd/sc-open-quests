@@ -1,0 +1,122 @@
+rank,city,country,osm_relation,population,sc_changesets,edits,mappers,per_1k,fork_changesets,stage1_changesets,stage1_rank,stage1_bbox_inclusive,counted,inside,top_quests,area_from,overture_area_id
+1,Berlin,DE,62422.0,3700577,36804,138531,1151,9.9,4986,39980,1,41900,yes,,AddOpeningHours 7%; CheckShopExistence 4%; CheckExistence 4%,counted relation,59f212f3-4e73-45d4-aca6-a8c5cb0c2bfd
+2,London,GB,175342.0,8908083,30709,133564,564,3.4,3251,24604,3,32728,,,AddPathSurface 6%; AddRoadSurface 4%; AddTactilePavingCrosswalk 4%,override,r175342
+3,Hamburg,DE,62782.0,1869473,24788,120129,648,13.3,5195,37407,2,40650,yes,,AddOpeningHours 6%; CheckShopExistence 4%; AddPathSurface 4%,counted relation,4c1ca808-40a6-4573-aed0-cec8ca74cc41
+4,München,DE,62428.0,1505036,20189,97663,585,13.4,4050,24147,4,24147,,,AddPathSurface 6%; AddOpeningHours 5%; CheckExistence 5%,county München,09755310-09cb-4d76-861f-74f19544e65a
+5,Paris,FR,7444.0,2133111,19599,239065,684,9.2,8199,20694,5,26529,,,AddPathSurface 6%; AddOpeningHours 4%; AddTreeGenus 4%,own,8ac4f7a7-3596-4267-89a6-9ae3d1c6a634
+6,Wien,AT,109166.0,2042036,19510,70589,498,9.6,3312,20452,6,20452,,,AddOpeningHours 7%; CheckExistence 5%; AddPathSurface 5%,region Wien,b7a8bc03-5bb6-439c-a325-a5b1d9329adf
+7,Praha,CZ,435514.0,1275406,17455,61864,358,13.7,3615,18677,7,18677,,,AddPathSurface 7%; AddOpeningHours 5%; CheckExistence 4%,region Praha,a96dea37-dc5f-4b18-8b19-0520842f20f8
+8,Budapest,HU,1244004.0,1686222,15325,53449,240,9.1,6197,16169,8,16256,,,AddOpeningHours 5%; AddPathSurface 4%; ThingsOverlay 3%,own,5b68bcaa-b122-42e3-8af4-b666cf0dd426
+9,Warszawa,PL,2907540.0,1863845,13942,66115,239,7.5,2635,14877,9,15101,,,AddPathSurface 5%; AddOpeningHours 5%; CheckExistence 4%,own,36bdc2dc-d28a-489e-a902-18844abe1a5d
+10,Kraków,PL,2768922.0,780796,13565,61090,174,17.4,6782,13271,11,14627,,,ThingsOverlay 6%; AddPathSurface 5%; AddOpeningHours 3%,own,f2217f66-8db9-4c39-a84d-44f982696ab1
+11,Hannover,DE,59418.0,555372,12038,51106,263,21.7,4177,13253,12,14522,,,AddOpeningHours 5%; AddPathSurface 4%; CheckShopExistence 3%,own,7a50e448-ec18-4c2c-88db-8152993678eb
+12,Dresden,DE,191645.0,572240,11557,46806,354,20.2,3395,14238,10,14238,,,AddOpeningHours 6%; AddPathSurface 5%; CheckExistence 4%,county Dresden,a7a1523f-09b7-407d-8c0b-0b618b0d3602
+13,Milano,IT,44915.0,1396827,9544,36543,186,6.8,1279,10491,14,11036,,,AddLaneMarkings 5%; AddRoadSurface 5%; AddPathSurface 4%,own,fa978908-a67f-440e-8527-27feeca5c8d9
+14,Leipzig,DE,62649.0,628718,9306,34637,299,14.8,410,10378,15,10378,,,AddOpeningHours 8%; AddPathSurface 4%; CheckShopExistence 4%,county Leipzig,17f9c48c-c6ae-4922-8703-1db53674eb8e
+15,Zürich,CH,1682248.0,443037,8871,35669,231,20.0,1174,10043,16,10043,,,AddPathSurface 6%; AddOpeningHours 5%; CheckExistence 4%,localadmin Zürich,0e41ccfa-2792-4140-b401-27fd7757424a
+16,Frankfurt am Main,DE,62400.0,701350,8759,43729,324,12.5,1346,12070,13,14465,,,AddOpeningHours 6%; ThingsOverlay 5%; CheckShopExistence 4%,county Frankfurt am Main,21c09df6-0433-4f5f-a7b9-b7c96bc30283
+17,Braunschweig,DE,62531.0,252962,7828,26881,173,30.9,2959,8269,19,8701,,,AddOpeningHours 5%; AddPathSurface 4%; ThingsOverlay 4%,county Braunschweig,95f250be-73a9-4e10-a185-f9563532535a
+18,Köln,DE,62578.0,1069200,7730,25064,383,7.2,1263,7252,26,11309,,,AddOpeningHours 6%; CheckExistence 6%; AddPathSurface 5%,county Köln,17375791-94e6-49fb-8f4a-bfd3196ccc77
+19,Toulouse,FR,35738.0,504078,7646,26327,178,15.2,655,9752,17,9752,,,AddPathSurface 5%; AddOpeningHours 5%; CheckExistence 3%,own,00d21849-57f8-49f1-95aa-07d911a97ea3
+20,Barcelona,ES,347950.0,1713247,7274,31637,197,4.2,919,6634,33,8448,,,AddPathSurface 6%; AddTactilePavingCrosswalk 5%; AddWayLit 4%,own,b7c512e6-208d-45a5-ac47-08ccdfa1cd0a
+21,Albacete,ES,346317.0,175068,7161,69533,4,40.9,5220,7357,25,7357,,,AddOpeningHours 5%; AddWheelchairAccessBusiness 4%; AddTreeLeafType 3%,own,c020e890-d4bf-474f-ad81-0eb704b56af1
+22,Nantes,FR,59874.0,327734,6971,35052,160,21.3,3086,7747,21,8933,,,TagEdit 10%; AddPathSurface 5%; CheckExistence 4%,own,61012e6a-4c59-459c-a294-923075b6a04a
+23,Helsinki,FI,34914.0,695526,6910,41211,153,9.9,416,8682,18,8682,,,AddPathSurface 5%; AddWayLit 4%; CheckExistence 4%,own,624768bb-b776-415a-90b0-ac19e9a35a03
+24,Göteborg,SE,935611.0,607882,6701,95840,116,11.0,3169,6917,29,8283,,,ThingsOverlay 11%; AddPathSurface 5%; AddRoadSurface 3%,county Göteborgs Stad,44011f5a-7e3d-4021-b025-2a0a017a7fe0
+25,Oslo,NO,2775550.0,1110887,6590,24386,143,5.9,665,7477,24,7477,,,AddPathSurface 5%; AddKerbHeight 4%; AddTactilePavingKerb 3%,county Oslo,bdcbdbb4-9dc1-47fa-a643-0754987d0980
+26,Stuttgart,DE,62375.0,613392,6480,17861,314,10.6,1069,8237,20,9573,,,CheckExistence 7%; AddPathSurface 6%; AddOpeningHours 5%,county Stuttgart,9047dd8f-0f09-4bfd-bcfa-3cad7a695f6b
+27,Rīga,LV,13048688.0,588911,6442,19448,80,10.9,159,6854,31,6876,,,AddPathSurface 6%; AddRoadSurface 5%; CheckExistence 3%,region Rīga,ea8b01eb-b158-44db-83b6-de26ba0abe10
+28,Stockholm,SE,398021.0,984748,6418,21851,220,6.5,763,4233,70,9198,,,AddPathSurface 7%; AddRoadSurface 4%; AddSidewalk 3%,county Stockholms kommun,4a826233-4f66-4630-a065-9296cbaf1125
+29,Москва,RU,2555133.0,12700000,6231,18052,105,0.5,1026,5506,44,7317,,,AddPathSurface 5%; AddOpeningHours 5%; AddRoadSurface 3%,own,71ed2bb4-98ea-4aa9-b620-625aedb85f9a
+30,Bonn,DE,62508.0,335913,6185,61632,202,18.4,681,6551,34,6897,,,AddOpeningHours 6%; AddPathSurface 5%; CheckExistence 5%,county Bonn,d0b52e4a-7e9a-4f8e-802d-1432d9ba179e
+31,Karlsruhe,DE,62518.0,283959,5972,27728,277,21.0,1336,7068,28,7068,,,AddOpeningHours 7%; CheckExistence 6%; CheckShopExistence 5%,county Karlsruhe,1fe08ca7-6e8e-46fa-8e32-7a13b2e650e8
+32,Amsterdam,NL,271110.0,881933,5905,19561,249,6.7,301,6426,35,6838,,,AddPathSurface 7%; AddRoadSurface 5%; AddSidewalk 4%,own,29be7bc9-5783-4240-87d6-fefa0a64e0b3
+33,Київ,UA,421866.0,2952301,5882,44105,48,2.0,415,5922,40,5971,,,AddPathSurface 6%; WayLitOverlay 5%; AddRoadSurface 5%,region Київ,882f0362-7723-41e4-913d-66f9d8ca2f12
+34,Lyon,FR,120965.0,522250,5782,29924,266,11.1,629,5660,42,8054,,,AddPathSurface 8%; AddOpeningHours 7%; CheckShopExistence 6%,own,553311a4-0263-450f-a5b3-e074ec2ee311
+35,Dortmund,DE,1829065.0,600933,5629,20471,164,9.4,990,5888,41,7683,,,AddPathSurface 5%; AddOpeningHours 5%; AddRoadSurface 4%,county Dortmund,e3bf0ba2-f540-4d65-a16a-d40d99dd265d
+36,Nürnberg,DE,62780.0,526091,5489,15683,254,10.4,1047,6863,30,7912,,,AddOpeningHours 6%; AddPathSurface 4%; CheckExistence 4%,county Nürnberg,c71d04d4-b0a2-41e8-8780-1895874144dd
+37,Essen,DE,62713.0,569884,5412,20010,173,9.5,217,3895,80,6396,,,AddPathSurface 4%; AddOpeningHours 4%; CheckExistence 3%,county Essen,d67de9aa-9c52-403e-9e21-7cb30b2754cb
+38,Salzburg,AT,86538.0,152083,5389,23296,90,35.4,226,5970,39,5970,,,AddPathSurface 5%; AddPathSmoothness 4%; AddWayLit 4%,county Salzburg,e0d607cf-599a-496f-a762-68f1b5042185
+39,Madrid,ES,5326784.0,3477497,5384,20939,177,1.5,819,5216,52,7220,,,AddPathSurface 6%; AddTactilePavingCrosswalk 5%; AddOpeningHours 4%,own,cfb42293-0f1f-44f5-856f-036601c04546
+40,København,DK,2192363.0,613288,5312,23706,188,8.7,961,6674,32,6674,,,AddPathSurface 5%; AddOpeningHours 4%; CheckShopExistence 3%,county Københavns Kommune,a3271282-e901-4843-9ce4-a5956ceeaa2c
+41,Aachen,DE,62564.0,241683,5259,21325,183,21.8,989,6381,36,6828,,,AddOpeningHours 7%; CheckShopExistence 4%; AddRoadSurface 4%,own,d27f306d-b111-4a85-9a0e-75480709dd35
+42,Санкт-Петербург,RU,421007.0,5652922,5170,19787,58,0.9,2562,7651,23,8252,,,SurfaceOverlay 8%; WayLitOverlay 6%; AddPathSurface 5%,own,ff3a1bef-1d4a-4f98-8221-19c888ad76f1
+43,Brno,CZ,438171.0,379466,5162,16883,131,13.6,1016,5535,43,5535,,,AddOpeningHours 6%; AddPathSurface 6%; CheckShopExistence 5%,localadmin Brno,1d156bfc-b904-4ac0-8c2d-09b9632ee3bb
+44,Lisboa,PT,5400890.0,552700,5152,28633,134,9.3,61,5315,48,5422,,,AddPathSurface 5%; AddRoadSurface 4%; AddTactilePavingCrosswalk 4%,county Lisboa,5c2601bd-dc37-46c3-8eb7-732375767a7e
+45,София,BG,4283101.0,1286383,4872,24340,73,3.8,775,3736,86,4975,,,AddOpeningHours 6%; ThingsOverlay 4%; PlacesOverlay 4%,own,6887196d-944a-42fa-a43d-79625d19738c
+46,Bratislava,SK,,432801,4855,18851,114,11.2,1949,4997,54,4997,,,AddPathSurface 7%; AddOpeningHours 4%; AddRoadSurface 4%,own,5911a34d-9770-40ac-9718-eacfc42dc83c
+47,Torino,IT,43992.0,861341,4769,15679,115,5.5,282,5369,46,5638,,,PlacesOverlay 5%; AddTactilePavingCrosswalk 4%; CheckShopExistence 4%,own,80651db4-fed0-42db-96d8-90d08b97a115
+48,Hull,GB,,260700,4743,23181,8,18.2,0,4778,59,4778,,,AddBuildingLevels 10%; AddRoofShape 10%; AddRoadSurface 7%,"county Kingston upon Hull, City of",984a52d1-9a53-4ff5-a1da-8cd606dbf040
+49,Edinburgh,GB,,488050,4735,14748,134,9.7,446,4928,55,4928,,,AddPathSurface 6%; AddRoadSurface 5%; CheckExistence 4%,county City of Edinburgh,68f55d8d-1285-4240-b35d-8224684b4a8f
+50,Potsdam,DE,62369.0,178089,4616,16876,129,25.9,1492,5435,45,5435,,,AddPathSurface 5%; AddOpeningHours 5%; CheckExistence 4%,county Potsdam,3eef590a-0b51-41e6-9049-341e098c8cd9
+51,Bremen,DE,62559.0,588413,4460,12997,221,7.6,488,7078,27,8916,yes,,AddOpeningHours 7%; CheckShopExistence 6%; CheckExistence 6%,counted relation,dea19669-baf7-40f5-aa2d-c8dbc6b088f7
+52,Rostock,DE,62405.0,207830,4442,13321,116,21.4,501,4658,62,4658,,,CheckExistence 4%; AddPathSurface 4%; AddCrossingSignals 4%,county Rostock,5f8d9890-b4e4-49c2-aea6-80e1f9384986
+53,Uppsala,SE,305455.0,166698,4413,20717,75,26.5,1408,5244,50,5244,,,AddPathSurface 5%; AddRoadSurface 5%; AddLaneMarkings 3%,county Uppsala kommun,34f7c1a8-e5c6-4f86-bf97-533f3d9a40e5
+54,Düsseldorf,DE,62539.0,653253,4387,13379,212,6.7,533,2225,169,6520,,,AddPathSurface 5%; AddOpeningHours 4%; CheckExistence 4%,county Düsseldorf,a212a325-805e-45ec-87a4-85828e33ba4b
+55,Мінск,BY,59195.0,1995471,4329,13115,40,2.2,581,4665,61,4665,,,AddPathSurface 9%; AddRoadSurface 5%; AddOpeningHours 5%,region Мінск,86633172-9936-47df-9062-3995b5c00e64
+56,Freiburg im Breisgau,DE,62768.0,220286,4322,23575,185,19.6,586,6364,37,6364,,,AddPathSurface 5%; AddRoadSmoothness 5%; AddOpeningHours 5%,county Freiburg im Breisgau,59a8dfe1-e8e4-4287-83a7-85ae6d04a922
+57,Mannheim,DE,62691.0,310000,4263,14986,141,13.8,295,2595,141,5012,,,AddPathSurface 5%; AddOpeningHours 4%; CheckShopExistence 4%,county Mannheim,72eaf50b-9648-42a6-a572-186b20ac6cde
+58,Dublin,IE,1109531.0,588233,4191,18742,107,7.1,169,4587,63,4587,,,AddPathSurface 5%; AddHousenumber 4%; CheckShopExistence 4%,own,125dd123-9c04-4380-9ab2-1166f2b333ad
+59,Heidelberg,DE,62487.0,152113,4180,16900,152,27.5,2181,5241,51,5241,,,AddOpeningHours 4%; ThingsOverlay 4%; CheckExistence 4%,county Heidelberg,86bf7f69-f776-4952-90da-484f3739f6fb
+60,Darmstadt,DE,62581.0,159631,4127,14312,191,25.9,512,5149,53,5149,,,AddPathSurface 6%; AddOpeningHours 5%; AddRoadSurface 4%,county Darmstadt,59dd52ac-2729-412b-9b4a-85598c40d83f
+61,Marseille,FR,76469.0,873076,4060,18144,97,4.7,639,4169,72,4169,,,AddBuildingType 9%; AddBuildingLevels 5%; AddPathSurface 4%,own,ce8c9ee3-ed18-41d0-a781-531cdc49a589
+62,Mainz,DE,62630.0,227277,4024,18469,123,17.7,682,5293,49,5293,,,AddPathSurface 5%; CheckExistence 4%; AddOpeningHours 4%,county Mainz,bc597559-c32b-4bdc-bc2a-cd37bc72e6bd
+63,Ulm,DE,62495.0,121648,4010,14450,108,33.0,2130,1670,234,5978,,,AddPathSurface 5%; ThingsOverlay 4%; AddOpeningHours 4%,county Ulm,030b4b83-34cf-4085-b904-328befb99d15
+64,Halle (Saale),DE,62638.0,231565,4007,14919,104,17.3,994,4176,71,4176,,,AddOpeningHours 6%; AddPathSurface 5%; CheckShopExistence 4%,county Halle (Saale),872082ae-d2f3-4d29-a000-eac22467c4b1
+65,Manchester,GB,,503100,4001,23560,74,8.0,109,1856,212,5987,,,AddPathSurface 6%; AddRoadSurface 4%; AddTactilePavingCrosswalk 4%,county Manchester,8527ff11-85dd-4315-8e1c-0fc9b9a09442
+66,Den Haag,NL,192737.0,525745,3994,15539,108,7.6,253,4483,66,5268,,,AddPathSurface 5%; AddRoadSurface 5%; CheckShopExistence 4%,own,2ea65d1f-816f-460f-a20d-c35be7581d9a
+67,Bristol,GB,5746665.0,463400,3976,16835,69,8.6,313,4903,57,4903,,,AddRoadSurface 4%; AddPathSurface 4%; CheckExistence 4%,own,ae70c32d-d333-49c8-95f5-51dd97be0e51
+68,Münster,DE,62591.0,314332,3965,10511,165,12.6,541,4680,60,4680,,,AddPathSurface 5%; AddOpeningHours 5%; AddRoadSurface 4%,county Münster,ad36fb3d-aec3-4ab6-95e2-a5dc42fd4c12
+69,Grenoble,FR,80348.0,157477,3947,18438,129,25.1,987,5359,47,5359,,,CheckExistence 5%; CheckShopExistence 5%; ThingsOverlay 4%,own,7f5dfedc-8287-4dc6-8f47-ab982d81c2ff
+70,İstanbul,TR,223474.0,15701602,3924,34813,98,0.2,353,73,1057,4153,,,AddBenchStatusOnBusStop 5%; AddBusStopShelter 5%; AddLaneMarkings 5%,region İstanbul,6d1a95a9-4af5-498e-8df2-77cc995080b2
+71,Bochum,DE,62644.0,371075,3918,12229,139,10.6,642,2753,129,5054,,,AddOpeningHours 6%; CheckExistence 5%; CheckShopExistence 4%,county Bochum,ad28183a-a2f1-43e1-a05e-d3fc12a436fb
+72,València,ES,344953.0,841558,3899,17724,126,4.6,1466,4378,68,4427,,,AddPathSurface 5%; AddTactilePavingCrosswalk 4%; AddRoadSurface 3%,own,7b35ce25-d828-4202-b2d8-5c1f3b19e071
+73,Vilnius,LT,1529146.0,581475,3839,16468,70,6.6,134,3943,76,3943,,,AddPathSurface 4%; AddOpeningHours 4%; WayLitOverlay 3%,own,fe2c266d-fb4c-4068-964e-4896af2be430
+74,Augsburg,DE,62407.0,301033,3814,12853,165,12.7,1117,4905,56,4905,,,AddPathSurface 6%; AddOpeningHours 6%; CheckExistence 5%,county Augsburg,23c6af3c-43c8-46c3-abda-041c62e5c4eb
+75,Αθήνα,GR,1370736.0,3090508,3755,17580,74,1.2,1567,6006,38,6006,,,AddressOverlay 8%; PlacesOverlay 7%; AddOpeningHours 6%,county Δήμος Αθηναίων,4b4bf2f5-1ca3-4d36-acd9-6c20e244d980
+76,Sheffield,GB,,547000,3748,18769,73,6.9,208,3202,103,4244,,,AddRoadSurface 5%; AddPathSurface 4%; CheckExistence 3%,county Sheffield,f54f1847-12e6-4f57-8e88-a3da24779e8c
+77,Innsbruck,AT,4835169.0,130585,3641,12166,79,27.9,348,3966,75,3966,,,AddPathSurface 6%; CheckExistence 5%; CheckShopExistence 5%,county Innsbruck,11748f4a-fb72-441b-aaf7-1beaffac3081
+78,Zagreb,HR,3168167.0,663592,3635,15447,60,5.5,2217,3764,82,3764,,,AddPathSurface 4%; ThingsOverlay 4%; AddPathSmoothness 3%,own,996799ed-87cc-488b-8882-6da1f5955318
+79,Oldenburg,DE,62409.0,163830,3609,11650,114,22.0,1226,3901,79,3901,,,AddOpeningHours 4%; AddPathSurface 4%; CheckExistence 3%,county Oldenburg,4d0b4dfc-e3ff-46df-9dcf-8494f9c66c08
+80,Rennes,FR,54517.0,225081,3596,11247,143,16.0,1242,4402,67,4402,,,AddPathSurface 5%; CheckExistence 5%; AddOpeningHours 4%,own,5df6e275-c2ac-44cf-9570-0a0e2fa8bbb4
+81,Firenze,IT,42602.0,362348,3587,10563,88,9.9,1921,4104,73,4104,,,AddPathSurface 5%; ThingsOverlay 5%; PlacesOverlay 4%,own,d0a07d00-c467-41a9-84b1-3e55ed4018d2
+82,Roma,IT,41485.0,2802048,3549,13390,188,1.3,320,3755,85,4165,,,AddPathSurface 7%; AddRoadSurface 5%; AddTactilePavingCrosswalk 5%,own,6fe9e7a3-65c4-4a9c-9aa2-3dddad62e1ab
+83,Cambridge,GB,,145818,3466,13286,105,23.8,109,4549,65,5976,,,AddRoadSurface 7%; AddPathSurface 6%; AddLaneMarkings 3%,county Cambridgeshire,87beca3e-dd2d-40f7-aa51-55b3556319dd
+84,Fulda,DE,454863.0,67980,3458,15777,60,50.9,2242,4051,74,4051,,,AddPathSurface 6%; ThingsOverlay 6%; AddKerbHeight 4%,own,4a11b32a-7823-41b0-a40a-92a00b69dba6
+85,Gloucester,GB,,121700,3429,14281,81,28.2,350,3755,84,4285,,,AddRoadSurface 5%; AddLaneMarkings 4%; AddPathSurface 3%,county Gloucestershire,3ac6cc00-5af8-479f-b26c-cda5849d793c
+86,Duisburg,DE,62456.0,486855,3389,10387,98,7.0,110,2939,116,6005,,,AddRoadSurface 6%; AddPathSurface 5%; AddOpeningHours 4%,county Duisburg,eee35641-d2bd-4ee8-8814-96a34e38f6da
+87,Wiesbaden,DE,62496.0,299946,3384,12106,133,11.3,157,3473,90,6427,,,AddOpeningHours 6%; AddPathSurface 5%; AddRoadSurface 4%,county Wiesbaden,ca23611d-1a50-4b9c-af2d-2154fb5db25e
+88,Koblenz,DE,62512.0,110643,3314,13558,85,30.0,1143,3925,77,3925,,,MarkCompletedHighwayConstruction 5%; AddPathSurface 4%; AddRoadSurface 4%,county Koblenz,d5ca5bdc-5fde-46b4-ab32-da6f6b58139a
+89,Leeds,GB,,766399,3302,17420,83,4.3,424,2988,112,4041,,,AddPathSurface 6%; AddRoadSurface 6%; AddAddressStreet 4%,county Leeds,ba740665-bcef-446b-9a36-1e494472743b
+90,Rotterdam,NL,1411101.0,572392,3261,14115,93,5.7,94,2569,143,4085,,,AddPathSurface 5%; AddRoadSurface 4%; CheckShopExistence 4%,own,9783bcfa-381d-410f-90a5-021b67e64e68
+91,Szczecin,PL,2873415.0,387700,3246,12278,41,8.4,27,3367,93,3367,,,AddTreeLeafType 7%; AddPathSurface 7%; AddOpeningHours 4%,own,af41fcd9-096e-4b89-86cc-c6de80616f2c
+92,Tübingen,DE,2778914.0,89447,3227,9622,86,36.1,1506,3725,88,3861,,,AddTreeLeafType 5%; AddOpeningHours 5%; CheckShopExistence 4%,own,98cf5707-001c-4f91-ab0e-6d944959db30
+93,Kiel,DE,27021.0,246306,3197,17366,136,13.0,820,3908,78,3908,,,AddOpeningHours 8%; CheckExistence 4%; AddPathSurface 4%,county Kiel,d5a3e302-839e-49c9-a1bf-11dbbdf5bad4
+94,Graz,AT,34719.0,331359,3196,10535,120,9.6,810,3392,92,3392,,,CheckExistence 6%; AddOpeningHours 5%; AddPathSurface 4%,county Graz,f54236aa-d87b-41d4-8283-e2b1488fbe81
+95,Oxford,GB,,165000,3058,9379,120,18.5,227,3264,97,3772,,,AddRoadSurface 6%; AddPathSurface 5%; AddLaneMarkings 3%,county Oxfordshire,65bea0e8-cd9b-4421-94a7-d6d50b4b8e04
+96,Utrecht,NL,1433619.0,295591,3032,9397,137,10.3,172,3361,94,3702,,,AddPathSurface 6%; CheckExistence 4%; AddRoadSurface 4%,own,4a02dcde-1fd8-4815-8870-54bdb31e7844
+97,Sunderland,GB,,275300,3006,20855,11,10.9,2215,3227,99,3227,,,AddressOverlay 18%; AddHousenumber 18%; WayLitOverlay 11%,county Sunderland,782b49cb-d95f-45e3-8446-9845112fbe8d
+98,Antwerpen,BE,59518.0,525935,3000,13510,85,5.7,104,4264,69,4264,,,WayLitOverlay 6%; AddPathSurface 5%; AddRoadSurface 4%,own,d68cde32-90c0-41b7-8be0-b95a69bc05cc
+99,Aalborg,DK,2099194.0,114194,2988,12243,53,26.2,1130,3227,100,3227,,,AddPathSurface 3%; TagEdit 3%; SurfaceOverlay 3%,county Aalborg Kommune,3eeba1d1-85bc-4ea8-b6f2-df044e1e2b77
+100,Saarbrücken,DE,1187159.0,177201,2976,11157,79,16.8,764,4551,64,4551,,,AddOpeningHours 6%; AddPathSurface 4%; CheckExistence 4%,own,82416d07-da14-46db-a126-3595cba63716
+101,Chemnitz,DE,62594.0,243089,2968,12074,145,12.2,698,3759,83,3759,,,AddOpeningHours 5%; AddPathSurface 5%; AddRoadSurface 4%,county Chemnitz,66894c4b-004a-46d5-8488-76e9eaa207a8
+102,Bielefeld,DE,62646.0,328864,2916,10105,104,8.9,162,2956,115,4006,,,CheckShopExistence 7%; AddPathSurface 6%; CheckExistence 5%,county Bielefeld,b565df22-476c-4fe0-b07e-35bf2ca7149f
+103,Lübeck,DE,27027.0,212958,2882,22948,147,13.5,252,3891,81,3891,,,CheckExistence 6%; AddOpeningHours 5%; AddPathSurface 5%,county Lübeck,35c0e022-d30e-452b-a35d-092b0e0fcda3
+104,Ingolstadt,DE,62381.0,127886,2825,10429,65,22.1,118,3317,95,3317,,,AddRoadSurface 6%; AddPathSurface 5%; AddOpeningHours 4%,county Ingolstadt,11dc7bb4-4fa2-4e3c-a661-2ba2f51a66ca
+105,Espoo,FI,36097.0,326280,2748,16970,59,8.4,439,2164,175,6010,,,AddWayLit 6%; SurfaceOverlay 6%; AddCyclewaySegregation 4%,own,23a19bfe-e00e-4e23-8d33-664767501b24
+106,Bruxelles - Brussel,BE,20113191.0,194291,2686,7259,151,13.8,899,7705,22,7705,,,AddPathSurface 7%; AddOpeningHours 5%; CheckExistence 5%,own,e4e43901-624b-4182-b9bb-7aa1de0176d4
+107,Würzburg,DE,62464.0,124700,2621,7775,109,21.0,209,3215,101,3215,,,AddOpeningHours 6%; AddPathSurface 5%; CheckExistence 4%,county Würzburg,5c3acdbe-7317-4a05-aef7-744b40a84724
+108,Wuppertal,DE,62478.0,361077,2619,8368,81,7.3,327,2547,146,4120,,,AddOpeningHours 6%; CheckExistence 6%; AddPathSurface 5%,county Wuppertal,4b006215-8a99-4005-aa8c-4e5c4cd349d5
+109,Lille,FR,58404.0,236710,2578,10095,92,10.9,94,3733,87,3827,,,AddOpeningHours 6%; AddCrossingKerbHeight 5%; CheckExistence 5%,own,f5840052-8e37-49de-a54d-dbad0eeacb5c
+110,Strasbourg,FR,71033.0,291313,2522,9912,155,8.7,252,3496,89,3496,,,CheckShopExistence 6%; AddPathSurface 5%; CheckExistence 5%,own,7e82b33f-1411-4bd1-a1a3-4f315c1f4a8f
+111,Amersfoort,NL,144642.0,145699,2496,9903,60,17.1,1127,3251,98,3251,,,AddPathSurface 5%; ThingsOverlay 5%; AddRoadSurface 4%,own,10df9863-2548-4459-9c52-dad49d48a396
+112,Nottingham,GB,,305700,2449,12121,39,8.0,1273,3274,96,3274,,,AddRoadSurface 4%; AddLaneMarkings 4%; AddPathSurface 4%,county Nottingham,04a01356-edd5-4200-9afb-941e1e0f30db
+113,Bern,CH,1682378.0,128848,2425,6950,102,18.8,66,3213,102,3213,,,AddPathSurface 7%; CheckExistence 5%; AddFireHydrantPosition 4%,localadmin Bern,d839084a-ed78-4d54-b84a-eb0558851d27
+114,Enschede,NL,1380244.0,151041,2292,9278,40,15.2,10,1860,211,3575,,,AddLaneMarkings 5%; AddPathSurface 5%; AddRoadSurface 4%,own,564ecd53-4eb4-4988-8ea4-49af08e415f1
+115,Chester,GB,,119000,1863,6492,36,15.7,702,3147,106,4055,,,AddRoadSurface 6%; ThingsOverlay 5%; AddPathSurface 5%,county Cheshire West and Chester,5e8529ff-06fe-43ca-bc8c-9226432b393f
+116,Gdańsk,PL,2723259.0,470633,1807,8813,82,3.8,123,1920,201,3273,,,AddPathSurface 8%; AddRoadSurface 5%; AddTactilePavingCrosswalk 4%,own,521ae2e4-5493-49a4-aaeb-854a24e2627f
+117,Stafford,GB,,71673,1751,6685,62,24.4,321,2966,114,8155,,,AddRoadSurface 8%; AddPathSurface 5%; AddLaneMarkings 5%,county Staffordshire,e7d4a1ca-61f9-4c13-bb60-7370a58003c5
+118,Neu-Ulm,DE,941087.0,62610,1624,6658,45,25.9,863,4844,58,4844,,,AddRoadSmoothness 8%; AddRoadSurface 6%; AddWayLit 5%,own,cfdce9e0-8f9d-4f89-9401-db4c5889349f
+119,Bremerhaven,DE,62658.0,118502,1284,3915,41,10.8,289,1382,278,1382,yes,,AddOpeningHours 5%; AddPathSurface 5%; AddRoadSurface 4%,counted relation,71f5896b-ad33-4a01-a3f4-7e42c664df1e
+120,Stockport,GB,,136082,1268,6879,28,9.3,0,3174,104,3184,,,AddRoadSurface 5%; AddPathSurface 4%; AddHousenumber 4%,county Stockport,66eee238-2aa9-4ad0-85e6-c3e53020d3e9
+121,Ludwigshafen am Rhein,DE,62347.0,163340,856,1962,47,5.2,40,3443,91,3443,,,AddPathSurface 5%; CheckShopExistence 4%; CheckExistence 4%,county Ludwigshafen am Rhein,347fcaf3-d91b-4582-a013-be50a2424eb7
