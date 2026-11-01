@@ -79,7 +79,9 @@ class Region:
         home = self.extract if self.on_clip else region_id
         self.history_dir = run.OSM_DATA_DIR / (self.extract if self.on_clip else f"{region_id}-history")
         self.history = self.history_dir / f"{home}-{PLANET}.osh.pbf"
-        self.history_meta = self.history.with_name(self.history.name + ".meta.json")
+        # clip() writes <file>.meta.json; osm-extracts recut names a history cut's meta <stem>.meta.json
+        self.history_meta = (self.history_dir / f"{home}-{PLANET}.meta.json" if self.on_clip
+                             else self.history.with_name(self.history.name + ".meta.json"))
         self.poly = self.history_dir / f"{region_id}.poly"  # a copy of config's: osmium sees only /osm
         self.backfill = BACKFILL / region_id
         self.slices = BACKFILL / home  # where slices of self.history go

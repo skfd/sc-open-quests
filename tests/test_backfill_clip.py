@@ -42,6 +42,7 @@ class ClipRegionTest(unittest.TestCase):
         a, b, berlin = bh.Region("eu-a"), bh.Region("eu-b"), bh.Region("berlin")
         self.assertTrue(a.on_clip)
         self.assertEqual(a.history, self.store / "eu" / "eu-history-261029.osh.pbf")
+        self.assertEqual(a.history_meta, self.store / "eu" / "eu-history-261029.meta.json")  # osm-extracts' name
         self.assertEqual(a.history, b.history)
         self.assertEqual(a.slices, b.slices)
         self.assertFalse(berlin.on_clip)
