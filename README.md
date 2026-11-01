@@ -44,12 +44,16 @@ python run.py count      # engine on each region's newest extract -> data/archiv
 python run.py backfill   # count every dated extract still in the store
 python run.py history    # archive -> docs/data/history/<city>.json, cities.json, compare/<quest>.json, newest snapshots
 python run.py update     # all three, then commit "data <asOfDate>" and push (--no-push: commit only)
-python run.py weekly     # osm-extracts fetch planet-history, then the "cadence": "weekly" regions from the
-                         # planet history file -> archive, history, commit "data weekly <date>", push (--no-push)
+python run.py planet     # monthly: osm-extracts fetch planet-history, osm-extracts recut (every clip), the
+                         # months the regions on clips lack, the "cadence": "weekly" regions -> archive,
+                         # history, commit "data planet <date>", push (--no-push). `weekly` is its old name
+python tools/backfill_history.py months --region europe-west --region europe-central     --region europe-east --region europe-msk [--step 12]   # a clip's regions by hand, sharing each slice
+python tools/clip_polygon.py europe   # after adding a city to a clip's region: its polygon and .poly files
 ```
 
-`update` is the scheduled entry point; `weekly` the weekly one (today no region is weekly, so it only
-keeps the planet history file current). A second run on the same extract downloads nothing, counts
+`update` is the scheduled entry point; `planet` the monthly one. A region counted from an
+osm-extracts clip (`"extract": "europe"`: the planet inside a polygon, kept current by the daily
+diffs) goes through `update` like a Geofabrik one; `planet` re-cuts the clip and adds its monthly points. A second run on the same extract downloads nothing, counts
 nothing and commits nothing. `count --force` recounts.
 
 Tests: `python -m unittest`.
@@ -73,13 +77,14 @@ The task is named `kk-SCOpenQuests`. It starts when available if the machine was
 is stopped after two hours.
 
 ```powershell
-.\schedule-weekly-add.ps1      # run.py weekly on the first Monday of each month at 07:30, appends to logs\weekly.log
-.\schedule-weekly-remove.ps1
+.\schedule-planet-add.ps1      # run.py planet on the first Monday of each month at 07:30, appends to logs\planet.log
+.\schedule-planet-remove.ps1
 ```
 
-`kk-SCOpenQuests-weekly` starts when available and is stopped after ten hours. It never holds the
-pipeline lock across the daily 13:15 run (DESIGN.md, "Weekly planet job"). It runs monthly while no
-region is counted from the planet (DESIGN.md, "Planet job: monthly while nothing counts from it").
+`kk-SCOpenQuests-planet` starts when available and is stopped after fourteen hours; registering it
+removes the old `kk-SCOpenQuests-weekly`. It never holds the pipeline lock across the daily 13:15 run
+(DESIGN.md, "Weekly planet job"). It runs monthly because each run rewrites the 160 GB history file
+(DESIGN.md, "Planet job: monthly while nothing counts from it").
 
 ## Licence and attribution
 

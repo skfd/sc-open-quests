@@ -12,16 +12,22 @@ This is the contract between the engine (writes snapshots), the pipeline (keeps 
   and the `osm-extracts fetch <extract>`; `url` is passed as `fetch --url` when osm-extracts does not know
   the extract by name. Several regions may share an extract (a country across time zones, or more cities
   than one run takes); `download` fetches each extract once, and regions sharing one must give the same
-  `url`. Today every region is its own Geofabrik extract (`id` = osm-extracts region: ontario, berlin, …).
-  `group` heads the city selector ("Ontario", "Germany"); `source` names the extract in the footer; `poly`
-  is the region's `.poly` (Geofabrik's, for today's), used to clip notes and the planet history.
+  `url`. The Canadian and German regions are each their own Geofabrik extract (`id` = osm-extracts region:
+  ontario, berlin, …); the four `europe-*` regions share the osm-extracts clip `europe` (a store folder with
+  a `clip.json`: the planet inside `config/europe.geojson`, kept current by the daily diffs), whose history
+  cut `europe/europe-history-<YYMMDD>.osh.pbf` gives their monthly points.
+  `group` heads the city selector ("Ontario", "Germany"); a city's own `group` wins over it. `source` names
+  the extract in the footer; `poly` is the region's `.poly` (Geofabrik's, or for a clip's regions their
+  cities' padded boxes, from `tools/clip_polygon.py`), used to clip notes and the planet history.
   `cadence` is `"daily"` (default) or `"weekly"`. A daily region is counted from its extract by
   `run.py update`; a weekly one has no extract (`extract` and `url` are ignored) and is counted by
-  `run.py weekly` from the planet history file: a slice at the file's replication timestamp each week, plus
+  `run.py planet` from the planet history file: a slice at the file's replication timestamp each week, plus
   the 1st of every month since 2017-01 not yet counted. Its snapshots' `source.url` is null and
   `source.file` is `<id>-history-<YYMMDD>.osh.pbf@<time>`. Today every region is daily.
 - `config/cities.json`: `{ "cities": [ { id, name, relation, adminLevel, countryCodes: ["CA","CA-ON"],
-  timeZone, population, landAreaKm2, boundary, region } ] }`. `boundary` is a path to an Overpass `out geom`
+  timeZone, population, landAreaKm2, boundary, region[, group][, populationSource] } ] }`. `group`
+  (optional) heads the city's place in the city selector instead of its region's: its country, for a
+  region spanning several. `boundary` is a path to an Overpass `out geom`
   relation element; `region` is the region whose extract holds the city, and its `timeZone` must be the
   region's. Adding a city means adding an entry and its boundary file (`tools/add_city.py <relation>`
   makes both; `tools/import_farmland_cities.py` made the ontario-farmland set). The engine gets the
