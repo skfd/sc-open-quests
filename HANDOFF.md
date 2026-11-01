@@ -259,14 +259,26 @@ monthly planet job all need it.
    role's lock. It holds `planet/fetch.lock`. When it lands: `python ../osm-extracts/osm_extracts.py
    fetch europe` by hand (diffs 5161 on), and read `timings` in the meta. The fetch's memory budget
    (4.5 GB for the cut) was sized on 146 MB clips, so check it on this one.
+   **Overnight, unattended:** `.scratch/europe-overnight.sh` (started 20:29, log
+   `logs/europe-overnight.log`) waits for the re-cut, runs `fetch europe` and `fetch notes`, copies main's
+   archive into the worktree for the site preview, counts the four regions once (UTC+3 first), then
+   their monthly points with `--planet history-261029`: yearly (`--step 12`), then quarterly
+   (`--step 3`). Each step skips what is done, so a rerun goes on: `RECUT_PID=0 bash
+   .scratch/europe-overnight.sh >> logs/europe-overnight.log 2>&1`. **Monday 07:30's planet job is
+   still main's old `weekly`:** it rewrites the history file to `history-261102` and retires 261029.
+   That is why the months name `--planet history-261029`: the clip's history cut stays in `europe/`.
+   After the merge the planet job re-cuts the clip from the newest file by itself.
 2. Count each region once from the clip, on the branch, `europe-msk` first (Moscow and Istanbul in
    one engine run).
 3. Monthly points: **built on the branch** (dbb5c42): `backfill_history months --region europe-west
    --region europe-central --region europe-east --region europe-msk --step 12` reads the clip's
    history cut and shares each slice; then without `--step`.
 4. The site: **built on the branch** (469ae32): a city's own `group` (its country) wins over the region's.
-5. Merge `europe` into main. Then rework the planet job to fetch planet-history, `recut`, and count the
-   months, and rename it from "weekly" to "planet" in the same change.
+5. Merge `europe` into main. **The merge publishes**: the 13:15 run pushes main, so it waits for the
+   owner to look at the site preview from the worktree. The planet job is already reworked on the
+   branch (a65b99a: `run.py planet`, `weekly` its old name). At the merge: copy the worktree's
+   `data/archive/europe-*`, `data/grid/europe-*` and `data/backfill/europe-*` into main's, and run
+   `.\schedule-planet-add.ps1` as Administrator; it removes `kk-SCOpenQuests-weekly`.
 6. osm-extracts: **done** (3413b63). Registering a clip again keeps a changed polygon waiting for the
    next re-cut, and the clip serves the old one until then. Adding a city: `add_city.py`, then
    `tools/clip_polygon.py europe`, then `osm_extracts.py clip europe --polygon config/europe.geojson`.
