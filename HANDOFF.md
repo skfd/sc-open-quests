@@ -276,6 +276,17 @@ monthly planet job all need it.
    still main's old `weekly`:** it rewrites the history file to `history-261102` and retires 261029.
    That is why the months name `--planet history-261029`: the clip's history cut stays in `europe/`.
    After the merge the planet job re-cuts the clip from the newest file by itself.
+   **Counted (2026-11-01, 00:04-00:35):** all four regions from the 10-29 clip, 32 cities. UTC+3 in under
+   4 min (Istanbul 2.05M open quests, Moscow 1.64M, Minsk 398k), central 20 min. London has the most,
+   3.8M (1.1M of the default-on quests); Paris is the densest per road km. The monthly points take about
+   12 min a month for all four regions (one slice, four counts): yearly done about 02:45, quarterly
+   about midday. The driver stops after that; the rest of the months is
+   `python tools/backfill_history.py months --planet history-261029 --region europe-msk --region europe-west
+   --region europe-central --region europe-east`, in the worktree, about 16 h.
+   **Site preview:** `run.py history` in the worktree (left uncommitted: main's daily data commits would
+   conflict), served by `python -m http.server 8791 --directory ../sc-open-quests-europe` (8765 is
+   another project's), screenshots in `.scratch/europe-preview/` (`shoot.py`). The picker groups by
+   country, München under Germany; no page errors. The title now says "Canada and Europe" (4766615).
 2. Count each region once from the clip, on the branch, `europe-msk` first (Moscow and Istanbul in
    one engine run).
 3. Monthly points: **built on the branch** (dbb5c42): `backfill_history months --region europe-west
