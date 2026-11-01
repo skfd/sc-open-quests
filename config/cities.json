@@ -60,7 +60,8 @@
       "landAreaKm2": 219.50200157510776,
       "boundary": "data/boundaries/271110.json",
       "region": "europe-central",
-      "populationSource": "Overture divisions 2026-10-21.0"
+      "populationSource": "Overture divisions 2026-10-21.0",
+      "group": "Netherlands"
     },
     {
       "id": "antwerpen",
@@ -76,7 +77,8 @@
       "landAreaKm2": 208.13502545750643,
       "boundary": "data/boundaries/59518.json",
       "region": "europe-central",
-      "populationSource": "Overture divisions 2026-10-21.0"
+      "populationSource": "Overture divisions 2026-10-21.0",
+      "group": "Belgium"
     },
     {
       "id": "athens",
@@ -91,7 +93,8 @@
       "landAreaKm2": 38.0775037473652,
       "boundary": "data/boundaries/1370736.json",
       "region": "europe-east",
-      "populationSource": "ELSTAT 2021 census, municipality of Athens"
+      "populationSource": "ELSTAT 2021 census, municipality of Athens",
+      "group": "Greece"
     },
     {
       "id": "aurora",
@@ -123,7 +126,8 @@
       "landAreaKm2": 101.33425266840518,
       "boundary": "data/boundaries/347950.json",
       "region": "europe-central",
-      "populationSource": "Overture divisions 2026-10-21.0"
+      "populationSource": "Overture divisions 2026-10-21.0",
+      "group": "Spain"
     },
     {
       "id": "barrie",
@@ -229,7 +233,8 @@
       "landAreaKm2": 367.6003570663314,
       "boundary": "data/boundaries/1702499.json",
       "region": "europe-central",
-      "populationSource": "Overture divisions 2026-10-21.0"
+      "populationSource": "Overture divisions 2026-10-21.0",
+      "group": "Slovakia"
     },
     {
       "id": "bremen",
@@ -305,7 +310,8 @@
       "landAreaKm2": 525.9162813145822,
       "boundary": "data/boundaries/1244004.json",
       "region": "europe-central",
-      "populationSource": "Overture divisions 2026-10-21.0"
+      "populationSource": "Overture divisions 2026-10-21.0",
+      "group": "Hungary"
     },
     {
       "id": "burlington",
@@ -525,7 +531,8 @@
       "landAreaKm2": 118.62170402980561,
       "boundary": "data/boundaries/1109531.json",
       "region": "europe-west",
-      "populationSource": "Overture divisions 2026-10-21.0"
+      "populationSource": "Overture divisions 2026-10-21.0",
+      "group": "Ireland"
     },
     {
       "id": "edmonton",
@@ -588,7 +595,8 @@
       "landAreaKm2": 1030.5663287149753,
       "boundary": "data/boundaries/935611.json",
       "region": "europe-central",
-      "populationSource": "Overture divisions 2026-10-21.0"
+      "populationSource": "Overture divisions 2026-10-21.0",
+      "group": "Sweden"
     },
     {
       "id": "granby",
@@ -727,7 +735,8 @@
       "landAreaKm2": 717.6430644131422,
       "boundary": "data/boundaries/34914.json",
       "region": "europe-east",
-      "populationSource": "Overture divisions 2026-10-21.0"
+      "populationSource": "Overture divisions 2026-10-21.0",
+      "group": "Finland"
     },
     {
       "id": "istanbul",
@@ -742,7 +751,8 @@
       "landAreaKm2": 11283.102475873793,
       "boundary": "data/boundaries/223474.json",
       "region": "europe-msk",
-      "populationSource": "Overture divisions 2026-10-21.0"
+      "populationSource": "Overture divisions 2026-10-21.0",
+      "group": "Türkiye"
     },
     {
       "id": "kamloops",
@@ -834,7 +844,8 @@
       "landAreaKm2": 94.4149637364322,
       "boundary": "data/boundaries/2192363.json",
       "region": "europe-central",
-      "populationSource": "Overture divisions 2026-10-21.0"
+      "populationSource": "Overture divisions 2026-10-21.0",
+      "group": "Denmark"
     },
     {
       "id": "krakow",
@@ -849,7 +860,8 @@
       "landAreaKm2": 326.8503924592668,
       "boundary": "data/boundaries/2768922.json",
       "region": "europe-central",
-      "populationSource": "Overture divisions 2026-10-21.0"
+      "populationSource": "Overture divisions 2026-10-21.0",
+      "group": "Poland"
     },
     {
       "id": "kyiv",
@@ -864,7 +876,8 @@
       "landAreaKm2": 826.1533074197102,
       "boundary": "data/boundaries/421866.json",
       "region": "europe-east",
-      "populationSource": "Overture divisions 2026-10-21.0"
+      "populationSource": "Overture divisions 2026-10-21.0",
+      "group": "Ukraine"
     },
     {
       "id": "langley",
@@ -943,7 +956,8 @@
       "landAreaKm2": 86.84769301363109,
       "boundary": "data/boundaries/5400890.json",
       "region": "europe-west",
-      "populationSource": "Overture divisions 2026-10-21.0"
+      "populationSource": "Overture divisions 2026-10-21.0",
+      "group": "Portugal"
     },
     {
       "id": "london",
@@ -974,7 +988,8 @@
       "landAreaKm2": 1595.1783150649458,
       "boundary": "data/boundaries/175342.json",
       "region": "europe-west",
-      "populationSource": "Overture divisions 2026-10-21.0"
+      "populationSource": "Overture divisions 2026-10-21.0",
+      "group": "United Kingdom"
     },
     {
       "id": "longueuil",
@@ -1052,7 +1067,8 @@
       "landAreaKm2": 181.89891249584895,
       "boundary": "data/boundaries/44915.json",
       "region": "europe-central",
-      "populationSource": "Overture divisions 2026-10-21.0"
+      "populationSource": "Overture divisions 2026-10-21.0",
+      "group": "Italy"
     },
     {
       "id": "milton",
@@ -1082,7 +1098,8 @@
       "landAreaKm2": 353.2912651236236,
       "boundary": "data/boundaries/59195.json",
       "region": "europe-msk",
-      "populationSource": "Overture divisions 2026-10-21.0"
+      "populationSource": "Overture divisions 2026-10-21.0",
+      "group": "Belarus"
     },
     {
       "id": "mirabel",
@@ -1160,7 +1177,8 @@
       "landAreaKm2": 2562.627941874916,
       "boundary": "data/boundaries/102269.json",
       "region": "europe-msk",
-      "populationSource": "Rosstat 2024 estimate, federal city"
+      "populationSource": "Rosstat 2024 estimate, federal city",
+      "group": "Russia"
     },
     {
       "id": "munchen",
@@ -1175,7 +1193,8 @@
       "landAreaKm2": 310.7123588265405,
       "boundary": "data/boundaries/62428.json",
       "region": "europe-central",
-      "populationSource": "Overture divisions 2026-10-21.0"
+      "populationSource": "Overture divisions 2026-10-21.0",
+      "group": "Germany"
     },
     {
       "id": "nanaimo",
@@ -1375,7 +1394,8 @@
       "landAreaKm2": 480.7540247447172,
       "boundary": "data/boundaries/2775550.json",
       "region": "europe-central",
-      "populationSource": "OSM population tag of r2775550"
+      "populationSource": "OSM population tag of r2775550",
+      "group": "Norway"
     },
     {
       "id": "ottawa",
@@ -1421,7 +1441,8 @@
       "landAreaKm2": 105.39146867836348,
       "boundary": "data/boundaries/7444.json",
       "region": "europe-central",
-      "populationSource": "Overture divisions 2026-10-21.0"
+      "populationSource": "Overture divisions 2026-10-21.0",
+      "group": "France"
     },
     {
       "id": "pembroke",
@@ -1497,7 +1518,8 @@
       "landAreaKm2": 496.26770803438126,
       "boundary": "data/boundaries/435514.json",
       "region": "europe-central",
-      "populationSource": "Overture divisions 2026-10-21.0"
+      "populationSource": "Overture divisions 2026-10-21.0",
+      "group": "Czechia"
     },
     {
       "id": "prince-george",
@@ -1638,7 +1660,8 @@
       "landAreaKm2": 304.1380944462003,
       "boundary": "data/boundaries/13048688.json",
       "region": "europe-east",
-      "populationSource": "Overture divisions 2026-10-21.0"
+      "populationSource": "Overture divisions 2026-10-21.0",
+      "group": "Latvia"
     },
     {
       "id": "saanich",
@@ -1749,7 +1772,8 @@
       "landAreaKm2": 65.68363415923048,
       "boundary": "data/boundaries/86538.json",
       "region": "europe-central",
-      "populationSource": "Overture divisions 2026-10-21.0"
+      "populationSource": "Overture divisions 2026-10-21.0",
+      "group": "Austria"
     },
     {
       "id": "sarnia",
@@ -1826,7 +1850,8 @@
       "landAreaKm2": 454.1686729187478,
       "boundary": "data/boundaries/4283101.json",
       "region": "europe-east",
-      "populationSource": "Overture divisions 2026-10-21.0"
+      "populationSource": "Overture divisions 2026-10-21.0",
+      "group": "Bulgaria"
     },
     {
       "id": "st-albert",
@@ -1903,7 +1928,8 @@
       "landAreaKm2": 215.77592160481652,
       "boundary": "data/boundaries/398021.json",
       "region": "europe-central",
-      "populationSource": "Overture divisions 2026-10-21.0"
+      "populationSource": "Overture divisions 2026-10-21.0",
+      "group": "Sweden"
     },
     {
       "id": "stratford",
@@ -2027,7 +2053,8 @@
       "landAreaKm2": 118.15177513276485,
       "boundary": "data/boundaries/35738.json",
       "region": "europe-central",
-      "populationSource": "Overture divisions 2026-10-21.0"
+      "populationSource": "Overture divisions 2026-10-21.0",
+      "group": "France"
     },
     {
       "id": "trois-rivieres",
@@ -2105,7 +2132,8 @@
       "landAreaKm2": 396.6688502617997,
       "boundary": "data/boundaries/1529146.json",
       "region": "europe-east",
-      "populationSource": "Overture divisions 2026-10-21.0"
+      "populationSource": "Overture divisions 2026-10-21.0",
+      "group": "Lithuania"
     },
     {
       "id": "warszawa",
@@ -2120,7 +2148,8 @@
       "landAreaKm2": 517.1902477897786,
       "boundary": "data/boundaries/2907540.json",
       "region": "europe-central",
-      "populationSource": "Overture divisions 2026-10-21.0"
+      "populationSource": "Overture divisions 2026-10-21.0",
+      "group": "Poland"
     },
     {
       "id": "waterloo",
@@ -2180,7 +2209,8 @@
       "landAreaKm2": 414.86231695922083,
       "boundary": "data/boundaries/109166.json",
       "region": "europe-central",
-      "populationSource": "Overture divisions 2026-10-21.0"
+      "populationSource": "Overture divisions 2026-10-21.0",
+      "group": "Austria"
     },
     {
       "id": "windsor",
@@ -2257,7 +2287,8 @@
       "landAreaKm2": 305.8695320707387,
       "boundary": "data/boundaries/3168167.json",
       "region": "europe-central",
-      "populationSource": "Overture divisions 2026-10-21.0"
+      "populationSource": "Overture divisions 2026-10-21.0",
+      "group": "Croatia"
     },
     {
       "id": "zurich",
@@ -2272,7 +2303,8 @@
       "landAreaKm2": 91.87449622746496,
       "boundary": "data/boundaries/1682248.json",
       "region": "europe-central",
-      "populationSource": "Overture divisions 2026-10-21.0"
+      "populationSource": "Overture divisions 2026-10-21.0",
+      "group": "Switzerland"
     }
   ]
 }

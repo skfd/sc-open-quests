@@ -20,9 +20,14 @@ WEST = {"id": "canada-west", "timeZone": "America/Vancouver", "extract": "canada
 
 class RegionExtractTest(unittest.TestCase):
     def test_todays_regions_fetch_their_id_once_each(self):
+        # the Geofabrik regions fetch their own id; the four European regions share the planet clip "europe"
         regs = run.regions()
-        self.assertEqual(run.extract_fetches(regs), [(r["id"], None) for r in regs])
-        self.assertEqual([run.region_extract(r) for r in regs], [r["id"] for r in regs])
+        own = [r for r in regs if "extract" not in r]
+        europe = [r for r in regs if r.get("extract") == "europe"]
+        self.assertEqual(len(own) + len(europe), len(regs))
+        self.assertEqual(len(europe), 4)
+        self.assertEqual(run.extract_fetches(regs), [(r["id"], None) for r in own] + [("europe", None)])
+        self.assertEqual([run.region_extract(r) for r in own], [r["id"] for r in own])
 
     def test_regions_sharing_an_extract_fetch_it_once(self):
         regs = [{"id": "ontario"}, EAST, WEST, {"id": "berlin"}]
