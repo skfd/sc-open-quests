@@ -55,7 +55,7 @@
       "countryCodes": [
         "NL"
       ],
-      "timeZone": "Europe/Amsterdam",
+      "timeZone": "Europe/Berlin",
       "population": 881933,
       "landAreaKm2": 219.50200157510776,
       "boundary": "data/boundaries/271110.json",
@@ -72,7 +72,7 @@
         "BE-VLG",
         "BE"
       ],
-      "timeZone": "Europe/Brussels",
+      "timeZone": "Europe/Berlin",
       "population": 525935,
       "landAreaKm2": 208.13502545750643,
       "boundary": "data/boundaries/59518.json",
@@ -88,7 +88,7 @@
       "countryCodes": [
         "GR"
       ],
-      "timeZone": "Europe/Athens",
+      "timeZone": "Europe/Helsinki",
       "population": 643452,
       "landAreaKm2": 38.0775037473652,
       "boundary": "data/boundaries/1370736.json",
@@ -121,7 +121,7 @@
         "ES-CT",
         "ES"
       ],
-      "timeZone": "Europe/Madrid",
+      "timeZone": "Europe/Berlin",
       "population": 1713247,
       "landAreaKm2": 101.33425266840518,
       "boundary": "data/boundaries/347950.json",
@@ -228,7 +228,7 @@
       "countryCodes": [
         "SK"
       ],
-      "timeZone": "Europe/Bratislava",
+      "timeZone": "Europe/Berlin",
       "population": 432801,
       "landAreaKm2": 367.6003570663314,
       "boundary": "data/boundaries/1702499.json",
@@ -305,7 +305,7 @@
       "countryCodes": [
         "HU"
       ],
-      "timeZone": "Europe/Budapest",
+      "timeZone": "Europe/Berlin",
       "population": 1686222,
       "landAreaKm2": 525.9162813145822,
       "boundary": "data/boundaries/1244004.json",
@@ -526,7 +526,7 @@
       "countryCodes": [
         "IE"
       ],
-      "timeZone": "Europe/Dublin",
+      "timeZone": "Europe/London",
       "population": 588233,
       "landAreaKm2": 118.62170402980561,
       "boundary": "data/boundaries/1109531.json",
@@ -590,7 +590,7 @@
       "countryCodes": [
         "SE"
       ],
-      "timeZone": "Europe/Stockholm",
+      "timeZone": "Europe/Berlin",
       "population": 607882,
       "landAreaKm2": 1030.5663287149753,
       "boundary": "data/boundaries/935611.json",
@@ -746,7 +746,7 @@
       "countryCodes": [
         "TR"
       ],
-      "timeZone": "Europe/Istanbul",
+      "timeZone": "Europe/Moscow",
       "population": 15701602,
       "landAreaKm2": 11283.102475873793,
       "boundary": "data/boundaries/223474.json",
@@ -839,7 +839,7 @@
       "countryCodes": [
         "DK"
       ],
-      "timeZone": "Europe/Copenhagen",
+      "timeZone": "Europe/Berlin",
       "population": 613288,
       "landAreaKm2": 94.4149637364322,
       "boundary": "data/boundaries/2192363.json",
@@ -855,7 +855,7 @@
       "countryCodes": [
         "PL"
       ],
-      "timeZone": "Europe/Warsaw",
+      "timeZone": "Europe/Berlin",
       "population": 780796,
       "landAreaKm2": 326.8503924592668,
       "boundary": "data/boundaries/2768922.json",
@@ -871,7 +871,7 @@
       "countryCodes": [
         "UA"
       ],
-      "timeZone": "Europe/Kyiv",
+      "timeZone": "Europe/Helsinki",
       "population": 2952301,
       "landAreaKm2": 826.1533074197102,
       "boundary": "data/boundaries/421866.json",
@@ -951,7 +951,7 @@
       "countryCodes": [
         "PT"
       ],
-      "timeZone": "Europe/Lisbon",
+      "timeZone": "Europe/London",
       "population": 552700,
       "landAreaKm2": 86.84769301363109,
       "boundary": "data/boundaries/5400890.json",
@@ -1062,7 +1062,7 @@
       "countryCodes": [
         "IT"
       ],
-      "timeZone": "Europe/Rome",
+      "timeZone": "Europe/Berlin",
       "population": 1396827,
       "landAreaKm2": 181.89891249584895,
       "boundary": "data/boundaries/44915.json",
@@ -1093,7 +1093,7 @@
       "countryCodes": [
         "BY"
       ],
-      "timeZone": "Europe/Minsk",
+      "timeZone": "Europe/Moscow",
       "population": 1995471,
       "landAreaKm2": 353.2912651236236,
       "boundary": "data/boundaries/59195.json",
@@ -1389,7 +1389,7 @@
       "countryCodes": [
         "NO"
       ],
-      "timeZone": "Europe/Oslo",
+      "timeZone": "Europe/Berlin",
       "population": 724290,
       "landAreaKm2": 480.7540247447172,
       "boundary": "data/boundaries/2775550.json",
@@ -1436,7 +1436,7 @@
       "countryCodes": [
         "FR"
       ],
-      "timeZone": "Europe/Paris",
+      "timeZone": "Europe/Berlin",
       "population": 2133111,
       "landAreaKm2": 105.39146867836348,
       "boundary": "data/boundaries/7444.json",
@@ -1513,7 +1513,7 @@
       "countryCodes": [
         "CZ"
       ],
-      "timeZone": "Europe/Prague",
+      "timeZone": "Europe/Berlin",
       "population": 1275406,
       "landAreaKm2": 496.26770803438126,
       "boundary": "data/boundaries/435514.json",
@@ -1655,7 +1655,7 @@
       "countryCodes": [
         "LV"
       ],
-      "timeZone": "Europe/Riga",
+      "timeZone": "Europe/Helsinki",
       "population": 588911,
       "landAreaKm2": 304.1380944462003,
       "boundary": "data/boundaries/13048688.json",
@@ -1767,7 +1767,7 @@
       "countryCodes": [
         "AT"
       ],
-      "timeZone": "Europe/Vienna",
+      "timeZone": "Europe/Berlin",
       "population": 152083,
       "landAreaKm2": 65.68363415923048,
       "boundary": "data/boundaries/86538.json",
@@ -1845,7 +1845,7 @@
       "countryCodes": [
         "BG"
       ],
-      "timeZone": "Europe/Sofia",
+      "timeZone": "Europe/Helsinki",
       "population": 1286383,
       "landAreaKm2": 454.1686729187478,
       "boundary": "data/boundaries/4283101.json",
@@ -1923,7 +1923,7 @@
       "countryCodes": [
         "SE"
       ],
-      "timeZone": "Europe/Stockholm",
+      "timeZone": "Europe/Berlin",
       "population": 984748,
       "landAreaKm2": 215.77592160481652,
       "boundary": "data/boundaries/398021.json",
@@ -2048,7 +2048,7 @@
       "countryCodes": [
         "FR"
       ],
-      "timeZone": "Europe/Paris",
+      "timeZone": "Europe/Berlin",
       "population": 504078,
       "landAreaKm2": 118.15177513276485,
       "boundary": "data/boundaries/35738.json",
@@ -2127,7 +2127,7 @@
       "countryCodes": [
         "LT"
       ],
-      "timeZone": "Europe/Vilnius",
+      "timeZone": "Europe/Helsinki",
       "population": 581475,
       "landAreaKm2": 396.6688502617997,
       "boundary": "data/boundaries/1529146.json",
@@ -2143,7 +2143,7 @@
       "countryCodes": [
         "PL"
       ],
-      "timeZone": "Europe/Warsaw",
+      "timeZone": "Europe/Berlin",
       "population": 1863845,
       "landAreaKm2": 517.1902477897786,
       "boundary": "data/boundaries/2907540.json",
@@ -2204,7 +2204,7 @@
       "countryCodes": [
         "AT"
       ],
-      "timeZone": "Europe/Vienna",
+      "timeZone": "Europe/Berlin",
       "population": 2042036,
       "landAreaKm2": 414.86231695922083,
       "boundary": "data/boundaries/109166.json",
@@ -2282,7 +2282,7 @@
       "countryCodes": [
         "HR"
       ],
-      "timeZone": "Europe/Zagreb",
+      "timeZone": "Europe/Berlin",
       "population": 663592,
       "landAreaKm2": 305.8695320707387,
       "boundary": "data/boundaries/3168167.json",
@@ -2298,7 +2298,7 @@
       "countryCodes": [
         "CH"
       ],
-      "timeZone": "Europe/Zurich",
+      "timeZone": "Europe/Berlin",
       "population": 443037,
       "landAreaKm2": 91.87449622746496,
       "boundary": "data/boundaries/1682248.json",
