@@ -262,18 +262,28 @@ plus requests" to the end first. In short:
 - **Counted, in the worktree only:** all 32 cities at 2026-10-29 (`data/archive/europe-*` there; main's
   archive was copied in so the site preview has the rest). Istanbul 2.05M open quests, Moscow 1.64M,
   London 3.8M; the totals looked plausible against Berlin's 1.11M.
-- **Running, detached, survives a restart:** `.scratch/europe-overnight.sh` (log
-  `logs/europe-overnight-2.log`) counts the monthly points from `--planet history-261029`, about 12 min a
-  month for all four regions: the yearly ones (about 02:45), then the quarterly ones (about midday;
-  counts pause in the 13:15 window). Check its log ends in "overnight done". A rerun skips what is
-  done: `RECUT_PID=999999 bash .scratch/europe-overnight.sh >> logs/europe-overnight-2.log 2>&1` (not 0:
-  that is Windows' idle process).
+- **Monthly points so far:** 20 per region, the 1st of every quarter 2017-01 to 2021-10, staged in the
+  worktree's `data/backfill/europe-*/snapshots/` (not merged yet). `.scratch/europe-overnight.sh` (log
+  `logs/europe-overnight-2.log`) stopped twice at the same place: **the engine fails on `europe-msk` at
+  2022-01-01**, in Moscow's area pass right after Minsk's, with a bare "error: Failed requirement."
+  (a `require()` without a message: the block-kind checks in `AreaPass.kt` 303/324/371 or
+  `Engine.kt` 303/315/321/489 are the candidates). 2017-2021 counted, and so did the 10-29 clip. A
+  monthly slice is the whole 20 km ring of the history cut, 214M nodes, against the clip's 127M. The
+  slice is kept for reproducing it: `data/backfill/msk-repro/europe-2022-01-01.osm.pbf` in the worktree
+  (a hard link, 2.5 GB), with the command in `logs/europe-overnight-2.log`.
+- **Running, detached, survives a restart:** `.scratch/europe-months.sh` (log `logs/europe-months.log`,
+  started 2026-11-01 18:03) counts the months of the three other regions, quarterly first, then every
+  month: about 23 min a month (one slice of 3.5 min, central 15 min), so the quarterly ones by about
+  02:00 and the rest about 30 h later. Rerun the script to go on; it skips what is counted.
 - **Site preview:** `run.py history` in the worktree (its docs/data left uncommitted: main's daily
   data commits would conflict at the merge), `python -m http.server 8791 --directory
   ../sc-open-quests-europe` (8765 is another project's), then `/docs/?city=london-gb`. Screenshots:
   `.scratch/europe-preview/` (`shoot.py`). No page errors; München sits under Germany.
 
 **Next, in order:**
+0. **Find the `europe-msk` failure** (above). Run the engine by hand on the kept slice with a stack
+   trace (Main.kt prints only `e.message`, catching at line 68), fix it, then count `europe-msk`'s
+   months: `python tools/backfill_history.py months --planet history-261029 --region europe-msk`.
 1. **The owner's look at the preview, then the merge** of `europe` into main. The merge publishes: the
    13:15 run pushes main and counts the Europe regions from then on (`fetch europe` is part of its
    `download`). At the merge: discard the worktree's docs/data changes; copy the worktree's
