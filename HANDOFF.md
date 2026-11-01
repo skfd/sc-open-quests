@@ -246,3 +246,25 @@ Next, in order:
    region per time zone over the shared clip. `add_city.py` cannot do it today.
 Housekeeping still open: the weekly-to-monthly rename (above).
 
+**The European pilot (2026-10-31, evening).** DESIGN.md, from "Current clips in osm-extracts" on.
+Clips are built in osm-extracts (5c898c2, 1e5a749); the cities are ranked (`tools/rank_sc_cities.py`,
+`data/rank/`); the owner picked 32 cities, which are on branch `europe` in worktree
+`../sc-open-quests-europe` (b249b76) and must not reach main before step 5.
+**Docker Desktop must stay up**: it was found quit twice, and the re-cut, the clip fetch and Monday's
+monthly planet job all need it.
+1. **The re-cut**, started 20:10, detached (log `logs/recut-europe.log`, `.err`; about 3-4 h, one
+   planet pass). It holds `planet/fetch.lock`. When it lands: `python ../osm-extracts/osm_extracts.py
+   fetch europe` by hand (diffs 5161 on), and read `timings` in the meta. The fetch's memory budget
+   (4.5 GB for the cut) was sized on 146 MB clips, so check it on this one.
+2. Count each region once from the clip, on the branch, `europe-msk` first (Moscow and Istanbul in
+   one engine run).
+3. Monthly points: `backfill_history` reads the clip's history cut (`europe/europe-history-261029.osh.pbf`)
+   instead of a region clip of its own, one slice shared by the four regions; `step=12` first, then
+   every month.
+4. The site: the city picker groups by a region's `group`, and "Europe" lumps 28 countries; group by
+   country instead.
+5. Merge `europe` into main. Then rework the planet job to fetch planet-history, `recut`, and count the
+   months, and rename it from "weekly" to "planet" in the same change.
+6. osm-extracts: registering a clip again is refused, so adding a city means deleting the folder.
+   Change that to update the polygon in place and mark a re-cut due.
+
