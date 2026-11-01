@@ -246,59 +246,50 @@ Next, in order:
    region per time zone over the shared clip. `add_city.py` cannot do it today.
 Housekeeping still open: the weekly-to-monthly rename (above).
 
-**The European pilot (2026-10-31, evening).** DESIGN.md, from "Current clips in osm-extracts" on.
-Clips are built in osm-extracts (5c898c2, 1e5a749); the cities are ranked (`tools/rank_sc_cities.py`,
-`data/rank/`); the owner picked 32 cities, which are on branch `europe` in worktree
-`../sc-open-quests-europe` (b249b76) and must not reach main before step 5.
-**Docker Desktop must stay up**: it was found quit twice, and the re-cut, the clip fetch and Monday's
-monthly planet job all need it.
-1. **The re-cut**, restarted 20:17, detached (log `logs/recut-europe.log`, `.err`; about 3-4 h, one
-   planet pass). The 20:10 start was killed after 8 minutes by a scratch test of mine: the two
-   re-cuts shared the container name `osm-extracts-recut`, and the test's cleanup removed the real
-   one. Fixed in osm-extracts 3413b63: one container name per run, and leftovers removed only under the
-   role's lock. It holds `planet/fetch.lock`. When it lands: `python ../osm-extracts/osm_extracts.py
-   fetch europe` by hand (diffs 5161 on), and read `timings` in the meta. The fetch's memory budget
-   (4.5 GB for the cut) was sized on 146 MB clips, so check it on this one.
-   **Overnight, unattended:** `.scratch/europe-overnight.sh` (started 20:29, log
-   `logs/europe-overnight.log`) waits for the re-cut, runs `fetch europe` and `fetch notes`, copies main's
-   archive into the worktree for the site preview, counts the four regions once (UTC+3 first), then
-   their monthly points with `--planet history-261029`: yearly (`--step 12`), then quarterly
-   (`--step 3`). Each step skips what is done, so a rerun goes on: `RECUT_PID=999999 bash
-   .scratch/europe-overnight.sh >> logs/europe-overnight-2.log 2>&1` (not 0: that is Windows' idle process).
-   **The re-cut landed 23:42** (planet pass 11,630 s, 9.1 GB peak; the clip 1.67 GB, 127.6M nodes) and
-   `fetch europe` took it to 11-01 (3 diffs, 128 s plus a 159 s cut at 4.3 GB, just under the 4.5 GB budget).
-   The first run counted nothing, for two reasons. No notes dump reaches 11-01 yet, so the driver
-   now counts every stored clip file (10-29 now, 11-01 once the dump comes). And the engine wants
-   every city of a run in the run's time-zone id, so the cities carry their region's zone now (5431a01).
-   Restarted 00:04 (log `logs/europe-overnight-2.log`). That fetch also left 2,114 nodes missing from
-   20 ways, coastlines joined with far-away ones; osm-extracts now fetches such nodes from the OSM API
-   (c9d4081: 2,114 -> 0 in a test on a copy). The next daily fetch does it. **Monday 07:30's planet job is
-   still main's old `weekly`:** it rewrites the history file to `history-261102` and retires 261029.
-   That is why the months name `--planet history-261029`: the clip's history cut stays in `europe/`.
-   After the merge the planet job re-cuts the clip from the newest file by itself.
-   **Counted (2026-11-01, 00:04-00:35):** all four regions from the 10-29 clip, 32 cities. UTC+3 in under
-   4 min (Istanbul 2.05M open quests, Moscow 1.64M, Minsk 398k), central 20 min. London has the most,
-   3.8M (1.1M of the default-on quests); Paris is the densest per road km. The monthly points take about
-   12 min a month for all four regions (one slice, four counts): yearly done about 02:45, quarterly
-   about midday. The driver stops after that; the rest of the months is
-   `python tools/backfill_history.py months --planet history-261029 --region europe-msk --region europe-west
-   --region europe-central --region europe-east`, in the worktree, about 16 h.
-   **Site preview:** `run.py history` in the worktree (left uncommitted: main's daily data commits would
-   conflict), served by `python -m http.server 8791 --directory ../sc-open-quests-europe` (8765 is
-   another project's), screenshots in `.scratch/europe-preview/` (`shoot.py`). The picker groups by
-   country, München under Germany; no page errors. The title now says "Canada and Europe" (4766615).
-2. Count each region once from the clip, on the branch, `europe-msk` first (Moscow and Istanbul in
-   one engine run).
-3. Monthly points: **built on the branch** (dbb5c42): `backfill_history months --region europe-west
-   --region europe-central --region europe-east --region europe-msk --step 12` reads the clip's
-   history cut and shares each slice; then without `--step`.
-4. The site: **built on the branch** (469ae32): a city's own `group` (its country) wins over the region's.
-5. Merge `europe` into main. **The merge publishes**: the 13:15 run pushes main, so it waits for the
-   owner to look at the site preview from the worktree. The planet job is already reworked on the
-   branch (a65b99a: `run.py planet`, `weekly` its old name). At the merge: copy the worktree's
-   `data/archive/europe-*`, `data/grid/europe-*` and `data/backfill/europe-*` into main's, and run
-   `.\schedule-planet-add.ps1` as Administrator; it removes `kk-SCOpenQuests-weekly`.
-6. osm-extracts: **done** (3413b63). Registering a clip again keeps a changed polygon waiting for the
-   next re-cut, and the clip serves the old one until then. Adding a city: `add_city.py`, then
-   `tools/clip_polygon.py europe`, then `osm_extracts.py clip europe --polygon config/europe.geojson`.
+**The European pilot: where it stands (2026-11-01, 01:00).** Read DESIGN.md from "World: a seeded bar
+plus requests" to the end first. In short:
+- **Built and committed, nothing pushed.** osm-extracts (main, up to c9d4081): `fetch changesets`,
+  `fetch planet-diffs`, clips (`clip`, `recut`, `fetch <clip>`), a changed polygon waits for the next
+  recut, one container name per osmium run, missing edge nodes fetched from the OSM API. sc-open-quests
+  main: the ranking tool and `data/rank/`, DESIGN and HANDOFF. Branch **`europe`** (worktree
+  `../sc-open-quests-europe`, up to 4766615): the 32 cities in four time-zone regions over the clip
+  `europe`, `tools/clip_polygon.py`, per-city `group` in the picker, `backfill_history` reading a clip's
+  history cut with one shared slice, the monthly `run.py planet` job (`weekly` its old name) and
+  `schedule-planet-*.ps1`, the title "Canada and Europe". 98 tests pass on the branch.
+- **The clip:** `~/Code/.osm-data/europe/`, cut from `history-261029` on 2026-10-31 (planet pass
+  11,630 s, 9.1 GB peak; 1.67 GB, 127.6M nodes), brought to 11-01 by `fetch europe`. Its history cut
+  `europe-history-261029.osh.pbf` (7.9 GB) gives the monthly points.
+- **Counted, in the worktree only:** all 32 cities at 2026-10-29 (`data/archive/europe-*` there; main's
+  archive was copied in so the site preview has the rest). Istanbul 2.05M open quests, Moscow 1.64M,
+  London 3.8M; the totals looked plausible against Berlin's 1.11M.
+- **Running, detached, survives a restart:** `.scratch/europe-overnight.sh` (log
+  `logs/europe-overnight-2.log`) counts the monthly points from `--planet history-261029`, about 12 min a
+  month for all four regions: the yearly ones (about 02:45), then the quarterly ones (about midday;
+  counts pause in the 13:15 window). Check its log ends in "overnight done". A rerun skips what is
+  done: `RECUT_PID=999999 bash .scratch/europe-overnight.sh >> logs/europe-overnight-2.log 2>&1` (not 0:
+  that is Windows' idle process).
+- **Site preview:** `run.py history` in the worktree (its docs/data left uncommitted: main's daily
+  data commits would conflict at the merge), `python -m http.server 8791 --directory
+  ../sc-open-quests-europe` (8765 is another project's), then `/docs/?city=london-gb`. Screenshots:
+  `.scratch/europe-preview/` (`shoot.py`). No page errors; München sits under Germany.
 
+**Next, in order:**
+1. **The owner's look at the preview, then the merge** of `europe` into main. The merge publishes: the
+   13:15 run pushes main and counts the Europe regions from then on (`fetch europe` is part of its
+   `download`). At the merge: discard the worktree's docs/data changes; copy the worktree's
+   `data/archive/europe-*`, `data/grid/europe-*` and `data/backfill/europe-*` into main's data/, then
+   `python tools/backfill_history.py merge --region <each europe region>` and `run.py history`; run
+   `.\schedule-planet-add.ps1` as Administrator (it removes `kk-SCOpenQuests-weekly`); delete the worktree.
+2. **The rest of the monthly points** (about 16 h, any time): `python tools/backfill_history.py months
+   --planet history-261029 --region europe-msk --region europe-west --region europe-central --region
+   europe-east`, in whichever checkout holds the Europe archive.
+3. **Monday 2026-11-02 07:30:** the planet job still runs main's old `weekly`: it rewrites the history
+   file to `history-261102` and retires 261029; that is why the months name `--planet history-261029`.
+   Docker Desktop must be running (it was found quit twice), and so must it for every clip fetch.
+   After the merge, the next monthly run re-cuts the clip from the newest file by itself.
+4. **Watch:** the first daily `fetch europe` with the API fill in its meta (`check_refs_before_fill`);
+   the re-cut's memory (4.3 GB of the 4.5 GB budget for this 1.67 GB clip); the clip grows with every
+   city added (`add_city.py`, `tools/clip_polygon.py europe`, `osm_extracts.py clip europe --polygon
+   config/europe.geojson`; it is cut at the next recut).
+5. **Later:** the seeded bar for other countries, chosen from what these 32 cost (DESIGN.md); the step
+   from a request on the site to a counted region; the near-duplicate parts (above).
