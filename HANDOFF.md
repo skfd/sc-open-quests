@@ -263,8 +263,16 @@ monthly planet job all need it.
    `logs/europe-overnight.log`) waits for the re-cut, runs `fetch europe` and `fetch notes`, copies main's
    archive into the worktree for the site preview, counts the four regions once (UTC+3 first), then
    their monthly points with `--planet history-261029`: yearly (`--step 12`), then quarterly
-   (`--step 3`). Each step skips what is done, so a rerun goes on: `RECUT_PID=0 bash
-   .scratch/europe-overnight.sh >> logs/europe-overnight.log 2>&1`. **Monday 07:30's planet job is
+   (`--step 3`). Each step skips what is done, so a rerun goes on: `RECUT_PID=999999 bash
+   .scratch/europe-overnight.sh >> logs/europe-overnight-2.log 2>&1` (not 0: that is Windows' idle process).
+   **The re-cut landed 23:42** (planet pass 11,630 s, 9.1 GB peak; the clip 1.67 GB, 127.6M nodes) and
+   `fetch europe` took it to 11-01 (3 diffs, 128 s plus a 159 s cut at 4.3 GB, just under the 4.5 GB budget).
+   The first run counted nothing, for two reasons. No notes dump reaches 11-01 yet, so the driver
+   now counts every stored clip file (10-29 now, 11-01 once the dump comes). And the engine wants
+   every city of a run in the run's time-zone id, so the cities carry their region's zone now (5431a01).
+   Restarted 00:04 (log `logs/europe-overnight-2.log`). That fetch also left 2,114 nodes missing from
+   20 ways, coastlines joined with far-away ones; osm-extracts now fetches such nodes from the OSM API
+   (c9d4081: 2,114 -> 0 in a test on a copy). The next daily fetch does it. **Monday 07:30's planet job is
    still main's old `weekly`:** it rewrites the history file to `history-261102` and retires 261029.
    That is why the months name `--planet history-261029`: the clip's history cut stays in `europe/`.
    After the merge the planet job re-cuts the clip from the newest file by itself.
