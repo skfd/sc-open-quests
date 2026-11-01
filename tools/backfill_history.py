@@ -71,11 +71,19 @@ class Region:
             raise SystemExit(f"no region {region_id} in {run.REGIONS_CONFIG.name}")
         self.id = region_id
         self.config = regions[region_id]
-        self.history_dir = run.OSM_DATA_DIR / f"{region_id}-history"
-        self.history = self.history_dir / f"{region_id}-{PLANET}.osh.pbf"
+        # A region counted from an osm-extracts clip (DESIGN.md, "Current clips in osm-extracts") reads the
+        # history cut `recut` made in the clip's folder, which its sibling regions share; slices of it are
+        # shared too. Any other region has its own clip of the planet history, made by clip() below.
+        self.extract = run.region_extract(self.config)
+        self.on_clip = (run.OSM_DATA_DIR / self.extract / "clip.json").exists()
+        home = self.extract if self.on_clip else region_id
+        self.history_dir = run.OSM_DATA_DIR / (self.extract if self.on_clip else f"{region_id}-history")
+        self.history = self.history_dir / f"{home}-{PLANET}.osh.pbf"
         self.history_meta = self.history.with_name(self.history.name + ".meta.json")
         self.poly = self.history_dir / f"{region_id}.poly"  # a copy of config's: osmium sees only /osm
         self.backfill = BACKFILL / region_id
+        self.slices = BACKFILL / home  # where slices of self.history go
+        self.slice_prefix = home
         self.staged = self.backfill / "snapshots"
         self.recount = self.backfill / "recount"
         self.published = run.ARCHIVE_DIR / region_id / "snapshots"  # every snapshot, not only docs/data's newest
@@ -152,6 +160,11 @@ def osmium(script: str) -> None:
 
 def clip(regions: list[Region]) -> None:
     """Clip the planet history to each region's poly, in one pass over the planet for all of them."""
+    for r in regions:
+        if r.on_clip and not r.history.exists():
+            raise SystemExit(f"{r.id}: {r.history} is missing; clip {r.extract} is cut by "
+                             f"`osm_extracts.py recut {r.extract}`")
+    regions = [r for r in regions if not r.on_clip]
     todo = [r for r in regions if not r.history.exists()]
     for r in regions:
         if r not in todo:
@@ -205,14 +218,15 @@ def slice_at(r: Region, t: datetime) -> tuple[Path, Path]:
     if not r.history.exists():
         raise FileNotFoundError(f"{r.history} is missing; run `clip` first")
     stamp = iso(t)
-    name = f"{r.id}-{stamp[:10]}-from-{PLANET}"
-    pbf, meta = r.backfill / f"{name}.osm.pbf", r.backfill / f"{name}.meta.json"
+    name = f"{r.slice_prefix}-{stamp[:10]}-from-{PLANET}"
+    pbf, meta = r.slices / f"{name}.osm.pbf", r.backfill / f"{name}.meta.json"
     if not pbf.exists():
         run.log(f"slicing {r.history.name} at {stamp}")
-        r.backfill.mkdir(parents=True, exist_ok=True)
-        out = f"/out/{r.id}/{pbf.name}"
+        r.slices.mkdir(parents=True, exist_ok=True)
+        out = f"/out/{r.slices.name}/{pbf.name}"
         osmium(f"osmium time-filter /osm/{r.history_dir.name}/{r.history.name} {stamp} -o {out}.part -f pbf "
                f"--output-header=osmosis_replication_timestamp={stamp} --overwrite && mv {out}.part {out}")
+    r.backfill.mkdir(parents=True, exist_ok=True)
     run.write_json(meta, {"region": r.id, "source_url": PLANET_URL, "file": f"{r.history.name}@{stamp}",
                           "replication_timestamp": stamp, "derived_from": f"planet/{PLANET_FILE}",
                           **({"planet_derived_from": PLANET_DERIVED_FROM} if PLANET_DERIVED_FROM else {})})
@@ -330,18 +344,31 @@ def counted_dates(r: Region) -> set[str]:
     return {p.stem for p in r.staged.glob("*.json")} | {p.stem for p in r.published.glob("*.json")}
 
 
-def months(r: Region, first: str, last: str, step: int, keep: bool) -> None:
-    have = counted_dates(r)
-    for d in month_starts(first, last, step):
-        if d.isoformat() in have:
-            run.log(f"{r.id} {d} already counted")
-            continue
-        t0 = time.monotonic()
-        pbf, meta = slice_at(r, datetime(d.year, d.month, 1, 12, tzinfo=timezone.utc))
-        snap = count(r, pbf, meta, r.backfill)
-        if not keep:
-            pbf.unlink()
-        run.log(f"{r.id} {snap.name} in {time.monotonic() - t0:.0f} s")
+def months(regions: Region | list[Region], first: str, last: str, step: int, keep: bool) -> None:
+    """Slice and count the 1st of each month. Regions reading one history file (the regions of a clip)
+    share each slice: it is cut once, counted for each region lacking that date, then deleted."""
+    regions = [regions] if isinstance(regions, Region) else regions
+    by_history: dict[Path, list[Region]] = {}
+    for r in regions:
+        by_history.setdefault(r.history, []).append(r)
+    for group in by_history.values():
+        have = {r.id: counted_dates(r) for r in group}
+        for d in month_starts(first, last, step):
+            todo = [r for r in group if d.isoformat() not in have[r.id]]
+            for r in group:
+                if r not in todo:
+                    run.log(f"{r.id} {d} already counted")
+            if not todo:
+                continue
+            t = datetime(d.year, d.month, 1, 12, tzinfo=timezone.utc)
+            pbf = None
+            for r in todo:
+                t0 = time.monotonic()
+                pbf, meta = slice_at(r, t)
+                snap = count(r, pbf, meta, r.backfill)
+                run.log(f"{r.id} {snap.name} in {time.monotonic() - t0:.0f} s")
+            if pbf and not keep:
+                pbf.unlink()
 
 
 def counts_slice(r: Region, t: datetime) -> bool:
@@ -469,12 +496,19 @@ def main(argv: list[str] | None = None) -> int:
     m.add_argument("--keep", action="store_true", help="keep the slices")
     rc = sub.add_parser("recount", parents=[common])
     mg = sub.add_parser("merge", parents=[common])
-    for p in (c, m, rc, mg):
+    for p in (c, rc, mg):
         p.add_argument("--region", default="ontario")
+    m.add_argument("--region", dest="regions", action="append",
+                   help="repeatable (the regions of a clip share each slice); default ontario")
     a = ap.parse_args(argv)
     set_planet(a.planet)
     if a.cmd == "clip":
         clip([Region(r) for r in a.regions or ["ontario"]])
+        return 0
+    if a.cmd == "months":
+        regs = [Region(x) for x in a.regions or ["ontario"]]
+        run.migrate_archive()
+        months(regs, a.first, a.last or last_month(planet_timestamp(regs[0])), a.step, a.keep)
         return 0
     r = Region(a.region)
     run.migrate_archive()  # snapshots published before 2026-10-24 still in docs/data count as published
@@ -482,8 +516,6 @@ def main(argv: list[str] | None = None) -> int:
         recount(r)
     elif a.cmd == "check":
         check(r, a.extract)
-    elif a.cmd == "months":
-        months(r, a.first, a.last or last_month(planet_timestamp(r)), a.step, a.keep)
     else:
         merge(r)
     return 0
