@@ -24,6 +24,10 @@ For each city of config/cities.json (DATA-FORMAT.md, "Places and parts"):
 4. **Inside the city**: the share of a part's area inside the city boundary, estimated on a 40 x 40
    grid of points over the part's bbox with the engine's even-odd test. Parts under 50% are dropped and
    reported (Overture's hierarchy puts them under the city, OSM draws them mostly elsewhere).
+5. **Not the city again**: a part that covers 90% or more of the city's area (the same grid, over the
+   city's bbox) is dropped and reported. It is the city under another relation (Bremen's locality
+   r2088648, Saint John's parish and neighbourhood) and would only repeat the city's numbers. A former
+   city inside today's (Halifax r9092218, Gatineau r5379616) covers far less and stays.
 
 Writes config/parts/<city>.json (the registry) and data/boundaries/parts/<city>/<osm>.geojson (one
 Feature per part, properties: osm, name and the OSM tags boundary, place, admin_level), replacing what
@@ -52,6 +56,7 @@ PARTS_GEOMETRY = run.ROOT / "data" / "boundaries" / "parts"
 PLACES_CONFIG = run.ROOT / "config" / "places.json"
 WORK = run.ROOT / ".scratch" / "add_parts"
 MIN_INSIDE = 0.5
+MAX_COVER = 0.9
 KEPT_TAGS = ("boundary", "place", "admin_level")
 
 
@@ -296,15 +301,20 @@ def main(argv: list[str] | None = None) -> int:
         for cid in cids:
             city = all_cities[cid]
             city_rings = Rings.of_boundary(run.ROOT / city["boundary"], city["relation"])
-            kept, missing, outside = [], [], []
+            kept, missing, outside, whole = [], [], [], []
             for p in selected[cid]:
                 feat = features.get(p["osm"])
                 if feat is None:
                     missing.append(p)
                     continue
-                share = inside_share(Rings.of_geojson(feat["geometry"]), city_rings)
+                part_rings = Rings.of_geojson(feat["geometry"])
+                share = inside_share(part_rings, city_rings)
                 if share < MIN_INSIDE:
                     outside.append((p, share))
+                    continue
+                cover = inside_share(city_rings, part_rings)
+                if cover >= MAX_COVER:
+                    whole.append((p, cover))
                     continue
                 kept.append(p)
             kept.sort(key=lambda p: (p["name"] or "", p["id"]))
@@ -319,6 +329,8 @@ def main(argv: list[str] | None = None) -> int:
                 report.append(f"  no OSM area: {p['osm']} {p['name']} ({p['subtype']}, {p['id']})")
             for p, share in outside:
                 report.append(f"  dropped, {share:.0%} inside: {p['osm']} {p['name']} ({p['subtype']}, {p['id']})")
+            for p, cover in whole:
+                report.append(f"  dropped, covers {cover:.0%} of the city: {p['osm']} {p['name']} ({p['subtype']}, {p['id']})")
     print("\n".join(report))
     return 0
 
