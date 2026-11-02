@@ -66,6 +66,8 @@ class HistoryTest(unittest.TestCase):
         self.assertEqual(t["agedOnly"], 2)
         self.assertEqual(t["highwayKm"], 102.0)
         self.assertEqual(t["questsCounted"], 3)
+        self.assertEqual(t["countryCodes"], ["CA", "CA-ON"])   # what the site names a quest's absence by
+        self.assertNotIn("countryCodes", idx["cities"][0])     # none in the config, none published
 
     def test_city_index_trends_cover_every_snapshot_date(self):
         idx = self.load("cities.json")

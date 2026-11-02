@@ -1,4 +1,4 @@
 { "cities": [
   { "id": "ottawa", "name": "Ottawa" },
-  { "id": "toronto", "name": "Toronto" }
+  { "id": "toronto", "name": "Toronto", "countryCodes": ["CA", "CA-ON"] }
 ] }

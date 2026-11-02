@@ -27,6 +27,9 @@ is recorded alongside it.
   - Show the class on the site. Since every quest reached *supported* (2026-11), the quest table shows it
     only where a quest is not counted: such rows sit greyed at the bottom under their reason (not offered
     in the city, no count in the latest run, not counted yet), and the Support and Status columns are gone.
+    Where the app doesn't offer a quest, the site says so by the city's country (`countryCodes` in
+    cities.json): "not offered in Canada", "only in 13 countries, not Canada", in the quest table and in
+    the compare view, whose all-quests subtitle notes that totals cover different quest sets by country.
 - **Split the aging signal from the mapping signal by using the filter itself.**
   - The 48 quests whose filters use `older` can reopen with no edit at all.
   - For those, record the count from the plain tag test and the count that only exists because the element

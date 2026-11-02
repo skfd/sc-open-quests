@@ -196,6 +196,7 @@ under that SC version, or new in a later one) is `null` at that index, never 0. 
                                                   // config/regions.json, in its order
   "cities": [ {                                   // sorted by name
     "id": "toronto", "name": "Toronto", "region": "ontario", "asOfDate": "2026-07-16", "scVersion": "63.4",
+    "countryCodes": ["CA", "CA-ON"],             // config/cities.json's, for saying where a quest isn't offered
     "landAreaKm2": 665.9, "population": null, "highwayKm": 0.0,
     "open": 0,          // headline: counted quests, default-disabled excluded
     "agedOnly": 0,      // of `open`

@@ -487,13 +487,23 @@ function countryName(code) {   // "US-OR" -> "United States (OR)"
   return sub ? `${n} (${sub})` : n;
 }
 
-// Where the app offers a quest: short for a chip, in full for its tooltip. Null when it is everywhere.
-function offeredWhere(e) {
+// Where the app offers a quest, for the city it is missing from: short for a chip, in full for its
+// tooltip. Null when it is everywhere. cities.json's countryCodes (["CA", "CA-ON"]) name the city's
+// country: the code on an except-list that leaves it out, or the country (or province) a long only-list lacks.
+function offeredWhere(e, cityId) {
   if (!e || !e.codes || !e.codes.length) return null;
   const names = e.codes.map(countryName).sort((a, b) => a.localeCompare(b));
   const only = e.type === "NoCountriesExcept";
+  const c = cityById(cityId), codes = (c && c.countryCodes) || [];
+  const country = codes.find((x) => !x.includes("-"));
+  // an only-list naming some of the country's provinces lacks the city's province, not its country
+  const lacks = country && e.codes.some((x) => x.startsWith(country + "-")) ? codes.find((x) => x.includes("-")) : country;
+  const hit = !only && e.codes.find((x) => codes.includes(x));
+  const countries = new Set(e.codes.map((x) => x.split("-")[0])).size;
+  const short = names.length <= 3 ? names.join(", ")
+    : `${countries} countries${only && lacks ? `, not ${countryName(lacks)}` : ""}`;
   return {
-    text: `${only ? "only in" : "not in"} ${names.length <= 3 ? names.join(", ") : `${names.length} countries`}`,
+    text: hit ? `not offered in ${countryName(hit)}` : `${only ? "only in" : "not in"} ${short}`,
     title: `The app offers this quest ${only ? "only in" : "everywhere except"} ${names.join(", ")}`,
   };
 }
@@ -566,7 +576,7 @@ function questRow(h, r) {
   const sel = selected(r.q.name), pinned = state.pinned.includes(r.q.name);
   const name = questTitle(r.q.name);
   const link = r.q.wikiLink ? el("a", { href: `https://wiki.openstreetmap.org/wiki/${r.q.wikiLink}` }, name) : el("span", {}, name);
-  const where = r.group === "not-in-region" ? offeredWhere(r.q.enabledInCountries) : null;
+  const where = r.group === "not-in-region" ? offeredWhere(r.q.enabledInCountries, h.city) : null;
   // An uncounted quest's tick does nothing here, so it is shown but locked; it still counts where the quest is.
   return el("tr", { class: [r.counted ? "" : "off", sel ? "" : "unselected", pinned ? "pinned" : ""].join(" ").trim() || null },
       el("td", { class: "c-pick" }, el("input", { type: "checkbox", checked: sel, disabled: !r.counted,
@@ -643,12 +653,14 @@ async function compareFile(quest) {
 async function compareRows() {
   const qn = state.compareQuest;
   const per = qn ? (await compareFile(qn)).open : null;
+  const q = qn && questByName.get(qn);
   const rows = [];
   for (const c of cities.cities) {
     // cities.json carries the app-default total, not the reader's selection
     const open = qn ? per[c.id] ?? null : c.open;
     rows.push({
       c, open,
+      notOffered: !!(q && q.status && q.status[c.id] === "not-in-region"),
       perKm2: open != null && c.landAreaKm2 ? open / c.landAreaKm2 : null,
       perRoadKm: open != null && c.highwayKm ? open / c.highwayKm : null,
       per1k: open != null && c.population ? (1000 * open) / c.population : null,
@@ -685,17 +697,24 @@ async function renderCompare() {
   // cities.json carries totals over time, not each quest's, so the trend column is for all quests only
   const trends = !state.compareQuest && cities.dates;
   for (const th of document.querySelectorAll("#compare-table th.c-trend")) th.hidden = !trends;
+  // The app offers some quests only in some countries, so totals cover different sets of quests.
+  const kinds = cities.cities.map((c) => c.questsCounted).filter((n) => n != null);
+  const lo = Math.min(...kinds), hi = Math.max(...kinds);
+  const off = rows.filter((r) => r.notOffered).length;
   $("#compare-sub").textContent = `${state.compareQuest ? humanize(state.compareQuest) : "All counted quests the app turns on by default"}, ${cities.asOfDate}. ` +
     "Raw counts follow city size, so the table ranks by density. Click a column to rank by it; the bar shows the ranked column." +
-    (state.compareQuest && cities.dates ? " Trends are shown for all counted quests only." : "");
+    (state.compareQuest && cities.dates ? " Trends are shown for all counted quests only." : "") +
+    (state.compareQuest && off ? ` The app doesn't offer this quest in ${off} of these cities; they are listed last.` : "") +
+    (!state.compareQuest && lo < hi ? ` The app offers some quests only in some countries, so a city's total covers ${lo}–${hi} quest types depending on where it is.` : "");
   $("#compare-table tbody").replaceChildren(...rows.map((r, i) => {
     const v = r[barKey];
     const trend = trends && r.c.trend;
-    return el("tr", { class: r.c.id === state.city ? "picked" : null },
-      el("td", { class: "num" }, i + 1),
+    const where = r.notOffered && offeredWhere(questByName.get(state.compareQuest).enabledInCountries, r.c.id);
+    return el("tr", { class: [r.c.id === state.city ? "picked" : "", r.notOffered ? "off" : ""].join(" ").trim() || null },
+      el("td", { class: "num" }, r.notOffered ? null : i + 1),
       el("td", {}, el("a", { href: "#", onclick: (e) => { e.preventDefault(); state.city = r.c.id; $("#city").value = r.c.id; setView("city"); } }, r.c.name)),
       trends ? el("td", { class: "c-trend" }, trend ? sparkline(cities.dates, trend, r.c.name) : null) : null,
-      el("td", { class: "num" }, fmt(r.open, nf)),
+      el("td", { class: "num" }, r.notOffered ? el("span", { title: where ? where.title : null }, where ? where.text : "not offered") : fmt(r.open, nf)),
       el("td", { class: "num" }, rate(r.perKm2)),
       el("td", { class: "num" }, rate(r.perRoadKm)),
       el("td", { class: "num" }, rate(r.per1k)),

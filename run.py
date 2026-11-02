@@ -600,6 +600,7 @@ def build_history(snapshots: list[dict], city_config: list[dict], disabled: set[
     names = {c["id"]: c["name"] for c in city_config}
     city_regions = {c["id"]: c.get("region") for c in city_config}
     city_groups = {c["id"]: c["group"] for c in city_config if c.get("group")}  # else the region's group
+    city_codes = {c["id"]: c["countryCodes"] for c in city_config if c.get("countryCodes")}
     dates = sorted({s["asOfDate"] for s in snapshots})  # each region has its own snapshot of a date
     city_ids = sorted({cid for s in snapshots for cid in s["cities"]})
     history, index = {}, []
@@ -642,6 +643,7 @@ def build_history(snapshots: list[dict], city_config: list[dict], disabled: set[
             "name": series["name"],
             **({"region": city_regions[cid]} if city_regions.get(cid) else {}),
             **({"group": city_groups[cid]} if cid in city_groups else {}),
+            **({"countryCodes": city_codes[cid]} if cid in city_codes else {}),
             "asOfDate": last_snap["asOfDate"],
             "scVersion": last_snap["scVersion"],
             "landAreaKm2": den.get("landAreaKm2"),
