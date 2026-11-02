@@ -2,11 +2,13 @@
 # rerun the script instead. StreetComplete is GPL-3.0 (see src/main/kotlin/sc/LICENSE).
 tag=v64.0
 commit=6c88a654cad86a149583c7cb6b409e021f76b9c5
-patches=clock,multiplier,nolazy
+patches=clock,multiplier,nolazy,codepoints
   clock: util/ktx/Instant.kt: systemTimeNow() reads a settable `var systemClock: Clock` (default Clock.System)
   multiplier: data/elementfilter/filters/RelativeDate.kt: MULTIPLIER reads a thread-local override first (`multiplierOverride`)
   nolazy: data/elementfilter/filters/RelativeDate.kt: `date` is a getter again, not `by lazy`
   nolazy: data/elementfilter/filters/ElementFilter.kt: `dateTimestamp` is a getter again, not `by lazy` (two classes)
+  codepoints: data/osm/mapdata/Element.kt: a tag key or value may have 255 code points, as in SC v64.1 (8fe4c925)
+  codepoints: data/osm/mapdata/Element.kt: the same for the value
 files (sha256 of the copied file; patched files also give the upstream sha256):
   b5dc8154ec673f1522c129131ace62d6ea6913e8f8afb8e8242fac1549b0d1ed  de/westnordost/streetcomplete/data/elementfilter/BooleanExpression.kt
   af9ee66cfc6e286bbf6c4bf76ff43f7fde01bd04454fe529528db13d8fceecac  de/westnordost/streetcomplete/data/elementfilter/BooleanExpressionBuilder.kt
@@ -18,7 +20,7 @@ files (sha256 of the copied file; patched files also give the upstream sha256):
   f746e0a417dc7e7502a171c13fe3ecf7a4a6242edf14801e7e335aa990a3c69a  de/westnordost/streetcomplete/data/elementfilter/filters/ElementFilterOverpass.kt
   58e34a334b19a281128b8965f060aeb4f330d283d3930db027554296912a1b7e  de/westnordost/streetcomplete/data/elementfilter/filters/RegexOrSet.kt
   db459c2a3298511c12b13868bb58f6828f674800a2015219c177224a2444165c  de/westnordost/streetcomplete/data/elementfilter/filters/RelativeDate.kt  (patch multiplier,nolazy; upstream 4d611838f2d6a60da327e539852ce86e871985fe071baf532faba8c80613fbb5)
-  974ab1eec328f609c46c8890671c17527e279c6ca6f82882dca4fb77e40f9297  de/westnordost/streetcomplete/data/osm/mapdata/Element.kt
+  4baa516810c5bcae762d259c11087f6812dfbc5ba8b8a9ed34cbc49f57ab7fb4  de/westnordost/streetcomplete/data/osm/mapdata/Element.kt  (patch codepoints; upstream 974ab1eec328f609c46c8890671c17527e279c6ca6f82882dca4fb77e40f9297)
   1fd01cd36bb3ed130b1bb7c80577d887122ea26d15a8638b6196de7c159cb5bf  de/westnordost/streetcomplete/osm/ResurveyUtils.kt
   0d2c60bd8166e130b9fb5bb4f589779ccd649918fd4198045ab2e61f4f1a1042  de/westnordost/streetcomplete/osm/TagsUtils.kt
   cada8081fdb8801dcb15cc0bd88d3b7cac97b454ad22188c94afd9b2df495a51  de/westnordost/streetcomplete/data/osm/edits/update_tags/StringMapChangesBuilder.kt

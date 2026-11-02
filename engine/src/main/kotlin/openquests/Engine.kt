@@ -1,6 +1,7 @@
 package openquests
 
 import crosby.binary.Osmformat
+import de.westnordost.streetcomplete.ApplicationConstants.MAX_OSM_TAG_VALUE_LENGTH
 import de.westnordost.streetcomplete.data.osm.geometry.ElementGeometry
 import de.westnordost.streetcomplete.data.osm.geometry.ElementGeometryCreator
 import de.westnordost.streetcomplete.data.osm.mapdata.Element
@@ -414,7 +415,7 @@ class Engine(val registry: Registry, val cities: List<City>, val parts: List<Par
                     var j = start
                     while (j < end) { tags[ctx.strings[d.getKeysVals(j)]] = ctx.strings[d.getKeysVals(j + 1)]; j += 2 }
                     val version = if (hasInfo) info.getVersion(i) else 1
-                    val node = Node(id, position, tags, version, ts * ctx.dateGranularity)
+                    val node = Node(id, position, fitTags("main", "node", id, tags), version, ts * ctx.dateGranularity)
                     for (c in cityIdx) counts.taggedNodes.incrementAndGet(c)
                     offer(node, NODE, cityIdx, position)
                 }
@@ -426,7 +427,7 @@ class Engine(val registry: Registry, val cities: List<City>, val parts: List<Par
                 val position = LatLon(lat7 / 1e7, lon7 / 1e7)
                 val cityIdx = locate(NODE, position)
                 if (cityIdx.isEmpty()) continue
-                val node = Node(n.id, position, tagsOf(n.keysList, n.valsList, ctx.strings),
+                val node = Node(n.id, position, fitTags("main", "node", n.id, tagsOf(n.keysList, n.valsList, ctx.strings)),
                     if (n.hasInfo()) n.info.version else 1, n.info.timestamp * ctx.dateGranularity)
                 for (c in cityIdx) counts.taggedNodes.incrementAndGet(c)
                 offer(node, NODE, cityIdx, position)
@@ -467,7 +468,7 @@ class Engine(val registry: Registry, val cities: List<City>, val parts: List<Par
 
             val positions = ArrayList<LatLon>(rc)
             for (i in 0 until rc) positions += LatLon(unpackLat7(coords[i]) / 1e7, unpackLon7(coords[i]) / 1e7)
-            val tags = tagsOf(w.keysList, w.valsList, ctx.strings)
+            val tags = fitTags("main", "way", w.id, tagsOf(w.keysList, w.valsList, ctx.strings))
             val way = Way(w.id, LongArrayAsList(refs.copyOf(rc)), tags,
                 if (w.hasInfo()) w.info.version else 1, w.info.timestamp * ctx.dateGranularity)
             val geometry = geometryOf(WAY) { geometryCreator.create(way, positions) } ?: continue
@@ -490,7 +491,7 @@ class Engine(val registry: Registry, val cities: List<City>, val parts: List<Par
         val ctx = BlockContext(b)
         for (g in b.primitivegroupList) for (r in g.relationsList) {
             if (r.keysCount == 0) continue
-            val tags = tagsOf(r.keysList, r.valsList, ctx.strings)
+            val tags = fitTags("main", "relation", r.id, tagsOf(r.keysList, r.valsList, ctx.strings))
             // the app drops these while parsing a download, so no quest is ever on one
             if (ignoreRelation(tags)) { stats.ignoredRelations.incrementAndGet(); continue }
             val members = ArrayList<RelationMember>(r.memidsCount)
@@ -567,6 +568,19 @@ internal fun tagsOf(keys: List<Int>, vals: List<Int>, strings: Array<String>): M
     for (i in keys.indices) m[strings[keys[i]]] = strings[vals[i]]
     return m
 }
+
+/** SC's [Node]/[Way]/[Relation] reject a tag key or value of more than 255 code points, and OSM holds a
+ *  few (node 5616691292, 2018 on: a description of 271). Both passes leave out just those tags, so that
+ *  one element cannot stop a run; its other tags and its geometry count as usual. */
+internal fun fitTags(pass: String, type: String, id: Long, tags: Map<String, String>): Map<String, String> {
+    if (tags.all { (k, v) -> fitsTag(k) && fitsTag(v) }) return tags
+    val kept = tags.filter { (k, v) -> fitsTag(k) && fitsTag(v) }
+    for (k in tags.keys - kept.keys) log("$pass: $type $id: tag '$k' is over $MAX_OSM_TAG_VALUE_LENGTH code points, left out")
+    return kept
+}
+
+private fun fitsTag(s: String) =
+    s.length <= MAX_OSM_TAG_VALUE_LENGTH || s.codePointCount(0, s.length) <= MAX_OSM_TAG_VALUE_LENGTH
 
 class LongList {
     private var a = LongArray(8000); private var n = 0

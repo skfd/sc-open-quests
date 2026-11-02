@@ -14,8 +14,9 @@ sealed class Element {
 
     protected fun checkValidity() {
         for ((key, value) in tags) {
-            require(key.length <= MAX_OSM_TAG_VALUE_LENGTH)
-            require(value.length <= MAX_OSM_TAG_VALUE_LENGTH)
+            // sc-open-quests patch: SC 8fe4c925 (#7341, in v64.1) counts code points, not UTF-16 units
+            require(key.codePointCount(0, key.length) <= MAX_OSM_TAG_VALUE_LENGTH)
+            require(value.codePointCount(0, value.length) <= MAX_OSM_TAG_VALUE_LENGTH)
         }
     }
 }

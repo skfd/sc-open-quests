@@ -299,6 +299,7 @@ class AreaPass(
     // ---------------------------------------------------------------------------------------------
     // collection
 
+
     private fun collectWays(b: Osmformat.PrimitiveBlock): List<WayRec> {
         require(b.kind() == BlockKind.WAYS)
         val ctx = BlockContext(b)
@@ -314,7 +315,7 @@ class AreaPass(
                 if (c != NO_COORD) set = citySets.union(set, setAt(unpackLat7(c), unpackLon7(c)))
             }
             if (set == 0) continue
-            out += WayRec(w.id, refs, tagsOf(w.keysList, w.valsList, ctx.strings),
+            out += WayRec(w.id, refs, fitTags("area", "way", w.id, tagsOf(w.keysList, w.valsList, ctx.strings)),
                 if (w.hasInfo()) w.info.version else 1, w.info.timestamp * ctx.dateGranularity, set)
         }
         return out
@@ -351,7 +352,7 @@ class AreaPass(
                         var j = start
                         while (j < end) { m[ctx.strings[d.getKeysVals(j)]] = ctx.strings[d.getKeysVals(j + 1)]; j += 2 }
                     }
-                    out += NodeRec(id, pack(lat7, lon7), tags, if (hasInfo) info.getVersion(i) else 1,
+                    out += NodeRec(id, pack(lat7, lon7), fitTags("area", "node", id, tags), if (hasInfo) info.getVersion(i) else 1,
                         ts * ctx.dateGranularity, set)
                 }
             }
@@ -360,7 +361,7 @@ class AreaPass(
                 val set = setAt(lat7, lon7)
                 val isNeeded = needed.binarySearch(n.id) >= 0
                 if (!isNeeded && (n.keysCount == 0 || set == 0)) continue
-                out += NodeRec(n.id, pack(lat7, lon7), tagsOf(n.keysList, n.valsList, ctx.strings),
+                out += NodeRec(n.id, pack(lat7, lon7), fitTags("area", "node", n.id, tagsOf(n.keysList, n.valsList, ctx.strings)),
                     if (n.hasInfo()) n.info.version else 1, n.info.timestamp * ctx.dateGranularity, set)
             }
         }
@@ -393,7 +394,7 @@ class AreaPass(
                 })
             }
             if (set == 0) continue
-            out += RelRec(r.id, members, tags,
+            out += RelRec(r.id, members, fitTags("area", "relation", r.id, tags),
                 if (r.hasInfo()) r.info.version else 1, r.info.timestamp * ctx.dateGranularity, set)
         }
         return out
