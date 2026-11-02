@@ -472,12 +472,31 @@ function renderCityCharts(h) {
   }
 }
 
-const STATUS_RANK = { counted: 0, "not-in-region": 2, unsupported: 3 };
-const STATUS_TEXT = {
-  counted: "no count in latest run",        // counted per quests.json, but absent from this city's snapshot
-  "not-in-region": "not offered here",      // the app doesn't offer it here (enabledInCountries)
-  unsupported: "not counted yet",           // custom logic this site doesn't model yet
+// Uncounted rows sink below the counted ones, one group per reason, each under its own heading.
+const GROUPS = {
+  missing: { rank: 1, head: () => "No count in the latest run" },          // counted per quests.json, but absent from this city's snapshot
+  "not-in-region": { rank: 2, head: (h) => `Not offered in ${h.name}` },   // enabledInCountries leaves this city out
+  unsupported: { rank: 3, head: () => "Not counted yet" },                 // custom logic this site doesn't model yet
 };
+
+const regionNames = new Intl.DisplayNames(["en"], { type: "region" });
+function countryName(code) {   // "US-OR" -> "United States (OR)"
+  const [c, sub] = code.split("-");
+  let n;
+  try { n = regionNames.of(c) || c; } catch { n = c; }
+  return sub ? `${n} (${sub})` : n;
+}
+
+// Where the app offers a quest: short for a chip, in full for its tooltip. Null when it is everywhere.
+function offeredWhere(e) {
+  if (!e || !e.codes || !e.codes.length) return null;
+  const names = e.codes.map(countryName).sort((a, b) => a.localeCompare(b));
+  const only = e.type === "NoCountriesExcept";
+  return {
+    text: `${only ? "only in" : "not in"} ${names.length <= 3 ? names.join(", ") : `${names.length} countries`}`,
+    title: `The app offers this quest ${only ? "only in" : "everywhere except"} ${names.join(", ")}`,
+  };
+}
 
 function questRows(h) {
   const n = h.dates.length;
@@ -487,12 +506,13 @@ function questRows(h) {
     const open = s ? s.open[n - 1] : null;
     const prev = s && n > 1 ? s.open[n - 2] : null;
     const aged = s ? s.agedOnly[n - 1] : null;
+    const counted = status === "counted" && open != null;
     return {
-      q, status, open,
+      q, status, open, counted,
+      group: counted ? null : status === "counted" ? "missing" : GROUPS[status] ? status : "unsupported",
       delta: open != null && prev != null ? open - prev : null,
       isNew: open != null && n > 1 && prev == null,
       agedShare: q.usesAge && open ? aged / open : null,
-      counted: status === "counted" && open != null,
     };
   });
 }
@@ -511,12 +531,10 @@ function renderQuestTable(h) {
   const val = {
     name: (r) => questTitle(r.q.name).toLowerCase(),
     open: (r) => r.open, delta: (r) => r.delta, aged: (r) => r.agedShare,
-    support: (r) => ["supported", "approximated", "unsupported"].indexOf(r.q.support),
-    status: (r) => STATUS_RANK[r.status] ?? 9,
   }[key];
   rows.sort((a, b) => {
     if (a.counted !== b.counted) return a.counted ? -1 : 1;   // uncounted always below
-    if (!a.counted) return (STATUS_RANK[a.status] ?? 9) - (STATUS_RANK[b.status] ?? 9) || a.q.order - b.q.order;
+    if (!a.counted) return GROUPS[a.group].rank - GROUPS[b.group].rank || a.q.order - b.q.order;
     const va = val(a), vb = val(b);
     if (va == null && vb == null) return a.q.order - b.q.order;
     if (va == null) return 1;
@@ -526,19 +544,34 @@ function renderQuestTable(h) {
   for (const th of document.querySelectorAll("#quest-table th[data-sort]"))
     th.setAttribute("aria-sort", th.dataset.sort === key ? (dir > 0 ? "ascending" : "descending") : "none");
 
-  const on = rows.filter((r) => selected(r.q.name)).length;
+  const tickable = rows.filter((r) => r.counted);
+  const on = tickable.filter((r) => selected(r.q.name)).length;
   const head = $("#select-shown");
-  head.checked = on > 0 && on === rows.length;
-  head.indeterminate = on > 0 && on < rows.length;
-  head.disabled = !rows.length;
+  head.checked = on > 0 && on === tickable.length;
+  head.indeterminate = on > 0 && on < tickable.length;
+  head.disabled = !tickable.length;
 
-  const tbody = $("#quest-table tbody");
-  tbody.replaceChildren(...rows.map((r) => {
-    const sel = selected(r.q.name), pinned = state.pinned.includes(r.q.name);
-    const name = questTitle(r.q.name);
-    const link = r.q.wikiLink ? el("a", { href: `https://wiki.openstreetmap.org/wiki/${r.q.wikiLink}` }, name) : el("span", {}, name);
-    return el("tr", { class: [r.counted ? "" : "off", sel ? "" : "unselected", pinned ? "pinned" : ""].join(" ").trim() || null },
-      el("td", { class: "c-pick" }, el("input", { type: "checkbox", checked: sel, "aria-label": `Count ${name} in the totals`,
+  const out = [];
+  for (const [i, r] of rows.entries()) {
+    if (r.group && r.group !== (rows[i - 1] && rows[i - 1].group)) {
+      const n = rows.filter((x) => x.group === r.group).length;
+      out.push(el("tr", { class: "group-head" }, el("th", { colspan: 7, scope: "rowgroup" }, `${GROUPS[r.group].head(h)} · ${n}`)));
+    }
+    out.push(questRow(h, r));
+  }
+  $("#quest-table tbody").replaceChildren(...out);
+}
+
+function questRow(h, r) {
+  const sel = selected(r.q.name), pinned = state.pinned.includes(r.q.name);
+  const name = questTitle(r.q.name);
+  const link = r.q.wikiLink ? el("a", { href: `https://wiki.openstreetmap.org/wiki/${r.q.wikiLink}` }, name) : el("span", {}, name);
+  const where = r.group === "not-in-region" ? offeredWhere(r.q.enabledInCountries) : null;
+  // An uncounted quest's tick does nothing here, so it is shown but locked; it still counts where the quest is.
+  return el("tr", { class: [r.counted ? "" : "off", sel ? "" : "unselected", pinned ? "pinned" : ""].join(" ").trim() || null },
+      el("td", { class: "c-pick" }, el("input", { type: "checkbox", checked: sel, disabled: !r.counted,
+                                                  "aria-label": `Count ${name} in the totals`,
+                                                  title: r.counted ? null : `Not counted in ${h.name}, so the tick does nothing here`,
                                                   onchange: () => toggleSelect(r.q.name) })),
       el("td", { class: "c-pin" }, r.counted ? el("button", { type: "button", class: "pin-btn", "aria-pressed": pinned ? "true" : "false",
                                                               title: pinned ? "Unpin: take its chart away" : "Pin: chart this quest on its own",
@@ -546,14 +579,12 @@ function renderQuestTable(h) {
                                                               onclick: () => togglePin(r.q.name) }) : null),
       el("td", {}, el("div", { class: "quest-cell" }, questIcon(r.q.name),
         el("div", {}, link, r.q.defaultDisabled ? el("span", { class: "chip", title: "Off by default in the app" }, "off by default") : null,
+          where ? el("span", { class: "chip", title: where.title }, where.text) : null,
           el("span", { class: "code" }, r.q.name)))),
       el("td", { class: "c-trend" }, r.counted ? sparkline(h.dates, h.quests[r.q.name].open, name) : null),
       el("td", { class: "num" }, r.open == null ? "—" : nf.format(r.open)),
       el("td", { class: "num" }, r.isNew ? "new" : r.delta == null ? "—" : signed(r.delta)),
-      el("td", { class: "num" }, r.agedShare == null ? "—" : `${Math.round(100 * r.agedShare)}%`),
-      el("td", {}, el("span", { class: `badge ${r.q.support}` }, r.q.support)),
-      el("td", {}, r.counted ? "counted" : STATUS_TEXT[r.status] || "not counted yet"));
-  }));
+      el("td", { class: "num" }, r.agedShare == null ? "—" : `${Math.round(100 * r.agedShare)}%`));
 }
 
 function togglePin(name) {
@@ -572,8 +603,9 @@ function toggleSelect(name) {
   selectionChanged();
 }
 
-function selectShown(on) {   // the header tick: every row the search box leaves
+function selectShown(on) {   // the header tick: every counted row the search box leaves
   for (const r of shownRows(hist)) {
+    if (!r.counted) continue;
     if (on) state.selected.add(r.q.name);
     else state.selected.delete(r.q.name);
   }

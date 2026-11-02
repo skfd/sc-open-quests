@@ -24,7 +24,9 @@ is recorded alongside it.
   - The 51 custom quests start as *unsupported*.
   - A custom quest moves up to *approximated* or *supported* only when someone writes its logic and checks it
     against the app.
-  - Show the class on the site.
+  - Show the class on the site. Since every quest reached *supported* (2026-11), the quest table shows it
+    only where a quest is not counted: such rows sit greyed at the bottom under their reason (not offered
+    in the city, no count in the latest run, not counted yet), and the Support and Status columns are gone.
 - **Split the aging signal from the mapping signal by using the filter itself.**
   - The 48 quests whose filters use `older` can reopen with no edit at all.
   - For those, record the count from the plain tag test and the count that only exists because the element
