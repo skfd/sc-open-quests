@@ -58,9 +58,9 @@ IMAGE = "name-ru-repair-osmium"
 BACKFILL = run.ROOT / "data" / "backfill"
 
 # The scheduled update starts at 17:15 UTC (13:15 in summer, 12:15 in winter: the task's trigger carries
-# a fixed offset) and takes most of an hour; don't start an engine run across it, nor a longer step (the
+# a fixed offset) and takes up to two hours; don't start an engine run across it, nor a longer step (the
 # monthly planet job) that would still run then. In UTC, so the window moves with the task.
-QUIET = ((16, 55), (18, 30))  # 13 regions and the Europe clip since 2026-11-02; an Ontario month takes 5 min
+QUIET = ((16, 55), (19, 15))  # 13 regions and the Europe clip since 2026-11-02 (europe-central 10-20 min); an Ontario month takes 5 min
 
 
 class Region:

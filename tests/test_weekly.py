@@ -232,7 +232,8 @@ class QuietTest(unittest.TestCase):
         at = lambda hm: datetime(2026, 10, 26, *hm, tzinfo=timezone.utc)  # noqa: E731
         self.assertTrue(bh.in_quiet(at((17, 15))))
         self.assertFalse(bh.in_quiet(at((16, 54))))
-        self.assertFalse(bh.in_quiet(at((18, 30))))
+        self.assertFalse(bh.in_quiet(at((19, 15))))
+        self.assertTrue(bh.in_quiet(at((19, 0))))
         self.assertTrue(bh.in_quiet(at((15, 30)), ahead_minutes=90))
         self.assertFalse(bh.in_quiet(at((15, 20)), ahead_minutes=90))
         self.assertFalse(bh.in_quiet(at((12, 30)), ahead_minutes=120))  # the planet job, 07:30 EST
