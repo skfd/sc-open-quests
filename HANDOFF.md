@@ -270,8 +270,9 @@ plus requests" to the end first. In short:
   monthly slice is the whole 20 km ring of the history cut, 214M nodes, against the clip's 127M. The
   slice is kept for reproducing it: `data/backfill/msk-repro/europe-2022-01-01.osm.pbf` in the worktree
   (a hard link, 2.5 GB), with the command in `logs/europe-overnight-2.log`.
-- **Running, detached, survives a restart:** `.scratch/europe-months.sh` (log `logs/europe-months.log`,
-  started 2026-11-01 18:03) counts the months of the three other regions, quarterly first, then every
+- **Ran until 2026-11-02 00:34:** `.scratch/europe-months.sh` (log `logs/europe-months.log`,
+  started 2026-11-01 18:03) counted the months of the three other regions; now `europe-months-4.sh`
+  (item 0 below) counts all four, quarterly first, then every
   month: about 23 min a month (one slice of 3.5 min, central 15 min), so the quarterly ones by about
   02:00 and the rest about 30 h later. Rerun the script to go on; it skips what is counted.
 - **Site preview:** `run.py history` in the worktree (its docs/data left uncommitted: main's daily
@@ -291,28 +292,24 @@ plus requests" to the end first. In short:
    its stack trace. Checked on a Moscow cut of the kept slice: the pre-fix engine fails there, the fixed
    one counts it; every engine test passes, the snapshot reproduction unchanged.
    The months job rebuilds the worktree's engine before it counts, so `europe-months.sh` has run the
-   fixed engine since 20:37. **Left: `europe-msk`'s months from 2022-01.** Slices are deleted after
-   each date, so Moscow should ride along on the running job's: stop `europe-months.sh` by its process
-   tree (root: the hidden `bash.exe .../europe-months.sh`, pid 23580 on 2026-11-01; its python and the
-   engine's java change every count, and a count lost midway is just redone; do not stop it while the
-   log's last line is "slicing ..."), then start the four-region script, in PowerShell from the repo root:
-   `Start-Process -WindowStyle Hidden 'C:\Program Files\Git\bin\bash.exe' -ArgumentList
-   '/c/Users/kk/Code/sc-open-quests/.scratch/europe-months-4.sh' -RedirectStandardOutput
-   logs\europe-months-4.log -RedirectStandardError logs\europe-months-4.err`. It skips what is
-   counted. Its quarterly phase cuts msk's 20 quarterly slices (2022-01 to 2026-10) for msk alone, as
-   the other three have those quarters (about 20 x 6 min); the monthly phase then shares each slice.
-   Without the restart: the three-region job ends in about 30 h, and msk alone then needs about 10-12 h
-   (its own slice for every month). Docker Desktop was running at 21:00 on 2026-11-01. Cleanup after msk's 2022-01-01 lands: `data/backfill/msk-repro/` in the worktree (2.5 GB)
-   and `.scratch/msk-fail/` (240 MB of cuts and dumps).
+   fixed engine since 20:37. **Restarted with all four regions at the owner's word, 2026-11-02 00:36**:
+   `.scratch/europe-months-4.sh` (hidden, log `logs/europe-months-4.log`, `.err`); `europe-months.sh` is
+   stopped. Its first count was the one that had failed: europe-msk 2022-01-01 in 135 s (Istanbul
+   1.29M, Moscow 1.39M, Minsk 346k open, each within 1% of 2021-10). Quarterly first (msk's 20 quarters
+   cut alone, about 2 h), then every month for all four, about 30 h. To go on after a stop, start it
+   again the same way: `Start-Process -WindowStyle Hidden 'C:\Program Files\Git\bin\bash.exe'
+   -ArgumentList '/c/Users/kk/Code/sc-open-quests/.scratch/europe-months-4.sh' -RedirectStandardOutput
+   logs\europe-months-4.log -RedirectStandardError logs\europe-months-4.err` (it skips what is
+   counted and reuses a slice already cut; stop it by its process tree, not while it is slicing). The
+   repro slice and the scratch cuts are deleted.
 1. **The owner's look at the preview, then the merge** of `europe` into main. The merge publishes: the
    13:15 run pushes main and counts the Europe regions from then on (`fetch europe` is part of its
    `download`). At the merge: discard the worktree's docs/data changes; copy the worktree's
    `data/archive/europe-*`, `data/grid/europe-*` and `data/backfill/europe-*` into main's data/, then
    `python tools/backfill_history.py merge --region <each europe region>` and `run.py history`; run
    `.\schedule-planet-add.ps1` as Administrator (it removes `kk-SCOpenQuests-weekly`); delete the worktree.
-2. **The rest of the monthly points** (about 16 h, any time): `python tools/backfill_history.py months
-   --planet history-261029 --region europe-msk --region europe-west --region europe-central --region
-   europe-east`, in whichever checkout holds the Europe archive.
+2. **The rest of the monthly points:** running (item 0). If the merge comes first, it can wait for them
+   or merge what is counted and rerun `merge` after.
 3. **Monday 2026-11-02 07:30:** the planet job still runs main's old `weekly`: it rewrites the history
    file to `history-261102` and retires 261029; that is why the months name `--planet history-261029`.
    Docker Desktop must be running (it was found quit twice), and so must it for every clip fetch.
