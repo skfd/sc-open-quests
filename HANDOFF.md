@@ -302,16 +302,21 @@ plus requests" to the end first. In short:
    logs\europe-months-4.log -RedirectStandardError logs\europe-months-4.err` (it skips what is
    counted and reuses a slice already cut; stop it by its process tree, not while it is slicing). The
    repro slice and the scratch cuts are deleted.
-1. **The merge** of `europe` into main, **once every monthly point is counted** (the owner's choice,
-   2026-11-02 00:55: the site launches Europe with its full history; `europe-months-4.log` ends in
-   "months done", about 2026-11-03 07:00). The merge publishes: the
-   13:15 run pushes main and counts the Europe regions from then on (`fetch europe` is part of its
-   `download`). At the merge: discard the worktree's docs/data changes; copy the worktree's
-   `data/archive/europe-*`, `data/grid/europe-*` and `data/backfill/europe-*` into main's data/, then
-   `python tools/backfill_history.py merge --region <each europe region>` and `run.py history`; run
-   `.\schedule-planet-add.ps1` as Administrator (it removes `kk-SCOpenQuests-weekly`); delete the worktree.
-2. **The rest of the monthly points:** running (item 0). If the merge comes first, it can wait for them
-   or merge what is counted and rerun `merge` after.
+1. ~~The merge.~~ **Merged and published 2026-11-02 ~12:00 at the owner's word ("just publish it")**,
+   before the months were done: merge 57fbf1b (one conflict, the engine README's wording; main's kept),
+   data a0c40cd: 147 cities, the Europe ones quarterly since 2017-01 plus the months counted by then
+   (west, central and east monthly to about 2020-10). Checked: 98 pytest, `run.py history` (231 files),
+   and Moscow, London, Istanbul, Toronto and München in a headless browser, no page errors. From the
+   next 13:15 run on, main counts the Europe regions daily (`fetch europe` is in its `download`; Docker
+   must run). **Left for the owner:** `.\schedule-planet-add.ps1` as Administrator (it removes
+   `kk-SCOpenQuests-weekly`; until then the old task runs `run.py weekly`, which is still accepted;
+   its next run is 2026-12-07). Keep the worktree until the months are done: the job runs there.
+2. **The rest of the monthly points**, still counting in the worktree (item 0). When
+   `logs/europe-months-4.log` ends in "months done": copy the worktree's `data/backfill/europe-*` into
+   main's data/backfill/, `python tools/backfill_history.py merge --planet history-261029 --region
+   <each europe region>`, `run.py history`, commit "data: ..."; the 13:15 run pushes. Then delete the
+   worktree (`git worktree remove ../sc-open-quests-europe`; its docs/data changes are discardable) and
+   the `europe` branch. A check-in on this session is scheduled for 2026-11-03 08:10 to do that.
 3. **Monday 2026-11-02 07:30:** the planet job still runs main's old `weekly`: it rewrites the history
    file to `history-261102` and retires 261029; that is why the months name `--planet history-261029`.
    Docker Desktop must be running (it was found quit twice), and so must it for every clip fetch.
