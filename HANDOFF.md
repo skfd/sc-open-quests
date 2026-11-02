@@ -302,7 +302,9 @@ plus requests" to the end first. In short:
    logs\europe-months-4.log -RedirectStandardError logs\europe-months-4.err` (it skips what is
    counted and reuses a slice already cut; stop it by its process tree, not while it is slicing). The
    repro slice and the scratch cuts are deleted.
-1. **The owner's look at the preview, then the merge** of `europe` into main. The merge publishes: the
+1. **The merge** of `europe` into main, **once every monthly point is counted** (the owner's choice,
+   2026-11-02 00:55: the site launches Europe with its full history; `europe-months-4.log` ends in
+   "months done", about 2026-11-03 07:00). The merge publishes: the
    13:15 run pushes main and counts the Europe regions from then on (`fetch europe` is part of its
    `download`). At the merge: discard the worktree's docs/data changes; copy the worktree's
    `data/archive/europe-*`, `data/grid/europe-*` and `data/backfill/europe-*` into main's data/, then
