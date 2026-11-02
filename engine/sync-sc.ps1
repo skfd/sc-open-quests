@@ -38,6 +38,12 @@
            a whole run (Moscow, node 7370179285, 2021-11 to 2023-10). SC fixed it in 8fe4c925 (#7341,
            shipped in v64.1): count code points. Drop this patch at the v64.1 repin; the script fails
            there anyway, since the upstream line is gone.
+    onepoint  util/math/SphericalEarthMath.kt: ElementGeometryCreator checks a way's size before it
+           drops repeated positions, so a way whose nodes all share one position gets a polyline of
+           one point, and `intersectsWith` fails on it with a require. AddMaxHeight's bridge check met
+           one in Moscow's 2017-12 data and stopped the run. The patch answers false (a point crosses
+           nothing); no count that ran before changes. Still upstream on master as of 2026-11-02, so
+           keep it at the v64.1 repin.
 
 .EXAMPLE
   ./sync-sc.ps1 -ScPath C:\Users\kk\AppData\Local\Temp\sc-v64.0 -Tag v64.0
@@ -270,6 +276,17 @@ $patches = @(
             '            require(value.codePointCount(0, value.length) <= MAX_OSM_TAG_VALUE_LENGTH)'
         )
         Description = 'data/osm/mapdata/Element.kt: the same for the value'
+    }
+    @{
+        Name = 'onepoint'
+        File = "$pkg/util/math/SphericalEarthMath.kt"
+        Find = '    require(size > 1 && polyline.size > 1) { "Polylines must each contain at least two elements" }'
+        Replace = @(
+            '    // sc-open-quests patch: a polyline of one point crosses nothing. SC builds one for a way whose nodes'
+            '    // all share a position (ElementGeometryCreator checks the size before eliminateDuplicates)'
+            '    if (size < 2 || polyline.size < 2) return false'
+        )
+        Description = 'util/math/SphericalEarthMath.kt: intersectsWith() is false for a polyline of one point instead of failing'
     }
 )
 

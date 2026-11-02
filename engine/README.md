@@ -114,6 +114,13 @@ node positions), relations. Each stage decodes blocks in parallel.
   every count of `europe-msk` in that span with "error: Failed requirement.". The patch counts code points,
   as SC itself does from 8fe4c925 (#7341, "App doesn't launch after update"), released in v64.1. Drop it
   at the v64.1 repin: the upstream line is gone there, so `sync-sc.ps1` fails until it is removed.
+- **`onepoint`** (`util/math/SphericalEarthMath.kt`): `ElementGeometryCreator.create(way, ...)` drops
+  repeated positions but checks the size of the list before it, so a way whose nodes all share one
+  position gets a polyline of one point, and `List<LatLon>.intersectsWith` rejects that with "Polylines
+  must each contain at least two elements". AddMaxHeight's bridge check met one in Moscow's 2017-12-01
+  data and stopped every `europe-msk` count there; in the app it would fail the download. The patch makes
+  `intersectsWith` answer false for a polyline of one point (a point crosses nothing), so only a count
+  that used to fail changes. Upstream master has the same check (2026-11-02): keep it at the repin.
 - **Stub** `src/main/kotlin/stubs/de/westnordost/streetcomplete/ui/common/street_side_select/Side.kt`: SC
   declares `enum class Side { LEFT, RIGHT }` in a Compose UI file; the vendored `osm/Sides.kt` imports it.
 - **Stubs** `resources/Res.kt` and `ui/ktx/Res.kt` (`Res.readBytesOrNull`): SC reads its

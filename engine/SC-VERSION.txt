@@ -2,13 +2,14 @@
 # rerun the script instead. StreetComplete is GPL-3.0 (see src/main/kotlin/sc/LICENSE).
 tag=v64.0
 commit=6c88a654cad86a149583c7cb6b409e021f76b9c5
-patches=clock,multiplier,nolazy,codepoints
+patches=clock,multiplier,nolazy,codepoints,onepoint
   clock: util/ktx/Instant.kt: systemTimeNow() reads a settable `var systemClock: Clock` (default Clock.System)
   multiplier: data/elementfilter/filters/RelativeDate.kt: MULTIPLIER reads a thread-local override first (`multiplierOverride`)
   nolazy: data/elementfilter/filters/RelativeDate.kt: `date` is a getter again, not `by lazy`
   nolazy: data/elementfilter/filters/ElementFilter.kt: `dateTimestamp` is a getter again, not `by lazy` (two classes)
   codepoints: data/osm/mapdata/Element.kt: a tag key or value may have 255 code points, as in SC v64.1 (8fe4c925)
   codepoints: data/osm/mapdata/Element.kt: the same for the value
+  onepoint: util/math/SphericalEarthMath.kt: intersectsWith() is false for a polyline of one point instead of failing
 files (sha256 of the copied file; patched files also give the upstream sha256):
   b5dc8154ec673f1522c129131ace62d6ea6913e8f8afb8e8242fac1549b0d1ed  de/westnordost/streetcomplete/data/elementfilter/BooleanExpression.kt
   af9ee66cfc6e286bbf6c4bf76ff43f7fde01bd04454fe529528db13d8fceecac  de/westnordost/streetcomplete/data/elementfilter/BooleanExpressionBuilder.kt
@@ -41,7 +42,7 @@ files (sha256 of the copied file; patched files also give the upstream sha256):
   5936c3d28e80a96234f15509a8ebc4b8c29a94edeb04e366d1308ef61438a044  de/westnordost/streetcomplete/data/osm/geometry/NodeWayMap.kt
   d6db6ff46fa8a7f90a386738f089cbc9fb00c0a98cb24ef865e0b118044a9bbd  de/westnordost/streetcomplete/data/osm/mapdata/MapData.kt
   f2ffc8b1165cfecd705f737446041a9b65fb84222798b4e1a63cabb721fce386  de/westnordost/streetcomplete/data/osm/mapdata/BoundingBox.kt
-  014aa3281b79c45abb0d07411d9662cf471543058143f8ae1db55447255377a6  de/westnordost/streetcomplete/util/math/SphericalEarthMath.kt
+  a7a6509980affc316644e9fbf78109e233a0c3b024739dbb04d389b7abdb8820  de/westnordost/streetcomplete/util/math/SphericalEarthMath.kt  (patch onepoint; upstream 014aa3281b79c45abb0d07411d9662cf471543058143f8ae1db55447255377a6)
   1faf17ca19bcf032fe528ad2772d996d69f88fc9ef64b7766997b6fe2414e8ac  de/westnordost/streetcomplete/util/math/SphericalEarthMathVector3d.kt
   6269b305df088170db654ff2d17c9948182f9e6f2011b47be0a5f9c39013400e  de/westnordost/streetcomplete/util/math/Vector3d.kt
   1426d63608e4bc6b67e924db9e52abc11a7d9dabdc1ca72ca0ad3d9781392544  de/westnordost/streetcomplete/util/math/AngleMath.kt

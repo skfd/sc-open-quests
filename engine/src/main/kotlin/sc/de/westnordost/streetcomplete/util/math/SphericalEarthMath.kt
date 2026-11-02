@@ -200,7 +200,9 @@ fun List<LatLon>.distanceTo(polyline: List<LatLon>, globeRadius: Double = EARTH_
  *  other at an endpoint (e.g. two consecutive polylines that share one endpoint), this doesn't
  *  count. */
 fun List<LatLon>.intersectsWith(polyline: List<LatLon>): Boolean {
-    require(size > 1 && polyline.size > 1) { "Polylines must each contain at least two elements" }
+    // sc-open-quests patch: a polyline of one point crosses nothing. SC builds one for a way whose nodes
+    // all share a position (ElementGeometryCreator checks the size before eliminateDuplicates)
+    if (size < 2 || polyline.size < 2) return false
     val ns = map { it.toNormalOnSphere() }
     val npolyline = polyline.map { it.toNormalOnSphere() }
     ns.asSequenceOfPairs().forEach { (first, second) ->
