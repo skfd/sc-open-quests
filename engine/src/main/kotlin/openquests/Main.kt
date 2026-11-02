@@ -67,7 +67,8 @@ fun main(args: Array<String>) {
         count(opts)
     } catch (e: Throwable) {
         System.err.println("error: ${e.message ?: e}")
-        if (e !is IllegalArgumentException) e.printStackTrace()
+        // a bare require() says only "Failed requirement.": show where
+        if (e !is IllegalArgumentException || e.message == "Failed requirement.") e.printStackTrace()
         exitProcess(1)
     }
 }

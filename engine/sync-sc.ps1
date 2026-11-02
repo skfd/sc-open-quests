@@ -33,6 +33,11 @@
            multiplier for the filter's lifetime. The engine evaluates one filter instance at the
            extract's time, at 1900 (agedOnly) and at three multipliers, so both become getters again,
            as they were up to v63. Same verbatim-line rule (the filter line occurs twice).
+    codepoints  data/osm/mapdata/Element.kt: v64.0 rejects a tag key or value over 255 UTF-16 units
+           with a bare `require`, so a value of 255 code points with emoji in it (OSM allows it) killed
+           a whole run (Moscow, node 7370179285, 2021-11 to 2023-10). SC fixed it in 8fe4c925 (#7341,
+           shipped in v64.1): count code points. Drop this patch at the v64.1 repin; the script fails
+           there anyway, since the upstream line is gone.
 
 .EXAMPLE
   ./sync-sc.ps1 -ScPath C:\Users\kk\AppData\Local\Temp\sc-v64.0 -Tag v64.0
@@ -247,6 +252,25 @@ $patches = @(
         )
         Description = 'data/elementfilter/filters/ElementFilter.kt: `dateTimestamp` is a getter again, not `by lazy` (two classes)'
     }
+    @{
+        Name = 'codepoints'
+        File = "$pkg/data/osm/mapdata/Element.kt"
+        Find = '            require(key.length <= MAX_OSM_TAG_VALUE_LENGTH)'
+        Replace = @(
+            '            // sc-open-quests patch: SC 8fe4c925 (#7341, in v64.1) counts code points, not UTF-16 units'
+            '            require(key.codePointCount(0, key.length) <= MAX_OSM_TAG_VALUE_LENGTH)'
+        )
+        Description = 'data/osm/mapdata/Element.kt: a tag key or value may have 255 code points, as in SC v64.1 (8fe4c925)'
+    }
+    @{
+        Name = 'codepoints'
+        File = "$pkg/data/osm/mapdata/Element.kt"
+        Find = '            require(value.length <= MAX_OSM_TAG_VALUE_LENGTH)'
+        Replace = @(
+            '            require(value.codePointCount(0, value.length) <= MAX_OSM_TAG_VALUE_LENGTH)'
+        )
+        Description = 'data/osm/mapdata/Element.kt: the same for the value'
+    }
 )
 
 function Get-Sha256Lf([string]$path) {
@@ -302,7 +326,7 @@ foreach ($f in $files) {
             $out = foreach ($l in $fileLines) { if ($l -ceq $patch.Find) { $patch.Replace } else { $l } }
             [System.IO.File]::WriteAllText($target, ($out -join $nl), (New-Object System.Text.UTF8Encoding $false))
         }
-        $names = ($filePatches | ForEach-Object { $_.Name }) -join ','
+        $names = ($filePatches | ForEach-Object { $_.Name } | Select-Object -Unique) -join ','
         $lines += "  $(Get-Sha256 $target)  $f  (patch $names; upstream $upstream)"
     } else {
         $lines += "  $upstream  $f"

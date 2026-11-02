@@ -10,7 +10,7 @@ release is a *repin*: [REPIN.md](../REPIN.md). Output format: [DATA-FORMAT.md](.
 
 `src/main/kotlin/sc/` is StreetComplete source, **GPL-3.0** (licence text copied alongside). Linking it
 makes the engine a GPL-3.0 derivative; the repository is GPL-3.0. The SC files carry no per-file headers
-upstream; they are copied byte-for-byte except for the one patch below (see the sha256 list in
+upstream; they are copied byte-for-byte except for the patches below (see the sha256 list in
 `SC-VERSION.txt`).
 
 ## Build, run, test
@@ -108,6 +108,12 @@ node positions), relations. Each stage decodes blocks in parallel.
   `systemTimeNow()`. `sync-sc.ps1` applies it by exact line match after the copy (and fails if the
   upstream line changed) and records both hashes in `SC-VERSION.txt`. The engine installs a clock that
   reads a thread-local override first (`EngineClock`), which is how agedOnly runs in the same pass.
+- **`codepoints`** (`data/osm/mapdata/Element.kt`): v64.0's `Element` rejects a tag key or value over 255
+  UTF-16 units with a bare `require`, but OSM allows 255 *code points*, and an emoji outside the BMP is two
+  units. A Moscow shop's description of 255 code points (node 7370179285, 2021-11-13 to 2023-10-10) stopped
+  every count of `europe-msk` in that span with "error: Failed requirement.". The patch counts code points,
+  as SC itself does from 8fe4c925 (#7341, "App doesn't launch after update"), released in v64.1. Drop it
+  at the v64.1 repin: the upstream line is gone there, so `sync-sc.ps1` fails until it is removed.
 - **Stub** `src/main/kotlin/stubs/de/westnordost/streetcomplete/ui/common/street_side_select/Side.kt`: SC
   declares `enum class Side { LEFT, RIGHT }` in a Compose UI file; the vendored `osm/Sides.kt` imports it.
 - **Stubs** `resources/Res.kt` and `ui/ktx/Res.kt` (`Res.readBytesOrNull`): SC reads its
@@ -326,6 +332,9 @@ All counted quests are marked `supported`: none of the differences below is spec
   either, so they get no quest in the app; this is not an engine gap.
 - **Country gating** is evaluated per city, not per element position. Exact while every city lies inside
   one region (CA-ON, DE, US-TX, ...); a city across a border would need per-position gating.
+- **Tags over 255 code points** are left out of the element (`fitTags`, both passes, logged with the
+  element id), since SC's `Element` rejects them, so the app could not load such an element at all. OSM
+  holds a few (node 5616691292 in Poland, a description of 271 since 2018), none in a counted city so far.
 - **Default-disabled quests** (30 filter quests) are counted like the others; the site leaves them out of
   headline totals (`defaultDisabled` in quests.json). The resurvey multiplier is the app default, 1.
 
