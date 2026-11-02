@@ -57,9 +57,10 @@ IMAGE = "name-ru-repair-osmium"
 
 BACKFILL = run.ROOT / "data" / "backfill"
 
-# The scheduled update runs at 13:15 and takes a few minutes; don't start an engine run across it, nor a
-# longer step (the weekly job's planet clip) that would still run then.
-QUIET = ((12, 55), (13, 50))  # 12 regions and a 3.4 GB download since 2026-10-21; an Ontario month takes 5 min
+# The scheduled update starts at 17:15 UTC (13:15 in summer, 12:15 in winter: the task's trigger carries
+# a fixed offset) and takes most of an hour; don't start an engine run across it, nor a longer step (the
+# monthly planet job) that would still run then. In UTC, so the window moves with the task.
+QUIET = ((16, 55), (18, 30))  # 13 regions and the Europe clip since 2026-11-02; an Ontario month takes 5 min
 
 
 class Region:
@@ -236,8 +237,9 @@ def slice_at(r: Region, t: datetime) -> tuple[Path, Path]:
 
 
 def in_quiet(now: datetime, ahead_minutes: int = 0) -> bool:
-    """True if now (local time) falls in the scheduled update's window, or ahead_minutes before it."""
-    now = now.replace(tzinfo=None)
+    """True if now falls in the scheduled update's window (QUIET, UTC), or ahead_minutes before it. A naive
+    now is local time."""
+    now = now.astimezone(timezone.utc).replace(tzinfo=None)
     start, end = (datetime.combine(now.date(), dtime(*hm)) for hm in QUIET)
     return start - timedelta(minutes=ahead_minutes) <= now < end
 

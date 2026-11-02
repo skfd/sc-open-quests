@@ -6,7 +6,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest import mock
 
@@ -229,13 +229,20 @@ class CountAtTest(StoreCase):
 
 class QuietTest(unittest.TestCase):
     def test_window_and_lookahead(self):
-        at = lambda hm: datetime(2026, 10, 26, *hm)  # noqa: E731
-        self.assertTrue(bh.in_quiet(at((13, 0))))
-        self.assertFalse(bh.in_quiet(at((12, 54))))
-        self.assertFalse(bh.in_quiet(at((13, 50))))
-        self.assertTrue(bh.in_quiet(at((11, 30)), ahead_minutes=90))
-        self.assertFalse(bh.in_quiet(at((11, 20)), ahead_minutes=90))
-        self.assertFalse(bh.in_quiet(at((7, 30)), ahead_minutes=120))
+        at = lambda hm: datetime(2026, 10, 26, *hm, tzinfo=timezone.utc)  # noqa: E731
+        self.assertTrue(bh.in_quiet(at((17, 15))))
+        self.assertFalse(bh.in_quiet(at((16, 54))))
+        self.assertFalse(bh.in_quiet(at((18, 30))))
+        self.assertTrue(bh.in_quiet(at((15, 30)), ahead_minutes=90))
+        self.assertFalse(bh.in_quiet(at((15, 20)), ahead_minutes=90))
+        self.assertFalse(bh.in_quiet(at((12, 30)), ahead_minutes=120))  # the planet job, 07:30 EST
+
+    def test_window_follows_the_task_not_the_clock(self):
+        # the task fires at 17:15 UTC: 13:15 in summer (EDT), 12:15 in winter (EST)
+        edt, est = timezone(timedelta(hours=-4)), timezone(timedelta(hours=-5))
+        self.assertTrue(bh.in_quiet(datetime(2026, 10, 26, 13, 15, tzinfo=edt)))
+        self.assertTrue(bh.in_quiet(datetime(2026, 11, 2, 12, 15, tzinfo=est)))
+        self.assertFalse(bh.in_quiet(datetime(2026, 11, 2, 11, 50, tzinfo=est)))
 
 
 class CadenceTest(unittest.TestCase):
