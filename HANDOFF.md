@@ -266,8 +266,7 @@ plus requests" to the end first. In short:
   worktree's `data/backfill/europe-*/snapshots/` (not merged yet). `.scratch/europe-overnight.sh` (log
   `logs/europe-overnight-2.log`) stopped twice at the same place: **the engine fails on `europe-msk` at
   2022-01-01**, in Moscow's area pass right after Minsk's, with a bare "error: Failed requirement."
-  (a `require()` without a message: the block-kind checks in `AreaPass.kt` 303/324/371 or
-  `Engine.kt` 303/315/321/489 are the candidates). 2017-2021 counted, and so did the 10-29 clip. A
+  (it was SC's own tag-length check; found and fixed, item 0 below). 2017-2021 counted, and so did the 10-29 clip. A
   monthly slice is the whole 20 km ring of the history cut, 214M nodes, against the clip's 127M. The
   slice is kept for reproducing it: `data/backfill/msk-repro/europe-2022-01-01.osm.pbf` in the worktree
   (a hard link, 2.5 GB), with the command in `logs/europe-overnight-2.log`.
@@ -281,9 +280,23 @@ plus requests" to the end first. In short:
   `.scratch/europe-preview/` (`shoot.py`). No page errors; München sits under Germany.
 
 **Next, in order:**
-0. **Find the `europe-msk` failure** (above). Run the engine by hand on the kept slice with a stack
-   trace (Main.kt prints only `e.message`, catching at line 68), fix it, then count `europe-msk`'s
-   months: `python tools/backfill_history.py months --planet history-261029 --region europe-msk`.
+0. ~~Find the `europe-msk` failure.~~ **Found and fixed 2026-11-01 evening** (engine 8d8f220 on main,
+   cherry-picked to `europe` as 4ab7b15; engine/README.md, patch `codepoints`). A Moscow shop's
+   `description` (node 7370179285, 2021-11-13 to 2023-10-10, just outside the city polygon, so only the
+   area pass built it) is 255 code points, but 257 UTF-16 units with its emoji, and v64.0's `Element`
+   requires `length <= 255`. SC fixed exactly this in 8fe4c925 (#7341), **released in v64.1 on
+   2026-11-01**; the patch backports it until the repin. OSM also holds values over 255 code points
+   (node 5616691292 in Poland, 271, outside every city): both passes now leave such a tag out, logged
+   ("tag '...' is over 255 code points, left out"), instead of stopping. A bare `require()` now prints
+   its stack trace. Checked on a Moscow cut of the kept slice: the pre-fix engine fails there, the fixed
+   one counts it; every engine test passes, the snapshot reproduction unchanged.
+   The months job rebuilds the worktree's engine before it counts, so `europe-months.sh` has run the
+   fixed engine since 20:37. **Left: `europe-msk`'s months from 2022-01.** Slices are deleted after
+   each date, so Moscow should ride along on the running job's: stop `europe-months.sh` (its bash,
+   python and the engine's java; a count lost midway is just redone), then start
+   `.scratch/europe-months-4.sh` the same way (all four regions, skips what is counted). Until then
+   msk waits. Cleanup after msk's 2022-01-01 lands: `data/backfill/msk-repro/` in the worktree (2.5 GB)
+   and `.scratch/msk-fail/` (240 MB of cuts and dumps).
 1. **The owner's look at the preview, then the merge** of `europe` into main. The merge publishes: the
    13:15 run pushes main and counts the Europe regions from then on (`fetch europe` is part of its
    `download`). At the merge: discard the worktree's docs/data changes; copy the worktree's
@@ -301,5 +314,9 @@ plus requests" to the end first. In short:
    the re-cut's memory (4.3 GB of the 4.5 GB budget for this 1.67 GB clip); the clip grows with every
    city added (`add_city.py`, `tools/clip_polygon.py europe`, `osm_extracts.py clip europe --polygon
    config/europe.geojson`; it is cut at the next recut).
-5. **Later:** the seeded bar for other countries, chosen from what these 32 cost (DESIGN.md); the step
+5. **Repin to StreetComplete v64.1** (released 2026-11-01; the 13:15 run opens its issue): REPIN.md. It
+   carries quest changes (access checks on more quests, AddOpeningHours on craft/healthcare/office,
+   AddFirewood, `#surveyneeded`), so it moves counts everywhere: after the Europe merge, not during the
+   months. Drop the `codepoints` patch there (`sync-sc.ps1` fails until it is dropped).
+6. **Later:** the seeded bar for other countries, chosen from what these 32 cost (DESIGN.md); the step
    from a request on the site to a counted region; the near-duplicate parts (above).
