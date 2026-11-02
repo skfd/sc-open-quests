@@ -1261,9 +1261,12 @@ async function main() {
   state.selected = resolveSelection(urlSelection);
 
   const sel = $("#city");
-  // cities grouped as the regions are (Ontario, Germany), in config order, when there is more than one group
-  const groups = [...new Set((cities.regions || []).map((r) => r.group))];
-  const groupOf = (c) => ((cities.regions || []).find((r) => r.id === c.region) || {}).group;
+  // cities grouped as the regions are (Ontario, Germany), in config order, when there is more than one group;
+  // a city's own group (its country, for a region spanning several) wins, and those groups follow by name
+  const groupOf = (c) => c.group || ((cities.regions || []).find((r) => r.id === c.region) || {}).group;
+  const own = [...new Set(cities.cities.filter((c) => c.group).map((c) => c.group))].sort((a, b) => a.localeCompare(b));
+  const groups = [...new Set([...(cities.regions || []).map((r) => r.group), ...own])]
+    .filter((g) => cities.cities.some((c) => groupOf(c) === g));
   const option = (c) => el("option", { value: c.id }, c.name);
   sel.replaceChildren(...(groups.length > 1
     ? groups.map((g) => el("optgroup", { label: g }, ...cities.cities.filter((c) => groupOf(c) === g).map(option)))

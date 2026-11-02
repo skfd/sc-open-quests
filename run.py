@@ -14,10 +14,12 @@ Subcommands:
   migrate-archive  move snapshots published before 2026-10-24 (docs/data/<region>/snapshots/) into
              data/archive/; count and history do it too, so it is idempotent and needs no flag
   update     download + backfill + history, then commit "data <asOfDate>" and push; last, check-release
-  weekly     refresh the planet history file (osm-extracts fetch planet-history; a failure leaves it as it
-             is), count the weekly regions from it (tools/backfill_history.py weekly: clip, the months not
-             yet counted, a slice at the file's timestamp), merge, history, then commit
-             "data weekly <date>" and push. With no weekly region it only refreshes the history file
+  planet     the monthly planet job (`weekly` is the old name, still accepted): refresh the planet
+             history file (osm-extracts fetch planet-history; a failure leaves it as it is), re-cut every
+             osm-extracts clip from it (osm-extracts recut), count the months the regions on a clip lack
+             from the clip's history cut, and the weekly regions (tools/backfill_history.py weekly: clip,
+             the months not yet counted, a slice at the file's timestamp); merge, history, then commit
+             "data planet <date>" and push. With neither it only refreshes the history file
   check-release  compare the pinned StreetComplete tag (engine/SC-VERSION.txt) with the newest stable
              GitHub release; if the app moved on, open a GitHub issue "Repin to StreetComplete vX.Y"
              (once; see REPIN.md) and refresh docs/data/sc-releases.json. Network and `gh` failures
@@ -26,8 +28,9 @@ Subcommands:
 Regions are config/regions.json; a city names its region in config/cities.json. A region is one engine
 run (one time zone) over one shared extract: its "extract" key, default its id; several regions may share
 one, and an extract osm-extracts does not know by name comes with a "url". A region with "cadence":
-"weekly" has no extract: `weekly` counts it from the planet history file, and download, count, backfill
-and update leave it alone (default "daily", the Geofabrik path). Extracts and notes dumps live
+"weekly" has no extract: `planet` counts it from the planet history file, and download, count, backfill
+and update leave it alone (default "daily": a Geofabrik extract, or an osm-extracts clip of the planet
+kept current by the daily diffs, whose monthly points `planet` counts). Extracts and notes dumps live
 in the shared store (~/Code/.osm-data, see ~/Code/osm-extracts/README.md); this project never downloads
 them itself. A notes dump is clipped to every region in one pass, into data/notes/. Every snapshot is kept
 in data/archive/<region>/ (not committed); docs/data, which GitHub Pages publishes, holds only the newest
@@ -596,6 +599,7 @@ def build_history(snapshots: list[dict], city_config: list[dict], disabled: set[
     """
     names = {c["id"]: c["name"] for c in city_config}
     city_regions = {c["id"]: c.get("region") for c in city_config}
+    city_groups = {c["id"]: c["group"] for c in city_config if c.get("group")}  # else the region's group
     dates = sorted({s["asOfDate"] for s in snapshots})  # each region has its own snapshot of a date
     city_ids = sorted({cid for s in snapshots for cid in s["cities"]})
     history, index = {}, []
@@ -637,6 +641,7 @@ def build_history(snapshots: list[dict], city_config: list[dict], disabled: set[
             "id": cid,
             "name": series["name"],
             **({"region": city_regions[cid]} if city_regions.get(cid) else {}),
+            **({"group": city_groups[cid]} if cid in city_groups else {}),
             "asOfDate": last_snap["asOfDate"],
             "scVersion": last_snap["scVersion"],
             "landAreaKm2": den.get("landAreaKm2"),
@@ -846,7 +851,7 @@ def update(force: bool = False, push: bool = True) -> None:
     log("update done")
 
 
-# --- weekly: the planet history file -----------------------------------------------------------------
+# --- planet: the planet history file, monthly ---------------------------------------------------------
 
 def fetch_planet_history() -> bool:
     """Ask osm-extracts to bring the planet history file up to date with replication diffs. A failure
@@ -862,43 +867,91 @@ def fetch_planet_history() -> bool:
     return True
 
 
-def weekly(push: bool = True) -> None:
-    """The weekly job: refresh the planet history file, count the weekly regions from it, merge them into
-    the archive, rebuild history and publish. Each step that touches data/ takes the pipeline lock, and
-    no step starts that would run into the daily update's window (backfill_history.wait_for_quiet), so the
-    two never overlap and the daily never finds the lock held. The fetch touches only the shared store,
-    which osm-extracts locks itself."""
+def clip_regions(regs: list[dict] | None = None) -> list[dict]:
+    """The daily regions counted from an osm-extracts clip (a store folder with a clip.json)."""
+    return [r for r in regions_by_cadence("daily", regs)
+            if (OSM_DATA_DIR / region_extract(r) / "clip.json").exists()]
+
+
+def recut_clips() -> bool:
+    """Ask osm-extracts to re-cut every clip not yet cut from the newest planet history file (one pass over
+    it, three hours or more). It takes no pipeline lock and a clip's daily fetch goes on beside it, so it
+    need not keep out of the daily update's window. A failure is logged; returns True on success."""
+    cmd = [sys.executable, str(OSM_EXTRACTS_TOOL), "recut"]
+    log(f"re-cutting the clips: {' '.join(cmd[1:])}")
+    done = subprocess.run(cmd, check=False)
+    if done.returncode != 0:
+        log(f"osm-extracts recut failed (exit {done.returncode}; its message is above); "
+            "the regions on clips get no monthly points this time")
+        return False
+    return True
+
+
+def planet(push: bool = True) -> None:
+    """The monthly planet job: refresh the planet history file, re-cut the clips from it, count the months
+    the regions on clips lack (from the clip's history cut, one slice for all regions of a clip) and the
+    weekly regions, merge them into the archive, rebuild history and publish. Each step that touches data/
+    takes the pipeline lock, and no such step starts that would run into the daily update's window
+    (backfill_history.wait_for_quiet), so the two never overlap and the daily never finds the lock held.
+    The fetch and the re-cut touch only the shared store, which osm-extracts locks itself."""
     sys.path.insert(0, str(TOOLS_DIR))
     import backfill_history as bh  # noqa: E402  (tools/backfill_history.py; it imports this module)
     log("=== planet history ===")
-    bh.wait_for_quiet(ahead_minutes=120)  # a week of diffs over the planet: about 1-1.5 h
+    bh.wait_for_quiet(ahead_minutes=120)  # a month of diffs over the planet: about 2-2.5 h
     fetch_planet_history()
     weekly_regions = regions_by_cadence("weekly")
+    clipped = clip_regions()
     try:
         bh.set_planet(None)
         log(f"planet history: planet/{bh.PLANET_FILE}, up to {bh.iso(bh.planet_timestamp())}")
     except SystemExit as e:  # no history file, or no meta: fatal only if a region needs it
-        if weekly_regions:
+        if weekly_regions or clipped:
             raise RuntimeError(str(e)) from None
         log(str(e))
-    if not weekly_regions:
-        log(f'no region is weekly ("cadence" in {REGIONS_CONFIG.name}); the planet history file was all to do')
+    if not weekly_regions and not clipped:
+        log(f"no region is weekly or counts a clip ({REGIONS_CONFIG.name}); "
+            "the planet history file was all to do")
         return
-    log(f"=== count: {', '.join(r['id'] for r in weekly_regions)} ===")
-    try:
-        t = bh.weekly([r["id"] for r in weekly_regions])
-    except SystemExit as e:
-        raise RuntimeError(str(e)) from None
+    t = bh.planet_timestamp()
+    counted = []
+    if clipped:
+        log("=== recut ===")
+        if recut_clips():
+            regs = [bh.Region(r["id"]) for r in clipped]
+            ready = [r for r in regs if r.history.exists()]
+            for r in regs:
+                if r not in ready:
+                    log(f"{r.id}: {r.history.name} is missing after the re-cut; no monthly points this time")
+            if ready:
+                log(f"=== months: {', '.join(r.id for r in ready)} ===")
+                try:
+                    bh.months(ready, bh.FIRST_MONTH, bh.last_month(t), 1, keep=False)
+                except SystemExit as e:
+                    raise RuntimeError(str(e)) from None
+                counted += [r.id for r in ready]
+    if weekly_regions:
+        log(f"=== count: {', '.join(r['id'] for r in weekly_regions)} ===")
+        try:
+            t = bh.weekly([r["id"] for r in weekly_regions])
+        except SystemExit as e:
+            raise RuntimeError(str(e)) from None
+        counted += [r["id"] for r in weekly_regions]
+    if not counted:
+        log("nothing counted; nothing to publish")
+        return
     bh.wait_for_quiet()
     with bh.locked():
         log("=== merge ===")
-        for r in weekly_regions:
-            bh.merge(bh.Region(r["id"]))
+        for rid in counted:
+            bh.merge(bh.Region(rid))
         log("=== history ===")
         history()
         log("=== publish ===")
-        publish(message=f"data weekly {t.date().isoformat()}", push=push)
-    log("weekly done")
+        publish(message=f"data planet {t.date().isoformat()}", push=push)
+    log("planet done")
+
+
+weekly = planet  # the job's name until 2026-11 (DESIGN.md, "Planet job: monthly while nothing counts from it")
 
 
 # --- SC releases ----------------------------------------------------------------------------------
@@ -987,8 +1040,10 @@ def main(argv: list[str] | None = None) -> int:
         p.add_argument("--force", action="store_true", help="redo even if nothing changed")
         if name == "update":
             p.add_argument("--no-push", dest="push", action="store_false", help="commit but do not push")
-    w = sub.add_parser("weekly", help="planet history + the weekly regions + history + commit + push")
-    w.add_argument("--no-push", dest="push", action="store_false", help="commit but do not push")
+    for name in ("planet", "weekly"):
+        w = sub.add_parser(name, help="monthly: planet history + re-cut the clips + their months + the weekly "
+                           "regions + history + commit + push" + (" (old name of planet)" if name == "weekly" else ""))
+        w.add_argument("--no-push", dest="push", action="store_false", help="commit but do not push")
     h = sub.add_parser("history", help="rebuild history/, cities.json and compare/ from the archived snapshots")
     h.add_argument("--data-dir", type=Path, default=DATA_DIR)
     h.add_argument("--cities", type=Path, default=CITIES_CONFIG)
@@ -1014,8 +1069,8 @@ def main(argv: list[str] | None = None) -> int:
                 migrate_archive()
         elif args.command == "update":
             update(force=args.force, push=args.push)
-        elif args.command == "weekly":
-            weekly(push=args.push)
+        elif args.command in ("planet", "weekly"):
+            planet(push=args.push)
         elif args.command == "check-release":
             check_release()
         return 0

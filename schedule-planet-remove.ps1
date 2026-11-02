@@ -1,4 +1,4 @@
-$taskName = "kk-SCOpenQuests-weekly"
+$taskName = "kk-SCOpenQuests-planet"
 
 if (Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue) {
     Unregister-ScheduledTask -TaskName $taskName -Confirm:$false

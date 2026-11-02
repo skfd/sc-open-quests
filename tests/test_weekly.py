@@ -1,4 +1,5 @@
-"""The weekly planet job: history file naming, the months' end, cadence, run.py weekly. Run: python -m unittest"""
+"""The monthly planet job (once weekly): history file naming, the months' end, cadence, run.py planet.
+Run: python -m unittest"""
 import json
 import shutil
 import subprocess
@@ -312,8 +313,53 @@ class WeeklyRunTest(unittest.TestCase):
         counted.assert_called_once_with(["bremen-weekly"])
         self.assertEqual(merged, [("bremen-weekly", True)])  # under the pipeline lock
         hist.assert_called_once_with()
-        pub.assert_called_once_with(message="data weekly 2026-10-07", push=False)
+        pub.assert_called_once_with(message="data planet 2026-10-07", push=False)
         self.assertFalse(self.lock.exists())
+
+    def clip_store(self, cut: bool):
+        (self.tmp / "eu").mkdir()
+        (self.tmp / "eu" / "clip.json").write_text("{}")
+        if cut:
+            (self.tmp / "eu" / "eu-history-261005.osh.pbf").write_bytes(b"")
+        return [BREMEN, {**BREMEN, "id": "eu-a", "extract": "eu"}, {**BREMEN, "id": "eu-b", "extract": "eu"}]
+
+    def run_planet(self, regs, recut_code):
+        calls, months, merged = [], [], []
+
+        def fake(cmd, **kw):
+            calls.append(cmd[2:])
+            return subprocess.CompletedProcess(cmd, recut_code if cmd[2:] == ["recut"] else 0)
+        with mock.patch.object(run.subprocess, "run", side_effect=fake),                 mock.patch.object(run, "regions", return_value=regs),                 mock.patch.object(bh, "months", side_effect=lambda rs, *a, **kw: months.append([r.id for r in rs])),                 mock.patch.object(bh, "merge", side_effect=lambda r: merged.append((r.id, self.lock.exists()))),                 mock.patch.object(run, "history") as hist, mock.patch.object(run, "publish") as pub:
+            run.planet(push=False)
+        return calls, months, merged, hist, pub
+
+    def test_clip_regions_are_recut_then_their_months_counted_and_published(self):
+        calls, months, merged, hist, pub = self.run_planet(self.clip_store(cut=True), 0)
+        self.assertEqual(calls, [["fetch", "planet-history"], ["recut"]])
+        self.assertEqual(months, [["eu-a", "eu-b"]])  # one call: the two regions share each slice
+        self.assertEqual(merged, [("eu-a", True), ("eu-b", True)])
+        hist.assert_called_once_with()
+        pub.assert_called_once_with(message="data planet 2026-10-05", push=False)
+
+    def test_a_failed_recut_counts_and_publishes_nothing(self):
+        calls, months, merged, hist, pub = self.run_planet(self.clip_store(cut=True), 1)
+        self.assertEqual(calls, [["fetch", "planet-history"], ["recut"]])
+        self.assertEqual(months, [])
+        pub.assert_not_called()
+        self.assertTrue(any("recut failed" in m for m in self.logs), self.logs)
+
+    def test_a_clip_without_its_history_cut_gets_no_months(self):
+        calls, months, merged, hist, pub = self.run_planet(self.clip_store(cut=False), 0)
+        self.assertEqual(months, [])
+        pub.assert_not_called()
+        self.assertTrue(any("is missing after the re-cut" in m for m in self.logs), self.logs)
+
+    def test_weekly_is_the_old_name_of_planet(self):
+        self.assertIs(run.weekly, run.planet)
+        with mock.patch.object(run, "planet") as job:
+            self.assertEqual(run.main(["weekly", "--no-push"]), 0)
+            self.assertEqual(run.main(["planet"]), 0)
+        self.assertEqual(job.call_args_list, [mock.call(push=False), mock.call(push=True)])
 
     def test_a_weekly_region_without_any_history_file_fails(self):
         shutil.rmtree(self.tmp / "planet")

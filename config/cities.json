@@ -48,6 +48,55 @@
       "region": "ontario"
     },
     {
+      "id": "amsterdam",
+      "name": "Amsterdam",
+      "relation": 271110,
+      "adminLevel": 10,
+      "countryCodes": [
+        "NL"
+      ],
+      "timeZone": "Europe/Berlin",
+      "population": 881933,
+      "landAreaKm2": 219.50200157510776,
+      "boundary": "data/boundaries/271110.json",
+      "region": "europe-central",
+      "populationSource": "Overture divisions 2026-10-21.0",
+      "group": "Netherlands"
+    },
+    {
+      "id": "antwerpen",
+      "name": "Antwerpen",
+      "relation": 59518,
+      "adminLevel": 8,
+      "countryCodes": [
+        "BE-VLG",
+        "BE"
+      ],
+      "timeZone": "Europe/Berlin",
+      "population": 525935,
+      "landAreaKm2": 208.13502545750643,
+      "boundary": "data/boundaries/59518.json",
+      "region": "europe-central",
+      "populationSource": "Overture divisions 2026-10-21.0",
+      "group": "Belgium"
+    },
+    {
+      "id": "athens",
+      "name": "Αθήνα",
+      "relation": 1370736,
+      "adminLevel": 7,
+      "countryCodes": [
+        "GR"
+      ],
+      "timeZone": "Europe/Helsinki",
+      "population": 643452,
+      "landAreaKm2": 38.0775037473652,
+      "boundary": "data/boundaries/1370736.json",
+      "region": "europe-east",
+      "populationSource": "ELSTAT 2021 census, municipality of Athens",
+      "group": "Greece"
+    },
+    {
       "id": "aurora",
       "name": "Aurora",
       "relation": 2401094,
@@ -62,6 +111,23 @@
       "boundary": "data/boundaries/2401094.json",
       "region": "ontario",
       "populationSource": "Statistics Canada, 2021 Census of Population"
+    },
+    {
+      "id": "barcelona",
+      "name": "Barcelona",
+      "relation": 347950,
+      "adminLevel": 8,
+      "countryCodes": [
+        "ES-CT",
+        "ES"
+      ],
+      "timeZone": "Europe/Berlin",
+      "population": 1713247,
+      "landAreaKm2": 101.33425266840518,
+      "boundary": "data/boundaries/347950.json",
+      "region": "europe-central",
+      "populationSource": "Overture divisions 2026-10-21.0",
+      "group": "Spain"
     },
     {
       "id": "barrie",
@@ -155,6 +221,22 @@
       "region": "ontario"
     },
     {
+      "id": "bratislava",
+      "name": "Bratislava",
+      "relation": 1702499,
+      "adminLevel": 5,
+      "countryCodes": [
+        "SK"
+      ],
+      "timeZone": "Europe/Berlin",
+      "population": 432801,
+      "landAreaKm2": 367.6003570663314,
+      "boundary": "data/boundaries/1702499.json",
+      "region": "europe-central",
+      "populationSource": "Overture divisions 2026-10-21.0",
+      "group": "Slovakia"
+    },
+    {
       "id": "bremen",
       "name": "Bremen",
       "relation": 62559,
@@ -214,6 +296,22 @@
       "boundary": "data/boundaries/2812764.json",
       "region": "quebec",
       "populationSource": "Statistics Canada, 2021 Census of Population"
+    },
+    {
+      "id": "budapest",
+      "name": "Budapest",
+      "relation": 1244004,
+      "adminLevel": 8,
+      "countryCodes": [
+        "HU"
+      ],
+      "timeZone": "Europe/Berlin",
+      "population": 1686222,
+      "landAreaKm2": 525.9162813145822,
+      "boundary": "data/boundaries/1244004.json",
+      "region": "europe-central",
+      "populationSource": "Overture divisions 2026-10-21.0",
+      "group": "Hungary"
     },
     {
       "id": "burlington",
@@ -421,6 +519,22 @@
       "populationSource": "Statistics Canada, 2021 Census of Population"
     },
     {
+      "id": "dublin",
+      "name": "Dublin",
+      "relation": 1109531,
+      "adminLevel": 7,
+      "countryCodes": [
+        "IE"
+      ],
+      "timeZone": "Europe/London",
+      "population": 588233,
+      "landAreaKm2": 118.62170402980561,
+      "boundary": "data/boundaries/1109531.json",
+      "region": "europe-west",
+      "populationSource": "Overture divisions 2026-10-21.0",
+      "group": "Ireland"
+    },
+    {
       "id": "edmonton",
       "name": "Edmonton",
       "relation": 2564500,
@@ -467,6 +581,22 @@
       "boundary": "data/boundaries/5356213.json",
       "region": "quebec",
       "populationSource": "Statistics Canada, 2021 Census of Population"
+    },
+    {
+      "id": "goteborg",
+      "name": "Göteborg",
+      "relation": 935611,
+      "adminLevel": 7,
+      "countryCodes": [
+        "SE"
+      ],
+      "timeZone": "Europe/Berlin",
+      "population": 607882,
+      "landAreaKm2": 1030.5663287149753,
+      "boundary": "data/boundaries/935611.json",
+      "region": "europe-central",
+      "populationSource": "Overture divisions 2026-10-21.0",
+      "group": "Sweden"
     },
     {
       "id": "granby",
@@ -593,6 +723,38 @@
       "region": "ontario"
     },
     {
+      "id": "helsinki",
+      "name": "Helsinki",
+      "relation": 34914,
+      "adminLevel": 8,
+      "countryCodes": [
+        "FI"
+      ],
+      "timeZone": "Europe/Helsinki",
+      "population": 695526,
+      "landAreaKm2": 717.6430644131422,
+      "boundary": "data/boundaries/34914.json",
+      "region": "europe-east",
+      "populationSource": "Overture divisions 2026-10-21.0",
+      "group": "Finland"
+    },
+    {
+      "id": "istanbul",
+      "name": "İstanbul",
+      "relation": 223474,
+      "adminLevel": 4,
+      "countryCodes": [
+        "TR"
+      ],
+      "timeZone": "Europe/Moscow",
+      "population": 15701602,
+      "landAreaKm2": 11283.102475873793,
+      "boundary": "data/boundaries/223474.json",
+      "region": "europe-msk",
+      "populationSource": "Overture divisions 2026-10-21.0",
+      "group": "Türkiye"
+    },
+    {
       "id": "kamloops",
       "name": "Kamloops",
       "relation": 2230726,
@@ -670,6 +832,54 @@
       "region": "ontario"
     },
     {
+      "id": "kobenhavn",
+      "name": "København",
+      "relation": 2192363,
+      "adminLevel": 7,
+      "countryCodes": [
+        "DK"
+      ],
+      "timeZone": "Europe/Berlin",
+      "population": 613288,
+      "landAreaKm2": 94.4149637364322,
+      "boundary": "data/boundaries/2192363.json",
+      "region": "europe-central",
+      "populationSource": "Overture divisions 2026-10-21.0",
+      "group": "Denmark"
+    },
+    {
+      "id": "krakow",
+      "name": "Kraków",
+      "relation": 2768922,
+      "adminLevel": 8,
+      "countryCodes": [
+        "PL"
+      ],
+      "timeZone": "Europe/Berlin",
+      "population": 780796,
+      "landAreaKm2": 326.8503924592668,
+      "boundary": "data/boundaries/2768922.json",
+      "region": "europe-central",
+      "populationSource": "Overture divisions 2026-10-21.0",
+      "group": "Poland"
+    },
+    {
+      "id": "kyiv",
+      "name": "Київ",
+      "relation": 421866,
+      "adminLevel": 4,
+      "countryCodes": [
+        "UA"
+      ],
+      "timeZone": "Europe/Helsinki",
+      "population": 2952301,
+      "landAreaKm2": 826.1533074197102,
+      "boundary": "data/boundaries/421866.json",
+      "region": "europe-east",
+      "populationSource": "Overture divisions 2026-10-21.0",
+      "group": "Ukraine"
+    },
+    {
       "id": "langley",
       "name": "Langley",
       "relation": 2031947,
@@ -734,6 +944,22 @@
       "populationSource": "Statistics Canada, 2021 Census of Population"
     },
     {
+      "id": "lisboa",
+      "name": "Lisboa",
+      "relation": 5400890,
+      "adminLevel": 7,
+      "countryCodes": [
+        "PT"
+      ],
+      "timeZone": "Europe/London",
+      "population": 552700,
+      "landAreaKm2": 86.84769301363109,
+      "boundary": "data/boundaries/5400890.json",
+      "region": "europe-west",
+      "populationSource": "Overture divisions 2026-10-21.0",
+      "group": "Portugal"
+    },
+    {
       "id": "london",
       "name": "London",
       "relation": 7485368,
@@ -747,6 +973,23 @@
       "landAreaKm2": 423.23087453351434,
       "boundary": "data/boundaries/7485368.json",
       "region": "ontario"
+    },
+    {
+      "id": "london-gb",
+      "name": "London",
+      "relation": 175342,
+      "adminLevel": 5,
+      "countryCodes": [
+        "GB-ENG",
+        "GB"
+      ],
+      "timeZone": "Europe/London",
+      "population": 8908083,
+      "landAreaKm2": 1595.1783150649458,
+      "boundary": "data/boundaries/175342.json",
+      "region": "europe-west",
+      "populationSource": "Overture divisions 2026-10-21.0",
+      "group": "United Kingdom"
     },
     {
       "id": "longueuil",
@@ -812,6 +1055,22 @@
       "populationSource": "Statistics Canada, 2021 Census of Population"
     },
     {
+      "id": "milano",
+      "name": "Milano",
+      "relation": 44915,
+      "adminLevel": 8,
+      "countryCodes": [
+        "IT"
+      ],
+      "timeZone": "Europe/Berlin",
+      "population": 1396827,
+      "landAreaKm2": 181.89891249584895,
+      "boundary": "data/boundaries/44915.json",
+      "region": "europe-central",
+      "populationSource": "Overture divisions 2026-10-21.0",
+      "group": "Italy"
+    },
+    {
       "id": "milton",
       "name": "Milton",
       "relation": 2414122,
@@ -825,6 +1084,22 @@
       "landAreaKm2": 364.8489909033077,
       "boundary": "data/boundaries/2414122.json",
       "region": "ontario"
+    },
+    {
+      "id": "minsk",
+      "name": "Мінск",
+      "relation": 59195,
+      "adminLevel": 4,
+      "countryCodes": [
+        "BY"
+      ],
+      "timeZone": "Europe/Moscow",
+      "population": 1995471,
+      "landAreaKm2": 353.2912651236236,
+      "boundary": "data/boundaries/59195.json",
+      "region": "europe-msk",
+      "populationSource": "Overture divisions 2026-10-21.0",
+      "group": "Belarus"
     },
     {
       "id": "mirabel",
@@ -888,6 +1163,38 @@
       "boundary": "data/boundaries/1634158.json",
       "region": "quebec",
       "populationSource": "Statistics Canada, 2021 Census of Population"
+    },
+    {
+      "id": "moscow",
+      "name": "Москва",
+      "relation": 102269,
+      "adminLevel": 4,
+      "countryCodes": [
+        "RU"
+      ],
+      "timeZone": "Europe/Moscow",
+      "population": 13149803,
+      "landAreaKm2": 2562.627941874916,
+      "boundary": "data/boundaries/102269.json",
+      "region": "europe-msk",
+      "populationSource": "Rosstat 2024 estimate, federal city",
+      "group": "Russia"
+    },
+    {
+      "id": "munchen",
+      "name": "München",
+      "relation": 62428,
+      "adminLevel": 6,
+      "countryCodes": [
+        "DE"
+      ],
+      "timeZone": "Europe/Berlin",
+      "population": 1505036,
+      "landAreaKm2": 310.7123588265405,
+      "boundary": "data/boundaries/62428.json",
+      "region": "europe-central",
+      "populationSource": "Overture divisions 2026-10-21.0",
+      "group": "Germany"
     },
     {
       "id": "nanaimo",
@@ -1075,6 +1382,22 @@
       "region": "ontario"
     },
     {
+      "id": "oslo",
+      "name": "Oslo",
+      "relation": 2775550,
+      "adminLevel": 7,
+      "countryCodes": [
+        "NO"
+      ],
+      "timeZone": "Europe/Berlin",
+      "population": 724290,
+      "landAreaKm2": 480.7540247447172,
+      "boundary": "data/boundaries/2775550.json",
+      "region": "europe-central",
+      "populationSource": "OSM population tag of r2775550",
+      "group": "Norway"
+    },
+    {
       "id": "ottawa",
       "name": "Ottawa",
       "relation": 4136816,
@@ -1104,6 +1427,22 @@
       "landAreaKm2": 26.526490966226632,
       "boundary": "data/boundaries/7478456.json",
       "region": "ontario"
+    },
+    {
+      "id": "paris",
+      "name": "Paris",
+      "relation": 7444,
+      "adminLevel": 8,
+      "countryCodes": [
+        "FR"
+      ],
+      "timeZone": "Europe/Berlin",
+      "population": 2133111,
+      "landAreaKm2": 105.39146867836348,
+      "boundary": "data/boundaries/7444.json",
+      "region": "europe-central",
+      "populationSource": "Overture divisions 2026-10-21.0",
+      "group": "France"
     },
     {
       "id": "pembroke",
@@ -1165,6 +1504,22 @@
       "boundary": "data/boundaries/2221142.json",
       "region": "british-columbia",
       "populationSource": "Statistics Canada, 2021 Census of Population"
+    },
+    {
+      "id": "praha",
+      "name": "Praha",
+      "relation": 435514,
+      "adminLevel": 4,
+      "countryCodes": [
+        "CZ"
+      ],
+      "timeZone": "Europe/Berlin",
+      "population": 1275406,
+      "landAreaKm2": 496.26770803438126,
+      "boundary": "data/boundaries/435514.json",
+      "region": "europe-central",
+      "populationSource": "Overture divisions 2026-10-21.0",
+      "group": "Czechia"
     },
     {
       "id": "prince-george",
@@ -1293,6 +1648,22 @@
       "region": "ontario"
     },
     {
+      "id": "riga",
+      "name": "Rīga",
+      "relation": 13048688,
+      "adminLevel": 5,
+      "countryCodes": [
+        "LV"
+      ],
+      "timeZone": "Europe/Helsinki",
+      "population": 588911,
+      "landAreaKm2": 304.1380944462003,
+      "boundary": "data/boundaries/13048688.json",
+      "region": "europe-east",
+      "populationSource": "Overture divisions 2026-10-21.0",
+      "group": "Latvia"
+    },
+    {
       "id": "saanich",
       "name": "Saanich",
       "relation": 2221059,
@@ -1389,6 +1760,22 @@
       "populationSource": "Statistics Canada, 2021 Census of Population"
     },
     {
+      "id": "salzburg",
+      "name": "Salzburg",
+      "relation": 86538,
+      "adminLevel": 6,
+      "countryCodes": [
+        "AT"
+      ],
+      "timeZone": "Europe/Berlin",
+      "population": 152083,
+      "landAreaKm2": 65.68363415923048,
+      "boundary": "data/boundaries/86538.json",
+      "region": "europe-central",
+      "populationSource": "Overture divisions 2026-10-21.0",
+      "group": "Austria"
+    },
+    {
       "id": "sarnia",
       "name": "Sarnia",
       "relation": 3642177,
@@ -1451,6 +1838,22 @@
       "populationSource": "Statistics Canada, 2021 Census of Population"
     },
     {
+      "id": "sofia",
+      "name": "София",
+      "relation": 4283101,
+      "adminLevel": 8,
+      "countryCodes": [
+        "BG"
+      ],
+      "timeZone": "Europe/Helsinki",
+      "population": 1286383,
+      "landAreaKm2": 454.1686729187478,
+      "boundary": "data/boundaries/4283101.json",
+      "region": "europe-east",
+      "populationSource": "Overture divisions 2026-10-21.0",
+      "group": "Bulgaria"
+    },
+    {
       "id": "st-albert",
       "name": "St. Albert",
       "relation": 11890349,
@@ -1511,6 +1914,22 @@
       "landAreaKm2": 43.114189568345864,
       "boundary": "data/boundaries/2911978.json",
       "region": "ontario"
+    },
+    {
+      "id": "stockholm",
+      "name": "Stockholm",
+      "relation": 398021,
+      "adminLevel": 7,
+      "countryCodes": [
+        "SE"
+      ],
+      "timeZone": "Europe/Berlin",
+      "population": 984748,
+      "landAreaKm2": 215.77592160481652,
+      "boundary": "data/boundaries/398021.json",
+      "region": "europe-central",
+      "populationSource": "Overture divisions 2026-10-21.0",
+      "group": "Sweden"
     },
     {
       "id": "stratford",
@@ -1622,6 +2041,22 @@
       "region": "ontario"
     },
     {
+      "id": "toulouse",
+      "name": "Toulouse",
+      "relation": 35738,
+      "adminLevel": 8,
+      "countryCodes": [
+        "FR"
+      ],
+      "timeZone": "Europe/Berlin",
+      "population": 504078,
+      "landAreaKm2": 118.15177513276485,
+      "boundary": "data/boundaries/35738.json",
+      "region": "europe-central",
+      "populationSource": "Overture divisions 2026-10-21.0",
+      "group": "France"
+    },
+    {
       "id": "trois-rivieres",
       "name": "Trois-Rivières",
       "relation": 7711553,
@@ -1685,6 +2120,38 @@
       "populationSource": "Statistics Canada, 2021 Census of Population"
     },
     {
+      "id": "vilnius",
+      "name": "Vilnius",
+      "relation": 1529146,
+      "adminLevel": 8,
+      "countryCodes": [
+        "LT"
+      ],
+      "timeZone": "Europe/Helsinki",
+      "population": 581475,
+      "landAreaKm2": 396.6688502617997,
+      "boundary": "data/boundaries/1529146.json",
+      "region": "europe-east",
+      "populationSource": "Overture divisions 2026-10-21.0",
+      "group": "Lithuania"
+    },
+    {
+      "id": "warszawa",
+      "name": "Warszawa",
+      "relation": 2907540,
+      "adminLevel": 7,
+      "countryCodes": [
+        "PL"
+      ],
+      "timeZone": "Europe/Berlin",
+      "population": 1863845,
+      "landAreaKm2": 517.1902477897786,
+      "boundary": "data/boundaries/2907540.json",
+      "region": "europe-central",
+      "populationSource": "Overture divisions 2026-10-21.0",
+      "group": "Poland"
+    },
+    {
       "id": "waterloo",
       "name": "Waterloo",
       "relation": 2062154,
@@ -1728,6 +2195,22 @@
       "landAreaKm2": 168.05831872724175,
       "boundary": "data/boundaries/2408838.json",
       "region": "ontario"
+    },
+    {
+      "id": "wien",
+      "name": "Wien",
+      "relation": 109166,
+      "adminLevel": 4,
+      "countryCodes": [
+        "AT"
+      ],
+      "timeZone": "Europe/Berlin",
+      "population": 2042036,
+      "landAreaKm2": 414.86231695922083,
+      "boundary": "data/boundaries/109166.json",
+      "region": "europe-central",
+      "populationSource": "Overture divisions 2026-10-21.0",
+      "group": "Austria"
     },
     {
       "id": "windsor",
@@ -1790,6 +2273,38 @@
       "landAreaKm2": 57.14368666221945,
       "boundary": "data/boundaries/7496363.json",
       "region": "ontario"
+    },
+    {
+      "id": "zagreb",
+      "name": "Zagreb",
+      "relation": 3168167,
+      "adminLevel": 8,
+      "countryCodes": [
+        "HR"
+      ],
+      "timeZone": "Europe/Berlin",
+      "population": 663592,
+      "landAreaKm2": 305.8695320707387,
+      "boundary": "data/boundaries/3168167.json",
+      "region": "europe-central",
+      "populationSource": "Overture divisions 2026-10-21.0",
+      "group": "Croatia"
+    },
+    {
+      "id": "zurich",
+      "name": "Zürich",
+      "relation": 1682248,
+      "adminLevel": 8,
+      "countryCodes": [
+        "CH"
+      ],
+      "timeZone": "Europe/Berlin",
+      "population": 443037,
+      "landAreaKm2": 91.87449622746496,
+      "boundary": "data/boundaries/1682248.json",
+      "region": "europe-central",
+      "populationSource": "Overture divisions 2026-10-21.0",
+      "group": "Switzerland"
     }
   ]
 }
