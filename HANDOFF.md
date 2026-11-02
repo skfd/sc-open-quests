@@ -292,10 +292,17 @@ plus requests" to the end first. In short:
    one counts it; every engine test passes, the snapshot reproduction unchanged.
    The months job rebuilds the worktree's engine before it counts, so `europe-months.sh` has run the
    fixed engine since 20:37. **Left: `europe-msk`'s months from 2022-01.** Slices are deleted after
-   each date, so Moscow should ride along on the running job's: stop `europe-months.sh` (its bash,
-   python and the engine's java; a count lost midway is just redone), then start
-   `.scratch/europe-months-4.sh` the same way (all four regions, skips what is counted). Until then
-   msk waits. Cleanup after msk's 2022-01-01 lands: `data/backfill/msk-repro/` in the worktree (2.5 GB)
+   each date, so Moscow should ride along on the running job's: stop `europe-months.sh` by its process
+   tree (root: the hidden `bash.exe .../europe-months.sh`, pid 23580 on 2026-11-01; its python and the
+   engine's java change every count, and a count lost midway is just redone; do not stop it while the
+   log's last line is "slicing ..."), then start the four-region script, in PowerShell from the repo root:
+   `Start-Process -WindowStyle Hidden 'C:\Program Files\Gitinash.exe' -ArgumentList
+   '/c/Users/kk/Code/sc-open-quests/.scratch/europe-months-4.sh' -RedirectStandardOutput
+   logs\europe-months-4.log -RedirectStandardError logs\europe-months-4.err`. It skips what is
+   counted. Its quarterly phase cuts msk's 20 quarterly slices (2022-01 to 2026-10) for msk alone, as
+   the other three have those quarters (about 20 x 6 min); the monthly phase then shares each slice.
+   Without the restart: the three-region job ends in about 30 h, and msk alone then needs about 10-12 h
+   (its own slice for every month). Docker Desktop was running at 21:00 on 2026-11-01. Cleanup after msk's 2022-01-01 lands: `data/backfill/msk-repro/` in the worktree (2.5 GB)
    and `.scratch/msk-fail/` (240 MB of cuts and dumps).
 1. **The owner's look at the preview, then the merge** of `europe` into main. The merge publishes: the
    13:15 run pushes main and counts the Europe regions from then on (`fetch europe` is part of its

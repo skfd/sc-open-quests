@@ -334,7 +334,8 @@ All counted quests are marked `supported`: none of the differences below is spec
   one region (CA-ON, DE, US-TX, ...); a city across a border would need per-position gating.
 - **Tags over 255 code points** are left out of the element (`fitTags`, both passes, logged with the
   element id), since SC's `Element` rejects them, so the app could not load such an element at all. OSM
-  holds a few (node 5616691292 in Poland, a description of 271 since 2018), none in a counted city so far.
+  holds a few (node 5616691292 in Poland, a description of 271 since 2018; none in a European city at
+  2022-01-01, the one slice searched).
 - **Default-disabled quests** (30 filter quests) are counted like the others; the site leaves them out of
   headline totals (`defaultDisabled` in quests.json). The resurvey multiplier is the app default, 1.
 
