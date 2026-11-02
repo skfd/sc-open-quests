@@ -296,7 +296,7 @@ plus requests" to the end first. In short:
    tree (root: the hidden `bash.exe .../europe-months.sh`, pid 23580 on 2026-11-01; its python and the
    engine's java change every count, and a count lost midway is just redone; do not stop it while the
    log's last line is "slicing ..."), then start the four-region script, in PowerShell from the repo root:
-   `Start-Process -WindowStyle Hidden 'C:\Program Files\Gitinash.exe' -ArgumentList
+   `Start-Process -WindowStyle Hidden 'C:\Program Files\Git\bin\bash.exe' -ArgumentList
    '/c/Users/kk/Code/sc-open-quests/.scratch/europe-months-4.sh' -RedirectStandardOutput
    logs\europe-months-4.log -RedirectStandardError logs\europe-months-4.err`. It skips what is
    counted. Its quarterly phase cuts msk's 20 quarterly slices (2022-01 to 2026-10) for msk alone, as
