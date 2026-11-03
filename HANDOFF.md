@@ -289,7 +289,8 @@ plus requests" to the end first. In short:
   that used to fail change. On `europe` 3742af2, cherry-picked to main (every engine test passes there,
   SnapshotReproductionTest included; 99 pytest). The job was restarted the same
   way at 12:51 (old log kept as `logs/europe-months-4-until-1202.log`); Moscow 2017-12 counted in 116 s,
-  between its neighbours. At 11-03 08:35 it was at 2024-11 for all four: done about 19:30 on 11-03.
+  between its neighbours. At 11-03 08:35 it was at 2024-11 for all four: done about 21:00 on 11-03
+  (its own copy of the old quiet window pauses it across the 12:15 run).
 - **The daily run failed on 11-02 at 13:22** on the first Europe clip filled from the API: `osmium
   merge` leaves `sorting=Type_then_ID` out of the header, and the engine refuses such a file. Fixed in
   osm-extracts 0a45f19 (merge passes the header); that day's clip was checked ordered and its header
@@ -344,7 +345,7 @@ plus requests" to the end first. In short:
    main's data/backfill/, `python tools/backfill_history.py merge --planet history-261029 --region
    <each europe region>`, `run.py history`, commit "data: ..."; the 13:15 run pushes. Then delete the
    worktree (`git worktree remove ../sc-open-quests-europe`; its docs/data changes are discardable) and
-   the `europe` branch. A check-in is scheduled for 2026-11-03 20:00 (moved from 08:10; trigger
+   the `europe` branch. A check-in is scheduled for 2026-11-03 21:00 (moved from 08:10; trigger
    `trig_01J2wryMUuUaVjsqxw1uREGJ`); it reschedules itself if the log has not ended. Cherry-pick
    nothing at the merge: `onepoint` is on main already (69fcd0a6).
 3. ~~Monday 2026-11-02 07:30.~~ Done: `history-261102.osh.pbf` written in 10,432 s (osmium 7.8 GB),
