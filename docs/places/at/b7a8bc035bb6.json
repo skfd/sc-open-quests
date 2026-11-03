@@ -1,5 +1,5 @@
 {"schema":1,"region":"b7a8bc035bb6","places":[
-["b7a8bc035bb6","Wien",2,-1,16.1818,48.1179,16.5775,48.3227,"Vienna",null],
+["b7a8bc035bb6","Wien",2,-1,16.1818,48.1179,16.5775,48.3227,"Vienna","wien"],
 ["4854ef6404e5","Exelbergsiedlung",5,0,16.2568,48.2428,16.2641,48.2469,null,null],
 ["809d4421e745","Brigittenau",7,0,16.3611,48.2251,16.3981,48.2627,null,null],
 ["04342dbfbaff","Gaußplatz",9,2,16.3687,48.2256,16.3709,48.2269,null,null],

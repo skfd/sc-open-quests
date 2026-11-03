@@ -546,7 +546,7 @@
 ["ce792374fbaa","Plaça de Trafalgar",9,543,2.2188,41.4371,2.22,41.438,null,null],
 ["b7f21fc42dd0","Sant Roc",8,485,2.2201,41.431,2.2301,41.4384,null,null],
 ["c06d63213177","Sistrells",8,485,2.2239,41.4426,2.234,41.4505,null,null],
-["b7c512e6208d","Barcelona",5,484,2.0525,41.317,2.2284,41.4679,null,null],
+["b7c512e6208d","Barcelona",5,484,2.0525,41.317,2.2284,41.4679,null,"barcelona"],
 ["458982d1ddc5","Ciutat Vella",7,547,2.1631,41.3577,2.1996,41.3922,null,null],
 ["5a7b482e9d4b","Avinguda de la Catedral",9,548,2.175,41.3841,2.177,41.3856,null,null],
 ["aa6d953bc5be","el Gòtic",9,548,2.1698,41.3743,2.1852,41.3885,"Gothic Quarter",null],

@@ -10,7 +10,6 @@
   {"id": "ad5603d857b2", "gers": "ad5603d8-57b2-4753-ad1d-cf2ec519de9b", "name": "Blockland", "en": null, "subtype": "macrohood", "osm": "r1126018", "geometry": "data/boundaries/parts/bremen/r1126018.geojson"},
   {"id": "ad0513eb022b", "gers": "ad0513eb-022b-4e1d-ac85-04930ec0f222", "name": "Blumenthal", "en": null, "subtype": "macrohood", "osm": "r1114214", "geometry": "data/boundaries/parts/bremen/r1114214.geojson"},
   {"id": "7bc9de0c7d3a", "gers": "7bc9de0c-7d3a-4d14-9861-551485350fa7", "name": "Borgfeld", "en": null, "subtype": "macrohood", "osm": "r1126017", "geometry": "data/boundaries/parts/bremen/r1126017.geojson"},
-  {"id": "62aa41b5c2dc", "gers": "62aa41b5-c2dc-47c4-b8ab-4f6db4ab9d34", "name": "Bremen", "en": null, "subtype": "locality", "osm": "r2088648", "geometry": "data/boundaries/parts/bremen/r2088648.geojson"},
   {"id": "3d3e655cc94e", "gers": "3d3e655c-c94e-4a25-86d1-101ea1a25505", "name": "Bremen-Mitte", "en": null, "subtype": "locality", "osm": "r1135978", "geometry": "data/boundaries/parts/bremen/r1135978.geojson"},
   {"id": "d0eac3787e99", "gers": "d0eac378-7e99-444b-b5e2-281d51d6ab5f", "name": "Bremen-Nord", "en": null, "subtype": "locality", "osm": "r1114208", "geometry": "data/boundaries/parts/bremen/r1114208.geojson"},
   {"id": "fac1eac616b1", "gers": "fac1eac6-16b1-4ff0-8c16-2025c68d5636", "name": "Bremen-Ost", "en": null, "subtype": "locality", "osm": "r1130801", "geometry": "data/boundaries/parts/bremen/r1130801.geojson"},

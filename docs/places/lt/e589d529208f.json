@@ -333,7 +333,7 @@
 ["e4083f659a69","Vilniaus miesto savivaldybė",3,0,25.0245,54.5689,25.4815,54.8323,"Vilnius city municipality",null],
 ["03354ecf48ff","Grigiškių seniūnija",5,331,25.0676,54.6618,25.144,54.6907,"Grigiškės Eldership",null],
 ["3331aee7f0f1","Grigiškės",5,332,25.0676,54.6634,25.1132,54.6907,null,null],
-["fe2c266dfb4c","Vilnius",5,331,25.0245,54.5689,25.4815,54.8323,null,null],
+["fe2c266dfb4c","Vilnius",5,331,25.0245,54.5689,25.4815,54.8323,null,"vilnius"],
 ["5d9cfdec6780","Antakalnio seniūnija",5,334,25.2911,54.6871,25.4558,54.826,"Antakalnis Eldership",null],
 ["2b3781e910f2","Fabijoniškių seniūnija",5,334,25.2144,54.7202,25.2706,54.7577,null,null],
 ["79fc07012d3b","Justiniškių seniūnija",5,334,25.199,54.7034,25.2332,54.7263,null,null],

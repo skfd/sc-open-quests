@@ -1,7 +1,7 @@
 {"schema":1,"region":"b7ccc85cd3c6","places":[
 ["b7ccc85cd3c6","Woj Małopolskie",2,-1,19.0831,49.1785,21.4217,50.5205,"Lesser Poland Voivodeship",null],
 ["161504a331bc","Kraków",3,0,19.7922,49.9677,20.2173,50.1261,"Krakow",null],
-["f2217f668db9","Kraków",5,1,19.7922,49.9677,20.2173,50.1261,"Krakow",null],
+["f2217f668db9","Kraków",5,1,19.7922,49.9677,20.2173,50.1261,"Krakow","krakow"],
 ["a884edd9a4d6","Bieńczyce",5,2,20.0034,50.0764,20.0565,50.0955,null,null],
 ["5e327d3477e2","Osiedle Albertyńskie",8,3,20.0157,50.079,20.0226,50.0844,null,null],
 ["894fc8eec302","Osiedle Jagiellońskie",8,3,20.0209,50.086,20.0273,50.0902,null,null],

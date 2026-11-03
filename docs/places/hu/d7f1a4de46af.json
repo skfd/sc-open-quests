@@ -1,6 +1,6 @@
 {"schema":1,"region":"d7f1a4de46af","places":[
 ["d7f1a4de46af","Budapest",2,-1,18.9251,47.3497,19.3349,47.6131,null,null],
-["5b68bcaab122","Budapest",5,0,18.9251,47.3497,19.3349,47.6131,null,null],
+["5b68bcaab122","Budapest",5,0,18.9251,47.3497,19.3349,47.6131,null,"budapest"],
 ["431860384d66","Adyliget",7,1,18.9251,47.5418,18.9466,47.5528,null,null],
 ["af695f777397","Akadémiaújtelep",7,1,19.2111,47.4754,19.2311,47.4857,null,null],
 ["f2b0b38f90cf","Albertfalva",7,1,19.0262,47.4298,19.0537,47.4552,null,null],
