@@ -242,21 +242,21 @@ function breaks(h, { questSet = false } = {}) {
 
 function dayTs(d) { return Date.UTC(+d.slice(0, 4), +d.slice(5, 7) - 1, +d.slice(8, 10)) / 1000; }
 
-const majorRelease = (v) => /^v\d+\.0$/.test(v);
+// The first release of each major number: v5.0, but also v1.2 and v3.2 where SC skipped the .0.
+const majorOf = (v) => v.match(/^v?(\d+)/)?.[1];
+const isMajor = (r, i, all) => i === 0 || majorOf(all[i - 1].version) !== majorOf(r.version);
 
-// StreetComplete releases as faint, unlabelled vertical lines through the plot. While the pointer is
-// on a date, the release current on that date (the last one at or before it, so the line to the
-// pointer's left) is drawn solid and named in note, below the chart. Over long ranges only majors get
-// a faint line, but a minor release still gets its solid one while it is current.
-function releaseLayer(xs, long, { note = null, idle = true } = {}) {
+// StreetComplete major releases as faint, unlabelled vertical lines through the plot. While the pointer
+// is on a date, the release current on that date (the last one at or before it, so the line to the
+// pointer's left), minor or major, is drawn solid and named in note, below the chart.
+function releaseLayer(xs, { note = null, idle = true } = {}) {
   const rel = state.releases ? releases.filter((r) => r.ts >= xs[0] - 86400 && r.ts <= last(xs) + 86400) : [];
   let hover = null, hoverTs = null;
-  const shown = (r) => !long || majorRelease(r.version);
   const day = (ts) => new Date(ts * 1e3).toISOString().slice(0, 10);
   const describe = (r, ts) => `StreetComplete <b>${r.version}</b> was the current release on ${day(ts)}` +
     (r.ts === ts ? "; it came out that day." : `, out since ${day(r.ts)}.`);
   const idleText = rel.length && idle
-    ? "The faint vertical lines are StreetComplete releases" + (long ? " (major versions)" : "") +
+    ? "The faint vertical lines are StreetComplete major releases" +
       "; move along the chart to see which was current. Every count here uses the quests of " + `v${cities.scVersion}` + ", whatever the date."
     : "";
   if (note) note.innerHTML = idleText;
@@ -273,7 +273,7 @@ function releaseLayer(xs, long, { note = null, idle = true } = {}) {
       ctx.strokeStyle = css("--release");
       ctx.lineWidth = dpr;
       ctx.globalAlpha = 0.28;
-      for (const r of rel) if (shown(r) && r !== hover) line(r);
+      for (const r of rel) if (r.major && r !== hover) line(r);
       if (hover) { ctx.globalAlpha = 1; ctx.lineWidth = 1.5 * dpr; line(hover); }
       ctx.restore();
     },
@@ -302,7 +302,7 @@ function lineChart(target, h, series, { height = 260, showAged = true, questSetB
   const long = xs.length > 1 && xs[xs.length - 1] - xs[0] > 300 * 86400;
   const tickFmt = long ? { month: "short", year: "numeric", timeZone: "UTC" } : { month: "short", day: "numeric", timeZone: "UTC" };
   const surface = css("--surface");
-  const rel = releaseLayer(xs, long, { note, idle: noteIdle });
+  const rel = releaseLayer(xs, { note, idle: noteIdle });
   const mk = (label, color, data) => ({
     label, stroke: color, width: 2, value: (u, v) => (v == null ? "—" : nf.format(v)),
     points: { show: few, size: 8, width: 2, stroke: color, fill: color },
@@ -1306,7 +1306,8 @@ async function main() {
     getJSON("sc-releases.json").catch(() => null),
   ]);
   icons = (ic && ic.quests) || {};
-  releases = ((rel && rel.releases) || []).map((r) => ({ ts: dayTs(r.date), version: r.version }));
+  releases = ((rel && rel.releases) || []).map((r) => ({ ts: dayTs(r.date), version: r.version }))
+    .map((r, i, all) => ({ ...r, major: isMajor(r, i, all) }));
   if (!cities.cities.some((c) => c.id === state.city)) state.city = cities.cities.some((c) => c.id === "toronto") ? "toronto" : cities.cities[0].id;
   state.pinned = state.pinned.filter((n) => questByName.has(n));
   state.selected = resolveSelection(urlSelection);
