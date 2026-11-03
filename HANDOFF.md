@@ -280,6 +280,34 @@ plus requests" to the end first. In short:
   ../sc-open-quests-europe` (8765 is another project's), then `/docs/?city=london-gb`. Screenshots:
   `.scratch/europe-preview/` (`shoot.py`). No page errors; München sits under Germany.
 
+**2026-11-02 afternoon to 11-03 morning (a session after the merge):**
+- **The months job died again at 12:02 on 11-02**, europe-msk 2017-12-01, Moscow's area pass: "Polylines
+  must each contain at least two elements". SC's `ElementGeometryCreator` checks a way's size *before*
+  it drops repeated positions, so a way whose nodes all share one position gets a polyline of one point,
+  and `intersectsWith` (AddMaxHeight's bridge check) fails on it. Upstream master still has it. Patch
+  `onepoint` (engine README, `sync-sc.ps1`, OnePointTest): `intersectsWith` answers false; only counts
+  that used to fail change. On `europe` 3742af2, cherry-picked to main (every engine test passes there,
+  SnapshotReproductionTest included; 99 pytest). The job was restarted the same
+  way at 12:51 (old log kept as `logs/europe-months-4-until-1202.log`); Moscow 2017-12 counted in 116 s,
+  between its neighbours. At 11-03 08:35 it was at 2024-11 for all four: done about 19:30 on 11-03.
+- **The daily run failed on 11-02 at 13:22** on the first Europe clip filled from the API: `osmium
+  merge` leaves `sorting=Type_then_ID` out of the header, and the engine refuses such a file. Fixed in
+  osm-extracts 0a45f19 (merge passes the header); that day's clip was checked ordered and its header
+  rewritten with `osmium cat` (meta and latest.json carry the new sha256 and a `note`). The task was
+  started again by hand: "data 2026-11-02" pushed at 14:29, 147 cities; check-release opened issue #1
+  (v64.1). A normal day's Europe counts take about 35 min (europe-central 10-20 min, while the months
+  job runs), so a run is up to two hours.
+- **Daylight time:** the task's trigger is 17:15 UTC (12:15 EST now, 13:15 in summer). The quiet window
+  in `backfill_history.QUIET` was local 12:55-13:50, so it no longer covered the run; it is now UTC
+  16:55-19:15. `schedule-add.ps1` gives the trigger in UTC and allows 4 hours (the task was
+  re-registered on 11-03: PT4H). Every other kk- task with a `-05:00` offset moved an hour too; no
+  collisions.
+- **Near-duplicate parts done:** `add_parts.py` drops a part covering 90% or more of its city (step 5).
+  That is Bremen r2088648 (97%) and Saint John's r19758481 and r19872688 (100%). Halifax's (1%),
+  Gatineau's (42%) and Fredericton's (71%) same-named parts are former cities and stay; lower
+  `MAX_COVER` to drop Fredericton. `places.py build` also marked the 32 European cities as counted:
+  the Europe merge had not rebuilt the name layer.
+
 **Next, in order:**
 0. ~~Find the `europe-msk` failure.~~ **Found and fixed 2026-11-01 evening** (engine 8d8f220 on main,
    cherry-picked to `europe` as 4ab7b15; engine/README.md, patch `codepoints`). A Moscow shop's
@@ -316,18 +344,22 @@ plus requests" to the end first. In short:
    main's data/backfill/, `python tools/backfill_history.py merge --planet history-261029 --region
    <each europe region>`, `run.py history`, commit "data: ..."; the 13:15 run pushes. Then delete the
    worktree (`git worktree remove ../sc-open-quests-europe`; its docs/data changes are discardable) and
-   the `europe` branch. A check-in on this session is scheduled for 2026-11-03 08:10 to do that.
-3. **Monday 2026-11-02 07:30:** the planet job still runs main's old `weekly`: it rewrites the history
-   file to `history-261102` and retires 261029; that is why the months name `--planet history-261029`.
+   the `europe` branch. A check-in is scheduled for 2026-11-03 20:00 (moved from 08:10; trigger
+   `trig_01J2wryMUuUaVjsqxw1uREGJ`); it reschedules itself if the log has not ended. Cherry-pick
+   nothing at the merge: `onepoint` is on main already (69fcd0a6).
+3. ~~Monday 2026-11-02 07:30.~~ Done: `history-261102.osh.pbf` written in 10,432 s (osmium 7.8 GB),
+   261029 retired; the months slice the clip's own history cut and are unaffected.
    Docker Desktop must be running (it was found quit twice), and so must it for every clip fetch.
    After the merge, the next monthly run re-cuts the clip from the newest file by itself.
-4. **Watch:** the first daily `fetch europe` with the API fill in its meta (`check_refs_before_fill`);
+4. **Watch:** ~~the first daily `fetch europe` with the API fill~~ (11-02: 3,040 -> 0 missing, 3,035 nodes
+   in 4 s, merge 76 s; its header is the fix above);
    the re-cut's memory (4.3 GB of the 4.5 GB budget for this 1.67 GB clip); the clip grows with every
    city added (`add_city.py`, `tools/clip_polygon.py europe`, `osm_extracts.py clip europe --polygon
    config/europe.geojson`; it is cut at the next recut).
 5. **Repin to StreetComplete v64.1** (released 2026-11-01; the 13:15 run opens its issue): REPIN.md. It
    carries quest changes (access checks on more quests, AddOpeningHours on craft/healthcare/office,
-   AddFirewood, `#surveyneeded`), so it moves counts everywhere: after the Europe merge, not during the
-   months. Drop the `codepoints` patch there (`sync-sc.ps1` fails until it is dropped).
+   AddFirewood, `#surveyneeded`), so it moves counts everywhere: after the months are merged, not
+   during them. Issue #1 tracks it. Drop the `codepoints` patch there (`sync-sc.ps1` fails until it is
+   dropped); keep `onepoint`.
 6. **Later:** the seeded bar for other countries, chosen from what these 32 cost (DESIGN.md); the step
-   from a request on the site to a counted region; the near-duplicate parts (above).
+   from a request on the site to a counted region.
