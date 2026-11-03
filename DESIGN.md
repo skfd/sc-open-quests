@@ -981,3 +981,32 @@ the 13:15 update downloads every region's extract, and `fetch europe` fails unti
   `<role>-<pid>` and labelled with its role. A run removes only its own container. Leftovers of a role
   are removed only under the lock that role's runs hold, and a `--from-history` pass, which holds no
   planet lock, has a role of its own.
+
+## Repin to StreetComplete v64.1 (2026-11-03, on branch `sc-v64.1`)
+
+- **What v64.1 changed for the counts.** No quest type added or removed (the registry imports only
+  moved: AddAcceptsCards and AddAcceptsCash now live in `quests.payment`). Filters that move:
+  - **AddAcceptsCards and AddAcceptsCash ask again with age.** Both share the new
+    `PLACES_THAT_REQUIRE_PAYMENT_FILTER` (`osm/PaymentUtils.kt`), so AddAcceptsCards covers every place
+    AddAcceptsCash did (fuel, cinemas, hotels, saunas, crafts...), not just food, drink and shops
+    (branded places still do not ask for cards). Cards ask again when either payment tag is older
+    than 3 years; cash when `payment:cash = yes` is older than 2 years, or any `payment:cash` older than
+    4. Both turn from mapping quests into partly resurvey quests: expect them to rise, and the rise to
+    sit in the resurvey ("aging") part of the counts. `attraction` with a fee is gone from the cash list.
+  - **`access !~ private|no`** on AddAerialwayBicycleAccess, AddAirCompressor, AddAirConditioning,
+    AddAtmCashIn, AddAtmOperator, AddBicyclePump, AddBoatRental, AddClothingBinOperator (hand port),
+    AddGritBinSeasonal, AddHairdresserCustomers and AddVendingMachineType: each loses its private
+    places, a small drop.
+  - **AddOpeningHours** (hand port) asks `healthcare`, `craft` and `office` places too: a rise.
+  - **AddFirewood**: `fuel ~ ".*wood.*"` instead of `fuel = wood`, and shelters with a fireplace. Only
+    offered in the Nordic countries, so it moves only Göteborg, Helsinki, København, Oslo and Stockholm.
+  - **AddBoardType**: `information ~ board|map`, so maps ask too.
+  - **The note quest**: `#surveyneeded` in a comment makes a note a quest, as `#surveyme` does.
+  - AddHousenumber, AddKerbHeight, AddTactilePavingKerb and AddMaxWeight changed only in their forms or
+    answers: re-pinned, ports unchanged.
+- **What v64.1 changed for the engine.** SC's own fix for tag lengths in code points (8fe4c925) ships,
+  so the `codepoints` patch is dropped and `util/ktx/CharSequence.kt` is vendored; `onepoint` stays (the
+  same check is in v64.1). `MapDataXt.kt`'s filter cache takes an atomicfu lock, so the engine depends on
+  `org.jetbrains.kotlinx:atomicfu:0.33.0`, SC's version. Kotlin, kotlinx-datetime, serialization,
+  osmfeatures, the opening-hours parser, kaml and countryboundaries are unchanged, and so are the
+  country metadata, presets and boundaries.

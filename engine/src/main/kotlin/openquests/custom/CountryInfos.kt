@@ -16,7 +16,7 @@ import java.util.concurrent.ConcurrentHashMap
  * countryboundaries data gives for the position (smallest first, e.g. CA-ON, CA; in Germany only DE),
  * each region's yml in country_metadata/ (a region SC has no file for is skipped), then default.yml.
  * CountryInfos, CountryBoundaries and the data files are SC's own, vendored by sync-sc.ps1: all 515
- * country_metadata files SC v64.0 ships, so any position on Earth reads what the app reads. A file SC
+ * country_metadata files SC v64.1 ships, so any position on Earth reads what the app reads. A file SC
  * ships but the bundle lacks is an error (the Res.readBytesOrNull stub), not a silent default.yml.
  *
  * CountryInfos caches in a plain HashMap; calls are serialized per id list, then cached here.

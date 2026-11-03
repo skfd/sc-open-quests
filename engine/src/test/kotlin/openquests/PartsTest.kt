@@ -43,7 +43,7 @@ class PartsTest {
             {"id": "aaaaaaaaaaaa", "geometry": "geo/whole.geojson"}, {"id": "bbbbbbbbbbbb", "geometry": "geo/house.geojson"},
             {"id": "cccccccccccc", "geometry": "geo/bench.geojson"}, {"id": "dddddddddddd", "geometry": "geo/next.geojson"},
             {"id": "eeeeeeeeeeee", "geometry": "geo/holed.geojson"}]}""")
-        val quests = File("data/quests/v64.0.json")
+        val quests = File("data/quests/v64.1.json")
         fun run(withParts: Boolean) = count(CountOptions(pbf = pbf, quests = quests, cities = cities, out = null,
             baseDir = dir, parts = if (withParts) parts else null))
         val plain = run(false)

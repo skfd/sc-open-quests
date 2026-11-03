@@ -1,5 +1,5 @@
 plugins {
-    // keep in step with the pinned StreetComplete tag (v64.0 uses Kotlin 2.4.20)
+    // keep in step with the pinned StreetComplete tag (v64.1 uses Kotlin 2.4.20)
     kotlin("jvm") version "2.4.20"
     // only so that the vendored @Serializable annotations compile unchanged
     kotlin("plugin.serialization") version "2.4.20"
@@ -11,19 +11,20 @@ repositories {
 }
 
 dependencies {
-    // same versions as StreetComplete v64.0
+    // same versions as StreetComplete v64.1
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
     // OSM PBF format bindings (crosby.binary); pulls protobuf-java
     implementation("org.openstreetmap.pbf:osmpbf:1.8.0")
-    // feature presets (Feature, GeometryType), same version as StreetComplete v64.0
+    // feature presets (Feature, GeometryType), same version as StreetComplete v64.1
     implementation("de.westnordost:osmfeatures:8.0.0")
-    // opening hours parser, same version as StreetComplete v64.0 (AddOpeningHours, AddPostboxCollectionTimes)
+    // opening hours parser, same version as StreetComplete v64.1 (AddOpeningHours, AddPostboxCollectionTimes)
     implementation("de.westnordost:osm-opening-hours:0.4.0")
-    // country metadata and boundaries (getCountryInfoByLocation), same versions as StreetComplete v64.0
+    // country metadata and boundaries (getCountryInfoByLocation), same versions as StreetComplete v64.1
     implementation("com.charleskorn.kaml:kaml:0.104.0")
     implementation("de.westnordost:countryboundaries:3.0.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0") // runBlocking in CountryInfos.kt
+    implementation("org.jetbrains.kotlinx:atomicfu:0.33.0") // the lock in MapDataXt.kt (v64.1), same version as SC
 
     testImplementation(kotlin("test"))
     testImplementation("org.junit.jupiter:junit-jupiter:5.12.2")
@@ -69,7 +70,7 @@ tasks.test {
     systemProperty(
         "openquests.scBoundaries",
         providers.gradleProperty("scBoundaries").getOrElse(
-            "C:/Users/kk/AppData/Local/Temp/sc-v64.0/app/src/commonMain/composeResources/files/boundaries.ser"),
+            "C:/Users/kk/AppData/Local/Temp/sc-v64.1/app/src/commonMain/composeResources/files/boundaries.ser"),
     )
     testLogging {
         events("passed", "skipped", "failed")

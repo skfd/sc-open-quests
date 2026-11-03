@@ -22,6 +22,7 @@ object AddClothingBinOperator : CustomQuest {
           and !operator and !name and !brand
           and operator:signed != no
           and brand:signed != no
+          and access !~ private|no
     """.toElementFilterExpression() }
 
     override fun isApplicable(element: Element): Boolean =

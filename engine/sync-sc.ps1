@@ -9,7 +9,7 @@
 
   The files compile unchanged on a plain JVM because the build applies the kotlinx.serialization
   compiler plugin (for the @Serializable annotations in Element.kt, ElementGeometry.kt, ...) and uses
-  the same Kotlin (2.4.20) and kotlinx-datetime (0.8.0) versions as SC v64.0. util/ktx/Element.kt
+  the same Kotlin (2.4.20) and kotlinx-datetime (0.8.0) versions as SC v64.1. util/ktx/Element.kt
   imports de.westnordost.osmfeatures.GeometryType, from the osmfeatures library (jvm variant). osm/Sides.kt
   imports SC's Side enum from a Compose file; the engine stubs it in src/main/kotlin/stubs/.
 
@@ -33,24 +33,20 @@
            multiplier for the filter's lifetime. The engine evaluates one filter instance at the
            extract's time, at 1900 (agedOnly) and at three multipliers, so both become getters again,
            as they were up to v63. Same verbatim-line rule (the filter line occurs twice).
-    codepoints  data/osm/mapdata/Element.kt: v64.0 rejects a tag key or value over 255 UTF-16 units
-           with a bare `require`, so a value of 255 code points with emoji in it (OSM allows it) killed
-           a whole run (Moscow, node 7370179285, 2021-11 to 2023-10). SC fixed it in 8fe4c925 (#7341,
-           shipped in v64.1): count code points. Drop this patch at the v64.1 repin; the script fails
-           there anyway, since the upstream line is gone.
     onepoint  util/math/SphericalEarthMath.kt: ElementGeometryCreator checks a way's size before it
            drops repeated positions, so a way whose nodes all share one position gets a polyline of
            one point, and `intersectsWith` fails on it with a require. AddMaxHeight's bridge check met
            one in Moscow's 2017-12 data and stopped the run. The patch answers false (a point crosses
-           nothing); no count that ran before changes. Still upstream on master as of 2026-11-02, so
-           keep it at the v64.1 repin.
+           nothing); no count that ran before changes. Still in v64.1 and on upstream master as of
+           2026-11-02.
+  (codepoints, the backport of SC 8fe4c925 to Element.kt, was dropped at the v64.1 repin: v64.1 ships it.)
 
 .EXAMPLE
-  ./sync-sc.ps1 -ScPath C:\Users\kk\AppData\Local\Temp\sc-v64.0 -Tag v64.0
+  ./sync-sc.ps1 -ScPath C:\Users\kk\AppData\Local\Temp\sc-v64.1 -Tag v64.1
 #>
 param(
     [Parameter(Mandatory = $true)][string]$ScPath,
-    [string]$Tag = 'v64.0'
+    [string]$Tag = 'v64.1'
 )
 $ErrorActionPreference = 'Stop'
 
@@ -114,6 +110,7 @@ $files = @(
     "$pkg/util/ktx/Collections.kt"
     "$pkg/util/ktx/Double.kt"
     "$pkg/util/ktx/Element.kt" # isArea()
+    "$pkg/util/ktx/CharSequence.kt" # isCodePointCountSmallerOrEqualThan(), Element.kt since v64.1
     "$pkg/osm/AreaUtils.kt" # IS_AREA_EXPRESSION
     # helpers of the custom quests ported in src/main/kotlin/openquests/custom/ (see PORTED-QUESTS.txt)
     "$pkg/osm/RoadUtils.kt" # ALL_ROADS, MOTORWAYS, ROADS_ASSUMED_TO_BE_PAVED
@@ -138,7 +135,7 @@ $files = @(
     "$pkg/data/osm/mapdata/MapDataWithGeometry.kt"
     "$pkg/data/osm/mapdata/MutableMapDataWithGeometry.kt"
     "$pkg/data/osm/mapdata/MutableMapData.kt"
-    "$pkg/data/osm/mapdata/MapDataXt.kt" # filter(String)
+    "$pkg/data/osm/mapdata/MapDataXt.kt" # filter(String); its cache takes an atomicfu lock since v64.1
     "$pkg/data/osm/geometry/ElementGeometryEntry.kt"
     "$pkg/osm/WaysCrossingUtils.kt" # findNodesAtCrossingsOf()
     "$pkg/quests/barrier_type/DetectWayBarrierIntersectionUtil.kt"
@@ -257,25 +254,6 @@ $patches = @(
             '    protected val dateTimestamp get() = dateFilter.date.toEpochMilli()'
         )
         Description = 'data/elementfilter/filters/ElementFilter.kt: `dateTimestamp` is a getter again, not `by lazy` (two classes)'
-    }
-    @{
-        Name = 'codepoints'
-        File = "$pkg/data/osm/mapdata/Element.kt"
-        Find = '            require(key.length <= MAX_OSM_TAG_VALUE_LENGTH)'
-        Replace = @(
-            '            // sc-open-quests patch: SC 8fe4c925 (#7341, in v64.1) counts code points, not UTF-16 units'
-            '            require(key.codePointCount(0, key.length) <= MAX_OSM_TAG_VALUE_LENGTH)'
-        )
-        Description = 'data/osm/mapdata/Element.kt: a tag key or value may have 255 code points, as in SC v64.1 (8fe4c925)'
-    }
-    @{
-        Name = 'codepoints'
-        File = "$pkg/data/osm/mapdata/Element.kt"
-        Find = '            require(value.length <= MAX_OSM_TAG_VALUE_LENGTH)'
-        Replace = @(
-            '            require(value.codePointCount(0, value.length) <= MAX_OSM_TAG_VALUE_LENGTH)'
-        )
-        Description = 'data/osm/mapdata/Element.kt: the same for the value'
     }
     @{
         Name = 'onepoint'
