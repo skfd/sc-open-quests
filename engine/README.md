@@ -1,7 +1,7 @@
 # engine
 
 Counts open StreetComplete quests per city from an OSM PBF extract by running StreetComplete's own
-element filter and geometry code on a plain JVM. Status: all 140 filter quests of SC v64.0 and all 52 of
+element filter and geometry code on a plain JVM. Status: all 140 filter quests of SC v64.1 and all 52 of
 its custom quests (see "Custom quests" and "Area quests" below), 48 Ontario cities and 4 German ones, one
 pass over each extract plus an area pass for the quests that need surroundings. Moving to a new SC
 release is a *repin*: [REPIN.md](../REPIN.md). Output format: [DATA-FORMAT.md](../DATA-FORMAT.md).
@@ -22,7 +22,7 @@ cd engine; ./gradlew.bat installDist; cd ..
 # from the repo root; paths are relative to the working directory
 engine/build/install/sc-open-quests-engine/bin/sc-open-quests-engine.bat count `
     --pbf C:\Users\kk\Code\.osm-data\ontario\ontario-2026-10-10.osm.pbf `
-    --quests data/quests/v64.0.json --cities config/cities.json --out docs/data `
+    --quests data/quests/v64.1.json --cities config/cities.json --out docs/data `
     --source-meta C:\Users\kk\Code\.osm-data\ontario\ontario-2026-10-10.meta.json
 ```
 
@@ -108,29 +108,31 @@ node positions), relations. Each stage decodes blocks in parallel.
   `systemTimeNow()`. `sync-sc.ps1` applies it by exact line match after the copy (and fails if the
   upstream line changed) and records both hashes in `SC-VERSION.txt`. The engine installs a clock that
   reads a thread-local override first (`EngineClock`), which is how agedOnly runs in the same pass.
-- **`codepoints`** (`data/osm/mapdata/Element.kt`): v64.0's `Element` rejects a tag key or value over 255
-  UTF-16 units with a bare `require`, but OSM allows 255 *code points*, and an emoji outside the BMP is two
-  units. A Moscow shop's description of 255 code points (node 7370179285, 2021-11-13 to 2023-10-10) stopped
-  every count of `europe-msk` in that span with "error: Failed requirement.". The patch counts code points,
-  as SC itself does from 8fe4c925 (#7341, "App doesn't launch after update"), released in v64.1. Drop it
-  at the v64.1 repin: the upstream line is gone there, so `sync-sc.ps1` fails until it is removed.
+- **`codepoints`**, dropped at the v64.1 repin: v64.0's `Element` rejected a tag key or value over 255
+  UTF-16 units, so a Moscow shop's description of 255 code points with an emoji in it (node 7370179285,
+  2021-11-13 to 2023-10-10) stopped every `europe-msk` count in that span. The patch backported SC's fix,
+  8fe4c925 (#7341), which v64.1 ships: `util/ktx/CharSequence.kt` (`isCodePointCountSmallerOrEqualThan`)
+  is vendored for it. A value over 255 code points still fails SC's `require`; the engine leaves such a
+  tag out and logs it (`fitTags`, TagLengthTest).
 - **`onepoint`** (`util/math/SphericalEarthMath.kt`): `ElementGeometryCreator.create(way, ...)` drops
   repeated positions but checks the size of the list before it, so a way whose nodes all share one
   position gets a polyline of one point, and `List<LatLon>.intersectsWith` rejects that with "Polylines
   must each contain at least two elements". AddMaxHeight's bridge check met one in Moscow's 2017-12-01
   data and stopped every `europe-msk` count there; in the app it would fail the download. The patch makes
   `intersectsWith` answer false for a polyline of one point (a point crosses nothing), so only a count
-  that used to fail changes. Upstream master has the same check (2026-11-02): keep it at the repin.
+  that used to fail changes. v64.1 and upstream master (2026-11-02) have the same check, so it stays.
 - **Stub** `src/main/kotlin/stubs/de/westnordost/streetcomplete/ui/common/street_side_select/Side.kt`: SC
   declares `enum class Side { LEFT, RIGHT }` in a Compose UI file; the vendored `osm/Sides.kt` imports it.
 - **Stubs** `resources/Res.kt` and `ui/ktx/Res.kt` (`Res.readBytesOrNull`): SC reads its
   composeResources through Compose Multiplatform. The stub reads the files the engine bundles under
   `src/main/resources/sc/` instead, so that the vendored `data/meta/CountryInfos.kt` compiles unchanged.
+- kotlinx-atomicfu (`org.jetbrains.kotlinx:atomicfu:0.33.0`, as in SC): since v64.1 the vendored
+  `MapDataXt.kt` guards its filter cache with an atomicfu `ReentrantLock`, on the JVM the java.util one.
 - osmfeatures (`Feature`, `GeometryType`) is the real library, `de.westnordost:osmfeatures:8.0.0`, which
   publishes an `osmfeatures-jvm` variant (an earlier version of this README wrongly said it had none and
   stubbed `GeometryType`). The opening-hours parser is `de.westnordost:osm-opening-hours:0.4.0`, as in SC.
 
-Everything else under `src/main/kotlin/sc/` is byte-identical to SC v64.0 (the third patch, `nolazy`, is
+Everything else under `src/main/kotlin/sc/` is byte-identical to SC v64.1 (the third patch, `nolazy`, is
 described in `sync-sc.ps1`: v64 caches a date filter's threshold, which would freeze the movable clock
 and the multiplier). Stubs under `src/main/kotlin/stubs/` stand in for what the vendored files reach
 into but the engine never calls: Compose's `Locale`/`LocaleList` (the JVM's default locale),
@@ -161,6 +163,8 @@ vendored `commonMain` helpers they use (`osm/Places.kt`, `osm/sidewalk/*`, `osm/
   with SC's feature dictionary, CheckShopExistence, CheckOpeningHoursSigned, AddPlaceName. Since v64
   AddOpeningHours, CheckOpeningHoursSigned and AddPlaceName take relations too, and CheckShopExistence no
   longer requires a name (a nameless shop whose preset has a name counts).
+  v64.1 adds `healthcare`, `craft` and `office` to AddOpeningHours' places, and `access !~ private|no`
+  to AddClothingBinOperator.
 - **Feature dictionary** (`ScFeatures`): the app passes the registry
   `{ featureDictionary.getFeature(it) }`, osmfeatures over SC's own presets, asked with no language, so
   in the phone's locale. The engine pins the JVM locale to **en-CA** (launcher `-Duser.language=en
@@ -292,7 +296,7 @@ refuses a dump whose newest comment is older than asOf.
   `OsmNoteQuestController.kt`, ported verbatim into `openquests/NoteQuest.kt` and pinned in
   `PORTED-QUESTS.txt` (it runs on SC's vendored `Note`). It is counted for a user who wrote none of the
   notes, with "show all notes" off, the app's default: the first comment holds a question mark (SC's list
-  includes `;`, the Greek question mark's look-alike) or any comment holds `#surveyme`. Counted where the
+  includes `;`, the Greek question mark's look-alike) or any comment holds `#surveyme` (or, since v64.1, `#surveyneeded`). Counted where the
   note's position is in the city.
 - Snapshots record the dump in `notes`; without `--notes` it is null, nothing is hidden and the note
   quest is `unsupported`.

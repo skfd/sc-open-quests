@@ -87,7 +87,7 @@ class ManyCitiesTest {
         val rows = 8; val cols = 10
         val all = syntheticCities(File(dir, "all.json"), rows, cols)
         val pbf = File(dir, "synthetic.osm.pbf").also { writeSyntheticPbf(it, rows, cols) }
-        val quests = File("data/quests/v64.0.json")
+        val quests = File("data/quests/v64.1.json")
         fun run(cities: File) = count(CountOptions(pbf = pbf, quests = quests, cities = cities, out = null, baseDir = dir))
         val whole = run(all)
         assertEquals(rows * cols, whole.engine.cities.size)

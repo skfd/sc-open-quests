@@ -6,7 +6,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
-/** OSM allows 255 code points in a tag key or value; v64.0 counted UTF-16 units (patch codepoints). */
+/** OSM allows 255 code points in a tag key or value; v64.0 counted UTF-16 units (the engine patched it), v64.1 counts code points. */
 class TagLengthTest {
     // 255 code points, 256 UTF-16 units: an emoji outside the BMP is two
     private val emoji255 = "📄" + "a".repeat(254)

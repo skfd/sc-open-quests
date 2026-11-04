@@ -12,7 +12,8 @@ import de.westnordost.streetcomplete.data.osmnotes.NoteComment
  *
  * The app passes the logged-in user's id and `!prefs.showAllNotes` (default: showAllNotes = false).
  * The engine counts for a user who has written none of the notes ([NOBODY]), with the default setting,
- * so a note is a quest if its first comment holds a question mark or any comment holds "#surveyme".
+ * so a note is a quest if its first comment holds a question mark or any comment holds "#surveyme" or
+ * (since v64.1) "#surveyneeded".
  */
 
 /** a user id no note comment has: the user conditions never apply */
@@ -83,6 +84,7 @@ private fun Note.containsSurveyRequiredMarker(): Boolean =
 
 private fun NoteComment.containsSurveyRequiredMarker(): Boolean =
     text?.contains("#surveyme", ignoreCase = true) == true
+    || text?.contains("#surveyneeded", ignoreCase = true) == true
 
 private fun Note.probablyCreatedByUserInThisApp(userId: Long): Boolean {
     val firstComment = comments.first()

@@ -6,11 +6,11 @@
 # there from androidMain in v64), and the sha256 of that file with LF line endings at the pinned tag. sync-sc.ps1 fails if a
 # file changed: rerun port_area_quests.py for generated ports, recheck hand ports, then update the hash.
 AddSidewalk                     quests/sidewalk/AddSidewalk.kt                                           e9fc031ba8596a9514f5006c2c89a368875cfe720f8b0f09e9c133da75e2172f
-AddOpeningHours                 quests/opening_hours/AddOpeningHours.kt                                  f4695fbd316dae41d35a778afeb229d1274593200c9ef3cfb5c593c3b971fb1b
+AddOpeningHours                 quests/opening_hours/AddOpeningHours.kt                                  33e3c67b61e57a57366848677c757dea2715a7c3d767479123ee9a8892b90ee4
 AddPostboxCollectionTimes       quests/postbox_collection_times/AddPostboxCollectionTimes.kt             a0ce78664550ca3240df90e20cf037b38ae2e39bd5f2733cc8294aef0fd7b5c7
 AddRecyclingContainerMaterials  quests/recycling_material/AddRecyclingContainerMaterials.kt              9b2a4651802d69a074ab76c1932dde69bba5f2ab52b8b770eff194c0f25d9883
 CheckShopType                   quests/shop_type/CheckShopType.kt                                        bb65ee61a0b59c7b5689b825386ae2debeafea6d2dbb4ede98d07f3c58fa0c5b
-AddClothingBinOperator          quests/clothing_bin_operator/AddClothingBinOperator.kt                   2cbc86b3151faf9d2f838b7473ce83b45427cd248eef998247a04d91e5561b79
+AddClothingBinOperator          quests/clothing_bin_operator/AddClothingBinOperator.kt                   ef9f65382360759820fba350c356b33ada1b926df8f5f86359d786956c8421de
 AddOnewayAerialway              quests/oneway/AddOnewayAerialway.kt                                      5fcb482e303f3d6753a0be5461957fb109456f5f8343d488212f441450dadb0d
 AddRoadWidth                    quests/width/AddRoadWidth.kt                                             3a0c5b846def263f8fa57388397d69e30249493062786c414d3fac97880fced9
 AddMaxPhysicalHeight            quests/max_height/AddMaxPhysicalHeight.kt                                9f203397087e70e9dade4b9eac9a93425a7c0150cce3a1015dc0de8a6bcf0cec
@@ -19,12 +19,12 @@ CheckOpeningHoursSigned         quests/opening_hours_signed/CheckOpeningHoursSig
 AddPlaceName                    quests/place_name/AddPlaceName.kt                                        0cd4c6ebb97bc2b54ff51746971250d5bd054f645445376b10d201303ff71964
 AddCrossing                     quests/crossing/AddCrossing.kt                                           b8f2f0786b57c50e95bc6f46c6c6b9d1c06cb6c6ddd854cafc51ddc49fde56fd
 AddBarrierOnPath                quests/barrier_type/AddBarrierOnPath.kt                                  6d990cca0ceb7924cc68fa2352c9be330b57bdb274ba133b6940f577eb4d31f3
-AddKerbHeight                   quests/kerb_height/AddKerbHeight.kt                                      dd9cfef207a7a8ed58f72a1b6ce8ad207755a0eb79850e67a8d93d78e3e2b178
+AddKerbHeight                   quests/kerb_height/AddKerbHeight.kt                                      a120e53280b83fec54c7be8a68a1815240d4e6d4f983290a9aaad1b3c4c917d3
 AddEntrance                     quests/building_entrance/AddEntrance.kt                                  e79624bde1f83e2b04d14342c9e285d86da623b250bbfd399dc9e3e56459d8a9
 AddRailwayCrossingBarrier       quests/railway_crossing/AddRailwayCrossingBarrier.kt                     282e4de1ff259b85b1e380133931759086c3b725dc8e179a898ac2217d90f481
 AddAmenityCover                 quests/amenity_cover/AddAmenityCover.kt                                  a6a26940b7097d6ca6c03ec17d2c4eabc0f4363b8c8a4efc077d870bffce3590
 AddBicycleIncline               quests/incline_direction/AddBicycleIncline.kt                            dcc424701208b77b3924c41ec7df4b6c533801d848e1fad905981667a17113e9
-AddTactilePavingKerb            quests/tactile_paving/AddTactilePavingKerb.kt                            33b7cce54f8d368004349d9b3f46d36be68eaf353d7a02985794c4a72217cf85
+AddTactilePavingKerb            quests/tactile_paving/AddTactilePavingKerb.kt                            03bea418f2f0756492fc6771858fd6a8f7c0b846cc081b3a758b7ca9ce71c36f
 AddCrossingSignals              quests/crossing_signals/AddCrossingSignals.kt                            6f947e3cd5f068d66d7ec8ac36868ec46dfae403bee240927433d0fc2e627d93
 AddCrossingIsland               quests/crossing_island/AddCrossingIsland.kt                              ec68bdbb6a5de52f6f57b41ed0224caa5531c03a11c6d6a091944f949e770931
 AddCrossingMarkings             quests/crossing_markings/AddCrossingMarkings.kt                          5895debd254edaf61ef274ae4bf7ef10c848ef3b27727b77ca56bd1a82926d29
@@ -38,7 +38,7 @@ AddStileType                    quests/barrier_type/AddStileType.kt             
 AddStepCountStile               quests/step_count/AddStepCountStile.kt                                   9bdb8f0ea5de060bb088b485c902707592e9f969b7dd340c2c731626a1a8c895
 AddBollardType                  quests/bollard_type/AddBollardType.kt                                    a80bbcd8378e8934f00e750e2bb81188e03728435e2fb9accef060ce1ea1c07b
 AddAddressStreet                quests/address/AddAddressStreet.kt                                       5656f08b3ebba8650ed90ad99c30492565bdc1d47d84c8dfe48daa907e3ed938
-AddMaxWeight                    quests/max_weight/AddMaxWeight.kt                                        27bbae97f49a6cca5d186139ead8ff1184850f6280a68a9fff11536f6fe057ae
+AddMaxWeight                    quests/max_weight/AddMaxWeight.kt                                        b3ed56bdac057de6d7cb296f88caa22700ef8a956779b2c04853506abda67c35
 AddMaxHeight                    quests/max_height/AddMaxHeight.kt                                        723f092d98d20f5cd94801fd7f255bf34d93be01a89135c314ae7f17822bc74d
 AddOneway                       quests/oneway/AddOneway.kt                                               ee5483375f7bbf26d1ef8a264dfe5e9c10a651800234e6240a1b9f078167668c
 AddEntranceReference            quests/building_entrance_reference/AddEntranceReference.kt               6b1e45231c985f3320437867ac1639fe7458e0f07088adf736f5a7ea6385ea51
@@ -58,8 +58,8 @@ helper:LevelUtils               quests/level/LevelUtils.kt                      
 helper:SummitMarkingsUtil       quests/summit/SummitMarkingsUtil.kt                                      41d377bff5b8e46f2eca2befacfa7d072c9b238fc516333940a413bb71b99712
 helper:MaxHeightUtils           quests/max_height/MaxHeightUtils.kt                                      23204371a4f5bdebaf8fa366b33abae29455b79aea595f4f575346645a3997b7
 helper:ignoreRelation           ApplicationConstants.kt                                                  359dde912f138292f371ad5a9de0809249313f6a59b23cfe7436527087ff306a
-AddHousenumber                  quests/address/AddHousenumber.kt                                         d35cebf2aa1aea22236965585372b9a585d22c4bea78e8edecf82bf4a850d0b5
+AddHousenumber                  quests/address/AddHousenumber.kt                                         3db131aceee0ad57273c11ac767d052555cb4e1c13281c5d7cba8df8feb3a7a6
 AddCycleway                     quests/cycleway/AddCycleway.kt                                           d051385015791839920aca800c1c701518a79b8e47429dfa3043c6ce2abe5284
 AddRoofShape                    quests/roof_shape/AddRoofShape.kt                                        5d630b3c5a3d160863c6e77149c6bb87e3ddfb04669f585f797c5624f22049ee
-helper:OsmNoteQuest             data/osmnotes/notequests/OsmNoteQuestController.kt                       344692b3682161b692a5a3b5d027d653c427707477fa0eb1f6873f1d65371f03
+helper:OsmNoteQuest             data/osmnotes/notequests/OsmNoteQuestController.kt                       cccffef1dc5671033527c77b5dfb6a119d3950e70ddf5039e4a9d24dc8688acf
 AddChargingStationSocket        quests/socket/AddChargingStationSocket.kt                                7922f3199005aa41078397355bbebfffc6da6cc035467d81ef13befae801c446

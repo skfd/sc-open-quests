@@ -21,7 +21,7 @@ import de.westnordost.streetcomplete.util.math.measuredMultiPolygonArea
 object FastAddHousenumber : FastTwin {
     override val name = "AddHousenumber"
     override val usesAge = false
-    override val sourceSha256 = "d35cebf2aa1aea22236965585372b9a585d22c4bea78e8edecf82bf4a850d0b5"
+    override val sourceSha256 = "3db131aceee0ad57273c11ac767d052555cb4e1c13281c5d7cba8df8feb3a7a6"
 
     override fun getApplicableElements(mapData: MapDataWithGeometry): Iterable<Element> {
         val bbox = mapData.boundingBox ?: return listOf()
