@@ -339,7 +339,7 @@ plus requests" to the end first. In short:
    next 13:15 run on, main counts the Europe regions daily (`fetch europe` is in its `download`; Docker
    must run). **Left for the owner:** `.\schedule-planet-add.ps1` as Administrator (it removes
    `kk-SCOpenQuests-weekly`; until then the old task runs `run.py weekly`, which is still accepted;
-   its next run is 2026-12-07). Keep the worktree until the months are done: the job runs there.
+   its next run is 2026-12-07).
 2. ~~The rest of the monthly points.~~ **Done 2026-11-03.** `logs/europe-months-4.log` ended in "months
    done" at 19:18, no FAILED (the last months took about 45 min each, europe-central 25). All 118 months
    2017-01 to 2026-10 are in for the four regions, merged and pushed as "data: every month from 2017-01
@@ -357,7 +357,8 @@ plus requests" to the end first. In short:
    city added (`add_city.py`, `tools/clip_polygon.py europe`, `osm_extracts.py clip europe --polygon
    config/europe.geojson`; it is cut at the next recut).
 5. **Repin to StreetComplete v64.1: ready on branch `sc-v64.1`** (worktree `../sc-open-quests-v64.1`, up
-   to c9f416ec, nothing pushed, nothing counted on main). Issue #1 tracks it. Done: REPIN.md steps 1 to 4
+   to c9f416ec, nothing pushed, nothing counted on main; merges clean into main as of 5f42dc55). Issue #1
+   tracks it. Done: REPIN.md steps 1 to 4
    and most of 6 (vendoring, ports, registry dump, DESIGN "Repin to StreetComplete v64.1"). The
    `codepoints` patch is dropped, `onepoint` kept, atomicfu added. The oracle is exact for all 52 custom
    quests: Guelph 33,311, Bremerhaven 20,413. 58 engine tests pass in the worktree;
