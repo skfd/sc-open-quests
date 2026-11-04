@@ -85,6 +85,20 @@ Notes:
 - `elementFilter` keeps the string exactly as SC holds it, including the leading newline and indentation
   of Kotlin raw strings. Trim if you need to; SC's parser doesn't care.
 
+## v64.1 run (2026-11-03)
+
+- Same setup as v64.0 below (foojay in both settings files, JDK 25 from `~/.gradle/jdks/`). No harness
+  file changed. First build, Gradle warm but a new checkout: 13 min 6 s.
+- SC's `gradle.properties` asks for 12 GB (Gradle 8g, Kotlin daemon 4g). Beside a running engine that may
+  be more commit charge than there is: `engine_heap_gb` gives the engine what the machine can spare, so
+  wait for it to end. `./gradlew --stop` afterwards, or the idle daemons shrink the next engine's heap.
+- 193 registry entries: 140 `filter`, 52 `custom`, 1 `note`, none added or removed. Against v64.0, 13
+  `elementFilter`s changed. Many more entries differ in `overpassQL` alone: it carries `older today` as a
+  date, so it moves with the day of the dump.
+- The oracle reads the JVM's zone for `older today`: set `JAVA_TOOL_OPTIONS=-Duser.timezone=<the city's>`
+  or a German city is a day off in the Canadian evening. Run on Git Bash's `gradlew`; from Python call
+  bash, as `cmd /c gradlew.bat` did not find the file.
+
 ## v64.0 run (2026-10-21)
 
 - `buildSrc` asks for a JDK 25 toolchain and refuses to run on Gradle's own JVM below 25, so: add

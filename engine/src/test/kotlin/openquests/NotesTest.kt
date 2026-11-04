@@ -79,7 +79,7 @@ class NotesTest {
         assertTrue(n1.shouldShowAsQuest(1L, true)) // the user opened it, but not via StreetComplete
     }
 
-    @Test fun `#surveyneeded marks a statement as a quest, as #surveyme does (since v64.1)`() {
+    @Test fun `#surveyneeded marks a statement as a quest, as #surveyme does`() {
         val one = clip(note(8, "43.7600000", "-79.4600000", c("opened", "2026-01-01T00:00:00Z", "Shop closed."),
             c("commented", "2026-06-01T00:00:00Z", "Needs a look #SurveyNeeded", uid = 2)))
         assertEquals(listOf(8L), OpenNotes(one.source, one.openAt(Instant.parse("2026-10-01T00:00:00Z"))).quests.map { it.id })
