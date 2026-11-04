@@ -982,7 +982,7 @@ the 13:15 update downloads every region's extract, and `fetch europe` fails unti
   are removed only under the lock that role's runs hold, and a `--from-history` pass, which holds no
   planet lock, has a role of its own.
 
-## Repin to StreetComplete v64.1 (2026-11-03, on branch `sc-v64.1`)
+## Repin to StreetComplete v64.1 (2026-11-03)
 
 - **What v64.1 changed for the counts.** No quest type added or removed (the registry imports only
   moved: AddAcceptsCards and AddAcceptsCash now live in `quests.payment`). Filters that move:
@@ -1026,7 +1026,11 @@ the 13:15 update downloads every region's extract, and `fetch europe` fails unti
   -2). London +0.10% (AddAcceptsCards 50,797 to 54,166, AddAcceptsCash 69,161 to 69,372 with 226 aged),
   Dublin +0.11%, Lisboa +0.42% (AddAcceptsCards 8,316 to 9,532). So a total barely breaks at the repin,
   and one quest's own line does, by 6 to 15%.
-- **SnapshotReproductionTest fails after the merge until a v64.1 snapshot exists.** It recounts a stored
+- **Where the break is.** The owner chose no recount: about 5 days of machine time for a move this small.
+  Each region's newest extract was recounted with v64.1 at the merge and older snapshots stay on v64.0,
+  so the series break there (Canada and Germany 2026-11-02, Europe 2026-11-03). AddAcceptsCards and
+  AddAcceptsCash are off by default on the site, so the one visible step is not in a reader's default totals.
+- **SnapshotReproductionTest cannot pass between the merge and the first v64.1 count.** It recounts a stored
   snapshot with that snapshot's own registry, but the hand ports are v64.1, so AddOpeningHours,
   AddClothingBinOperator and the note quest may differ from a v64.0 snapshot. Run `test` after
   `run.py count`, or read a failure limited to those quests as expected.

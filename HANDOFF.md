@@ -367,23 +367,16 @@ a few big filter quests with their old filter at their arrival month. The SC clo
    the re-cut's memory (4.3 GB of the 4.5 GB budget for this 1.67 GB clip); the clip grows with every
    city added (`add_city.py`, `tools/clip_polygon.py europe`, `osm_extracts.py clip europe --polygon
    config/europe.geojson`; it is cut at the next recut).
-5. **Repin to StreetComplete v64.1: ready on branch `sc-v64.1`** (worktree `../sc-open-quests-v64.1`, up
-   to c9f416ec, nothing pushed, nothing counted on main; merges clean into main as of 5f42dc55). Issue #1
-   tracks it. Done: REPIN.md steps 1 to 4
-   and most of 6 (vendoring, ports, registry dump, DESIGN "Repin to StreetComplete v64.1"). The
-   `codepoints` patch is dropped, `onepoint` kept, atomicfu added. The oracle is exact for all 52 custom
-   quests: Guelph 33,311, Bremerhaven 20,413. 58 engine tests pass in the worktree;
-   SnapshotReproductionTest and TorontoRegressionTest were skipped there (no `data/cities/`, pruned extract).
-   **The owner's call: recount the history, or let the break sit at the repin date?** Measured on the
-   same extracts: totals move 0.05% (Ontario) to 0.42% (Lisboa); AddAcceptsCards alone rises 6 to 15%.
-   A full recount is about 4 days of Europe months at 45 min each, on top of Canada's day. The
-   recommendation is no recount: the site marks the break and a total hardly moves.
-   Then: merge to main, without a data commit on the branch; from main `engine/gradlew installDist`,
-   `python run.py count` (each region's newest extract), `tools/sc_assets.py <Temp/sc-v64.1>`, `history`,
-   `test`, close the issue with the data commit. **`test` comes after the count**:
-   SnapshotReproductionTest cannot pass against a v64.0 snapshot with v64.1 ports (DESIGN, same section).
-   Keep clear of the daily run (fires 17:15 UTC, up to two hours) and of Gradle beside an engine: SC's build
-   wants 12 GB of commit, and an engine takes all the machine can spare. The previews are in
-   `.scratch/oracle-v64.1/`. `~/AppData/Local/Temp/sc-v64.1` is the checkout with the harness.
+5. ~~Repin to StreetComplete v64.1.~~ **Done and published 2026-11-03 at the owner's word**: merged
+   (b414bc21), each region's newest extract recounted with v64.1 (50 min, `logs/repin-v64.1-count.log`),
+   history, icons, pushed; issue #1 closed. **The owner chose no recount:** older snapshots stay on v64.0,
+   so the series break at the newest snapshot of each region (Canada and Germany 11-02, Europe 11-03).
+   Totals move 0.05% (Ontario) to 0.42% (Lisboa); AddAcceptsCards alone rises 6 to 15%, and it and
+   AddAcceptsCash are off by default on the site. DESIGN, "Repin to StreetComplete v64.1", has the
+   changes and the checks. The oracle is exact on Guelph (33,311) and Bremerhaven (20,413), for all 52
+   custom quests. After the count, 105 pytest and 59 engine tests pass, SnapshotReproductionTest
+   included; TorontoRegressionTest skips, as its extract is pruned. Four cities load in a headless
+   browser with no page errors. Worktree and branch are removed. `.scratch/oracle-v64.1/` (213 MB of
+   previews) can go. Watch the 12:15 run: it is the first scheduled one on v64.1.
 6. **Later:** the seeded bar for other countries, chosen from what these 32 cost (DESIGN.md); the step
    from a request on the site to a counted region.
