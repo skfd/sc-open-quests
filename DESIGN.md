@@ -1000,10 +1000,9 @@ the 13:15 update downloads every region's extract, and `fetch europe` fails unti
   - **AddOpeningHours** (hand port) asks `healthcare`, `craft` and `office` places too: a rise.
   - **AddFirewood**: `fuel ~ ".*wood.*"` instead of `fuel = wood`, and shelters with a fireplace. Only
     offered in the Nordic countries, so it moves only Göteborg, Helsinki, København, Oslo and Stockholm.
-  - **AddBoardType**: `information ~ board|map`, so maps ask too.
   - **The note quest**: `#surveyneeded` in a comment makes a note a quest, as `#surveyme` does.
-  - AddHousenumber, AddKerbHeight, AddTactilePavingKerb and AddMaxWeight changed only in their forms or
-    answers: re-pinned, ports unchanged.
+  - AddHousenumber, AddKerbHeight, AddTactilePavingKerb and AddMaxWeight changed only in their forms,
+    answers or highlights: re-pinned, ports unchanged. AddBoardType likewise (highlights only).
 - **What v64.1 changed for the engine.** SC's own fix for tag lengths in code points (8fe4c925) ships,
   so the `codepoints` patch is dropped and `util/ktx/CharSequence.kt` is vendored; `onepoint` stays (the
   same check is in v64.1). `MapDataXt.kt`'s filter cache takes an atomicfu lock, so the engine depends on
