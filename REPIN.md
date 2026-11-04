@@ -81,6 +81,10 @@ either: old snapshots keep them, the site shows them while the newest registry h
   (it reads the quest names from there): icons, titles, authors.
 - `python run.py check-release` refreshes `docs/data/sc-releases.json`; with the new pin in
   `SC-VERSION.txt` it reports the pin as current and opens nothing.
+- `python tools/sc_first_release.py <bare clone>` (its docstring has the clone) rewrites
+  `docs/data/quest-releases.json`, after `check-release` so the new tag has its date. A quest the file lacks
+  counts for all of history under "Only quests the app had then", and `tests/test_first_release.py` fails.
+  A quest that replaces or splits an old one goes in `PREDECESSOR` first: read the changelog's new quests.
 
 ## 6. Write it down, merge, count
 

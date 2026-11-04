@@ -53,14 +53,20 @@
     <article class="card">
       <div class="card-head">
         <h2 id="chart-title">Open quests over time</h2>
-        <label class="field check small">
-          <input type="checkbox" id="show-releases" checked> App releases
-        </label>
+        <div class="head-checks">
+          <label class="field check small" title="Leaves each quest out until the release that first offered it, so the line steps up where quests were added. Counts are today's rules on that date's map.">
+            <input type="checkbox" id="as-then"> Only quests the app had then
+          </label>
+          <label class="field check small">
+            <input type="checkbox" id="show-releases" checked> App releases
+          </label>
+        </div>
       </div>
       <p class="sub" id="chart-sub"></p>
       <div class="chart" id="chart-total"></div>
       <p class="hover-note" id="release-note" aria-live="polite"></p>
       <ul class="breaks" id="breaks"></ul>
+      <ul class="breaks" id="arrivals"></ul>
     </article>
 
     <div class="multiples" id="multiples"></div>

@@ -187,6 +187,11 @@ A city's `dates` holds only the snapshots that contain it. A quest absent from o
 under that SC version, or new in a later one) is `null` at that index, never 0. Both files are written by
 `run.py history` with sorted keys, so a rerun on the same snapshots changes no bytes.
 
+`docs/data/quest-releases.json` holds the release that first offered each quest, through its old names:
+`{ "quests": { "AddPathSurface": { "date": "2018-07-01", "version": "v6.0" } } }`. Written at a repin by
+`tools/sc_first_release.py`, not by the daily run. The site's "Only quests the app had then" reads it; without
+the file the switch is hidden.
+
 `docs/data/cities.json` lists cities with their latest totals, for the selector and comparisons:
 
 ```jsonc

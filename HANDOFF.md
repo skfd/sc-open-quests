@@ -309,6 +309,17 @@ plus requests" to the end first. In short:
   `MAX_COVER` to drop Fredericton. `places.py build` also marked the 32 European cities as counted:
   the Europe merge had not rebuilt the name layer.
 
+**"Only quests the app had then" (2026-11-03, late evening):** a switch on the totals chart that counts each
+quest from the release that first offered it, so the line steps up where quests were added, and lists the
+five largest arrivals. No recount and no engine change: `docs/data/quest-releases.json` from
+`tools/sc_first_release.py` (DESIGN.md, same name; REPIN.md, step 5). Real old versions were measured and
+turned down: the custom quests hold 41-80% of the counts, and each old engine is a repin. Step heights are
+today's rules; quests SC dropped with no successor (ten names) are not in the counts, so a step is an
+arrival, never a removal.
+Checked in a headless browser on the published data, no page errors. Next if the heights look wrong: count
+a few big filter quests with their old filter at their arrival month. The SC clone for the tool is in
+`~/AppData/Local/Temp/sc-history-probe/`; the docstring has the line to make it again.
+
 **Next, in order:**
 0. ~~Find the `europe-msk` failure.~~ **Found and fixed 2026-11-01 evening** (engine 8d8f220 on main,
    cherry-picked to `europe` as 4ab7b15; engine/README.md, patch `codepoints`). A Moscow shop's

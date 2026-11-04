@@ -17,6 +17,7 @@ const state = {
   compareQuest: "",                 // "" = all counted quests
   compareSort: { key: "perKm2", dir: -1 },
   releases: true,                   // StreetComplete releases on the time axis
+  asThen: false,                    // each quest counts only from the release that first offered it
   place: "",                        // places view: the place shown (12-hex id), "" = the list of countries
   placeIn: "",                      // its region file as "<cc>/<regionId>", the hint that finds it
   placeScope: "",                   // the country the place search looks inside ("" = names in the index)
@@ -25,6 +26,7 @@ let cities, quests, questByName, hist;   // loaded data
 let urlSelection = null;                    // the selection as read from the URL, resolved once quests.json is in
 let icons = {};                             // quest name -> {icon, title}, from icons/index.json
 let releases = [];                          // [{ts, version}], stable SC releases, oldest first
+let questFirst = {};                        // quest name -> {version, date}, from quest-releases.json
 const compareCache = new Map();             // quest name -> promise of compare/<quest>.json
 const charts = [];                          // live uPlot instances, for resize
 
@@ -97,6 +99,7 @@ function readURL() {
   state.pinned = names(p.get("pin") ?? h.get("q")).slice(0, MAX_PINNED);
   if (get("cq") != null) state.compareQuest = get("cq");
   state.releases = get("rel") !== "0";
+  state.asThen = get("then") === "1";
   if (p.get("place")) { state.view = "places"; state.place = p.get("place"); state.placeIn = p.get("in") || ""; }
   urlSelection = { base: SEL_BASES.includes(p.get("base")) ? p.get("base") : "app", on: names(p.get("on")), off: names(p.get("off")) };
 }
@@ -143,6 +146,7 @@ function queryString(s = state) {
   if (state.pinned.length) p.set("pin", state.pinned.join(","));
   if (state.compareQuest) p.set("cq", state.compareQuest);
   if (!state.releases) p.set("rel", "0");
+  if (state.asThen) p.set("then", "1");
   return "?" + p.toString().replace(/%2C/g, ",").replace(/%2F/g, "/");
 }
 
@@ -163,6 +167,13 @@ function selectionText() {
 
 // ---------- series ----------
 
+// With "Only quests the app had then", a quest counts from the release that first offered it. The counts
+// themselves are today's rules on that date's map data. A quest the file doesn't name counts all along.
+function offeredOn(name, date) {
+  const f = state.asThen && questFirst[name];
+  return !f || f.date <= date;
+}
+
 // Sum of the selected quests at each date. null quest values count as absent, not 0,
 // but a date where every quest is null stays null.
 function totalSeries(h) {
@@ -170,6 +181,7 @@ function totalSeries(h) {
   for (const [name, s] of Object.entries(h.quests)) {
     if (!selected(name)) continue;
     for (let i = 0; i < n; i++) {
+      if (!offeredOn(name, h.dates[i])) continue;
       if (s.open[i] != null) open[i] = (open[i] || 0) + s.open[i];
       if (s.agedOnly[i] != null) aged[i] = (aged[i] || 0) + s.agedOnly[i];
     }
@@ -180,7 +192,33 @@ function totalSeries(h) {
 function questSeries(h, name) {
   const s = h.quests[name];
   if (!s) return null;
-  return { open: s.open, aged: s.agedOnly };
+  const shown = (v) => v.map((x, i) => (offeredOn(name, h.dates[i]) ? x : null));
+  return { open: shown(s.open), aged: shown(s.agedOnly) };
+}
+
+// The steps of the switch: the dates selected quests first count at, the largest few, oldest first.
+// A step is what the arriving quests hold at that date; the rest of the total moves as it would anyway.
+function arrivals(h, limit = 5) {
+  const at = new Map();
+  for (const [name, s] of Object.entries(h.quests)) {
+    const f = questFirst[name];
+    if (!f || !selected(name) || f.date <= h.dates[0]) continue;
+    const i = h.dates.findIndex((d) => d >= f.date);
+    if (i < 0 || !s.open[i]) continue;
+    if (!at.has(i)) at.set(i, []);
+    at.get(i).push({ name, open: s.open[i], ...f });
+  }
+  return [...at].map(([i, qs]) => ({ i, date: h.dates[i], qs: qs.sort((a, b) => b.open - a.open), open: qs.reduce((t, q) => t + q.open, 0) }))
+    .sort((a, b) => b.open - a.open).slice(0, limit).sort((a, b) => a.i - b.i);
+}
+
+// By the quest's name, not the app's title: "What's the surface here?" could be any of six quests.
+function arrivalText({ date, qs, open }) {
+  const more = qs.length - 1;
+  const byDate = [...qs].sort((a, b) => a.date.localeCompare(b.date));
+  const from = byDate[0].version, to = last(byDate).version;
+  return `↑ ${date}: ${signed(open)} from ${humanize(qs[0].name).replace(/^Add /, "").toLowerCase()}` + (more ? ` and ${more} more` : "") +
+    (from === to ? `, new in ${from}` : `, new in ${from} to ${to}`);
 }
 
 // Names of the selected quests that have a value at date index i.
@@ -257,7 +295,9 @@ function releaseLayer(xs, { note = null, idle = true } = {}) {
     (r.ts === ts ? "; it came out that day." : `, out since ${day(r.ts)}.`);
   const idleText = rel.length && idle
     ? "The faint vertical lines are StreetComplete major releases" +
-      "; move along the chart to see which was current. Every count here uses the quests of " + `v${cities.scVersion}` + ", whatever the date."
+      "; move along the chart to see which was current. " + (state.asThen
+        ? `Quests join at the first date on or after their release, and every count uses the rules of v${cities.scVersion}.`
+        : `Every count here uses the quests of v${cities.scVersion}, whatever the date.`)
     : "";
   if (note) note.innerHTML = idleText;
   return {
@@ -450,9 +490,11 @@ function renderCityCharts(h) {
   const name = h.name;
   $("#chart-title").textContent = `Open quests over time in ${name}`;
   $("#chart-sub").textContent = `Counting ${selectionText()}. ` +
-    (h.dates.length === 1 ? "One snapshot so far; the line starts here." : `${h.dates.length} snapshots since ${h.dates[0]}.`);
+    (h.dates.length === 1 ? "One snapshot so far; the line starts here." : `${h.dates.length} snapshots since ${h.dates[0]}.`) +
+    (state.asThen ? " Each quest counts from the release that first offered it, by today's rules. Quests since removed from the app are not in these counts." : "");
   lineChart($("#chart-total"), h, tot, { height: 300, questSetBreaks: true, note: $("#release-note") });
   $("#breaks").replaceChildren(...breaks(h, { questSet: true }).map((b) => el("li", {}, `│ ${b.date}: ${b.label}. Totals on either side are not directly comparable.`)));
+  $("#arrivals").replaceChildren(...(state.asThen ? arrivals(h) : []).map((a) => el("li", {}, arrivalText(a))));
 
   const box = $("#multiples");
   box.replaceChildren();
@@ -1301,11 +1343,14 @@ async function main() {
   }
   questByName = new Map(quests.quests.map((q) => [q.name, q]));
   // Icons and release dates only decorate; the site works without them.
-  const [ic, rel] = await Promise.all([
+  const [ic, rel, first] = await Promise.all([
     fetch("icons/index.json").then((r) => (r.ok ? r.json() : null)).catch(() => null),
     getJSON("sc-releases.json").catch(() => null),
+    getJSON("quest-releases.json").catch(() => null),
   ]);
   icons = (ic && ic.quests) || {};
+  questFirst = (first && first.quests) || {};
+  state.asThen = state.asThen && !!first;
   releases = ((rel && rel.releases) || []).map((r) => ({ ts: dayTs(r.date), version: r.version }))
     .map((r, i, all) => ({ ...r, major: isMajor(r, i, all) }));
   if (!cities.cities.some((c) => c.id === state.city)) state.city = cities.cities.some((c) => c.id === "toronto") ? "toronto" : cities.cities[0].id;
@@ -1330,6 +1375,11 @@ async function main() {
   showRel.checked = state.releases;
   showRel.closest("label").hidden = !releases.length;
   showRel.addEventListener("change", () => { state.releases = showRel.checked; writeURL(); render(); });
+
+  const asThen = $("#as-then");
+  asThen.checked = state.asThen;
+  asThen.closest("label").hidden = !first;
+  asThen.addEventListener("change", () => { state.asThen = asThen.checked; writeURL(); render(); });
 
   $("#quest-filter").addEventListener("input", (e) => { state.filter = e.target.value; if (hist) renderQuestTable(hist); });
   $("#select-shown").addEventListener("change", (e) => { if (hist) selectShown(e.target.checked); });

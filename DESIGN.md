@@ -348,9 +348,9 @@ Known gaps:
   any error in it is logged and ignored.
 - **What v64.0 changed for the counts.** 193 quest types (was 190): added AddDoctorType,
   AddVendingMachineType, AddGeneralAccess (replaces AddPlaygroundAccess and AddTowerAccess),
-  AddChargingStationSocket (custom: a charging station without mapped charge points),
-  AddParkingCharge, AddMotorcycleParkingSurface, AddChargingStationMotorcar and AddLockable (the two
-  replace AddChargingStationCapacity and AddChargingStationBicycleCapacity); removed
+  AddChargingStationSocket (custom: a charging station without mapped charge points) and
+  AddChargingStationMotorcar (the two replace AddChargingStationCapacity and
+  AddChargingStationBicycleCapacity), AddParkingCharge, AddMotorcycleParkingSurface, AddLockable; removed
   AddProhibitedForPedestrians. 57 filter quests and three hand-ported ones (AddOpeningHours,
   CheckOpeningHoursSigned, AddPlaceName) now take relations; CheckShopExistence no longer requires a
   name (a nameless shop whose preset has a name counts, so it rises); AddIsAmenityIndoor asks for
@@ -1032,11 +1032,11 @@ the 13:15 update downloads every region's extract, and `fetch europe` fails unti
   `run.py count`, or read a failure limited to those quests as expected.
 
 ---
-## History with the app of its day: what was measured (2026-11-03)
+## Only quests the app had then (2026-11-03)
 
 The owner asked whether history could be recounted with the SC version of each date, so the jumps show
-where quests were added. Measured from a bare clone of SC (195 stable tags, git only, nothing built) and the
-published `docs/data/history/`; nothing recounted, no site change. Scripts: `.scratch/sc-history/`.
+where quests were added. Measured from a bare clone of SC (194 stable tags, git only, nothing built) and the
+published `docs/data/history/`, then built as a switch on the totals chart; nothing was recounted.
 
 - **"The version of the day" is three things, at very different prices.**
   - *Which quests existed:* every tag's registry parses, so each quest's first release is known. Free.
@@ -1051,18 +1051,28 @@ published `docs/data/history/`; nothing recounted, no site change. Scripts: `.sc
 
   | Default-on quests | 2017-01 | 2018-01 | 2019-01 | 2021-01 | 2024-01 |
   |---|---|---|---|---|---|
-  | Toronto | 6% | 39% | 70% | 92% | 99% |
-  | Berlin | 8% | 34% | 61% | 77% | 97% |
-  | London | 7% | 49% | 63% | 84% | 97% |
+  | Toronto | 6% | 40% | 70% | 93% | 100% |
+  | Berlin | 8% | 35% | 61% | 77% | 98% |
+  | London | 7% | 50% | 64% | 85% | 98% |
 
   (share of the today's-rules total). Largest steps: London AddRoadSurface +122,897 (2017-04), Berlin
   AddPathSurface +59,599 (2018-07), Toronto AddCycleway +30,008 (2017-12) and CheckShopExistence +21,671
   (2023-04).
 - **What the mask is not.** A step's date is exact to the next monthly point; its height is today's rule on
-  that date's data, not what the app showed. It shows arrivals only: the 19 removed quests (AddCrossingType,
-  AddStreetParking, AddShoulder...) are not in the counts, so early totals are low and no removal shows.
+  that date's data, not what the app showed. It shows arrivals only: of 19 names gone from
+  the registry, nine live on in a successor, and ten have none (AddStreetParking, AddShoulder,
+  AddProhibitedForPedestrians, AddSuspectedOneway...). Those are not in the counts, so early totals are low
+  and no removal shows.
   `defaultDisabled` and country lists are today's too.
-- **For a build:** a quest-to-first-release file, with aliases for the v64.0 replacements (AddGeneralAccess,
-  AddChargingStationMotorcar, AddLockable) and the `WheelChair` case rename. Tag dates match
-  `sc-releases.json` within a day; one quest crosses a month (AddSanitaryDumpStation). That file lacks 22
-  tags, mostly before v3.1, which 28 quests first shipped in.
+- **Built.** `tools/sc_first_release.py` writes `docs/data/quest-releases.json`; the site's "Only quests the
+  app had then" (`then=1` in the link) applies it to the total and the pinned quests, and lists the five
+  largest arrivals under the chart. The quest table, the tiles and the compare view stay as they are: the
+  newest date is the same either way. Arrivals are not breaks: `breaks()` still reads the counted set.
+- **Renames decide the steps.** A renamed quest would look like a new one, so `PREDECESSOR` carries twelve
+  names from SC's changelog and git's rename detection. Without it AddCrossingMarkings and AddCrossingSignals
+  arrive in 2024, though AddCrossingType asked since 2017. AddIsAmenityIndoor stays new (v55): it took over
+  from AddIsDefibrillatorIndoor but asks for far more. Tag `v0.3` is a stray on an ordinary 2017-08 commit.
+- **Dates.** A quest's date is its GitHub release, so a step sits on its release line; 22 tags have none
+  (mostly before v3.1) and use the tag's own date, which agrees within a day wherever both exist.
+- **Reading the chart.** Not every step is an arrival: Toronto's largest, 2019, is the AddHousenumber rise
+  this file already records, and the 2026 drop the address import. They stay, unlisted.
