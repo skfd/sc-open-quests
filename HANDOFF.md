@@ -340,14 +340,13 @@ plus requests" to the end first. In short:
    must run). **Left for the owner:** `.\schedule-planet-add.ps1` as Administrator (it removes
    `kk-SCOpenQuests-weekly`; until then the old task runs `run.py weekly`, which is still accepted;
    its next run is 2026-12-07). Keep the worktree until the months are done: the job runs there.
-2. **The rest of the monthly points**, still counting in the worktree (item 0). When
-   `logs/europe-months-4.log` ends in "months done": copy the worktree's `data/backfill/europe-*` into
-   main's data/backfill/, `python tools/backfill_history.py merge --planet history-261029 --region
-   <each europe region>`, `run.py history`, commit "data: ..."; the 13:15 run pushes. Then delete the
-   worktree (`git worktree remove ../sc-open-quests-europe`; its docs/data changes are discardable) and
-   the `europe` branch. A check-in is scheduled for 2026-11-03 21:00 (moved from 08:10; trigger
-   `trig_01J2wryMUuUaVjsqxw1uREGJ`); it reschedules itself if the log has not ended. Cherry-pick
-   nothing at the merge: `onepoint` is on main already (69fcd0a6).
+2. ~~The rest of the monthly points.~~ **Done 2026-11-03.** `logs/europe-months-4.log` ended in "months
+   done" at 19:18, no FAILED (the last months took about 45 min each, europe-central 25). All 118 months
+   2017-01 to 2026-10 are in for the four regions, merged and pushed as "data: every month from 2017-01
+   to 2026-10 for the 32 European cities" (300305fe); 99 pytest; each city has 122 points on the live
+   site, the largest month-to-month move 23% (Zagreb 2018-02). Worktree `../sc-open-quests-europe` and
+   branch `europe` are removed (only 36 old notes clips and the three parts dropped on purpose were not
+   on main).
 3. ~~Monday 2026-11-02 07:30.~~ Done: `history-261102.osh.pbf` written in 10,432 s (osmium 7.8 GB),
    261029 retired; the months slice the clip's own history cut and are unaffected.
    Docker Desktop must be running (it was found quit twice), and so must it for every clip fetch.
