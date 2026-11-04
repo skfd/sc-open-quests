@@ -1,0 +1,776 @@
+{
+ "quests": {
+  "AddAcceptsCards": {
+   "date": "2022-04-26",
+   "version": "v43.0"
+  },
+  "AddAcceptsCash": {
+   "date": "2020-03-09",
+   "version": "v18.0"
+  },
+  "AddAccessPointRef": {
+   "date": "2022-10-25",
+   "version": "v48.0"
+  },
+  "AddAddressStreet": {
+   "date": "2020-05-28",
+   "version": "v20.0"
+  },
+  "AddAerialwayBicycleAccess": {
+   "date": "2025-11-14",
+   "version": "v62.0"
+  },
+  "AddAirCompressor": {
+   "date": "2022-04-26",
+   "version": "v43.0"
+  },
+  "AddAirConditioning": {
+   "date": "2022-02-07",
+   "version": "v40.0"
+  },
+  "AddAmenityCover": {
+   "date": "2021-10-10",
+   "version": "v36.0"
+  },
+  "AddArtworkType": {
+   "date": "2026-03-01",
+   "version": "v63.0"
+  },
+  "AddAtmCashIn": {
+   "date": "2022-09-27",
+   "version": "v47.0"
+  },
+  "AddAtmOperator": {
+   "date": "2020-10-24",
+   "version": "v25.0"
+  },
+  "AddBabyChangingTable": {
+   "date": "2017-07-09",
+   "version": "v0.14"
+  },
+  "AddBarrierOnPath": {
+   "date": "2022-02-07",
+   "version": "v40.0"
+  },
+  "AddBarrierOnRoad": {
+   "date": "2022-02-07",
+   "version": "v40.0"
+  },
+  "AddBarrierOpening": {
+   "date": "2024-09-18",
+   "version": "v59.0"
+  },
+  "AddBarrierType": {
+   "date": "2021-05-23",
+   "version": "v32.0"
+  },
+  "AddBbqFuel": {
+   "date": "2023-10-23",
+   "version": "v55.0"
+  },
+  "AddBeachSurface": {
+   "date": "2026-03-01",
+   "version": "v63.0"
+  },
+  "AddBenchBackrest": {
+   "date": "2018-02-21",
+   "version": "v4.0"
+  },
+  "AddBenchStatusOnBusStop": {
+   "date": "2020-09-21",
+   "version": "v23.0"
+  },
+  "AddBicycleBarrierInstallation": {
+   "date": "2022-10-25",
+   "version": "v48.0"
+  },
+  "AddBicycleBarrierType": {
+   "date": "2021-11-24",
+   "version": "v38.0"
+  },
+  "AddBicycleIncline": {
+   "date": "2022-10-25",
+   "version": "v48.0"
+  },
+  "AddBicyclePump": {
+   "date": "2022-04-26",
+   "version": "v43.0"
+  },
+  "AddBicycleRepairStationServices": {
+   "date": "2024-12-08",
+   "version": "v60.0"
+  },
+  "AddBikeParkingAccess": {
+   "date": "2021-02-04",
+   "version": "v30.0"
+  },
+  "AddBikeParkingCapacity": {
+   "date": "2017-05-06",
+   "version": "v0.9"
+  },
+  "AddBikeParkingCover": {
+   "date": "2017-07-09",
+   "version": "v0.14"
+  },
+  "AddBikeParkingFee": {
+   "date": "2021-02-04",
+   "version": "v30.0"
+  },
+  "AddBikeParkingType": {
+   "date": "2018-04-22",
+   "version": "v5.0"
+  },
+  "AddBikeRentalCapacity": {
+   "date": "2022-06-02",
+   "version": "v44.0"
+  },
+  "AddBikeRentalType": {
+   "date": "2022-06-02",
+   "version": "v44.0"
+  },
+  "AddBikeRepairAvailability": {
+   "date": "2022-06-02",
+   "version": "v44.0"
+  },
+  "AddBinStatusOnBusStop": {
+   "date": "2021-07-02",
+   "version": "v33.0"
+  },
+  "AddBoardName": {
+   "date": "2024-09-18",
+   "version": "v59.0"
+  },
+  "AddBoardType": {
+   "date": "2020-08-02",
+   "version": "v22.0"
+  },
+  "AddBoatRental": {
+   "date": "2024-12-08",
+   "version": "v60.0"
+  },
+  "AddBollardType": {
+   "date": "2021-07-02",
+   "version": "v33.0"
+  },
+  "AddBridgeStructure": {
+   "date": "2018-02-21",
+   "version": "v4.0"
+  },
+  "AddBuildingLevels": {
+   "date": "2017-02-20",
+   "version": "0.3"
+  },
+  "AddBuildingType": {
+   "date": "2018-07-01",
+   "version": "v6.0"
+  },
+  "AddBusStopLit": {
+   "date": "2021-05-23",
+   "version": "v32.0"
+  },
+  "AddBusStopName": {
+   "date": "2018-04-22",
+   "version": "v5.0"
+  },
+  "AddBusStopRef": {
+   "date": "2020-10-24",
+   "version": "v25.0"
+  },
+  "AddBusStopShelter": {
+   "date": "2017-05-06",
+   "version": "v0.9"
+  },
+  "AddCabins": {
+   "date": "2026-03-01",
+   "version": "v63.0"
+  },
+  "AddCameraType": {
+   "date": "2021-07-02",
+   "version": "v33.0"
+  },
+  "AddCampDrinkingWater": {
+   "date": "2022-09-01",
+   "version": "v46.0"
+  },
+  "AddCampPower": {
+   "date": "2022-09-01",
+   "version": "v46.0"
+  },
+  "AddCampShower": {
+   "date": "2022-09-01",
+   "version": "v46.0"
+  },
+  "AddCarWashType": {
+   "date": "2017-11-15",
+   "version": "v3.0"
+  },
+  "AddCaravans": {
+   "date": "2022-09-01",
+   "version": "v46.0"
+  },
+  "AddChargingStationBicycles": {
+   "date": "2025-11-14",
+   "version": "v62.0"
+  },
+  "AddChargingStationMotorcar": {
+   "date": "2020-11-06",
+   "version": "v26.0"
+  },
+  "AddChargingStationOperator": {
+   "date": "2020-10-24",
+   "version": "v25.0"
+  },
+  "AddChargingStationSocket": {
+   "date": "2020-11-06",
+   "version": "v26.0"
+  },
+  "AddClothingBinOperator": {
+   "date": "2020-10-24",
+   "version": "v25.0"
+  },
+  "AddCrossing": {
+   "date": "2021-09-02",
+   "version": "v34.0"
+  },
+  "AddCrossingIsland": {
+   "date": "2020-10-24",
+   "version": "v25.0"
+  },
+  "AddCrossingKerbHeight": {
+   "date": "2023-08-30",
+   "version": "v54.0"
+  },
+  "AddCrossingMarkings": {
+   "date": "2017-09-23",
+   "version": "v2.0"
+  },
+  "AddCrossingSignals": {
+   "date": "2017-09-23",
+   "version": "v2.0"
+  },
+  "AddCycleway": {
+   "date": "2017-11-15",
+   "version": "v3.0"
+  },
+  "AddCyclewayPartSurface": {
+   "date": "2019-09-15",
+   "version": "v14.0"
+  },
+  "AddCyclewaySegregation": {
+   "date": "2018-08-26",
+   "version": "v7.0"
+  },
+  "AddCyclewayWidth": {
+   "date": "2022-02-27",
+   "version": "v41.0"
+  },
+  "AddDefibrillatorLocation": {
+   "date": "2023-10-23",
+   "version": "v55.0"
+  },
+  "AddDoctorType": {
+   "date": "2026-10-19",
+   "version": "v64.0"
+  },
+  "AddDrinkingWater": {
+   "date": "2021-02-04",
+   "version": "v30.0"
+  },
+  "AddDrinkingWaterType": {
+   "date": "2022-10-25",
+   "version": "v48.0"
+  },
+  "AddEntrance": {
+   "date": "2022-06-02",
+   "version": "v44.0"
+  },
+  "AddEntranceReference": {
+   "date": "2022-07-04",
+   "version": "v45.0"
+  },
+  "AddFerryAccessBicycle": {
+   "date": "2026-03-01",
+   "version": "v63.0"
+  },
+  "AddFerryAccessHgv": {
+   "date": "2026-03-01",
+   "version": "v63.0"
+  },
+  "AddFerryAccessMotorVehicle": {
+   "date": "2019-08-07",
+   "version": "v13.0"
+  },
+  "AddFerryAccessPedestrian": {
+   "date": "2019-08-07",
+   "version": "v13.0"
+  },
+  "AddFireHydrantDiameter": {
+   "date": "2021-10-28",
+   "version": "v37.0"
+  },
+  "AddFireHydrantPosition": {
+   "date": "2022-01-19",
+   "version": "v39.0"
+  },
+  "AddFireHydrantRef": {
+   "date": "2022-10-25",
+   "version": "v48.0"
+  },
+  "AddFireHydrantType": {
+   "date": "2017-07-20",
+   "version": "v1.0"
+  },
+  "AddFirewood": {
+   "date": "2025-11-14",
+   "version": "v62.0"
+  },
+  "AddFirstAidKitLocation": {
+   "date": "2025-11-14",
+   "version": "v62.0"
+  },
+  "AddFootwayPartSurface": {
+   "date": "2019-09-15",
+   "version": "v14.0"
+  },
+  "AddForestLeafType": {
+   "date": "2019-09-15",
+   "version": "v14.0"
+  },
+  "AddFuelSelfService": {
+   "date": "2022-02-07",
+   "version": "v40.0"
+  },
+  "AddGeneralAccess": {
+   "date": "2018-08-26",
+   "version": "v7.0"
+  },
+  "AddGeneralFee": {
+   "date": "2019-11-10",
+   "version": "v15.0"
+  },
+  "AddGlutenFree": {
+   "date": "2025-05-05",
+   "version": "v61.0"
+  },
+  "AddGritBinSeasonal": {
+   "date": "2023-02-10",
+   "version": "v51.0"
+  },
+  "AddHairdresserCustomers": {
+   "date": "2023-05-10",
+   "version": "v53.0"
+  },
+  "AddHalal": {
+   "date": "2021-10-10",
+   "version": "v36.0"
+  },
+  "AddHandrail": {
+   "date": "2019-11-10",
+   "version": "v15.0"
+  },
+  "AddHandwashing": {
+   "date": "2025-11-14",
+   "version": "v62.0"
+  },
+  "AddHotWater": {
+   "date": "2026-03-01",
+   "version": "v63.0"
+  },
+  "AddHousenumber": {
+   "date": "2017-05-06",
+   "version": "v0.9"
+  },
+  "AddInformationToTourism": {
+   "date": "2020-03-09",
+   "version": "v18.0"
+  },
+  "AddInternetAccess": {
+   "date": "2018-02-21",
+   "version": "v4.0"
+  },
+  "AddIsAmenityIndoor": {
+   "date": "2023-10-23",
+   "version": "v55.0"
+  },
+  "AddIsBuildingUnderground": {
+   "date": "2018-12-15",
+   "version": "v9.0"
+  },
+  "AddKerbHeight": {
+   "date": "2020-11-27",
+   "version": "v27.0"
+  },
+  "AddKosher": {
+   "date": "2021-01-07",
+   "version": "v29.0"
+  },
+  "AddLaneMarkings": {
+   "date": "2025-11-14",
+   "version": "v62.0"
+  },
+  "AddLanes": {
+   "date": "2020-11-27",
+   "version": "v27.0"
+  },
+  "AddLevel": {
+   "date": "2021-11-24",
+   "version": "v38.0"
+  },
+  "AddLevelThing": {
+   "date": "2025-11-14",
+   "version": "v62.0"
+  },
+  "AddLockable": {
+   "date": "2026-10-19",
+   "version": "v64.0"
+  },
+  "AddMaxHeight": {
+   "date": "2018-08-26",
+   "version": "v7.0"
+  },
+  "AddMaxPhysicalHeight": {
+   "date": "2022-02-27",
+   "version": "v41.0"
+  },
+  "AddMaxSpeed": {
+   "date": "2017-07-09",
+   "version": "v0.14"
+  },
+  "AddMaxWeight": {
+   "date": "2019-11-10",
+   "version": "v15.0"
+  },
+  "AddMemorialType": {
+   "date": "2022-07-04",
+   "version": "v45.0"
+  },
+  "AddMopedAccess": {
+   "date": "2024-06-01",
+   "version": "v58.0"
+  },
+  "AddMotorcycleParkingCapacity": {
+   "date": "2018-12-15",
+   "version": "v9.0"
+  },
+  "AddMotorcycleParkingCover": {
+   "date": "2018-12-15",
+   "version": "v9.0"
+  },
+  "AddMotorcycleParkingFee": {
+   "date": "2025-11-14",
+   "version": "v62.0"
+  },
+  "AddMotorcycleParkingSurface": {
+   "date": "2026-10-19",
+   "version": "v64.0"
+  },
+  "AddOneway": {
+   "date": "2018-07-01",
+   "version": "v6.0"
+  },
+  "AddOnewayAerialway": {
+   "date": "2026-03-01",
+   "version": "v63.0"
+  },
+  "AddOpeningHours": {
+   "date": "2016-12-01",
+   "version": "v0.1"
+  },
+  "AddOrchardProduce": {
+   "date": "2017-09-23",
+   "version": "v2.0"
+  },
+  "AddParcelLockerBrand": {
+   "date": "2024-06-01",
+   "version": "v58.0"
+  },
+  "AddParkingAccess": {
+   "date": "2018-02-21",
+   "version": "v4.0"
+  },
+  "AddParkingCharge": {
+   "date": "2026-10-19",
+   "version": "v64.0"
+  },
+  "AddParkingFee": {
+   "date": "2018-02-21",
+   "version": "v4.0"
+  },
+  "AddParkingType": {
+   "date": "2017-09-23",
+   "version": "v2.0"
+  },
+  "AddPathSmoothness": {
+   "date": "2022-01-19",
+   "version": "v39.0"
+  },
+  "AddPathSurface": {
+   "date": "2018-07-01",
+   "version": "v6.0"
+  },
+  "AddPitchLit": {
+   "date": "2021-05-23",
+   "version": "v32.0"
+  },
+  "AddPitchSurface": {
+   "date": "2021-01-07",
+   "version": "v29.0"
+  },
+  "AddPlaceName": {
+   "date": "2017-03-28",
+   "version": "v0.5"
+  },
+  "AddPoliceType": {
+   "date": "2021-05-23",
+   "version": "v32.0"
+  },
+  "AddPostboxCollectionTimes": {
+   "date": "2018-04-22",
+   "version": "v5.0"
+  },
+  "AddPostboxRef": {
+   "date": "2020-01-02",
+   "version": "v16.0"
+  },
+  "AddPostboxRoyalCypher": {
+   "date": "2021-03-04",
+   "version": "v31.0"
+  },
+  "AddPowerAttachment": {
+   "date": "2024-12-08",
+   "version": "v60.0"
+  },
+  "AddPowerPolesMaterial": {
+   "date": "2017-09-23",
+   "version": "v2.0"
+  },
+  "AddRailwayCrossingBarrier": {
+   "date": "2018-09-22",
+   "version": "v8.0"
+  },
+  "AddRecyclingContainerMaterials": {
+   "date": "2020-01-02",
+   "version": "v16.0"
+  },
+  "AddRecyclingType": {
+   "date": "2017-07-20",
+   "version": "v1.0"
+  },
+  "AddReligionToPlaceOfWorship": {
+   "date": "2018-02-21",
+   "version": "v4.0"
+  },
+  "AddReligionToWaysideShrine": {
+   "date": "2018-02-21",
+   "version": "v4.0"
+  },
+  "AddRoadName": {
+   "date": "2016-12-01",
+   "version": "v0.1"
+  },
+  "AddRoadSmoothness": {
+   "date": "2022-01-19",
+   "version": "v39.0"
+  },
+  "AddRoadSurface": {
+   "date": "2017-03-28",
+   "version": "v0.5"
+  },
+  "AddRoadWidth": {
+   "date": "2022-02-27",
+   "version": "v41.0"
+  },
+  "AddRoofShape": {
+   "date": "2017-02-20",
+   "version": "0.3"
+  },
+  "AddSanitaryDumpStation": {
+   "date": "2023-12-31",
+   "version": "v56.0"
+  },
+  "AddSeating": {
+   "date": "2022-03-24",
+   "version": "v42.0"
+  },
+  "AddSecondHandBicycleAvailability": {
+   "date": "2022-06-02",
+   "version": "v44.0"
+  },
+  "AddSelfServiceLaundry": {
+   "date": "2019-11-10",
+   "version": "v15.0"
+  },
+  "AddShelterCapacity": {
+   "date": "2025-11-14",
+   "version": "v62.0"
+  },
+  "AddSidewalk": {
+   "date": "2019-02-10",
+   "version": "v10.0"
+  },
+  "AddSidewalkSurface": {
+   "date": "2022-03-24",
+   "version": "v42.0"
+  },
+  "AddSmoking": {
+   "date": "2022-03-24",
+   "version": "v42.0"
+  },
+  "AddSport": {
+   "date": "2017-05-21",
+   "version": "v0.11"
+  },
+  "AddStepCount": {
+   "date": "2020-10-05",
+   "version": "v24.0"
+  },
+  "AddStepCountStile": {
+   "date": "2022-04-26",
+   "version": "v43.0"
+  },
+  "AddStepsIncline": {
+   "date": "2020-10-05",
+   "version": "v24.0"
+  },
+  "AddStepsRamp": {
+   "date": "2020-10-24",
+   "version": "v25.0"
+  },
+  "AddStileType": {
+   "date": "2021-05-23",
+   "version": "v32.0"
+  },
+  "AddSummitCross": {
+   "date": "2022-07-04",
+   "version": "v45.0"
+  },
+  "AddSummitRegister": {
+   "date": "2020-09-21",
+   "version": "v23.0"
+  },
+  "AddTactilePavingBusStop": {
+   "date": "2017-07-09",
+   "version": "v0.14"
+  },
+  "AddTactilePavingCrosswalk": {
+   "date": "2017-07-09",
+   "version": "v0.14"
+  },
+  "AddTactilePavingKerb": {
+   "date": "2020-11-27",
+   "version": "v27.0"
+  },
+  "AddTactilePavingSteps": {
+   "date": "2023-05-10",
+   "version": "v53.0"
+  },
+  "AddTents": {
+   "date": "2022-09-01",
+   "version": "v46.0"
+  },
+  "AddToiletAvailability": {
+   "date": "2017-09-23",
+   "version": "v2.0"
+  },
+  "AddToiletsFee": {
+   "date": "2017-07-09",
+   "version": "v0.14"
+  },
+  "AddTracktype": {
+   "date": "2018-12-15",
+   "version": "v9.0"
+  },
+  "AddTrafficCalmingType": {
+   "date": "2021-10-28",
+   "version": "v37.0"
+  },
+  "AddTrafficSignalsButton": {
+   "date": "2018-12-15",
+   "version": "v9.0"
+  },
+  "AddTrafficSignalsSound": {
+   "date": "2018-12-15",
+   "version": "v9.0"
+  },
+  "AddTrafficSignalsVibration": {
+   "date": "2020-10-05",
+   "version": "v24.0"
+  },
+  "AddTreeLeafType": {
+   "date": "2024-04-14",
+   "version": "v57.2"
+  },
+  "AddVegan": {
+   "date": "2017-11-15",
+   "version": "v3.0"
+  },
+  "AddVegetarian": {
+   "date": "2017-11-15",
+   "version": "v3.0"
+  },
+  "AddVendingMachineType": {
+   "date": "2026-10-19",
+   "version": "v64.0"
+  },
+  "AddWayLit": {
+   "date": "2017-08-02",
+   "version": "v1.1"
+  },
+  "AddWheelchairAccessBusiness": {
+   "date": "2017-07-09",
+   "version": "v0.14"
+  },
+  "AddWheelchairAccessOutside": {
+   "date": "2018-12-15",
+   "version": "v9.0"
+  },
+  "AddWheelchairAccessPublicTransport": {
+   "date": "2017-07-09",
+   "version": "v0.14"
+  },
+  "AddWheelchairAccessToilets": {
+   "date": "2018-02-21",
+   "version": "v4.0"
+  },
+  "AddWheelchairAccessToiletsPart": {
+   "date": "2019-09-15",
+   "version": "v14.0"
+  },
+  "CheckExistence": {
+   "date": "2020-12-21",
+   "version": "v28.0"
+  },
+  "CheckOpeningHoursSigned": {
+   "date": "2022-02-07",
+   "version": "v40.0"
+  },
+  "CheckShopExistence": {
+   "date": "2023-03-27",
+   "version": "v52.0"
+  },
+  "CheckShopType": {
+   "date": "2020-12-21",
+   "version": "v28.0"
+  },
+  "DetermineRecyclingGlass": {
+   "date": "2020-01-02",
+   "version": "v16.0"
+  },
+  "MarkCompletedBuildingConstruction": {
+   "date": "2018-04-22",
+   "version": "v5.0"
+  },
+  "MarkCompletedHighwayConstruction": {
+   "date": "2018-04-22",
+   "version": "v5.0"
+  },
+  "OsmNoteQuestType": {
+   "date": "2017-09-23",
+   "version": "v2.0"
+  },
+  "SpecifyShopType": {
+   "date": "2021-05-23",
+   "version": "v32.0"
+  }
+ }
+}
