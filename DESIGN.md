@@ -1030,3 +1030,39 @@ the 13:15 update downloads every region's extract, and `fetch europe` fails unti
   snapshot with that snapshot's own registry, but the hand ports are v64.1, so AddOpeningHours,
   AddClothingBinOperator and the note quest may differ from a v64.0 snapshot. Run `test` after
   `run.py count`, or read a failure limited to those quests as expected.
+
+---
+## History with the app of its day: what was measured (2026-11-03)
+
+The owner asked whether history could be recounted with the SC version of each date, so the jumps show
+where quests were added. Measured from a bare clone of SC (195 stable tags, git only, nothing built) and the
+published `docs/data/history/`; nothing recounted, no site change. Scripts: `.scratch/sc-history/`.
+
+- **"The version of the day" is three things, at very different prices.**
+  - *Which quests existed:* every tag's registry parses, so each quest's first release is known. Free.
+  - *Each quest's filter:* about 800 text changes over the 193 quests (a rough count: it hashes the string
+    literals, so it misses constants defined elsewhere); 30 never changed. AddRoadSurface had no resurvey
+    until v30. Filter quests could take an old string through the registry dump, but the strings
+    interpolate Kotlin (`${ROADS_WITH_SURFACES...}`), so each era needs resolving, and every month a recount.
+  - *Custom quest logic:* 52 hand ports pinned to one tag, and they hold 77-80% of Toronto's open quests,
+    41-57% of Berlin's and London's. An old engine means a repin per release, half a day each at best,
+    worse going back (quests are Java until v10, in 2019, and Android-only). Not worth doing.
+- **The mask alone gives the jumps.** Each quest's published series, kept only from its first release:
+
+  | Default-on quests | 2017-01 | 2018-01 | 2019-01 | 2021-01 | 2024-01 |
+  |---|---|---|---|---|---|
+  | Toronto | 6% | 39% | 70% | 92% | 99% |
+  | Berlin | 8% | 34% | 61% | 77% | 97% |
+  | London | 7% | 49% | 63% | 84% | 97% |
+
+  (share of the today's-rules total). Largest steps: London AddRoadSurface +122,897 (2017-04), Berlin
+  AddPathSurface +59,599 (2018-07), Toronto AddCycleway +30,008 (2017-12) and CheckShopExistence +21,671
+  (2023-04).
+- **What the mask is not.** A step's date is exact to the next monthly point; its height is today's rule on
+  that date's data, not what the app showed. It shows arrivals only: the 19 removed quests (AddCrossingType,
+  AddStreetParking, AddShoulder...) are not in the counts, so early totals are low and no removal shows.
+  `defaultDisabled` and country lists are today's too.
+- **For a build:** a quest-to-first-release file, with aliases for the v64.0 replacements (AddGeneralAccess,
+  AddChargingStationMotorcar, AddLockable) and the `WheelChair` case rename. Tag dates match
+  `sc-releases.json` within a day; one quest crosses a month (AddSanitaryDumpStation). That file lacks 22
+  tags, mostly before v3.1, which 28 quests first shipped in.
