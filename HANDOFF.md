@@ -356,10 +356,22 @@ plus requests" to the end first. In short:
    the re-cut's memory (4.3 GB of the 4.5 GB budget for this 1.67 GB clip); the clip grows with every
    city added (`add_city.py`, `tools/clip_polygon.py europe`, `osm_extracts.py clip europe --polygon
    config/europe.geojson`; it is cut at the next recut).
-5. **Repin to StreetComplete v64.1** (released 2026-11-01; the 13:15 run opens its issue): REPIN.md. It
-   carries quest changes (access checks on more quests, AddOpeningHours on craft/healthcare/office,
-   AddFirewood, `#surveyneeded`), so it moves counts everywhere: after the months are merged, not
-   during them. Issue #1 tracks it. Drop the `codepoints` patch there (`sync-sc.ps1` fails until it is
-   dropped); keep `onepoint`.
+5. **Repin to StreetComplete v64.1: ready on branch `sc-v64.1`** (worktree `../sc-open-quests-v64.1`, up
+   to c9f416ec, nothing pushed, nothing counted on main). Issue #1 tracks it. Done: REPIN.md steps 1 to 4
+   and most of 6 (vendoring, ports, registry dump, DESIGN "Repin to StreetComplete v64.1"). The
+   `codepoints` patch is dropped, `onepoint` kept, atomicfu added. The oracle is exact for all 52 custom
+   quests: Guelph 33,311, Bremerhaven 20,413. 58 engine tests pass in the worktree;
+   SnapshotReproductionTest and TorontoRegressionTest were skipped there (no `data/cities/`, pruned extract).
+   **The owner's call: recount the history, or let the break sit at the repin date?** Measured on the
+   same extracts: totals move 0.05% (Ontario) to 0.42% (Lisboa); AddAcceptsCards alone rises 6 to 15%.
+   A full recount is about 4 days of Europe months at 45 min each, on top of Canada's day. The
+   recommendation is no recount: the site marks the break and a total hardly moves.
+   Then: merge to main, without a data commit on the branch; from main `engine/gradlew installDist`,
+   `python run.py count` (each region's newest extract), `tools/sc_assets.py <Temp/sc-v64.1>`, `history`,
+   `test`, close the issue with the data commit. **`test` comes after the count**:
+   SnapshotReproductionTest cannot pass against a v64.0 snapshot with v64.1 ports (DESIGN, same section).
+   Keep clear of the daily run (fires 17:15 UTC, up to two hours) and of Gradle beside an engine: SC's build
+   wants 12 GB of commit, and an engine takes all the machine can spare. The previews are in
+   `.scratch/oracle-v64.1/`. `~/AppData/Local/Temp/sc-v64.1` is the checkout with the harness.
 6. **Later:** the seeded bar for other countries, chosen from what these 32 cost (DESIGN.md); the step
    from a request on the site to a counted region.
