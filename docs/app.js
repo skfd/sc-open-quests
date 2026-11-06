@@ -852,9 +852,11 @@ async function loadCountry(country) {
 }
 
 // A place is a ref: { kind: "country" | "region" | "row", country, region, shard, i }.
-const refName = (ref) => ref.kind === "country" ? ref.country.name : ref.kind === "region" ? ref.region.name : ref.shard.rows[ref.i][R.name];
+// The English name where the name layer has one, else the local name, which still finds the place.
+const enName = (p) => p.en || p.name;
+const rowName = (row) => row[R.en] || row[R.name];
+const refName = (ref) => ref.kind === "country" ? enName(ref.country) : ref.kind === "region" ? enName(ref.region) : rowName(ref.shard.rows[ref.i]);
 const refId = (ref) => ref.kind === "country" ? ref.country.id : ref.kind === "region" ? ref.region.id : ref.shard.rows[ref.i][R.id];
-const refEn = (ref) => ref.kind === "row" ? ref.shard.rows[ref.i][R.en] : null;
 const refSt = (ref) => ref.kind === "country" ? 0 : ref.kind === "region" ? 2 : ref.shard.rows[ref.i][R.st];
 const refIn = (ref) => ref.kind === "row" ? `${ref.country.cc.toLowerCase()}/${ref.region.id}` : "";
 function refCounted(ref) {
@@ -1004,10 +1006,9 @@ function sheetSection(head, note, rows) {
 }
 
 function sheetCity(c, where = true) {
-  const aka = (c.aka || [])[0];
   return el("button", { type: "button", class: "sheet-row", onclick: () => chooseCity(c.id) },
     el("span", {},
-      el("span", { class: "sheet-name" }, c.name, aka ? el("small", {}, ` ${aka}`) : null),
+      el("span", { class: "sheet-name" }, c.name),
       where ? el("span", { class: "sheet-where" }, cityWhere(c)) : null),
     el("span", { class: "sheet-value" }, nfShort.format(c.open)));
 }
@@ -1110,7 +1111,7 @@ function fillScope(idx) {
   const sel = $("#place-scope");
   if (!sel.options.length) {
     sel.append(el("option", { value: "" }, "Countries and regions"),
-      ...idx.countries.map((c) => el("option", { value: c.cc }, c.name)));
+      ...idx.countries.map((c) => el("option", { value: c.cc }, enName(c))));
   }
   sel.value = state.placeScope;
 }
@@ -1135,7 +1136,7 @@ async function runSearch() {
   if (country) {
     const n = country.regions.reduce((s, r) => s + (r.n || 0), 0);
     const pending = country.regions.some((r) => !shardCache.has(r.file));
-    if (pending) { note.textContent = `Loading ${country.name}'s ${nf.format(n)} place names…`; box.setAttribute("aria-busy", "true"); }
+    if (pending) { note.textContent = `Loading ${enName(country)}'s ${nf.format(n)} place names…`; box.setAttribute("aria-busy", "true"); }
     await loadCountry(country);
     box.removeAttribute("aria-busy");
     if (seq !== searchSeq) return;
@@ -1147,8 +1148,8 @@ async function runSearch() {
     if (rank != null) hits.push({ ref, rank, counted: !!counted, st: refSt(ref), name: refName(ref) });
   };
   for (const c of idx.countries) {
-    offer({ kind: "country", country: c }, [fold(c.name), fold(countryName(c.cc))]);
-    for (const r of c.regions) if (r.id !== "_" && r.name) offer({ kind: "region", country: c, region: r }, [fold(r.name)]);
+    offer({ kind: "country", country: c }, [fold(c.name), fold(c.en)]);
+    for (const r of c.regions) if (r.id !== "_" && r.name) offer({ kind: "region", country: c, region: r }, [fold(r.name), fold(r.en)]);
   }
   // every region file loaded so far: the chosen country's, and any the reader browsed
   const shards = await Promise.all([...shardCache.values()].map((p) => p.catch(() => null)));
@@ -1160,13 +1161,12 @@ async function runSearch() {
   hits.sort((a, b) => a.rank - b.rank || b.counted - a.counted || a.st - b.st ||
     a.name.length - b.name.length || a.name.localeCompare(b.name));
   box.replaceChildren(...hits.slice(0, MAX_RESULTS).map((h) => {
-    const en = refEn(h.ref);
-    return el("li", {}, placeLink(h.ref, refName(h.ref) + (en ? ` (${en})` : "")),
+    return el("li", {}, placeLink(h.ref),
       h.counted ? el("span", { class: "chip counted" }, "counted") : null,
       el("span", { class: "place-kind" }, SUBTYPE[h.st] || ""),
       el("span", { class: "place-chain" }, chainText(h.ref)));
   }));
-  const where = country ? `${country.name}'s places and every country and region` :
+  const where = country ? `${enName(country)}'s places and every country and region` :
     "country and region names (choose a country to search its towns and neighbourhoods)";
   note.textContent = !hits.length ? `Nothing found among ${where}.` :
     hits.length > MAX_RESULTS ? `The first ${MAX_RESULTS} of ${nf.format(hits.length)} matches among ${where}; type more to narrow.` :
@@ -1196,7 +1196,7 @@ async function renderPlaces() {
   }
   if (state.placeScope !== ref.country.cc) { state.placeScope = ref.country.cc; $("#place-scope").value = ref.country.cc; }
   const head = placeHead(ref);
-  const slot = el("div", {}, el("p", { class: "notice" }, ref.kind === "country" ? `Loading ${ref.country.name}'s places…` : "Loading…"));
+  const slot = el("div", {}, el("p", { class: "notice" }, ref.kind === "country" ? `Loading ${enName(ref.country)}'s places…` : "Loading…"));
   page.replaceChildren(head, slot);
   if (ref.kind === "country") page.append(countryChildren(ref, []) || "");
   const sections = await placeSections(ref);
@@ -1216,12 +1216,11 @@ function countriesCard(idx) {
 
 function placeHead(ref) {
   const up = chain(ref).reverse();
-  const en = refEn(ref);
   return el("article", { class: "card place-head" },
     el("nav", { class: "crumbs", "aria-label": "Where it is" },
       placeLink(null, "All countries"),
       ...up.slice(0, -1).flatMap((r) => [el("span", { class: "sep", "aria-hidden": "true" }, "›"), placeLink(r)])),
-    el("h2", {}, refName(ref), en ? el("span", { class: "en" }, ` (${en})`) : null,
+    el("h2", {}, refName(ref),
       el("span", { class: "place-kind" }, SUBTYPE[refSt(ref)] || "")));
 }
 
@@ -1290,7 +1289,7 @@ function rollupCard(ref, shards) {
   }
   // a city's parts are on its own page; parts whose city is outside this place are listed here
   const listed = found.filter((f) => !f.c.includes("/") || !cityIds.has(f.c.split("/")[0]));
-  listed.sort((a, b) => a.sh.rows[a.i][R.name].localeCompare(b.sh.rows[b.i][R.name]));
+  listed.sort((a, b) => rowName(a.sh.rows[a.i]).localeCompare(rowName(b.sh.rows[b.i])));
   const name = refName(ref);
   return el("article", { class: "card" },
     el("h2", {}, `${nf.format(found.length)} of ${nf.format(m)} places counted`),
@@ -1340,7 +1339,7 @@ function childrenCard(ref, items) {
 function askCard(ref) {
   const name = refName(ref), id = refId(ref);
   const path = chain(ref).reverse().map(refName).filter(Boolean).join(" / ");
-  const p = new URLSearchParams({ template: "place-request.yml", title: `Count ${name} (${ref.country.name})`,
+  const p = new URLSearchParams({ template: "place-request.yml", title: `Count ${name} (${enName(ref.country)})`,
                                   "place-id": id, "place-name": name, "place-path": path });
   const search = new URLSearchParams({ q: `is:issue label:"place request" ${id}` });
   return el("article", { class: "card ask" },
@@ -1381,7 +1380,7 @@ async function partsCard(cityId, ref, current) {
   if (!names || !names.parts || !names.parts.length) return null;
   const sh = ref.shard;
   const rows = names.parts.map((p) => ({ p, open: counts[p.id] ? partTotal(counts[p.id]) : null }))
-    .sort((a, b) => (b.open ?? -1) - (a.open ?? -1) || a.p.name.localeCompare(b.p.name));
+    .sort((a, b) => (b.open ?? -1) - (a.open ?? -1) || enName(a.p).localeCompare(enName(b.p)));
   return el("article", { class: "card" },
     el("h2", {}, `Parts of ${c.name}`),
     el("p", { class: "sub" }, `Open quests inside each part's OpenStreetMap boundary, counting ${selectionText()}. ` +
@@ -1390,7 +1389,7 @@ async function partsCard(cityId, ref, current) {
       el("thead", {}, el("tr", {}, el("th", { scope: "col" }, "Part"), el("th", { scope: "col" }, "Kind"), el("th", { scope: "col", class: "num" }, "Open"))),
       el("tbody", {}, rows.map(({ p, open }) => {
         const i = sh.byId.get(p.id);
-        const label = p.name + (p.en ? ` (${p.en})` : "");
+        const label = enName(p);
         return el("tr", { class: p.id === current ? "picked" : null },
           el("td", {}, i != null ? placeLink(rowRef(sh, i), label) : label),
           el("td", {}, p.subtype === "neighborhood" ? "neighbourhood" : p.subtype),

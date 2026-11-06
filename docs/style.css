@@ -148,7 +148,6 @@ select:focus, input:focus { outline: 2px solid var(--series-1); outline-offset: 
 .sheet-more .sheet-row, .sheet-row.sheet-back { color: var(--link); }
 .sheet-row.sheet-back { width: auto; margin: 8px 4px 0; }
 .sheet-name { display: block; font-weight: 500; }
-.sheet-name small { font-size: 0.88rem; font-weight: 400; color: var(--ink-2); }
 .sheet-where { display: block; color: var(--ink-2); font-size: 0.82rem; }
 .sheet-value { color: var(--ink-2); font-size: 0.88rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
 @media (max-width: 520px) {
@@ -270,7 +269,6 @@ table.data tbody tr.group-head:hover th { background: none; }
 .crumbs { display: flex; flex-wrap: wrap; gap: 4px 8px; font-size: 0.88rem; margin-bottom: 6px; }
 .crumbs .sep { color: var(--muted); }
 .place-head h2 { font-size: 1.5rem; }
-.place-head h2 .en { font-weight: 400; color: var(--ink-2); }
 .place-head h2 .place-kind { font-size: 0.85rem; font-weight: 400; margin-left: 10px; }
 .place-grid { list-style: none; padding: 0; margin: 4px 0 12px; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 4px 16px; }
 .place-grid .chip { margin-left: 6px; }

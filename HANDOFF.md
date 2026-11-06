@@ -321,9 +321,10 @@ a few big filter quests with their old filter at their arrival month. The SC clo
 `~/AppData/Local/Temp/sc-history-probe/`; the docstring has the line to make it again.
 
 **City picker (2026-11-06):** the dropdown is now a button and a search sheet (DESIGN.md, "The city
-picker"; `aka` in DATA-FORMAT.md). The first visit shows Guelph at the owner's word. A new city named in its
-own language wants an `aka`, and re-adding a city with `add_city.py` drops its `aka` and `group` (put them
-back by hand). Compare's country filter is put off.
+picker"; `aka` in DATA-FORMAT.md). The first visit shows Guelph at the owner's word. A city's
+English name is `name`, the local one an `aka` (`add_city.py` uses `name:en`); re-adding a city drops a
+hand-written `aka` and `group`. Places shows English first; 184,099 names have none. Compare's country filter
+is put off.
 
 **Next, in order:**
 0. ~~Find the `europe-msk` failure.~~ **Found and fixed 2026-11-01 evening** (engine 8d8f220 on main,

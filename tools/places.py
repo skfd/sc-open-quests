@@ -174,16 +174,19 @@ def build(rows, counted):
         out[f"{cc.lower()}/{reg}.json"] = {"schema": 1, "region": reg, "places": places}
         entry = {"id": reg, "name": None if reg == NO_REGION else root["name"],
                  "file": f"{cc.lower()}/{reg}.json", "n": len(places)}
+        if reg != NO_REGION and root["en"] and root["en"] != root["name"]:
+            entry["en"] = root["en"]
         countries.setdefault(cc, []).append(entry)
     index_countries = []
     for cc, regs in countries.items():
         root = roots.get(cc)
-        regs.sort(key=lambda e: (e["name"] is not None, (e["name"] or "").casefold(), e["id"]))
+        regs.sort(key=lambda e: (e["name"] is not None, (e.get("en") or e["name"] or "").casefold(), e["id"]))
         index_countries.append({
             "id": root["id"] if root else None, "name": root["name"] if root else cc, "cc": cc,
+            **({"en": root["en"]} if root and root["en"] and root["en"] != root["name"] else {}),
             "bbox": [r4(root[k]) for k in ("xmin", "ymin", "xmax", "ymax")] if root else None,
             "regions": regs})
-    index_countries.sort(key=lambda c: ((c["name"] or "").casefold(), c["cc"]))
+    index_countries.sort(key=lambda c: ((c.get("en") or c["name"] or "").casefold(), c["cc"]))
     return index_countries, out, stats
 
 

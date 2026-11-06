@@ -1095,11 +1095,15 @@ uncounted. The owner chose a search sheet over an inline type-ahead box.
   8.8 MB for localities alone, so no typing box can hold it. The last row carries the query to the Places
   search, inside the country browsed or else the current city's, because that search has no towns without
   a country. The owner chose this over a site-wide index (about 29 MB more in `docs/`, split by first letters).
-- **Names.** `fold()` strips accents and does not transliterate, so a city named in its own language needs
-  an `aka` in `config/cities.json`. Overture's `en` was not good enough to copy: 21 of 147 cities have one,
-  some raw ("Copenhagen Municipality"), Göteborg none. The 14 are by hand; a new city wants its own.
-  Country names come from the browser (`Intl.DisplayNames`), which also lets the Places search find
-  "germany" although the name layer says "Deutschland".
+- **Names are English, the owner's word.** A city's `name` is its English one (Vienna, Moscow, Krakow); the
+  local name stays as an `aka`, because `fold()` strips accents and does not transliterate, so "wien" still
+  finds it. Ids stay, so `?city=wien` still works. Quebec's French names (Lévis, Trois-Rivières) are their
+  English names too. The 18 are by hand: Overture's `en` has 21 of the 147, some raw ("Copenhagen
+  Municipality"), Göteborg none. `add_city.py` takes `name:en` when the relation has one.
+- **The Places tab shows `en` first too**, the local name only where there is no English one, and searches
+  both. `places/index.json` gained `en` for countries and regions, sorted by it; it was patched from the
+  shards, and `places.py build` writes the same. Left local: 184,099 of the 1.08M names are in another
+  script with no `en` (17%), 152,639 of them localities, 116,517 in Russia. No country; 12 regions.
 - **The first city is Guelph, the owner's choice**, for the flavour of it; it was Toronto. A link's city wins,
   then the last city seen on this browser (localStorage). A bare link to the site now shows Guelph.
 - **Not done.** Compare still lists every city; the owner put its country filter off. `cities.json` costs

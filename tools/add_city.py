@@ -289,7 +289,7 @@ def main() -> None:
     else:
         print(f"  no {poly.relative_to(ROOT)} to check against", file=sys.stderr)
 
-    name = a.name or tags["name"]
+    name = a.name or tags.get("name:en") or tags["name"]   # the site's names are English
     doc = json.loads(a.out.read_text(encoding="utf-8")) if a.out.exists() else {"cities": []}
     entry = {
         "id": choose_id(name, a.relation, a.id, doc["cities"]),
@@ -305,6 +305,8 @@ def main() -> None:
     }
     if a.population_source:
         entry["populationSource"] = a.population_source
+    if tags["name"] != name:
+        entry["aka"] = [tags["name"]]
 
     (ROOT / "data/boundaries" / f"{a.relation}.json").write_text(json.dumps(e), encoding="utf-8")
     doc["cities"] = sorted([c for c in doc["cities"] if c["id"] != entry["id"]] + [entry], key=lambda c: c["id"])
