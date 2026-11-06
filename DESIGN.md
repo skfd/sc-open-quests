@@ -1102,8 +1102,12 @@ uncounted. The owner chose a search sheet over an inline type-ahead box.
   Municipality"), Göteborg none. `add_city.py` takes `name:en` when the relation has one.
 - **The Places tab shows `en` first too**, the local name only where there is no English one, and searches
   both. `places/index.json` gained `en` for countries and regions, sorted by it; it was patched from the
-  shards, and `places.py build` writes the same. Left local: 184,099 of the 1.08M names are in another
-  script with no `en` (17%), 152,639 of them localities, 116,517 in Russia. No country; 12 regions.
+  shards, and `places.py build` writes the same.
+- **Cyrillic with no English name is romanized**, the owner's choice: 184,099 of the 1.08M names (17%) were
+  in another script with no `en`, about 147,000 of them Cyrillic, 116,517 in Russia. `places.py romanize`
+  puts them in `en`, by BGN/PCGN letters per country (Г is G in Russia, H in Ukraine); spelled, not
+  translated, so "сельское поселение" stays "selskoye poseleniye". The shards were patched with the same
+  function. Other scripts stay local: Japanese readings and Arabic vowels cannot be derived from the name.
 - **The first city is Guelph, the owner's choice**, for the flavour of it; it was Toronto. A link's city wins,
   then the last city seen on this browser (localStorage). A bare link to the site now shows Guelph.
 - **Not done.** Compare still lists every city; the owner put its country filter off. `cities.json` costs

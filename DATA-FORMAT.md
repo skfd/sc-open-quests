@@ -250,7 +250,8 @@ request"). Agreed before the work was split, so the builders, the engine and the
     2 region, 3 county, 4 localadmin, 5 locality, 6 borough, 7 macrohood, 8 neighborhood, 9 microhood.
     `parent` the index of the parent in this file's `places`, or -1 for the region itself (the nearest
     ancestor that has an area, from `hierarchies`, when `parent_division_id` has none). bbox rounded to
-    4 decimals. `en` the English name when it differs from `names.primary`, else null. `counted` the
+    4 decimals. `en` the English name when it differs from `names.primary`, else the name romanized when it is
+    Cyrillic (`places.romanize`), else null. The site shows `en` first; index entries carry it too, when there is one. `counted` the
     city id in config/cities.json when the place is a counted city, `"<city>/<placeId>"` when it is a
     counted part, else null. Parents come before children.
 - **Parts registry**, `config/parts/<city>.json` (committed): `{ "schema": 1, "city": "<id>", "overture":

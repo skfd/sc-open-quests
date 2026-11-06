@@ -323,7 +323,7 @@ a few big filter quests with their old filter at their arrival month. The SC clo
 **City picker (2026-11-06):** the dropdown is now a button and a search sheet (DESIGN.md, "The city
 picker"; `aka` in DATA-FORMAT.md). The first visit shows Guelph at the owner's word. A city's
 English name is `name`, the local one an `aka` (`add_city.py` uses `name:en`); re-adding a city drops a
-hand-written `aka` and `group`. Places shows English first; 184,099 names have none. Compare's country filter
+hand-written `aka` and `group`. Places shows English first, Cyrillic romanized; other scripts with no English name stay local. Compare's country filter
 is put off.
 
 **Next, in order:**

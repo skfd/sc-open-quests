@@ -18,6 +18,32 @@ def row(gers, name, subtype, cc, anc, parent=None, osm=(), en=None, bbox=(0, 0, 
             "xmin": bbox[0], "ymin": bbox[1], "xmax": bbox[2], "ymax": bbox[3]}
 
 
+class Romanize(unittest.TestCase):
+    def test_each_country_has_its_letters(self):
+        self.assertEqual(places.romanize("Вялікія Лукі", "BY"), "Vyalikiya Luki")
+        self.assertEqual(places.romanize("Харків", "UA"), "Kharkiv")
+        self.assertEqual(places.romanize("Гагарин", "RU"), "Gagarin")
+        self.assertEqual(places.romanize("Гагарин", "UA"), "Hahar" + "yn")
+
+    def test_russian_endings_read_as_written(self):
+        self.assertEqual(places.romanize("Гиагинское сельское поселение", "RU"), "Giaginskoye selskoye poseleniye")
+        self.assertEqual(places.romanize("Красный", "RU"), "Krasny")
+        self.assertEqual(places.romanize("Елец", "RU"), "Yelets")
+
+    def test_mixed_with_latin_is_finished(self):
+        self.assertEqual(places.romanize("Deхkonobod", "UZ"), "Dekhkonobod")
+
+    def test_other_scripts_are_left(self):
+        self.assertIsNone(places.romanize("Berlin", "DE"))
+        self.assertIsNone(places.romanize("東京", "JP"))
+        self.assertIsNone(places.romanize("Cercle دائرة и", "MA"))
+
+    def test_english_wins_over_romanizing(self):
+        self.assertEqual(places.english({"name": "Москва", "en": "Moscow"}, "RU"), "Moscow")
+        self.assertEqual(places.english({"name": "Тверь", "en": None}, "RU"), "Tver")
+        self.assertIsNone(places.english({"name": "Paris", "en": "Paris"}, "FR"))
+
+
 C = ("aaaaaaaa-0000-0000-0000-000000000001", "country")
 R = ("bbbbbbbb-0000-0000-0000-000000000002", "region")
 K = ("cccccccc-0000-0000-0000-000000000003", "county")

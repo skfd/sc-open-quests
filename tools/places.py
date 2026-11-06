@@ -119,6 +119,62 @@ def sort_key(r):
     return (r["st"], (r["name"] or "").casefold(), r["id"])
 
 
+# --- romanizing Cyrillic --------------------------------------------------------------------------
+
+# A name with no English one is shown in Latin letters when it is Cyrillic: rules that hold, unlike other
+# scripts' (Japanese readings, Arabic vowels). The letters are BGN/PCGN's, simplified, for a reader.
+CYRILLIC = {
+    "а": "a", "б": "b", "в": "v", "г": "g", "д": "d", "е": "e", "ё": "yo", "ж": "zh", "з": "z", "и": "i",
+    "й": "y", "к": "k", "л": "l", "м": "m", "н": "n", "о": "o", "п": "p", "р": "r", "с": "s", "т": "t",
+    "у": "u", "ф": "f", "х": "kh", "ц": "ts", "ч": "ch", "ш": "sh", "щ": "shch", "ъ": "", "ы": "y", "ь": "",
+    "э": "e", "ю": "yu", "я": "ya", "і": "i", "ї": "yi", "є": "ye", "ґ": "g", "ў": "w",
+    "ә": "a", "ғ": "gh", "қ": "q", "ң": "ng", "ө": "o", "ұ": "u", "ү": "u", "һ": "h", "ҳ": "h",
+    "ј": "j", "љ": "lj", "њ": "nj", "ћ": "c", "ђ": "dj", "џ": "dz", "ѓ": "gj", "ќ": "kj", "ѕ": "dz",
+}
+CYRILLIC_BY_COUNTRY = {
+    "UA": {"г": "h", "и": "y", "х": "kh", "щ": "shch", "е": "e"},
+    "BY": {"г": "h", "э": "e"},
+    "BG": {"щ": "sht", "ъ": "a", "й": "y", "х": "h"},
+    "RS": {"ж": "z", "ч": "c", "ш": "s", "х": "h", "ц": "c"},
+}
+VOWELS = set("аеёиоуыэюяіїєәөұү")
+
+
+def romanize(name, cc):
+    """The name in Latin letters if Cyrillic is its only other script, else None."""
+    letters = [ch for ch in name if ch.isalpha()]
+    def cyrillic(ch):
+        return "CYRILLIC" in unicodedata.name(ch, "")
+    if not any(cyrillic(ch) for ch in letters):
+        return None
+    if not all(cyrillic(ch) or "LATIN" in unicodedata.name(ch, "") for ch in letters):
+        return None
+    table = {**CYRILLIC, **CYRILLIC_BY_COUNTRY.get(cc, {})}
+    soft_e = cc in ("RU", "BY", "KZ", "KG", "UZ", "TJ")   # е is "ye" after a vowel or at a word's start
+    out = []
+    for i, ch in enumerate(name):
+        low = ch.lower()
+        if low not in table:
+            out.append(ch)
+            continue
+        before = name[i - 1].lower() if i else " "
+        after = name[i + 1].lower() if i + 1 < len(name) else " "
+        if low == "е" and soft_e and (not before.isalpha() or before in VOWELS or before in "ьъ"):
+            r = "ye"
+        elif low == "й" and before == "ы" and not after.isalpha():
+            r = ""                                        # -ый is -y, not -yy
+        else:
+            r = table[low]
+        out.append(r.capitalize() if ch != low else r)
+    return "".join(out)
+
+
+def english(m, cc):
+    """A place's name for the site, when it differs from its own: Overture's English one, else romanized."""
+    en = m["en"] if m["en"] and m["en"] != m["name"] else None
+    return en or (romanize(m["name"], cc) if m["name"] else None)
+
+
 def build(rows, counted):
     """-> (index dict, {path: file dict}, stats)."""
     by_gers = assign(rows)
@@ -168,14 +224,13 @@ def build(rows, counted):
                 p = -1
             if p == -1 and m is not root:
                 stats["orphans"] += 1
-            en = m["en"] if m["en"] and m["en"] != m["name"] else None
             places.append([m["id"], m["name"], m["st"], p, r4(m["xmin"]), r4(m["ymin"]),
-                           r4(m["xmax"]), r4(m["ymax"]), en, counted.get(m["id"])])
+                           r4(m["xmax"]), r4(m["ymax"]), english(m, cc), counted.get(m["id"])])
         out[f"{cc.lower()}/{reg}.json"] = {"schema": 1, "region": reg, "places": places}
         entry = {"id": reg, "name": None if reg == NO_REGION else root["name"],
                  "file": f"{cc.lower()}/{reg}.json", "n": len(places)}
-        if reg != NO_REGION and root["en"] and root["en"] != root["name"]:
-            entry["en"] = root["en"]
+        if reg != NO_REGION and english(root, cc):
+            entry["en"] = english(root, cc)
         countries.setdefault(cc, []).append(entry)
     index_countries = []
     for cc, regs in countries.items():
@@ -183,7 +238,7 @@ def build(rows, counted):
         regs.sort(key=lambda e: (e["name"] is not None, (e.get("en") or e["name"] or "").casefold(), e["id"]))
         index_countries.append({
             "id": root["id"] if root else None, "name": root["name"] if root else cc, "cc": cc,
-            **({"en": root["en"]} if root and root["en"] and root["en"] != root["name"] else {}),
+            **({"en": english(root, cc)} if root and english(root, cc) else {}),
             "bbox": [r4(root[k]) for k in ("xmin", "ymin", "xmax", "ymax")] if root else None,
             "regions": regs})
     index_countries.sort(key=lambda c: ((c.get("en") or c["name"] or "").casefold(), c["cc"]))
