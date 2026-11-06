@@ -390,3 +390,5 @@ new cities appear by themselves.
    previews) can go. Watch the 12:15 run: it is the first scheduled one on v64.1.
 6. **Later:** the seeded bar for other countries, chosen from what these 32 cost (DESIGN.md); the step
    from a request on the site to a counted region.
+   What GitHub can hold while that grows: DESIGN.md, "Hosting headroom: measured" (about 350 more cities
+   as things stand; near 1,000 the daily data leaves git history).
