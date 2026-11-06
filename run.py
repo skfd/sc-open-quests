@@ -792,11 +792,11 @@ def coverage_geometry(boundary: dict) -> dict:
     each outer ring with the inner rings inside it. A ring too small to survive is left out."""
     sys.path.insert(0, str(TOOLS_DIR))
     from add_city import inside, stitch, way_coords
-    ways = {role: [way_coords(m) for m in boundary["members"] if m["type"] == "way" and m["role"] == role]
-            for role in ("outer", "inner")}
-    outers, inners = (stitch(ways[role], boundary["id"], role) for role in ("outer", "inner"))
-    polygons = [[ring] for ring in outers]
-    for ring in inners:
+    def rings(*roles):   # the roles add_city.land_area_km2 stitched when it stored the boundary
+        return stitch([way_coords(m) for m in boundary["members"] if m["type"] == "way" and m.get("geometry")
+                       and m.get("role", "") in roles], boundary["id"], roles[0])
+    polygons = [[ring] for ring in rings("outer", "")]
+    for ring in rings("inner"):
         lat, lon = ring[0]
         next((p for p in polygons if inside(lat, lon, p[0])), []).append(ring)
     coords = []

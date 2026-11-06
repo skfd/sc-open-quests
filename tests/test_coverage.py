@@ -16,12 +16,12 @@ def way(role, *points):
     return {"type": "way", "ref": 1, "role": role, "geometry": [{"lat": y, "lon": x} for y, x in points]}
 
 
-# A square in two ways, one with a point on its edge, around a hole, and an islet under the tolerance.
+# A square in two ways, one with a point on its edge and one with no role, around a hole, and an islet under the tolerance.
 BOUNDARY = {"type": "relation", "id": 7, "members": [
     {"type": "node", "ref": 2, "role": "admin_centre", "lat": 0.5, "lon": 0.5},
     {"type": "relation", "ref": 3, "role": "subarea"},
     way("outer", (0, 0), (0, 0.5), (0, 1), (1, 1)),
-    way("outer", (1, 1), (1, 0), (0, 0)),
+    way("", (1, 1), (1, 0), (0, 0)),
     way("inner", (0.4, 0.4), (0.4, 0.6), (0.6, 0.6), (0.4, 0.4)),
     way("outer", (5, 5), (5, 5.00001), (5.00001, 5.00001), (5, 5)),
 ]}
