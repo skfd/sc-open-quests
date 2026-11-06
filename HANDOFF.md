@@ -322,7 +322,8 @@ a few big filter quests with their old filter at their arrival month. The SC clo
 
 **City picker (2026-11-06):** the dropdown is now a button and a search sheet (DESIGN.md, "The city
 picker"; `aka` in DATA-FORMAT.md). The first visit shows Guelph at the owner's word. A new city named in its
-own language wants an `aka`. Compare's country filter is put off.
+own language wants an `aka`, and re-adding a city with `add_city.py` drops its `aka` and `group` (put them
+back by hand). Compare's country filter is put off.
 
 **Next, in order:**
 0. ~~Find the `europe-msk` failure.~~ **Found and fixed 2026-11-01 evening** (engine 8d8f220 on main,
