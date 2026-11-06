@@ -78,7 +78,10 @@
       "boundary": "data/boundaries/59518.json",
       "region": "europe-central",
       "populationSource": "Overture divisions 2026-10-21.0",
-      "group": "Belgium"
+      "group": "Belgium",
+      "aka": [
+        "Antwerp"
+      ]
     },
     {
       "id": "athens",
@@ -94,7 +97,10 @@
       "boundary": "data/boundaries/1370736.json",
       "region": "europe-east",
       "populationSource": "ELSTAT 2021 census, municipality of Athens",
-      "group": "Greece"
+      "group": "Greece",
+      "aka": [
+        "Athens"
+      ]
     },
     {
       "id": "aurora",
@@ -596,7 +602,10 @@
       "boundary": "data/boundaries/935611.json",
       "region": "europe-central",
       "populationSource": "Overture divisions 2026-10-21.0",
-      "group": "Sweden"
+      "group": "Sweden",
+      "aka": [
+        "Gothenburg"
+      ]
     },
     {
       "id": "granby",
@@ -845,7 +854,10 @@
       "boundary": "data/boundaries/2192363.json",
       "region": "europe-central",
       "populationSource": "Overture divisions 2026-10-21.0",
-      "group": "Denmark"
+      "group": "Denmark",
+      "aka": [
+        "Copenhagen"
+      ]
     },
     {
       "id": "krakow",
@@ -877,7 +889,11 @@
       "boundary": "data/boundaries/421866.json",
       "region": "europe-east",
       "populationSource": "Overture divisions 2026-10-21.0",
-      "group": "Ukraine"
+      "group": "Ukraine",
+      "aka": [
+        "Kyiv",
+        "Kiev"
+      ]
     },
     {
       "id": "langley",
@@ -957,7 +973,10 @@
       "boundary": "data/boundaries/5400890.json",
       "region": "europe-west",
       "populationSource": "Overture divisions 2026-10-21.0",
-      "group": "Portugal"
+      "group": "Portugal",
+      "aka": [
+        "Lisbon"
+      ]
     },
     {
       "id": "london",
@@ -1068,7 +1087,10 @@
       "boundary": "data/boundaries/44915.json",
       "region": "europe-central",
       "populationSource": "Overture divisions 2026-10-21.0",
-      "group": "Italy"
+      "group": "Italy",
+      "aka": [
+        "Milan"
+      ]
     },
     {
       "id": "milton",
@@ -1099,7 +1121,10 @@
       "boundary": "data/boundaries/59195.json",
       "region": "europe-msk",
       "populationSource": "Overture divisions 2026-10-21.0",
-      "group": "Belarus"
+      "group": "Belarus",
+      "aka": [
+        "Minsk"
+      ]
     },
     {
       "id": "mirabel",
@@ -1178,7 +1203,10 @@
       "boundary": "data/boundaries/102269.json",
       "region": "europe-msk",
       "populationSource": "Rosstat 2024 estimate, federal city",
-      "group": "Russia"
+      "group": "Russia",
+      "aka": [
+        "Moscow"
+      ]
     },
     {
       "id": "munchen",
@@ -1194,7 +1222,10 @@
       "boundary": "data/boundaries/62428.json",
       "region": "europe-central",
       "populationSource": "Overture divisions 2026-10-21.0",
-      "group": "Germany"
+      "group": "Germany",
+      "aka": [
+        "Munich"
+      ]
     },
     {
       "id": "nanaimo",
@@ -1519,7 +1550,10 @@
       "boundary": "data/boundaries/435514.json",
       "region": "europe-central",
       "populationSource": "Overture divisions 2026-10-21.0",
-      "group": "Czechia"
+      "group": "Czechia",
+      "aka": [
+        "Prague"
+      ]
     },
     {
       "id": "prince-george",
@@ -1851,7 +1885,10 @@
       "boundary": "data/boundaries/4283101.json",
       "region": "europe-east",
       "populationSource": "Overture divisions 2026-10-21.0",
-      "group": "Bulgaria"
+      "group": "Bulgaria",
+      "aka": [
+        "Sofia"
+      ]
     },
     {
       "id": "st-albert",
@@ -2149,7 +2186,10 @@
       "boundary": "data/boundaries/2907540.json",
       "region": "europe-central",
       "populationSource": "Overture divisions 2026-10-21.0",
-      "group": "Poland"
+      "group": "Poland",
+      "aka": [
+        "Warsaw"
+      ]
     },
     {
       "id": "waterloo",
@@ -2210,7 +2250,10 @@
       "boundary": "data/boundaries/109166.json",
       "region": "europe-central",
       "populationSource": "Overture divisions 2026-10-21.0",
-      "group": "Austria"
+      "group": "Austria",
+      "aka": [
+        "Vienna"
+      ]
     },
     {
       "id": "windsor",

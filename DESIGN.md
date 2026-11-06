@@ -1080,3 +1080,28 @@ published `docs/data/history/`, then built as a switch on the totals chart; noth
   (mostly before v3.1) and use the tag's own date, which agrees within a day wherever both exist.
 - **Reading the chart.** Not every step is an arrival: Toronto's largest, 2019, is the AddHousenumber rise
   this file already records, and the 2026 drop the address import. They stay, unlisted.
+
+## The city picker (2026-11-06)
+
+A dropdown stopped working once the list was the world's: 147 cities in 37 groups that mixed provinces
+with countries, Moscow only under "Москва", and no way to the 4,200 counted neighbourhoods or to anything
+uncounted. The owner chose a search sheet over an inline type-ahead box.
+
+- **The control.** A button naming the city and where it is; it opens a sheet, full screen on a phone.
+  Before typing: recent cities, then counted cities by country, a country listing its cities under its
+  provinces. While typing: counted cities, a name match above a place match, a place matching only from a
+  word's start ("ber" is Berlin, not all of Alberta). `?city=` is unchanged.
+- **Only counted cities are searched here.** The name layer is 1.08M rows, 17 MB gzipped as a flat list and
+  8.8 MB for localities alone, so no typing box can hold it. The last row carries the query to the Places
+  search, inside the country browsed or else the current city's, because that search has no towns without
+  a country. The owner chose this over a site-wide index (about 29 MB more in `docs/`, split by first letters).
+- **Names.** `fold()` strips accents and does not transliterate, so a city named in its own language needs
+  an `aka` in `config/cities.json`. Overture's `en` was not good enough to copy: 21 of 147 cities have one,
+  some raw ("Copenhagen Municipality"), Göteborg none. The 14 are by hand; a new city wants its own.
+  Country names come from the browser (`Intl.DisplayNames`), which also lets the Places search find
+  "germany" although the name layer says "Deutschland".
+- **The first city is Guelph, the owner's choice**, for the flavour of it; it was Toronto. A link's city wins,
+  then the last city seen on this browser (localStorage). A bare link to the site now shows Guelph.
+- **Not done.** Compare still lists every city; the owner put its country filter off. `cities.json` costs
+  2.3 KB a city and loads on every page, about 100 bytes of it for the picker: at some thousands of cities
+  the picker wants its own slim file. No map picker: no map library, no city centres in the data.

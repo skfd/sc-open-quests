@@ -112,6 +112,50 @@ select, input[type="search"] {
 }
 select:focus, input:focus { outline: 2px solid var(--series-1); outline-offset: 1px; }
 
+/* ---------- the city picker: a button, and a sheet that fills a phone ---------- */
+.city-button {
+  display: flex; align-items: center; gap: 16px; width: 100%; max-width: 420px; padding: 10px 14px;
+  font: inherit; text-align: left; color: var(--ink); background: var(--surface);
+  border: 0; border-radius: 14px; box-shadow: var(--shadow); cursor: pointer;
+}
+.city-button:hover { background: var(--wash); }
+.city-button b { display: block; font-size: 1.15rem; font-weight: 600; line-height: 1.2; }
+#city-where { color: var(--ink-2); font-size: 0.85rem; }
+.city-change { margin-left: auto; color: var(--link); font-size: 0.9rem; }
+.city-sheet {
+  width: min(480px, 100vw); max-width: 100vw; height: min(680px, 100dvh); max-height: 100dvh;
+  padding: 0; border: 0; border-radius: 16px; color: var(--ink); background: var(--page); overflow: hidden;
+}
+.city-sheet[open] { display: flex; flex-direction: column; }
+.city-sheet::backdrop { background: rgba(0, 0, 0, 0.45); }
+.sheet-top { display: flex; gap: 8px; align-items: center; padding: 10px 12px; background: var(--surface); box-shadow: var(--shadow); }
+.sheet-top input { flex: 1; min-width: 0; padding: 10px 12px; font-size: 1rem; border-radius: 12px; }
+.sheet-close { font: inherit; color: var(--link); background: none; border: 0; padding: 8px 4px; cursor: pointer; }
+.sheet-body { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding-bottom: 16px; }
+.sheet-head {
+  display: flex; justify-content: space-between; gap: 12px; margin: 16px 16px 6px;
+  font-size: 0.8rem; font-weight: 600; color: var(--ink-2);
+}
+.sheet-head span + span { font-weight: 400; }
+.sheet-list { list-style: none; margin: 0 12px; padding: 0; background: var(--surface); border-radius: 14px; box-shadow: var(--shadow); overflow: hidden; }
+.sheet-list li + li { border-top: 1px solid var(--grid); }
+.sheet-more { margin-top: 12px; }
+.sheet-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; min-height: 44px; padding: 8px 14px;
+  font: inherit; text-align: left; color: var(--ink); background: none; border: 0; cursor: pointer;
+}
+.sheet-row:hover, .sheet-row:focus-visible { background: var(--wash); outline: none; }
+.sheet-more .sheet-row, .sheet-row.sheet-back { color: var(--link); }
+.sheet-row.sheet-back { width: auto; margin: 8px 4px 0; }
+.sheet-name { display: block; font-weight: 500; }
+.sheet-name small { font-size: 0.88rem; font-weight: 400; color: var(--ink-2); }
+.sheet-where { display: block; color: var(--ink-2); font-size: 0.82rem; }
+.sheet-value { color: var(--ink-2); font-size: 0.88rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+@media (max-width: 520px) {
+  .city-button { max-width: none; }
+  .city-sheet { width: 100vw; height: 100dvh; margin: 0; border-radius: 0; }
+}
+
 .notice { background: var(--surface); border-radius: 12px; box-shadow: var(--shadow); padding: 10px 14px; }
 
 /* ---------- tiles and cards: the app's rounded white surfaces ---------- */

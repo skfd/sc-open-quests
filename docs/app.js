@@ -6,10 +6,14 @@ const DATA = (new URLSearchParams(location.search).get("data") || "data").replac
 const MAX_PINNED = 6;
 const nf = new Intl.NumberFormat("en-CA");
 const nf1 = new Intl.NumberFormat("en-CA", { maximumFractionDigits: 1, minimumFractionDigits: 1 });
+const nfShort = new Intl.NumberFormat("en-CA", { notation: "compact", maximumSignificantDigits: 3 });
+const HOME_CITY = "guelph";                 // the first visit's city
+const RECENT_KEY = "sc-open-quests-cities"; // localStorage: the reader's cities, the last first
+const MAX_RECENT = 5;
 
 const state = {
   view: "city",
-  city: "toronto",
+  city: "",                         // from the link, else the last city seen, else HOME_CITY
   filter: "",
   selected: new Set(),              // quest names counted in the summary chart and tiles
   pinned: [],                       // quest names charted on their own, as small multiples
@@ -754,7 +758,7 @@ async function renderCompare() {
     const where = r.notOffered && offeredWhere(questByName.get(state.compareQuest).enabledInCountries, r.c.id);
     return el("tr", { class: [r.c.id === state.city ? "picked" : "", r.notOffered ? "off" : ""].join(" ").trim() || null },
       el("td", { class: "num" }, r.notOffered ? null : i + 1),
-      el("td", {}, el("a", { href: "#", onclick: (e) => { e.preventDefault(); state.city = r.c.id; $("#city").value = r.c.id; setView("city"); } }, r.c.name)),
+      el("td", {}, el("a", { href: "#", onclick: (e) => { e.preventDefault(); setCity(r.c.id); setView("city"); } }, r.c.name)),
       trends ? el("td", { class: "c-trend" }, trend ? sparkline(cities.dates, trend, r.c.name) : null) : null,
       el("td", { class: "num" }, r.notOffered ? el("span", { title: where ? where.title : null }, where ? where.text : "not offered") : fmt(r.open, nf)),
       el("td", { class: "num" }, rate(r.perKm2)),
@@ -928,8 +932,7 @@ function cityLink(c, text) {
   return el("a", { href: queryString({ ...state, view: "city", city: c.id }), onclick: (e) => {
     if (e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     e.preventDefault();
-    state.city = c.id;
-    $("#city").value = c.id;
+    setCity(c.id);
     renderFooter();
     setView("city");
     window.scrollTo({ top: 0 });
@@ -937,6 +940,169 @@ function cityLink(c, text) {
 }
 
 const cityById = (id) => cities.cities.find((c) => c.id === id);
+
+// ---- the city picker ----
+// A button naming the city, opening a sheet to find another. Every counted city is in cities.json, so
+// the sheet filters them as the reader types, on their names and `aka` and on where they are; a country
+// lists its cities. Towns the site does not count belong to the Places search, a country at a time.
+
+let cityKeys = new Map();              // city id -> { own, where }, folded for the sheet's search
+let sheetCountry = null;               // the country the sheet lists, { name, cc }; null = the sheet's start
+
+function recentCities() {
+  try { return JSON.parse(localStorage.getItem(RECENT_KEY)) || []; } catch { return []; }
+}
+
+// A city's own group is its country; a region's is its country or a province of it (DATA-FORMAT.md).
+const groupOf = (c) => c.group || ((cities.regions || []).find((r) => r.id === c.region) || {}).group;
+const cityCC = (c) => ((c.countryCodes || [])[0] || "").split("-")[0];
+const cityCountry = (c) => c.group || countryName(cityCC(c)) || groupOf(c) || "";
+
+function cityWhere(c) {
+  const g = groupOf(c), n = cityCountry(c);
+  return g && g !== n ? `${g}, ${n}` : n;
+}
+
+function showCity() {
+  const c = cityById(state.city);
+  $("#city-name").textContent = c.name;
+  $("#city-where").textContent = cityWhere(c);
+}
+
+// The city in the state, the button and the reader's recent cities; the caller renders.
+function setCity(id) {
+  state.city = id;
+  showCity();
+  try {
+    localStorage.setItem(RECENT_KEY, JSON.stringify([id, ...recentCities().filter((x) => x !== id)].slice(0, MAX_RECENT + 1)));
+  } catch { /* no storage, no recent cities */ }
+}
+
+function chooseCity(id) {
+  $("#city-sheet").close();
+  setCity(id);
+  writeURL();
+  renderFooter();
+  render();
+}
+
+// The query carried to the Places search, inside a country: that search has no towns without one.
+function searchPlaces(text, cc) {
+  $("#city-sheet").close();
+  state.place = "";
+  state.placeIn = "";
+  state.placeScope = cc;
+  $("#place-search").value = text;
+  setView("places");
+  runSearch();
+  window.scrollTo({ top: 0 });
+}
+
+function sheetSection(head, note, rows) {
+  return [el("h3", { class: "sheet-head" }, el("span", {}, head), note ? el("span", {}, note) : null),
+          el("ul", { class: "sheet-list" }, rows.map((r) => el("li", {}, r)))];
+}
+
+function sheetCity(c, where = true) {
+  const aka = (c.aka || [])[0];
+  return el("button", { type: "button", class: "sheet-row", onclick: () => chooseCity(c.id) },
+    el("span", {},
+      el("span", { class: "sheet-name" }, c.name, aka ? el("small", {}, ` ${aka}`) : null),
+      where ? el("span", { class: "sheet-where" }, cityWhere(c)) : null),
+    el("span", { class: "sheet-value" }, nfShort.format(c.open)));
+}
+
+function browseCountry(country) {
+  sheetCountry = country;
+  renderSheet();
+  $("#city-results .sheet-row").focus();
+}
+
+function sheetStart() {
+  const recent = recentCities().filter((id) => id !== state.city).map(cityById).filter(Boolean).slice(0, MAX_RECENT);
+  const byCountry = new Map();
+  for (const c of cities.cities) {
+    const name = cityCountry(c);
+    if (!byCountry.has(name)) byCountry.set(name, { name, cc: cityCC(c), n: 0 });
+    byCountry.get(name).n++;
+  }
+  const countries = [...byCountry.values()].sort((a, b) => b.n - a.n || a.name.localeCompare(b.name));
+  return [
+    ...(recent.length ? sheetSection("Recent", "open quests", recent.map((c) => sheetCity(c))) : []),
+    ...sheetSection("Counted cities by country", null, countries.map((k) =>
+      el("button", { type: "button", class: "sheet-row", onclick: () => browseCountry(k) },
+        el("span", { class: "sheet-name" }, k.name),
+        el("span", { class: "sheet-value" }, `${nf.format(k.n)} ${k.n > 1 ? "cities" : "city"} ›`)))),
+  ];
+}
+
+// A country's cities by name, under their provinces when it has several.
+function sheetOfCountry() {
+  const list = cities.cities.filter((c) => cityCountry(c) === sheetCountry.name);
+  const areas = [...new Set(list.map(groupOf))].sort((a, b) => a.localeCompare(b));
+  return [
+    el("button", { type: "button", class: "sheet-row sheet-back", onclick: () => browseCountry(null) }, "‹ All countries"),
+    ...(areas.length > 1
+      ? areas.flatMap((a, i) => sheetSection(a, i ? null : "open quests", list.filter((c) => groupOf(c) === a).map((c) => sheetCity(c, false))))
+      : sheetSection(sheetCountry.name, "open quests", list.map((c) => sheetCity(c, false)))),
+  ];
+}
+
+// A name beats a place, and a place must match from a word's start: "ber" finds Berlin first, and not
+// every city in Alberta.
+function cityRank(c, q) {
+  const { own, where } = cityKeys.get(c.id);
+  const ranks = [...own.map((k) => matchRank(k, q)),
+                 ...where.map((k) => { const r = matchRank(k, q); return r != null && r < 3 ? r + 4 : null; })];
+  const found = ranks.filter((r) => r != null);
+  return found.length ? Math.min(...found) : null;
+}
+
+function sheetHits(text, q) {
+  const hits = cities.cities.map((c) => ({ c, rank: cityRank(c, q) })).filter((h) => h.rank != null)
+    .sort((a, b) => a.rank - b.rank || b.c.open - a.c.open);
+  const cc = sheetCountry ? sheetCountry.cc : cityCC(cityById(state.city));
+  const head = !hits.length ? "No counted city matches" :
+    hits.length > MAX_RESULTS ? `The first ${MAX_RESULTS} of ${nf.format(hits.length)} counted cities` :
+    `Counted cities · ${hits.length}`;
+  return [
+    ...sheetSection(head, hits.length ? "open quests" : null, hits.slice(0, MAX_RESULTS).map((h) => sheetCity(h.c))),
+    el("ul", { class: "sheet-list sheet-more" }, el("li", {},
+      el("button", { type: "button", class: "sheet-row", onclick: () => searchPlaces(text, cc) },
+        `Search ${countryName(cc) ? `${countryName(cc)}'s` : "a country's"} towns for “${text}” ›`))),
+  ];
+}
+
+function renderSheet() {
+  const text = $("#city-search").value.trim(), q = fold(text), box = $("#city-results");
+  box.replaceChildren(...(q ? sheetHits(text, q) : sheetCountry ? sheetOfCountry() : sheetStart()));
+  box.scrollTop = 0;
+}
+
+function initCitySheet() {
+  cityKeys = new Map(cities.cities.map((c) => [c.id, {
+    own: [c.name, ...(c.aka || [])].map(fold),
+    where: [groupOf(c), cityCountry(c), countryName(cityCC(c))].map(fold),
+  }]));
+  const sheet = $("#city-sheet"), search = $("#city-search");
+  $("#city-button").addEventListener("click", () => {
+    sheetCountry = null;
+    search.value = "";
+    renderSheet();
+    sheet.showModal();
+  });
+  $("#city-close").addEventListener("click", () => sheet.close());
+  sheet.addEventListener("click", (e) => { if (e.target === sheet) sheet.close(); });   // the backdrop
+  search.addEventListener("input", renderSheet);
+  sheet.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && e.target === search && fold(search.value)) { $("#city-results .sheet-row").click(); return; }
+    if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+    e.preventDefault();
+    const rows = [search, ...sheet.querySelectorAll(".sheet-row")];
+    const next = rows[rows.indexOf(document.activeElement) + (e.key === "ArrowDown" ? 1 : -1)];
+    if (next) next.focus();
+  });
+}
 
 // ---- search ----
 
@@ -981,7 +1147,7 @@ async function runSearch() {
     if (rank != null) hits.push({ ref, rank, counted: !!counted, st: refSt(ref), name: refName(ref) });
   };
   for (const c of idx.countries) {
-    offer({ kind: "country", country: c }, [fold(c.name)]);
+    offer({ kind: "country", country: c }, [fold(c.name), fold(countryName(c.cc))]);
     for (const r of c.regions) if (r.id !== "_" && r.name) offer({ kind: "region", country: c, region: r }, [fold(r.name)]);
   }
   // every region file loaded so far: the chosen country's, and any the reader browsed
@@ -1353,23 +1519,15 @@ async function main() {
   state.asThen = state.asThen && !!first;
   releases = ((rel && rel.releases) || []).map((r) => ({ ts: dayTs(r.date), version: r.version }))
     .map((r, i, all) => ({ ...r, major: isMajor(r, i, all) }));
-  if (!cities.cities.some((c) => c.id === state.city)) state.city = cities.cities.some((c) => c.id === "toronto") ? "toronto" : cities.cities[0].id;
+  if (cityById(state.city)) setCity(state.city);   // a link's city counts as seen
+  else {
+    state.city = [...recentCities(), HOME_CITY].find(cityById) || cities.cities[0].id;
+    showCity();
+  }
   state.pinned = state.pinned.filter((n) => questByName.has(n));
   state.selected = resolveSelection(urlSelection);
 
-  const sel = $("#city");
-  // cities grouped as the regions are (Ontario, Germany), in config order, when there is more than one group;
-  // a city's own group (its country, for a region spanning several) wins, and those groups follow by name
-  const groupOf = (c) => c.group || ((cities.regions || []).find((r) => r.id === c.region) || {}).group;
-  const own = [...new Set(cities.cities.filter((c) => c.group).map((c) => c.group))].sort((a, b) => a.localeCompare(b));
-  const groups = [...new Set([...(cities.regions || []).map((r) => r.group), ...own])]
-    .filter((g) => cities.cities.some((c) => groupOf(c) === g));
-  const option = (c) => el("option", { value: c.id }, c.name);
-  sel.replaceChildren(...(groups.length > 1
-    ? groups.map((g) => el("optgroup", { label: g }, ...cities.cities.filter((c) => groupOf(c) === g).map(option)))
-    : cities.cities.map(option)));
-  sel.value = state.city;
-  sel.addEventListener("change", () => { state.city = sel.value; writeURL(); renderFooter(); render(); });
+  initCitySheet();
 
   const showRel = $("#show-releases");
   showRel.checked = state.releases;

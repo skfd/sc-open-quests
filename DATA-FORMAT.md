@@ -16,7 +16,7 @@ This is the contract between the engine (writes snapshots), the pipeline (keeps 
   ontario, berlin, …); the four `europe-*` regions share the osm-extracts clip `europe` (a store folder with
   a `clip.json`: the planet inside `config/europe.geojson`, kept current by the daily diffs), whose history
   cut `europe/europe-history-<YYMMDD>.osh.pbf` gives their monthly points.
-  `group` heads the city selector ("Ontario", "Germany"); a city's own `group` wins over it. `source` names
+  `group` is a province or a country, for the city picker ("Ontario", "Germany"); a city's own `group` wins over it. `source` names
   the extract in the footer; `poly` is the region's `.poly` (Geofabrik's, or for a clip's regions their
   cities' padded boxes, from `tools/clip_polygon.py`), used to clip notes and the planet history.
   `cadence` is `"daily"` (default) or `"weekly"`. A daily region is counted from its extract by
@@ -25,9 +25,10 @@ This is the contract between the engine (writes snapshots), the pipeline (keeps 
   the 1st of every month since 2017-01 not yet counted. Its snapshots' `source.url` is null and
   `source.file` is `<id>-history-<YYMMDD>.osh.pbf@<time>`. Today every region is daily.
 - `config/cities.json`: `{ "cities": [ { id, name, relation, adminLevel, countryCodes: ["CA","CA-ON"],
-  timeZone, population, landAreaKm2, boundary, region[, group][, populationSource] } ] }`. `group`
-  (optional) heads the city's place in the city selector instead of its region's: its country, for a
-  region spanning several. `boundary` is a path to an Overpass `out geom`
+  timeZone, population, landAreaKm2, boundary, region[, group][, aka][, populationSource] } ] }`. `group`
+  (optional) names the city's country in the city picker when its region spans several. `aka` (optional)
+  lists other names the picker finds the city by, the first shown beside its own: the English name of a
+  city named in its own language (`"Wien"`, `["Vienna"]`). `boundary` is a path to an Overpass `out geom`
   relation element; `region` is the region whose extract holds the city, and its `timeZone` must be the
   region's. Adding a city means adding an entry and its boundary file (`tools/add_city.py <relation>`
   makes both; `tools/import_farmland_cities.py` made the ontario-farmland set). The engine gets the
@@ -192,7 +193,7 @@ under that SC version, or new in a later one) is `null` at that index, never 0. 
 `tools/sc_first_release.py`, not by the daily run. The site's "Only quests the app had then" reads it; without
 the file the switch is hidden.
 
-`docs/data/cities.json` lists cities with their latest totals, for the selector and comparisons:
+`docs/data/cities.json` lists cities with their latest totals, for the picker and comparisons:
 
 ```jsonc
 { "asOfDate": "2026-07-16", "scVersion": "63.4", "resurveyMultiplier": 1,   // newest snapshot
@@ -202,6 +203,7 @@ the file the switch is hidden.
   "cities": [ {                                   // sorted by name
     "id": "toronto", "name": "Toronto", "region": "ontario", "asOfDate": "2026-07-16", "scVersion": "63.4",
     "countryCodes": ["CA", "CA-ON"],             // config/cities.json's, for saying where a quest isn't offered
+    "aka": ["Vienna"],                           // config/cities.json's, when it has any: other names to find it by
     "landAreaKm2": 665.9, "population": null, "highwayKm": 0.0,
     "open": 0,          // headline: counted quests, default-disabled excluded
     "agedOnly": 0,      // of `open`

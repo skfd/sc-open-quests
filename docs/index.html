@@ -40,9 +40,10 @@
 
 <main>
   <div class="filters" id="city-filters" role="group" aria-label="Filters">
-    <label class="field">City
-      <select id="city"></select>
-    </label>
+    <button type="button" class="city-button" id="city-button" aria-haspopup="dialog">
+      <span><b id="city-name"></b><span id="city-where"></span></span>
+      <span class="city-change">Change</span>
+    </button>
   </div>
 
   <p id="status" class="notice" hidden></p>
@@ -150,6 +151,14 @@
     <div id="place-page"></div>
   </section>
 </main>
+
+<dialog class="city-sheet" id="city-sheet" aria-label="Choose a city">
+  <div class="sheet-top">
+    <input type="search" id="city-search" placeholder="City or country" aria-label="City or country" autocomplete="off">
+    <button type="button" class="sheet-close" id="city-close">Close</button>
+  </div>
+  <div class="sheet-body" id="city-results"></div>
+</dialog>
 
 <footer class="page-foot" id="foot">
   <p id="foot-data"></p>
