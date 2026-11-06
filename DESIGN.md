@@ -1173,3 +1173,50 @@ month soft, a deploy times out at 10 minutes.
   timeout; others take about 35 s and later ones went through with more data.
 - **Page weight:** `cities.json` loads on every visit, 830 bytes a city gzipped: 830 KB at 1,000 cities,
   3.3 MB at 4,000.
+
+## The whole world: measured and proposed (2026-11-06)
+
+The owner asked what it takes to count all of it, hosting and hardware open. Nothing built. Scripts in
+`.scratch/world-spike/` (gitignored); both runs on this machine (12 cores, 24 threads, 88 GB).
+
+- **The engine's cost is flat per node, in town or country.** v64.1, 24 threads:
+
+  | area | nodes | pass | s per million nodes |
+  |---|---|---|---|
+  | the 147 cities, area pass, Paris and Toulouse left out | 259M | | 5.4 |
+  | Estonia as one area | 13.6M | 76.5 s | 5.6 |
+  | Czechia as 15 grid cells, each a "city" | 97.5M | 522 s | 5.4 |
+
+- **Czechia as one area ran out of heap** (41 GB, `MutableMapDataWithGeometry`, while building the map
+  data). The same file as 15 cells ran with no engine change, the largest cell 17M nodes in 72 s. So the
+  world is cut into cells. The cells' sum (11.2M open, every quest) double-counts what crosses an edge;
+  an element must belong to one cell.
+- **The planet is about 15 hours on this machine.** 9 to 10 billion nodes, from 85 GB at 100-110k nodes per
+  MB of pbf, at 5.4 s per million. About 1.5 billion open quests of every kind (0.12 to 0.16 a node).
+- **Outliers are single quests, not places.** Paris's AddAddressStreet took 582 s (Praha, the same size,
+  28 s in all), a quarter of a day's engine time; Toulouse 47 s; London's AddHousenumber 176 s. A fast twin
+  is due for the first, and cities not yet counted will hold more of these.
+
+**The proposal: count the planet once, not cities one by one.**
+1. Cut the planet into about 1,000 cells of at most 15M nodes, each with a ring of map data around it.
+   The engine's node index (16 bytes a node) cannot hold the planet, so this comes first. `osmium
+   extract` holds about 4 GB per output, so the cut goes in stages: continent, country, cell. Unmeasured:
+   the daily cost of keeping cells current, guessed at 1 to 3 hours.
+2. Each element counts in the one cell that owns its position, and into every place around it, from the
+   1.08M polygons of the name layer. Every place has real numbers, roll-ups are true sums, no request or
+   bar is needed, and "does land outside cities count" answers itself.
+3. Country gating and time zone come from the position, not the city (one zone per run today).
+4. **The test before anything else:** cell counts against today's whole-city counts for the 147 cities.
+   The unit changes from "the whole city" (the owner's choice, 2026-10-12), so the difference is the
+   owner's to accept.
+5. Publish to R2, the site staying where it is with `DATA` pointing there. Per-place history about 15 KB
+   gzipped at most, so about 16 GB for the world. Rewriting a million objects daily costs about $140 a month
+   in writes, so a day's numbers go in the 4,202 region shards and per-place history is written monthly.
+6. History since 2017 is run once: 118 months at about 6.5 billion nodes on average, about 7 weeks on this
+   machine.
+
+**What it needs.** Hetzner, 2026-11-06, excl. VAT, no minimum term: AX102 (16 cores, 128 GB, 2x 1.92 TB) EUR 259
+a month + 129 setup; AX162 (48 cores, 128-512 GB) EUR 614 + 304. Speed on either is unmeasured; a guess of
+1.5-2x and 3-4x this machine gives 8-10 and 4-5 hours a planet. R2 about $5 a month and egress free. It
+needs a custom domain and Linux for the pipeline (no Docker Desktop, no Task Scheduler). This machine could
+do a weekly world for nothing, if disk allows (247 GB free).
