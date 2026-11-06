@@ -1191,8 +1191,9 @@ The owner asked what it takes to count all of it, hosting and hardware open. Not
   data). The same file as 15 cells ran with no engine change, the largest cell 17M nodes in 72 s. So the
   world is cut into cells. The cells' sum (11.2M open, every quest) double-counts what crosses an edge;
   an element must belong to one cell.
-- **The planet is about 15 hours on this machine.** 9 to 10 billion nodes, from 85 GB at 100-110k nodes per
-  MB of pbf, at 5.4 s per million. About 1.5 billion open quests of every kind (0.12 to 0.16 a node).
+- **The planet is 15 to 17 hours on this machine.** 10 to 11 billion nodes, a density estimate (100-110k
+  nodes per MB of pbf, and a planet now larger than the 85 GB noted above), at 5.4 s per million. About 1.5
+  billion open quests of every kind, 0.12 to 0.16 a node; the app's default quests are about a third of that.
 - **Outliers are single quests, not places.** Paris's AddAddressStreet took 582 s (Praha, the same size,
   28 s in all), a quarter of a day's engine time; Toulouse 47 s; London's AddHousenumber 176 s. A fast twin
   is due for the first, and cities not yet counted will hold more of these.
@@ -1201,10 +1202,14 @@ The owner asked what it takes to count all of it, hosting and hardware open. Not
 1. Cut the planet into about 1,000 cells of at most 15M nodes, each with a ring of map data around it.
    The engine's node index (16 bytes a node) cannot hold the planet, so this comes first. `osmium
    extract` holds about 4 GB per output, so the cut goes in stages: continent, country, cell. Unmeasured:
-   the daily cost of keeping cells current, guessed at 1 to 3 hours.
-2. Each element counts in the one cell that owns its position, and into every place around it, from the
-   1.08M polygons of the name layer. Every place has real numbers, roll-ups are true sums, no request or
-   bar is needed, and "does land outside cities count" answers itself.
+   the daily cost of keeping cells current, guessed at 1 to 3 hours. That holds only for cells re-cut in
+   stages from a planet updated by diffs: a clip's own daily fetch takes 2-3 minutes, 40 hours for 1,000.
+2. Each element counts in the one cell that owns its position, and into every place around it. Every place
+   has real numbers, roll-ups are true sums, no request or bar is needed, and "does land outside cities
+   count" answers itself. The name layer has no polygons, so these 1.08M come from Overture's division
+   areas; fetching them from OSM one relation at a time is not an option. That undoes the owner's "counting
+   on OSM geometry" (2026-10-24) and is the owner's to accept. Two engine prerequisites follow: no
+   planet-wide node index, and a spatial index over a million polygons, not the grid over city boxes.
 3. Country gating and time zone come from the position, not the city (one zone per run today).
 4. **The test before anything else:** cell counts against today's whole-city counts for the 147 cities.
    The unit changes from "the whole city" (the owner's choice, 2026-10-12), so the difference is the
@@ -1213,10 +1218,11 @@ The owner asked what it takes to count all of it, hosting and hardware open. Not
    gzipped at most, so about 16 GB for the world. Rewriting a million objects daily costs about $140 a month
    in writes, so a day's numbers go in the 4,202 region shards and per-place history is written monthly.
 6. History since 2017 is run once: 118 months at about 6.5 billion nodes on average, about 7 weeks on this
-   machine.
+   machine, if months are sliced from per-cell history cuts, not from the 159 GB file each time.
 
 **What it needs.** Hetzner, 2026-11-06, excl. VAT, no minimum term: AX102 (16 cores, 128 GB, 2x 1.92 TB) EUR 259
 a month + 129 setup; AX162 (48 cores, 128-512 GB) EUR 614 + 304. Speed on either is unmeasured; a guess of
-1.5-2x and 3-4x this machine gives 8-10 and 4-5 hours a planet. R2 about $5 a month and egress free. It
+1.5-2x and 3-4x this machine gives 8-11 and 4-6 hours a planet. R2 about $5 a month and egress free. It
 needs a custom domain and Linux for the pipeline (no Docker Desktop, no Task Scheduler). This machine could
-do a weekly world for nothing, if disk allows (247 GB free).
+do a weekly world for nothing: the planet (85+ GB) and its cells (about 90) fit in the 247 GB free. The 2017
+history does not: its per-cell cuts add about 160 more.
