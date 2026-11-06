@@ -93,6 +93,26 @@ h2 { font-size: 1.1rem; }
 .tab:hover { background: rgba(255, 255, 255, 0.10); color: #fff; }
 .band .tab[aria-current="page"] { background: var(--page); color: var(--ink); font-weight: 600; }
 .band { margin-bottom: 0; }
+@media (max-width: 480px) {
+  .tabs { overflow-x: auto; }
+  .tab { padding: 9px 10px; white-space: nowrap; }
+}
+
+/* ---------- map view: the tiles step back so the counted cities stand out ----------
+   By id, because Leaflet's stylesheet loads with the tab, after this one. */
+#coverage-map { height: min(70vh, 640px, 90vw); min-height: 340px; border-radius: 12px; font: inherit; background: var(--grid); }
+#coverage-map .leaflet-tile-pane { filter: grayscale(1) brightness(1.04); }
+#coverage-map .leaflet-popup-content-wrapper, #coverage-map .leaflet-popup-tip { background: var(--surface); color: var(--ink); }
+#coverage-map .leaflet-popup-content { margin: 10px 14px; font-size: 0.9rem; }
+#coverage-map .leaflet-popup-content a { color: var(--link); }
+#coverage-map path:focus { outline: none; }   /* a click would box the shape */
+.map-where { color: var(--ink-2); }
+@media (prefers-color-scheme: dark) {
+  #coverage-map .leaflet-tile-pane { filter: grayscale(1) invert(1) brightness(0.8) contrast(0.9); }
+  #coverage-map .leaflet-bar a { background: var(--surface); color: var(--ink); border-color: var(--grid); }
+  #coverage-map .leaflet-control-attribution { background: rgba(34, 34, 34, 0.8); color: var(--ink-2); }
+  #coverage-map .leaflet-control-attribution a { color: var(--link); }
+}
 
 /* ---------- controls ---------- */
 .filters { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: end; padding: 18px 0 16px; }

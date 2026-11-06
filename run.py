@@ -10,7 +10,8 @@ Subcommands:
   backfill   count every dated extract of every region still in the shared store
   history    rebuild docs/data/history/<cityId>.json, cities.json, quests.json and compare/<quest>.json
              from the archive of all regions, and copy each region's newest snapshot into docs/data;
-             docs/data/parts/<cityId>.json from the parts registry (config/parts)
+             docs/data/parts/<cityId>.json from the parts registry (config/parts); docs/data/coverage.json,
+             the map's city boundaries
   migrate-archive  move snapshots published before 2026-10-24 (docs/data/<region>/snapshots/) into
              data/archive/; count and history do it too, so it is idempotent and needs no flag
   update     download + backfill + history, then commit "data <asOfDate>" and push; last, check-release
@@ -761,12 +762,66 @@ def publish_parts(data_dir: Path, cities: list[dict], parts_dir: Path) -> int:
     return changed
 
 
+COVERAGE_TOLERANCE = 0.0003   # degrees, about 30 m: a boundary drawn on the site's map, not counted on
+
+
+def simplify_ring(ring: list[tuple[float, float]], tolerance: float = COVERAGE_TOLERANCE) -> list[tuple[float, float]]:
+    """Douglas-Peucker on a closed ring of (lat, lon), in plain degrees. A ring smaller than the
+    tolerance comes out with under four points."""
+    keep = {0, len(ring) - 1}
+    spans = [(0, len(ring) - 1)]
+    while spans:
+        a, b = spans.pop()
+        (ay, ax), (by, bx) = ring[a], ring[b]
+        dy, dx = by - ay, bx - ax
+        length = math.hypot(dy, dx)
+        far, worst = None, tolerance
+        for i in range(a + 1, b):
+            y, x = ring[i]
+            d = abs(dx * (y - ay) - dy * (x - ax)) / length if length else math.hypot(y - ay, x - ax)
+            if d > worst:
+                far, worst = i, d
+        if far is not None:
+            keep.add(far)
+            spans += [(a, far), (far, b)]
+    return [ring[i] for i in sorted(keep)]
+
+
+def coverage_geometry(boundary: dict) -> dict:
+    """A boundary relation as Overpass gave it (data/boundaries/) as a GeoJSON MultiPolygon, simplified:
+    each outer ring with the inner rings inside it. A ring too small to survive is left out."""
+    sys.path.insert(0, str(TOOLS_DIR))
+    from add_city import inside, stitch, way_coords
+    ways = {role: [way_coords(m) for m in boundary["members"] if m["type"] == "way" and m["role"] == role]
+            for role in ("outer", "inner")}
+    outers, inners = (stitch(ways[role], boundary["id"], role) for role in ("outer", "inner"))
+    polygons = [[ring] for ring in outers]
+    for ring in inners:
+        lat, lon = ring[0]
+        next((p for p in polygons if inside(lat, lon, p[0])), []).append(ring)
+    coords = []
+    for polygon in polygons:
+        rings = [[[round(lon, 4), round(lat, 4)] for lat, lon in simplify_ring(r)] for r in polygon]
+        if len(rings[0]) >= 4:
+            coords.append([r for r in rings if len(r) >= 4])
+    return {"type": "MultiPolygon", "coordinates": coords}
+
+
+def publish_coverage(data_dir: Path, cities: list[dict], root: Path = ROOT) -> int:
+    """Write coverage.json, the map of what is counted: every city's boundary, keyed by id. Names and
+    counts stay in cities.json, so this file changes only when a city or a boundary does."""
+    features = [{"type": "Feature", "id": c["id"], "properties": {},
+                 "geometry": coverage_geometry(read_json(root / c["boundary"]))}
+                for c in sorted(cities, key=lambda c: c["id"])]
+    return write_json(data_dir / "coverage.json", {"type": "FeatureCollection", "features": features}, compact=True)
+
+
 def history(data_dir: Path = DATA_DIR, cities_config: Path = CITIES_CONFIG, archive: Path | None = None,
             parts_dir: Path | None = None) -> int:
     """Rewrite history/*.json, cities.json, quests.json, compare/*.json and parts/*.json under data_dir
     from the snapshots in archive (default: ARCHIVE_DIR for docs/data, else data_dir itself, as the test
     fixtures have it) and the parts registry in parts_dir (default: PARTS_CONFIG for docs/data, else
-    none). With a separate archive, first migrate anything published the old way, then publish each
+    none); for docs/data, coverage.json too. With a separate archive, first migrate anything published the old way, then publish each
     region's newest snapshot. Returns the number of files changed."""
     default = data_dir.resolve() == DATA_DIR.resolve()
     archive = archive or (ARCHIVE_DIR if default else data_dir)
@@ -775,6 +830,8 @@ def history(data_dir: Path = DATA_DIR, cities_config: Path = CITIES_CONFIG, arch
     changed = migrate_archive(data_dir, archive) if separate else 0
     if parts_dir is not None:
         changed += publish_parts(data_dir, read_json(cities_config)["cities"], parts_dir)
+    if default:
+        changed += publish_coverage(data_dir, read_json(cities_config)["cities"])
     snapshots = load_snapshots(archive)
     if not snapshots:
         log(f"no snapshots in {archive}/*/snapshots; nothing to do")

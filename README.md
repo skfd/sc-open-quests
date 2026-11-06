@@ -16,8 +16,9 @@ This project is **read-only**: it never edits OpenStreetMap.
    each quest per city polygon (`config/cities.json`, 115 municipalities). It writes one snapshot per
    extract to the archive, `data/archive/<region>/snapshots/<asOfDate>.json` (not committed).
 3. **`run.py history`** rebuilds the per-city time series in `docs/data/history/`, the city index
-   `docs/data/cities.json` and the per-quest comparison `docs/data/compare/` from all snapshots, and
-   publishes each region's newest snapshot in `docs/data/<region>/snapshots/`.
+   `docs/data/cities.json` and the per-quest comparison `docs/data/compare/` from all snapshots,
+   publishes each region's newest snapshot in `docs/data/<region>/snapshots/`, and writes the boundaries
+   the site's map draws, `docs/data/coverage.json`.
 4. **The site** (`docs/index.html`, no build step) reads that JSON.
 
 Quests the app shows but this site can't count yet are listed on the page, greyed, with their status.

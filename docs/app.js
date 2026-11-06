@@ -25,6 +25,7 @@ const state = {
   place: "",                        // places view: the place shown (12-hex id), "" = the list of countries
   placeIn: "",                      // its region file as "<cc>/<regionId>", the hint that finds it
   placeScope: "",                   // the country the place search looks inside ("" = names in the index)
+  mapAt: "",                        // map view: "zoom/lat/lon" once the reader has moved it, "" = every city in view
 };
 let cities, quests, questByName, hist;   // loaded data
 let urlSelection = null;                    // the selection as read from the URL, resolved once quests.json is in
@@ -98,12 +99,13 @@ function readURL() {
   const p = new URLSearchParams(location.search);
   const h = new URLSearchParams(location.hash.slice(1));
   const get = (k) => p.get(k) ?? h.get(k);
-  if (get("view")) state.view = { compare: "compare", places: "places" }[get("view")] || "city";
+  if (get("view")) state.view = { compare: "compare", places: "places", map: "map" }[get("view")] || "city";
   if (get("city")) state.city = get("city");
   state.pinned = names(p.get("pin") ?? h.get("q")).slice(0, MAX_PINNED);
   if (get("cq") != null) state.compareQuest = get("cq");
   state.releases = get("rel") !== "0";
   state.asThen = get("then") === "1";
+  state.mapAt = p.get("at") || "";
   if (p.get("place")) { state.view = "places"; state.place = p.get("place"); state.placeIn = p.get("in") || ""; }
   urlSelection = { base: SEL_BASES.includes(p.get("base")) ? p.get("base") : "app", on: names(p.get("on")), off: names(p.get("off")) };
 }
@@ -143,6 +145,7 @@ function queryString(s = state) {
     if (s.placeIn) p.set("in", s.placeIn);
   } else if (s.view !== "city") p.set("view", s.view);
   if (s.view !== "places") p.set("city", s.city);
+  if (s.view === "map" && s.mapAt) p.set("at", s.mapAt);
   const sel = selectionParams();
   if (sel.base !== "app") p.set("base", sel.base);
   if (sel.on.length) p.set("on", sel.on.join(","));
@@ -1448,6 +1451,88 @@ async function partCards(ref, counted) {
   return [card, await partsCard(cityId, ref, pid)];
 }
 
+// ---------- map view ----------
+// What is counted, on a map: each city's boundary from coverage.json (DATA-FORMAT.md), joined by id to
+// cities.json for its name and count. Everything not coloured is not counted. A city is a few pixels at
+// the zoom that shows both continents, so it also has a dot until its boundary is big enough to see.
+// Leaflet is the one page's library, so it loads with the tab.
+
+const LEAFLET = "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet";
+const LEAFLET_JS_SRI = "sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH";
+const LEAFLET_CSS_SRI = "sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H";
+const DOTS_BELOW_ZOOM = 9;              // a 10 km city is about 40 px wide from zoom 9 on
+let coverageMap = null;                 // promise of the Leaflet map, built the first time the tab opens
+
+function loadLeaflet() {
+  const load = (tag, attrs) => new Promise((done, fail) => {
+    const e = el(tag, { ...attrs, crossorigin: "anonymous" });
+    e.onload = done;
+    e.onerror = () => fail(new Error("the map library did not load"));
+    document.head.append(e);
+  });
+  return Promise.all([
+    load("link", { rel: "stylesheet", href: `${LEAFLET}.css`, integrity: LEAFLET_CSS_SRI }),
+    load("script", { src: `${LEAFLET}.js`, integrity: LEAFLET_JS_SRI }),
+  ]);
+}
+
+function mapPopup(c) {
+  return el("div", {}, el("b", {}, c.name), el("div", { class: "map-where" }, cityWhere(c)),
+    el("div", {}, `${nf.format(c.open)} open quests`), cityLink(c, "See this city"));
+}
+
+async function buildMap() {
+  const [coverage] = await Promise.all([getJSON("coverage.json"), loadLeaflet()]);
+  const map = L.map("coverage-map", { minZoom: 1, zoomSnap: 0.5 });
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+  }).addTo(map);
+  const colour = css("--series-1");
+  const dots = L.layerGroup();
+  const shapes = L.featureGroup().addTo(map);
+  for (const f of coverage.features) {
+    const c = cityById(f.id);
+    if (!c) continue;
+    const shape = L.geoJSON(f, { style: { color: colour, weight: 1.5, fillOpacity: 0.35 } }).addTo(shapes);
+    const dot = L.circleMarker(shape.getBounds().getCenter(),
+      { radius: 5, color: "#fff", weight: 1, fillColor: colour, fillOpacity: 1 }).addTo(dots);
+    for (const layer of [shape, dot]) {
+      layer.bindPopup(() => mapPopup(c));
+      if (!L.Browser.mobile) layer.bindTooltip(c.name, { sticky: true }).on("click", () => layer.closeTooltip());
+    }
+  }
+  const showDots = () => {
+    if (map.getZoom() < DOTS_BELOW_ZOOM) dots.addTo(map);
+    else dots.remove();
+  };
+  map.on("zoomend", showDots);
+  const at = state.mapAt.split("/").map(Number);
+  if (at.length === 3 && at.every(Number.isFinite)) map.setView(at.slice(1), at[0]);
+  else map.fitBounds(shapes.getBounds(), { animate: false });
+  showDots();
+  map.on("moveend", () => {
+    const { lat, lng } = map.getCenter();
+    state.mapAt = `${map.getZoom()}/${lat.toFixed(4)}/${lng.toFixed(4)}`;
+    writeURL();
+  });
+  return map;
+}
+
+async function renderMap() {
+  const countries = new Set(cities.cities.map(cityCountry)).size;
+  const land = cities.cities.reduce((sum, c) => sum + (c.landAreaKm2 || 0), 0);
+  $("#map-sub").replaceChildren(
+    `The coloured areas are counted: ${nf.format(cities.cities.length)} cities in ${nf.format(countries)} countries, ` +
+    `${nf.format(Math.round(land))} km² of land. The rest of the world is not counted yet; `,
+    el("a", { href: queryString({ ...state, view: "places" }), onclick: (e) => {
+      if (e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      e.preventDefault();
+      setView("places");
+    } }, "find a place"), " to ask for it.");
+  coverageMap ||= buildMap().catch((e) => { coverageMap = null; throw e; });
+  (await coverageMap).invalidateSize();
+}
+
 // ---------- wiring ----------
 
 function setStatus(msg) { const s = $("#status"); s.textContent = msg; s.hidden = !msg; }
@@ -1466,10 +1551,13 @@ async function render() {
   $("#view-city").hidden = state.view !== "city";
   $("#view-compare").hidden = state.view !== "compare";
   $("#view-places").hidden = state.view !== "places";
-  $("#city-filters").style.display = state.view === "places" ? "none" : "";   // a place page has no city picker
+  $("#view-map").hidden = state.view !== "map";
+  $("#city-filters").style.display = ["places", "map"].includes(state.view) ? "none" : "";   // neither has a city picker
+  setStatus("");
   try {
     if (state.view === "city") await renderCity();
     else if (state.view === "places") await renderPlaces();
+    else if (state.view === "map") await renderMap();
     else await renderCompare();
   } catch (e) {
     setStatus(`Could not load data: ${e.message}`);

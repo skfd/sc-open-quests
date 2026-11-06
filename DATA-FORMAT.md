@@ -224,6 +224,18 @@ A city whose newest snapshot lacks the quest is absent; a quest in no city's new
 which the site reads as no count anywhere. About 2 KB per quest at 115 cities; the compare view fetches
 the picked quest's file only. Written by `run.py history` like the history files, stale ones deleted.
 
+`docs/data/coverage.json` is the site's map of what is counted, one GeoJSON FeatureCollection:
+
+```jsonc
+{ "type": "FeatureCollection", "features": [
+  { "type": "Feature", "id": "toronto", "properties": {},         // city id, sorted; names and counts are cities.json's
+    "geometry": { "type": "MultiPolygon", "coordinates": [...] } } ] }
+```
+
+Written by `run.py history` from `config/cities.json` and `data/boundaries/`: the relation's outer and inner
+rings, simplified to about 30 m and rounded to 4 decimals, for drawing and never for counting. It holds no
+date or number, so the file changes only when a city or a boundary does.
+
 Rerunning on the same extract rewrites the same snapshot file byte for byte, apart from `runSeconds` and
 `engineCommit`.
 
