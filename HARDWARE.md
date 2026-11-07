@@ -87,7 +87,7 @@ Treat them as a shortlist until benchmarked.
 | Ryzen AI Max+ 395 mini PC, 64 GB (GMKtec EVO-X2) | 1.3 | about $1,500 | 1,150 | about 120 W | Memory soldered; prices conflict a lot |
 | Ryzen AI Max+ 395, 128 GB (Bosgame M5) | 1.3 | about $2,400 | 1,850 | about 120 W | The extra memory buys no speed here |
 | Framework Desktop, 64 GB | 1.3 | about $1,640 | 1,250 | about 120 W | Reported after its price rises |
-| **Used Ryzen 9 5950X tower, 64 GB DDR4, 4 TB** | **1.1** | **about $1,450** | **about 1,300** | **about 180 W** | Score from memory; CPU about $280 used, 2x32 GB $459, 4 TB $280-590, the rest a guess of $300; no warranty |
+| **Used Ryzen 9 5950X tower, 64 GB DDR4, 4 TB** | **1.1** | **about $1,450** | **about 1,300** | **about 180 W** | Score from memory; CPU about $280 used, 2x32 GB $459, 4 TB $280-590, the rest a guess of $300; no warranty; no built-in graphics, so it needs a cheap card |
 | **Ryzen 9 9950X desktop, 64 GB, built** | **1.4-1.8** | **about $2,200-2,600** | **about 1,350-1,700** | **about 200 W** | Scores found run from 20,550 to 27,000; no queue needed; CPU price not confirmed |
 | Used EPYC 7702 (64 cores) | 2.5-3.5, a guess | CPU about $500; board and DDR4 not priced | ? | 250-300 W | Loud; many cores may not scale; run several engines |
 
@@ -140,7 +140,9 @@ docs, none measured here.
   work. A $1,500 Mac mini beats the lot. Fun as an experiment, not as infrastructure.
 - **Raspberry Pis.** Same sums: about 0.2 L at best (a guess), with 16 GB at most.
 - **128 GB machines.** The count does not use it. Only a planet Nominatim would, and a tower can add it later.
-- **GPUs.** The work is hash lookups and tag filters in JVM code, nothing a GPU does well.
+- **GPUs.** Filters and tag walks are 55% of the time, so a perfect port caps at about 2.2x, and it means
+  rewriting StreetComplete's own quest code and matching every release. The one part that suits a GPU, "does this
+  element hold any of the quest's keys", is what the fast reject does on the CPU. Pbf reading stays on the CPU.
 - **More disk for speed.** It buys room, not time.
 
 ## Order of work
