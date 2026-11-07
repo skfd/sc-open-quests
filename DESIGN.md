@@ -1379,9 +1379,13 @@ numbers do not lose border elements. Harness and results in `.scratch/world-spik
 - **What moves:** AddHousenumber (44 quests in all at z10, 34 at z12; a building must lie wholly inside the map
   data), then AddMaxHeight and AddBarrierOnPath by 3 each.
 - **The harness can see an edge:** Bremen as bare z16 tiles with no ring is -0.66%. The 1 km ring removes that.
-- **Unexplained:** filter quests should not move and four do: Burlington's AddWayLit and AddCyclewaySegregation
-  by 1, Athens' AddMaxSpeed and AddRoadSmoothness. Perhaps one way whose centre lies on the boundary, where the
-  test's ring stitching reverses segments. Not verified.
+- **The four filter quests that moved are the test's, explained 2026-11-07.** Each pair is one way whose centre
+  lies exactly on the city boundary: Burlington's way 401631538 (0.0 m from relation 2407513), Athens' way
+  901806046. The even-odd test gives a point on an edge either answer depending on the order of the
+  segment's ends, and the test's stitched rings reverse some of them (`.scratch/cleanup/pip.py` replays
+  `Polygon.contains` on both). For the world count it is real all the same: roads often are the boundary, so a
+  centre on the edge between two places can land in both or neither. Rare, and worth one rule (half-open edges)
+  in the place lookup.
 - **Cost:** z10 passes 3,727 s against 2,525 s whole-city, most of the gap one cell: Paris's AddAddressStreet
   1,434 s against 582 s, on a machine shared with the re-cut at the end. It wants a fast twin first. z12 was 3 times
   slower (Alberta 4,721 mostly empty cells): empty tiles are expensive as cities, so cells should be sized by
