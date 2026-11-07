@@ -1226,3 +1226,40 @@ a month + 129 setup; AX162 (48 cores, 128-512 GB) EUR 614 + 304. Speed on either
 needs a custom domain and Linux for the pipeline (no Docker Desktop, no Task Scheduler). This machine could
 do a weekly world for nothing: the planet (85+ GB) and its cells (about 90) fit in the 247 GB free. The 2017
 history does not: its per-cell cuts add about 160 more.
+
+**The owner's answers (2026-11-06, evening):**
+- **Cells are accepted if every city's total stays within 0.1%** of its whole-city count; the per-quest
+  differences are listed for the owner.
+- **Overture's boundaries for every place.** This replaces "counting on OSM geometry" (2026-10-24).
+- **Only this machine, for now.** No server; work out what it takes.
+
+**Neighbourhoods in a world count, as asked.** The same rule as today's parts, and Wandrer's shape: a quest
+has one position, and it counts once in every polygon holding that position, from country down to
+microhood. Places overlap, leave gaps, and children need not add up to a parent. A part no longer needs a
+counted city around it, so `add_parts.py`'s step 1 and its "inside the city" check go. The filter stays: only
+divisions whose own source is OSM, the owner's rule of 2026-10-24 (costs Germany 4,130 of 4,717 microhoods,
+few neighbourhoods). A division with no polygon, 3.6M of the 4.7M, keeps its name and has no number. Parts
+cost about 4% of a pass today (Ontario 216 s against 208 s, 790 parts).
+Open for the cell test: a city today also counts an element that only crosses it; position alone does not.
+
+**Only this machine: measured the same evening.**
+- **CPU is the limit, not memory.** Czechia's five columns, two engines at once at 20 GB heap each: 520 s
+  of wall clock, against 522 s for one engine. One engine fills the 24 threads; running more buys nothing.
+  A 31M-node area needs under 24 GB.
+- **`osmium extract` holds 4.2 GB per output:** five outputs 21 GB, and 15 were killed by docker's 43 GB.
+  Five outputs of Czechia took 121 s for 951 MB, 7.9 MB/s, so a stage over the planet is about 3 hours.
+- **So the planet needs only a coarse cut.** The engine does the fine cutting itself, as in the Czechia
+  grid: a file of 100M+ nodes with its cells as "cities". Two stages of 9 outputs give about 80 files of
+  about 130M nodes. No 1,000 cell files.
+- **A weekly world is about 24 hours:** 2 for the current planet, 6 to cut, 15-17 to count. That is 14% of
+  the week, beside the daily run of the 147 cities, which stays as it is. A daily world does not fit.
+- **Disk, 260 GB free:** peak about 210 GB (planet 90, first stage 90, one continent's files up to 30), if
+  each file is deleted once used. The monthly rewrite needs 170 GB at another time, so the two must not
+  overlap. `data/backfill/` (20 GB) can go. Tight but enough.
+- **History without per-cell cuts:** each date goes through the whole chain, about 16 hours on average, so
+  10 yearly points in about a week, 40 quarterly in a month, all 118 months in 3 to 4 months beside the weekly
+  run. No extra disk. Fill coarse first, as Europe did.
+- **Not known:** whether a 16-hour run holds speed on a laptop chip (these runs were 10 minutes), and the
+  time of a planet slice from the current history file.
+- **Hosting stays a separate cost:** weekly data for a million places cannot go through git. R2 at this
+  size is about $1-2 a month, and needs a domain.

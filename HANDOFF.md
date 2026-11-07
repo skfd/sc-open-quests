@@ -392,5 +392,5 @@ new cities appear by themselves.
    from a request on the site to a counted region.
    What GitHub can hold while that grows: DESIGN.md, "Hosting headroom: measured" (about 350 more cities
    as things stand; near 1,000 the daily data leaves git history).
-7. **Asked 2026-11-06, waiting on the owner:** counting the whole planet, not cities (DESIGN.md, "The whole
-   world: measured and proposed"). 15 to 17 hours a planet on this machine; first the cell test.
+7. **Asked 2026-11-06:** counting the whole planet, not cities (DESIGN.md, "The whole
+   world: measured and proposed"). The owner's answers are there: cells within 0.1%, Overture boundaries, this machine only, a weekly world in about 24 hours. First the cell test.
