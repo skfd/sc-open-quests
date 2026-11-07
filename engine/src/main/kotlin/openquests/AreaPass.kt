@@ -60,7 +60,7 @@ enum class AreaUnit { TILES, CITY }
  * Stages over the PBF blobs already in memory: ways (which ways come within [AREA_PADDING_M] of a
  * city's bounding box, as a [CitySets] id; a [BoxGrid] finds the boxes of a point), nodes (those ways' nodes and the tagged nodes nearby, with
  * tags, version and timestamp), relations. Then the tiles: build the map data, run every enabled area
- * quest once at asOf and once at [EngineClock.LONG_AGO] for agedOnly.
+ * quest at asOf and, for an age quest, at the other resurvey settings and [EngineClock.LONG_AGO] for agedOnly.
  */
 class AreaPass(
     private val engine: Engine,
@@ -238,31 +238,58 @@ class AreaPass(
 
     private val cityIndex = CityIndex(cities)
 
-    /** Runs area quest [qi] on [mapData] (bounded by [box]) at asOf and at LONG_AGO, and for an age
-     *  quest also at the resurvey multipliers 0.5 and 2 (see [matchVariants]), and counts every result
-     *  whose position is in [box] in the cities whose polygon holds it, where [qi] is enabled;
-     *  [cityIndexes]: only these cities (city mode). */
-    private fun countIn(mapData: MapDataWithGeometry, box: BoundingBox, qi: Int, cityIndexes: List<Int>?) {
+    /** The runs of one area quest: at asOf; for an age quest also at the resurvey multipliers 0.5 and 2
+     *  (see [matchVariants]) and at LONG_AGO for agedOnly. A quest with no age test gives the same result
+     *  at any clock, so it has no agedOnly and runs once. */
+    private enum class Run { NOW, AT_05, AT_2, LONG_AGO }
+
+    private fun runsOf(qi: Int): List<Run> = if (engine.quests[qi].usesAge) Run.entries else listOf(Run.NOW)
+
+    /** Area quest [qi] on [mapData] in one [run]. The clocks are the current thread's, so the runs of
+     *  one quest may go on different threads. */
+    private fun runQuest(mapData: MapDataWithGeometry, qi: Int, run: Run): List<Element> {
         val port = engine.quests[qi].area!!
         val quest = FAST_TWINS[port.name] ?: port
-        // a quest may return an element twice (AddMaxHeight: a tunnel that is also below a bridge);
-        // the app keys quests by element, so it is one quest
-        val now = quest.getApplicableElements(mapData).distinctBy { it.type to it.id }
-        if (VERIFY_FAST && quest !== port) verifyTwin(port, mapData, now.mapTo(HashSet()) { it.type to it.id })
-        val usesAge = engine.quests[qi].usesAge
-        val at05 = if (usesAge) Resurvey.at(0.5f) { quest.getApplicableElements(mapData).toList() } else emptyList()
-        val at2 = if (usesAge) Resurvey.at(2f) { quest.getApplicableElements(mapData).toList() } else emptyList()
-        if (now.isEmpty() && at05.isEmpty() && at2.isEmpty()) return
-        val then = EngineClock.at(EngineClock.LONG_AGO) {
-            quest.getApplicableElements(mapData).mapTo(HashSet()) { it.type to it.id }
+        return when (run) {
+            Run.NOW -> {
+                // a quest may return an element twice (AddMaxHeight: a tunnel that is also below a bridge);
+                // the app keys quests by element, so it is one quest
+                val now = quest.getApplicableElements(mapData).distinctBy { it.type to it.id }
+                if (VERIFY_FAST) {
+                    val keys = now.mapTo(HashSet()) { it.type to it.id }
+                    if (quest !== port) verifyTwin(port, mapData, keys)
+                    if (!engine.quests[qi].usesAge) verifyNoAge(port, quest, mapData, keys)
+                }
+                now
+            }
+            Run.AT_05 -> Resurvey.at(0.5f) { quest.getApplicableElements(mapData).toList() }
+            Run.AT_2 -> Resurvey.at(2f) { quest.getApplicableElements(mapData).toList() }
+            Run.LONG_AGO -> EngineClock.at(EngineClock.LONG_AGO) { quest.getApplicableElements(mapData).toList() }
         }
+    }
+
+    /** Runs area quest [qi] on [mapData] (bounded by [box]), one run after the other, and counts it. */
+    private fun countIn(mapData: MapDataWithGeometry, box: BoundingBox, qi: Int, cityIndexes: List<Int>?) {
+        tally(mapData, box, qi, cityIndexes, runsOf(qi).associateWith { runQuest(mapData, qi, it) })
+    }
+
+    /** Counts every result of [results], the runs of area quest [qi], whose position is in [box] in the
+     *  cities whose polygon holds it, where [qi] is enabled; [cityIndexes]: only these cities (city mode). */
+    private fun tally(
+        mapData: MapDataWithGeometry, box: BoundingBox, qi: Int, cityIndexes: List<Int>?, results: Map<Run, List<Element>>,
+    ) {
+        val now = results.getValue(Run.NOW)
+        val at05 = results[Run.AT_05].orEmpty()
+        val at2 = results[Run.AT_2].orEmpty()
+        if (now.isEmpty() && at05.isEmpty() && at2.isEmpty()) return
+        val then = results[Run.LONG_AGO]?.mapTo(HashSet()) { it.type to it.id }
         val masks = LinkedHashMap<Pair<ElementType, Long>, Int>()
         val elements = HashMap<Pair<ElementType, Long>, Element>()
         fun mark(es: List<Element>, bit: Int, agedBit: Int) {
             for (e in es) {
                 val k = e.type to e.id
                 elements.putIfAbsent(k, e)
-                masks[k] = (masks[k] ?: 0) or bit or (if (k in then) 0 else agedBit)
+                masks[k] = (masks[k] ?: 0) or bit or (if (then == null || k in then) 0 else agedBit)
             }
         }
         mark(now, M_NOW, M_AGED)
@@ -289,6 +316,14 @@ class AreaPass(
         verifiedTwins.incrementAndGet()
     }
     val verifiedTwins = java.util.concurrent.atomic.AtomicLong()
+
+    /** a quest that says it has no age test must not care about the clock: [runsOf] relies on it */
+    private fun verifyNoAge(port: AreaQuest, quest: AreaQuest, mapData: MapDataWithGeometry, now: Set<Pair<ElementType, Long>>) {
+        val then = EngineClock.at(EngineClock.LONG_AGO) {
+            quest.getApplicableElements(mapData).mapTo(HashSet()) { it.type to it.id }
+        }
+        check(then == now) { "${port.name} has usesAge = false but depends on the clock in ${mapData.boundingBox}" }
+    }
 
     private fun timing(stage: String, t0: Long, note: String) {
         val s = (System.nanoTime() - t0) / 1e9
@@ -466,11 +501,22 @@ class AreaPass(
     private fun countCity(city: City, mapData: MutableMapDataWithGeometry, questIndices: List<Int>) {
         val box = mapData.boundingBox!!
         engine.dumpAreaElements(city, mapData)
-        val seconds = parallelMap(0, questIndices.size) { k ->
+        // every run is its own task, the age quests' first: they take longest, and one left for last holds
+        // up the whole city
+        val tasks = questIndices.sortedByDescending { engine.quests[it].usesAge }.flatMap { qi -> runsOf(qi).map { qi to it } }
+        class Done(val qi: Int, val run: Run, val elements: List<Element>, val seconds: Double)
+        val done = parallelMap(0, tasks.size) { k ->
+            val (qi, run) = tasks[k]
             val t0 = System.nanoTime()
-            countIn(mapData, box, questIndices[k], listOf(city.index))
-            questIndices[k] to (System.nanoTime() - t0) / 1e9
+            val elements = runQuest(mapData, qi, run)
+            Done(qi, run, elements, (System.nanoTime() - t0) / 1e9)
+        }.groupBy { it.qi }
+        val questIds = done.keys.toList()
+        parallelMap(0, questIds.size) { k ->
+            val qi = questIds[k]
+            tally(mapData, box, qi, listOf(city.index), done.getValue(qi).associate { it.run to it.elements })
         }
+        val seconds = done.map { (qi, runs) -> qi to runs.sumOf { it.seconds } }
         for ((qi, s) in seconds.sortedByDescending { it.second }.take(3)) if (s >= 1.0) {
             log("  %-30s %6.1f s".format(engine.quests[qi].name, s))
             engine.stats.timings["area: ${city.id} ${engine.quests[qi].name}"] = s

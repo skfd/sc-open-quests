@@ -16,8 +16,8 @@ import de.westnordost.streetcomplete.data.osm.mapdata.MapDataWithGeometry
 interface AreaQuest {
     /** SC's quest type name, as in the registry dump */
     val name: String
-    /** whether the kept code mentions the clock (`older`, `today`, `TagOlderThan`...); agedOnly is
-     *  computed for every area quest regardless */
+    /** whether the kept code mentions the clock (`older`, `today`, `TagOlderThan`...); only such a quest
+     *  runs again for agedOnly and the other resurvey settings (`-Dopenquests.verifyFast=true` checks the rest) */
     val usesAge: Boolean
     fun getApplicableElements(mapData: MapDataWithGeometry): Iterable<Element>
 }
