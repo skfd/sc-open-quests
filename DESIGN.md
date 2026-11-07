@@ -1189,8 +1189,8 @@ The owner asked what it takes to count all of it, hosting and hardware open. Not
 
 - **Czechia as one area ran out of heap** (41 GB, `MutableMapDataWithGeometry`, while building the map
   data). The same file as 15 cells ran with no engine change, the largest cell 17M nodes in 72 s. So the
-  world is cut into cells. The cells' sum (11.2M open, every quest) double-counts what crosses an edge;
-  an element must belong to one cell.
+  world is cut into cells. The cells' sum was 11.2M open, every quest. An element's centre lies in one
+  cell, so nothing is counted twice.
 - **The planet is 15 to 17 hours on this machine.** 10 to 11 billion nodes, a density estimate (100-110k
   nodes per MB of pbf, and a planet now larger than the 85 GB noted above), at 5.4 s per million. About 1.5
   billion open quests of every kind, 0.12 to 0.16 a node; the app's default quests are about a third of that.
@@ -1240,7 +1240,6 @@ counted city around it, so `add_parts.py`'s step 1 and its "inside the city" che
 divisions whose own source is OSM, the owner's rule of 2026-10-24 (costs Germany 4,130 of 4,717 microhoods,
 few neighbourhoods). A division with no polygon, 3.6M of the 4.7M, keeps its name and has no number. Parts
 cost about 4% of a pass today (Ontario 216 s against 208 s, 790 parts).
-Open for the cell test: a city today also counts an element that only crosses it; position alone does not.
 
 **Only this machine: measured the same evening.**
 - **CPU is the limit, not memory.** Czechia's five columns, two engines at once at 20 GB heap each: 520 s
@@ -1363,3 +1362,29 @@ Steps 2 and 4 alone would give about 2 to 3 times if they hold, which meets the 
 steps; reading the pbf is 17% of CPU, so that alone gives about 1.2 times at most. A full rewrite only if the goal
 changes: 16 GB workers, much larger cells, or a count of an hour or two. That is a separate project with its
 own repin process.
+
+## The cell test: passed (2026-11-06)
+
+Do cells change the numbers? Tiles as the engine's "cities", each real city a part inside every tile it
+touches, on the same extract, notes clip and quests file as each region's archived snapshot. No engine
+patch: a city's membership is by the element's centre in both passes, so nothing crosses twice and city
+numbers do not lose border elements. Harness and results in `.scratch/world-spike/cell-test/` (`REPORT.txt`).
+
+| cell | cities | every quest | app-default total | over 0.1% | worst city (default) |
+|---|---|---|---|---|---|
+| z10 | all 147 | 39,695,236 to 39,695,249 | 11,367,386 to 11,367,397 | 0 | Orangeville +0.0124% |
+| z12 | 115 (not Europe; out of time) | 20,436,529 to 20,436,513 | 5,788,935 to 5,788,920 | 0 | Saguenay -0.0405% |
+
+- **The owner's bar of 0.1% holds at both sizes.** 114 of the 147 cities are equal in every quest at z10.
+- **What moves:** AddHousenumber (44 quests in all at z10, 34 at z12; a building must lie wholly inside the map
+  data), then AddMaxHeight and AddBarrierOnPath by 3 each.
+- **The harness can see an edge:** Bremen as bare z16 tiles with no ring is -0.66%. The 1 km ring removes that.
+- **Unexplained:** filter quests should not move and four do: Burlington's AddWayLit and AddCyclewaySegregation
+  by 1, Athens' AddMaxSpeed and AddRoadSmoothness. Perhaps one way whose centre lies on the boundary, where the
+  test's ring stitching reverses segments. Not verified.
+- **Cost:** z10 passes 3,727 s against 2,525 s whole-city, most of the gap one cell: Paris's AddAddressStreet
+  1,434 s against 582 s, on a machine shared with the re-cut at the end. It wants a fast twin first. z12 was 3 times
+  slower (Alberta 4,721 mostly empty cells): empty tiles are expensive as cities, so cells should be sized by
+  nodes, not by zoom.
+- **Not tested:** a ring other than 1 km; a file cut to a region's edge (every run read the whole extract);
+  land outside counted cities; country rules and time zone by position.

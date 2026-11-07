@@ -392,7 +392,7 @@ new cities appear by themselves.
    What GitHub can hold while that grows: DESIGN.md, "Hosting headroom: measured" (about 350 more cities
    as things stand; near 1,000 the daily data leaves git history).
 7. **Asked 2026-11-06:** counting the whole planet, not cities (DESIGN.md, "The whole
-   world: measured and proposed"). The owner's answers are there: cells within 0.1%, Overture boundaries, this machine only, a weekly world in about 24 hours. First the cell test.
+   world: measured and proposed"). The owner's answers are there: cells within 0.1%, Overture boundaries, this machine only, a weekly world in about 24 hours. The cell test passed: every city within 0.1% (DESIGN.md, "The cell test: passed").
    What to buy for daily runs, and when: HARDWARE.md.
 8. **Canada and Germany onto a clip (2026-11-06, the owner's yes):** a week side by side, to 11-14, then the
    switch. DESIGN.md, "Canada and Germany onto a clip"; read `.scratch/side-by-side/report.csv` then.
