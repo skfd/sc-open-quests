@@ -18,13 +18,14 @@ speed **1 L**.
 |---|---|
 | counting | 5.4 s per million nodes, in town or country |
 | the planet | 10-11 billion nodes (estimated), so about 16 L-hours |
-| limit | CPU. Two engines at once took 520 s, one took 522 s |
+| limit | Not proven to be CPU. Two engines took 520 s and one 522 s, but on different work; one profiled run averaged 7.3 of 24 threads, with a busy machine (DESIGN.md, 2026-11-06) |
 | memory | about 1 GB of heap per million nodes in an area: 7.8M 7 GB, 11.8M 10 GB, 21M 18 GB, 31M 24 GB; 97.5M failed at 41 GB |
 | work units | independent files, no shared state, about 1 GB each at 130M nodes |
 | daily input | one planet diff, about 110 MB |
 
 **Count hours a day = 16 / (engine speed-up x total L).** The target is 8 hours or less, leaving room for
-diffs (1-3 h), publishing (1 h) and a bad day.
+diffs (1-3 h), publishing (1 h) and a bad day. The 16 includes idle threads, so a machine that overlaps cells may
+need less. The clean test below settles it.
 
 | engine speed-up | L needed for 8 hours | what that means |
 |---|---|---|
@@ -148,12 +149,13 @@ docs, none measured here.
 ## Order of work
 
 1. **Wait for the cell test.** If cells miss the 0.1% bar, the plan changes.
-2. **Build the engine speed-up** and measure it (free).
-3. **Run 16 hours on the laptop** to see if it holds speed (free).
-4. **Benchmark candidates.** `.scratch/world-spike/cells/col4.osm.pbf`, 11.8M nodes, with this engine and
+2. **Run the clean engine test** on an idle machine: one column alone, then two at once (free, about 15 minutes).
+3. **Build the engine speed-up** and measure it (free).
+4. **Run 16 hours on the laptop** to see if it holds speed (free).
+5. **Benchmark candidates.** `.scratch/world-spike/cells/col4.osm.pbf`, 11.8M nodes, with this engine and
    quest file: this laptop takes about 100 s. Compare seconds and snapshot, with the heap the machine would
    really have. One borrowed 5950X if one can be found.
-5. **Work out L needed** from the table above. At 1.8x or better, the 5950X tower; below that, the 9950X. Check
+6. **Work out L needed** from the table above. At 1.8x or better, the 5950X tower; below that, the 9950X. Check
    prices that week.
 
 ## Sources
