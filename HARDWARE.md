@@ -5,8 +5,9 @@ hosted elsewhere (DESIGN.md, "The whole world: measured and proposed"). Prices a
 that week, several of them conflicting, in a memory shortage that moves them monthly. Check before buying.
 
 **In short:** buy nothing until the engine speed-up is measured, because it may be worth as much as a new
-computer. Then benchmark before paying. The likely buy is one Ryzen 9 9950X desktop with 64 GB, or two or
-three 32 GB Mac minis if quiet and low power matter more. Phones are not worth it.
+computer. Then benchmark before paying. The machine should also serve OSM servers and CI (the owner, 2026-11-06),
+so buy a tower: a used Ryzen 9 5950X if the speed-up reaches 1.8x, a Ryzen 9 9950X if it does not. Both with
+64 GB and 4 TB. Phones are not worth it.
 
 ## The workload
 
@@ -34,16 +35,17 @@ diffs (1-3 h), publishing (1 h) and a bad day.
 ## Spec: one machine
 
 - **CPU:** 16 cores or more, at least 1.5 L. Sustained all-core speed is what counts; a desktop cooler matters.
-- **Memory:** 64 GB. 128 GB is not needed, and it is where prices are worst.
-- **Disk:** 4 TB NVMe. 2 TB works. See below.
+- **Memory:** 64 GB, as 2x32 GB so two slots stay free. The count does not need 128 GB, and it is where prices
+  are worst.
+- **Disk:** 4 TB NVMe. 2 TB works for the count alone, not with the OSM servers. See below.
 - **Network:** wired gigabit.
 - **OS:** Linux. It runs everything the laptop does without Docker Desktop or Task Scheduler.
 - **Uptime:** on all day, on a surge protector. A run that dies restarts its file, so no UPS is needed.
 
 ## Spec: many machines
 
-One **coordinator** holds the store, applies diffs, hands out files and publishes. This laptop can do it.
-**Workers** only count.
+One **coordinator** holds the store, applies diffs, hands out files and publishes. This laptop can do it only
+with more disk: the store peaks at about 680 GB and it has 260 GB free. **Workers** only count.
 
 | worker | requirement |
 |---|---|
@@ -57,6 +59,9 @@ keep their files and apply the diff themselves.
 
 **Check before trusting a new kind of worker:** its snapshot must be identical to the laptop's on the same
 file. Different CPUs and JVMs should agree, but nothing has tested it.
+
+**A small heap costs time.** Ontario took 261-271 s at 16 GB against 188 s at 40 GB, all of it collection. A
+32 GB worker may run below its L; cells that need far less than the heap may not suffer. Not yet measured.
 
 ## Disk
 
@@ -77,26 +82,51 @@ Treat them as a shortlist until benchmarked.
 
 | option | L (est.) | price | $ per L | power | note |
 |---|---|---|---|---|---|
-| Mac mini M4, 32 GB | 1.0 | about $1,000 (launch list) | 1,000 | about 40 W | Silent; memory is included; needs the job queue |
+| Mac mini M4, 32 GB, 512 GB | 1.0 | $1,199 (2025 list; the 256 GB model is gone) | 1,200 | about 40 W | Silent; memory is included; needs the job queue and disk elsewhere for the store |
 | Mac mini M4 Pro, 14 cores, 64 GB, 1 TB | 1.45 | about $2,400 (2024 list) | 1,650 | about 60 W | Score 22,285; refurbished is cheaper |
 | Ryzen AI Max+ 395 mini PC, 64 GB (GMKtec EVO-X2) | 1.3 | about $1,500 | 1,150 | about 120 W | Memory soldered; prices conflict a lot |
 | Ryzen AI Max+ 395, 128 GB (Bosgame M5) | 1.3 | about $2,400 | 1,850 | about 120 W | The extra memory buys no speed here |
 | Framework Desktop, 64 GB | 1.3 | about $1,640 | 1,250 | about 120 W | Reported after its price rises |
+| **Used Ryzen 9 5950X tower, 64 GB DDR4, 4 TB** | **1.1** | **about $1,450** | **about 1,300** | **about 180 W** | Score from memory; CPU about $280 used, 2x32 GB $459, 4 TB $280-590, the rest a guess of $300; no warranty |
 | **Ryzen 9 9950X desktop, 64 GB, built** | **1.75** | **about $2,200-2,600** | **about 1,350** | **about 200 W** | Score about 27,000; no queue needed; CPU price not confirmed |
 | Used EPYC 7702 (64 cores) | 2.5-3.5, a guess | CPU about $500; board and DDR4 not priced | ? | 250-300 W | Loud; many cores may not scale; run several engines |
+
+The two towers cost about the same per L. The 5950X saves about $900 of cash and gives up 0.65 L. It alone
+needs a 1.8x speed-up for 8 hours (16 / (1.8 x 1.1)); the 9950X needs 1.15x. Reaching 128 GB costs about $460
+more on the 5950X and $1,000-1,250 on the 9950X.
+
+## Other uses: OSM servers and CI
+
+The owner's choice for what the machine does when it is not counting. Requirements are from each project's own
+docs, none measured here.
+
+| job | memory | disk | on 64 GB, 4 TB |
+|---|---|---|---|
+| Overpass, whole planet | public instance runs on 32 GB; more is cache | 250-300 GB | Fits. A clone takes 4-8 hours, an import 24-48 |
+| Planetiler, planet tiles | half the planet file, about 45 GB; 32 GB with `--storage=mmap` | 10x the planet file, about 900 GB while building | Fits. Reported 2-3 hours on 24-32 cores, so longer here |
+| Nominatim, whole planet | 128 GB strongly recommended; out-of-memory reports under 64 GB not accepted | 1 TB or more, NVMe | At the floor. Run a region, or add 64 GB first |
+
+- **Disk:** the count (680) plus all three is about 2.9 TB, so 4 TB stops being optional.
+- **Sharing the machine:** one engine fills every thread, so nothing heavy should run beside a count. A count of
+  8 hours fits inside the owner's working day and leaves the evening free.
+- **CI:** 94 of 131 GitHub repos are public, where hosted Actions cost nothing, so a runner only helps private
+  repos and long jobs. Keep it off public repos: a fork's pull request could run code on this machine. GitHub's
+  planned $0.002 a minute for self-hosted runners was postponed; check before relying on it.
+- **Windows:** Linux stays the host. Windows jobs for the XrmToolBox tools run in a VM.
 
 ## Life hacks
 
 **Worth doing**
 - **Speed up the engine first.** A 2x gain is worth one new desktop, for nothing.
-- **Buy memory inside a computer.** 64 GB of DDR5 alone was reported at $1,000-1,250 this year. A whole 64 GB
-  mini PC costs about $1,500, and a 32 GB Mac mini about $1,000. In this shortage the computer is nearly free.
+- **Buy memory inside a computer, or buy DDR4.** 64 GB of DDR5 alone was reported at $1,000-1,250 this year. A
+  whole 64 GB mini PC costs about $1,500, and a 32 GB Mac mini about $1,200. 64 GB of DDR4 is about $460, which
+  is what makes the 5950X tower work.
 - **Rent before you buy.** Scaleway rents M4 Mac minis (reported about EUR 149 a month, billed hourly, 24-hour
   minimum): one day answers what a Mac does on this workload for a few euros.
 - **Use what you can borrow.** Any idle PC with 32 GB is a free worker at night, and can run the benchmark.
 - **Refurbished Macs.** Apple's refurbished store is usually about 15% below list. A Mac mini is small and
   quiet enough to run all day in a living room, which a 200 W desktop may not be.
-- **Keep the laptop as coordinator.** The new machine does the counting, and the laptop stays usable.
+- **Keep the laptop free.** The tower counts and holds the store, and the laptop stays usable.
 - **Recount only changed tiles, later.** In Ontario, 1.8% of the nodes sat in tiles touched that day. It could
   cut the count several times over on normal days, and shrinks whatever you need to buy.
 
@@ -104,9 +134,9 @@ Treat them as a shortlist until benchmarked.
 - **Cheap phones.** A 12 GB phone leaves perhaps 6-8 GB of heap, so files of 5M nodes and 2,000+ of them. It
   slows down from heat within minutes under full load, perhaps 0.1-0.2 L (a guess). So 10 phones for 1-2 L, each
   on a charger 24 hours a day (battery swelling is a real risk), on Wi-Fi, with Android killing background
-  work. A $1,000 Mac mini beats the lot. Fun as an experiment, not as infrastructure.
+  work. A $1,200 Mac mini beats the lot. Fun as an experiment, not as infrastructure.
 - **Raspberry Pis.** Same sums: about 0.2 L at best (a guess), with 16 GB at most.
-- **128 GB machines.** Nothing here uses it.
+- **128 GB machines.** The count does not use it. Only a planet Nominatim would, and a tower can add it later.
 - **GPUs.** The work is hash lookups and tag filters in JVM code, nothing a GPU does well.
 - **More disk for speed.** It buys room, not time.
 
@@ -116,8 +146,10 @@ Treat them as a shortlist until benchmarked.
 2. **Build the engine speed-up** and measure it (free).
 3. **Run 16 hours on the laptop** to see if it holds speed (free).
 4. **Benchmark candidates.** `.scratch/world-spike/cells/col4.osm.pbf`, 11.8M nodes, with this engine and
-   quest file: this laptop takes about 100 s. Compare seconds and snapshot. One rented Mac, one borrowed PC.
-5. **Work out L needed** from the table above, then buy the cheapest $ per L that fits. Check prices that week.
+   quest file: this laptop takes about 100 s. Compare seconds and snapshot, with the heap the machine would
+   really have. One borrowed 5950X if one can be found.
+5. **Work out L needed** from the table above. At 1.8x or better, the 5950X tower; below that, the 9950X. Check
+   prices that week.
 
 ## Sources
 
@@ -131,5 +163,16 @@ Prices and scores, read 2026-11-06:
 [GMKtec EVO-X2](https://www.tomshardware.com/desktops/mini-pcs/gmktec-evo-x2-ai-mini-pc-review),
 [Ryzen AI Max roundup](https://www.layer3labs.io/gear/ryzen-ai-mini-pcs),
 [EPYC 7702](https://www.amcompute.com/appraisals/epyc-7702),
-[Scaleway via Green Mini](https://www.greenmini.nl/compare/scaleway-alternative/).
-From memory, not sourced: the Mac mini M4's price and score, power figures, Apple's refurbished discount.
+[Scaleway via Green Mini](https://www.greenmini.nl/compare/scaleway-alternative/),
+[Mac mini 32 GB list](https://9to5toys.com/2025/08/21/rare-deal-mac-mini/),
+[256 GB Mac mini dropped](https://seekingalpha.com/news/4584299-apple-discontinues-256gb-mac-mini-starting-price-climbs-to-799),
+[used 5950X](https://yomotherboard.com/?p=467699),
+[64 GB DDR4](https://datacenterdisk.com/ram/ddr4/64gb),
+[4 TB NVMe](https://datacenterdisk.com/best/4tb-nvme-ssd),
+[Nominatim](https://git.openstreetmap.org/nominatim.git/blob_plain/87a8c246:/docs/admin/Installation.md),
+[Overpass](https://wiki.openstreetmap.org/wiki/Overpass_API/install),
+[Planetiler](https://www.github.com/onthegomap/planetiler/blob/main/PLANET.md),
+[Planetiler with mmap](https://newreleases.io/project/github/onthegomap/planetiler/release/v0.4.0),
+[self-hosted runner charge](https://github.blog/changelog/2025-12-16-coming-soon-simpler-pricing-and-a-better-experience-for-github-actions/).
+From memory, not sourced: the Mac mini M4's and 5950X's scores, power figures, Apple's refurbished discount, the
+fork risk on self-hosted runners.
