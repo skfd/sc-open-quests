@@ -7,7 +7,6 @@ import de.westnordost.streetcomplete.data.osm.mapdata.BoundingBox
 import de.westnordost.streetcomplete.data.osm.mapdata.Element
 import de.westnordost.streetcomplete.data.osm.mapdata.ElementType
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
-import de.westnordost.streetcomplete.data.osm.mapdata.MutableMapDataWithGeometry
 import de.westnordost.streetcomplete.data.osm.mapdata.Node
 import de.westnordost.streetcomplete.data.osm.mapdata.Relation
 import de.westnordost.streetcomplete.data.osm.mapdata.RelationMember
@@ -229,8 +228,8 @@ class AreaPass(
             val key = tiles[ti]
             val b = buckets.getValue(key)
             val box = TilePos((key shr 32).toInt(), key.toInt()).asBoundingBox(AREA_TILE_ZOOM)
-            val mapData = assemble(box, b.ways.toArray().map { ways[it] }, b.nodes.toArray().map { nodes[it] },
-                b.relations.toArray().map { relations[it] })
+            val mapData = assemble(box, b.ways.toArray().distinct().map { ways[it] }, b.nodes.toArray().distinct().map { nodes[it] },
+                b.relations.toArray().distinct().map { relations[it] })
             for (qi in questIndices) countIn(mapData, box, qi, cityIndexes = null)
         }
         timing("area: quests", t0, "${questIndices.size} quests in ${tiles.size} tiles")
@@ -438,7 +437,7 @@ class AreaPass(
     // ---------------------------------------------------------------------------------------------
     // per city
 
-    private fun buildMapData(city: Int): MutableMapDataWithGeometry {
+    private fun buildMapData(city: Int): MapDataWithGeometry {
         val inCity = citySets.membersOf(city)
         return assemble(bbox(city), ways.filter { inCity[it.cities] },
             nodes.filter { inCity[it.cities] && it.tags.isNotEmpty() }, relations.filter { inCity[it.cities] },
@@ -450,23 +449,47 @@ class AreaPass(
     private fun assemble(
         box: BoundingBox, areaWays: List<WayRec>, taggedNodes: List<NodeRec>, areaRelations: List<RelRec>,
         parallel: Boolean = false,
-    ): MutableMapDataWithGeometry {
-        val mapData = MutableMapDataWithGeometry()
-        mapData.boundingBox = box
+    ): MapDataWithGeometry {
+        fun <T> each(n: Int, f: (Int) -> T): List<T> = if (parallel) parallelMap(0, n, f) else (0 until n).map(f)
 
-        fun putNode(n: NodeRec) {
-            val node = Node(n.id, LatLon(unpackLat7(n.coord) / 1e7, unpackLon7(n.coord) / 1e7), n.tags, n.version, n.timestamp)
-            mapData.put(node, geometryCreator.create(node))
+        // the tagged nodes, then every node of a way, each where it first comes; a way's node that is not
+        // in the file stays out, and the way has no geometry
+        val refs = each(areaWays.size) { i ->
+            val r = areaWays[i].refs
+            val found = IntArray(r.size)
+            var n = 0
+            for (id in r) {
+                val at = nodeIds.binarySearch(id)
+                if (at >= 0) found[n++] = at
+            }
+            if (n == r.size) found else found.copyOf(n)
         }
-        for (n in taggedNodes) putNode(n)
-        for (w in areaWays) for (r in w.refs) {
-            if (mapData.getNode(r) != null) continue
-            val i = nodeIds.binarySearch(r)
-            if (i >= 0) putNode(nodes[i])
+        val wanted = IntArray(taggedNodes.size + refs.sumOf { it.size })
+        var filled = 0
+        for (n in taggedNodes) wanted[filled++] = nodeIds.binarySearch(n.id)
+        for (r in refs) { r.copyInto(wanted, filled); filled += r.size }
+        val byNode = LongArray(wanted.size) { (wanted[it].toLong() shl 32) or it.toLong() }
+        java.util.Arrays.parallelSort(byNode)
+        var distinct = 0
+        var previous = -1L
+        for (key in byNode) {
+            if (key ushr 32 != previous) byNode[distinct++] = key and 0xffffffffL
+            previous = key ushr 32
+        }
+        val firstAt = byNode.copyOf(distinct)
+        firstAt.sort()
+        val nodeOrder = IntArray(distinct) { wanted[firstAt[it].toInt()] }
+        val inHashOrder = hashMapOrder(LongArray(distinct) { nodes[nodeOrder[it]].id })
+        val mapNodes = each(distinct) { i ->
+            val n = nodes[nodeOrder[inHashOrder[i]]]
+            Node(n.id, LatLon(unpackLat7(n.coord) / 1e7, unpackLon7(n.coord) / 1e7), n.tags, n.version, n.timestamp)
         }
 
-        val wayGeometry = { i: Int ->
-            val w = areaWays[i]
+        val wayOrder = hashMapOrder(LongArray(areaWays.size) { areaWays[it].id })
+        val relationOrder = hashMapOrder(LongArray(areaRelations.size) { areaRelations[it].id })
+
+        val wayGeometries = each(areaWays.size) { i ->
+            val w = areaWays[wayOrder[i]]
             val way = Way(w.id, LongArrayAsList(w.refs), w.tags, w.version, w.timestamp)
             val positions = ArrayList<LatLon>(w.refs.size)
             var complete = true
@@ -478,10 +501,9 @@ class AreaPass(
             // SC (MapData.getNodePositions): a way with a node missing has no geometry
             way to if (complete) safeGeometry { geometryCreator.create(way, positions) } else null
         }
-        val wayGeometries = if (parallel) parallelMap(0, areaWays.size, wayGeometry) else areaWays.indices.map(wayGeometry)
-        for ((way, g) in wayGeometries) mapData.put(way, g)
 
-        for (r in areaRelations) {
+        val relationGeometries = each(areaRelations.size) { i ->
+            val r = areaRelations[relationOrder[i]]
             val relation = Relation(r.id, r.members, r.tags, r.version, r.timestamp)
             val geometries = HashMap<Long, List<LatLon>>()
             for (m in r.members) {
@@ -489,16 +511,16 @@ class AreaPass(
                 val coords = memberWays[m.ref] ?: continue
                 geometries[m.ref] = coords.map { LatLon(unpackLat7(it) / 1e7, unpackLon7(it) / 1e7) }
             }
-            val g = if (geometries.isEmpty()) null else safeGeometry { geometryCreator.create(relation, geometries) }
-            mapData.put(relation, g)
+            relation to if (geometries.isEmpty()) null else safeGeometry { geometryCreator.create(relation, geometries) }
         }
-        return mapData
+        return ArrayMapData(box, mapNodes, wayGeometries.map { it.first }, wayGeometries.map { it.second },
+            relationGeometries.map { it.first }, relationGeometries.map { it.second })
     }
 
     private inline fun safeGeometry(create: () -> ElementGeometry?): ElementGeometry? =
         try { create() } catch (e: RuntimeException) { null }
 
-    private fun countCity(city: City, mapData: MutableMapDataWithGeometry, questIndices: List<Int>) {
+    private fun countCity(city: City, mapData: MapDataWithGeometry, questIndices: List<Int>) {
         val box = mapData.boundingBox!!
         engine.dumpAreaElements(city, mapData)
         // every run is its own task, the age quests' first: they take longest, and one left for last holds
