@@ -267,7 +267,7 @@ $patches = @(
             '    val mayEvaluateToTrueWithNoTags = elementExprRoot?.mayEvaluateToTrueWithNoTags ?: true'
             ''
             '    // sc-open-quests patch: skips an element that holds none of the keys this expression needs'
-            '    private val keyReject = openquests.KeyReject.of(elementExprRoot)'
+            '    val keyReject = openquests.KeyReject.of(elementExprRoot)'
         )
         Description = 'data/elementfilter/ElementFilterExpression.kt: works out the keys an expression needs (`keyReject`)'
     }

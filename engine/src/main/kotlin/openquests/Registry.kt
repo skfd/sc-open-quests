@@ -58,11 +58,14 @@ sealed interface Countries {
 interface QuestMatcher {
     fun includesElementType(type: ElementType): Boolean
     fun matches(element: Element): Boolean
+    /** false only if [matches] is false whatever the clock and resurvey setting */
+    fun mayMatch(element: Element): Boolean = true
 }
 
 private class FilterMatcher(private val filter: ElementFilterExpression) : QuestMatcher {
     override fun includesElementType(type: ElementType) = filter.includesElementType(type)
     override fun matches(element: Element) = filter.matches(element)
+    override fun mayMatch(element: Element) = filter.keyReject.mayMatch(element)
 }
 
 private class CustomMatcher(private val quest: CustomQuest) : QuestMatcher {

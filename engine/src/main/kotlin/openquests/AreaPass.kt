@@ -261,8 +261,8 @@ class AreaPass(
                 }
                 now
             }
-            Run.AT_05 -> Resurvey.at(0.5f) { quest.getApplicableElements(mapData).toList() }
-            Run.AT_2 -> Resurvey.at(2f) { quest.getApplicableElements(mapData).toList() }
+            Run.AT_05 -> Resurvey.at(Resurvey.HALF) { quest.getApplicableElements(mapData).toList() }
+            Run.AT_2 -> Resurvey.at(Resurvey.DOUBLE) { quest.getApplicableElements(mapData).toList() }
             Run.LONG_AGO -> EngineClock.at(EngineClock.LONG_AGO) { quest.getApplicableElements(mapData).toList() }
         }
     }

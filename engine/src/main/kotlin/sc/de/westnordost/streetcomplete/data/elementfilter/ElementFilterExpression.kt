@@ -74,7 +74,7 @@ class ElementFilterExpression(
     val mayEvaluateToTrueWithNoTags = elementExprRoot?.mayEvaluateToTrueWithNoTags ?: true
 
     // sc-open-quests patch: skips an element that holds none of the keys this expression needs
-    private val keyReject = openquests.KeyReject.of(elementExprRoot)
+    val keyReject = openquests.KeyReject.of(elementExprRoot)
 
     /** returns whether the given element is found through (=matches) this expression */
     fun matches(element: Element): Boolean =

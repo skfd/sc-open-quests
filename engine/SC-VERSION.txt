@@ -13,7 +13,7 @@ patches=clock,fastreject,multiplier,nolazy,onepoint
 files (sha256 of the copied file; patched files also give the upstream sha256):
   b5dc8154ec673f1522c129131ace62d6ea6913e8f8afb8e8242fac1549b0d1ed  de/westnordost/streetcomplete/data/elementfilter/BooleanExpression.kt
   af9ee66cfc6e286bbf6c4bf76ff43f7fde01bd04454fe529528db13d8fceecac  de/westnordost/streetcomplete/data/elementfilter/BooleanExpressionBuilder.kt
-  f3ddca534d002e2d3d99d16020968912345569f39936ee4143ace821eeb1068d  de/westnordost/streetcomplete/data/elementfilter/ElementFilterExpression.kt  (patch fastreject; upstream 6d15276119ff080031968b463cf3194bb604a58287566a55817f1a7c5899fb24)
+  891ea907951786653782c39aa105f911aa3d91314b0dfd5582f55ab707bc2ce8  de/westnordost/streetcomplete/data/elementfilter/ElementFilterExpression.kt  (patch fastreject; upstream 6d15276119ff080031968b463cf3194bb604a58287566a55817f1a7c5899fb24)
   9b5d5afc93bd38ced47569d5142d37a0e0f6ed5fec9f42ae44f1564623311ecf  de/westnordost/streetcomplete/data/elementfilter/ElementFiltersParser.kt
   f9d744dc425637ab7a54da20584c8a9e2f9b6b0c78bbf6e25c96f467e8838338  de/westnordost/streetcomplete/data/elementfilter/NumberWithUnitParser.kt
   ad55e63ce728924b0174cfd2f82a724bc25c9dd8cb3f1285326bfa26a65120bb  de/westnordost/streetcomplete/data/elementfilter/OverpassQueryCreator.kt

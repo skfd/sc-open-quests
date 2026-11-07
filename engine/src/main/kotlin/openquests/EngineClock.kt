@@ -47,7 +47,11 @@ object EngineClock : Clock {
 /** The app's resurvey setting (ResurveyIntervals: 0.5, 1 or 2) for the current thread, through the
  *  `multiplier` patch of RelativeDate.MULTIPLIER; the default stays what the run set. */
 object Resurvey {
-    inline fun <T> at(multiplier: Float, block: () -> T): T {
+    /** the two other settings, boxed once: the main pass sets one for every match of an age quest */
+    val HALF: Float? = 0.5f
+    val DOUBLE: Float? = 2f
+
+    inline fun <T> at(multiplier: Float?, block: () -> T): T {
         val previous = RelativeDate.multiplierOverride.get()
         RelativeDate.multiplierOverride.set(multiplier)
         try {

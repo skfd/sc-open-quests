@@ -51,8 +51,8 @@ const val M_AGED_2 = 32
 inline fun matchVariants(usesAge: Boolean, test: () -> Boolean): Int {
     val now = test()
     if (!usesAge) return if (now) M_NOW else 0
-    val m05 = Resurvey.at(0.5f, test)
-    val m2 = Resurvey.at(2f, test)
+    val m05 = Resurvey.at(Resurvey.HALF, test)
+    val m2 = Resurvey.at(Resurvey.DOUBLE, test)
     if (!now && !m05 && !m2) return 0
     val past = EngineClock.at(EngineClock.LONG_AGO, test)
     var r = 0
@@ -262,6 +262,7 @@ class Engine(val registry: Registry, val cities: List<City>, val parts: List<Par
             if (!anyEnabled) continue
             val q = quests[qi]
             val matcher = q.matcher!!
+            if (!matcher.mayMatch(e)) continue
             // agedOnly: would it still match if no `older today -N` (or `< today`) test could be true?
             val mask = matchVariants(q.usesAge) { matcher.matches(e) }
             if (mask == 0) continue
