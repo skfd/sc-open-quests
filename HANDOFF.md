@@ -396,3 +396,6 @@ new cities appear by themselves.
    What to buy for daily runs, and when: HARDWARE.md.
 8. **Canada and Germany onto a clip (2026-11-06, the owner's yes):** a week side by side, to 11-14, then the
    switch. DESIGN.md, "Canada and Germany onto a clip"; read `.scratch/side-by-side/report.csv` then.
+9. **Engine, next (2026-11-07, handed off by the owner):** kerbs found once per map data for AddKerbHeight and
+   AddTactilePavingKerb, then a profile of CheckExistence. DESIGN.md, "Optimisation directions after the speed-up".
+   After that, the Germany world prototype (DESIGN.md, "The whole world: measured and proposed").
