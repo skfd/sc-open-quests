@@ -1295,12 +1295,16 @@ city waits for a re-cut, the re-cut's memory grows, and series step slightly whe
 - **A fast reject should:** each filter expression works out the keys it cannot match without and returns
   false at once when the element has none of them, in the one place all filters pass through. Exact by
   construction. Expected 1.7 to 2.5 times on the whole pass, not yet tried.
-- **Recounting only changed tiles buys little in an active city.** Hamburg, one day (860 objects): 3% of z14
-  tiles were touched, but they hold 21% of the nodes, 64% with a one-tile ring, and 98% at z12. Age-based
-  quests (52 of 193 filters mention a date) change with no edit at all, so a skip needs a full pass as well.
+- **Recounting only changed tiles pays in quiet places, not busy cities.** One day, nodes in z14 tiles touched:
+  Ontario (16,600 objects) 1.8%, 8.5% with a one-tile ring (22% at z12); Hamburg (860 objects) 21%, 64% with a
+  ring (98% at z12). Most of the planet should look more like Ontario, so this is a real later step: maybe a
+  fifth of the count on a normal day, unmeasured for the world. It needs per-tile state, and age-based quests
+  (52 of 193 mention a date) change with no edit at all, so a regular full pass stays.
 - **Keep the ~80 region files current from the daily diff** instead of a new planet and cut each day: the
   clip method, exact over 72 region-days. Guessed at 1 to 3 hours against 8.
 - **`run.py history` will not scale:** 72 s for 147 cities over 2,093 snapshots, a rebuild of everything each
   run; linear to a million places that is days. Publishing must append.
+- **The owner's answers (2026-11-06, late evening):** willing to buy a machine for the count, sized after the
+  speed-up is measured; R2 on a subdomain the owner has; the fast reject waits for the cell test.
 - **Budget for a day:** diffs 2 h, count 7-9 h, publish 1 h: about 11 hours, if the fast reject delivers.
   Without it 19 hours, on paper only. A second machine divides the count, since files share nothing.
