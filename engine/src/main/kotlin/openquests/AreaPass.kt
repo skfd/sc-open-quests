@@ -383,9 +383,9 @@ class AreaPass(
                     if (!isNeeded && end == start) continue
                     val set = setAt(lat7, lon7)
                     if (!isNeeded && set == 0) continue
-                    val tags = if (end == start) emptyMap() else HashMap<String, String>(end - start).also { m ->
+                    val tags = if (end == start) emptyMap() else TagMap((end - start) / 2).also { m ->
                         var j = start
-                        while (j < end) { m[ctx.strings[d.getKeysVals(j)]] = ctx.strings[d.getKeysVals(j + 1)]; j += 2 }
+                        while (j < end) { m.add(ctx.strings[d.getKeysVals(j)], ctx.strings[d.getKeysVals(j + 1)]); j += 2 }
                     }
                     out += NodeRec(id, pack(lat7, lon7), fitTags("area", "node", id, tags), if (hasInfo) info.getVersion(i) else 1,
                         ts * ctx.dateGranularity, set)

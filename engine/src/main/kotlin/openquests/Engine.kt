@@ -411,9 +411,9 @@ class Engine(val registry: Registry, val cities: List<City>, val parts: List<Par
                     val position = LatLon(lat7 / 1e7, lon7 / 1e7)
                     val cityIdx = locate(NODE, position)
                     if (cityIdx.isEmpty()) continue
-                    val tags = HashMap<String, String>(end - start)
+                    val tags = TagMap((end - start) / 2)
                     var j = start
-                    while (j < end) { tags[ctx.strings[d.getKeysVals(j)]] = ctx.strings[d.getKeysVals(j + 1)]; j += 2 }
+                    while (j < end) { tags.add(ctx.strings[d.getKeysVals(j)], ctx.strings[d.getKeysVals(j + 1)]); j += 2 }
                     val version = if (hasInfo) info.getVersion(i) else 1
                     val node = Node(id, position, fitTags("main", "node", id, tags), version, ts * ctx.dateGranularity)
                     for (c in cityIdx) counts.taggedNodes.incrementAndGet(c)
@@ -564,8 +564,8 @@ internal fun LongArray.distinctSorted(): LongArray {
 }
 
 internal fun tagsOf(keys: List<Int>, vals: List<Int>, strings: Array<String>): Map<String, String> {
-    val m = HashMap<String, String>(keys.size * 2)
-    for (i in keys.indices) m[strings[keys[i]]] = strings[vals[i]]
+    val m = TagMap(keys.size)
+    for (i in keys.indices) m.add(strings[keys[i]], strings[vals[i]])
     return m
 }
 
@@ -574,7 +574,8 @@ internal fun tagsOf(keys: List<Int>, vals: List<Int>, strings: Array<String>): M
  *  one element cannot stop a run; its other tags and its geometry count as usual. */
 internal fun fitTags(pass: String, type: String, id: Long, tags: Map<String, String>): Map<String, String> {
     if (tags.all { (k, v) -> fitsTag(k) && fitsTag(v) }) return tags
-    val kept = tags.filter { (k, v) -> fitsTag(k) && fitsTag(v) }
+    val kept = TagMap(tags.size)
+    for ((k, v) in tags) if (fitsTag(k) && fitsTag(v)) kept.add(k, v)
     for (k in tags.keys - kept.keys) log("$pass: $type $id: tag '$k' is over $MAX_OSM_TAG_VALUE_LENGTH code points, left out")
     return kept
 }

@@ -2,8 +2,10 @@
 # rerun the script instead. StreetComplete is GPL-3.0 (see src/main/kotlin/sc/LICENSE).
 tag=v64.1
 commit=f8a754b1674a316d2fd01b7870d69ff371cf74e2
-patches=clock,multiplier,nolazy,onepoint
+patches=clock,fastreject,multiplier,nolazy,onepoint
   clock: util/ktx/Instant.kt: systemTimeNow() reads a settable `var systemClock: Clock` (default Clock.System)
+  fastreject: data/elementfilter/ElementFilterExpression.kt: works out the keys an expression needs (`keyReject`)
+  fastreject: data/elementfilter/ElementFilterExpression.kt: matches() rejects an element without those keys at once
   multiplier: data/elementfilter/filters/RelativeDate.kt: MULTIPLIER reads a thread-local override first (`multiplierOverride`)
   nolazy: data/elementfilter/filters/RelativeDate.kt: `date` is a getter again, not `by lazy`
   nolazy: data/elementfilter/filters/ElementFilter.kt: `dateTimestamp` is a getter again, not `by lazy` (two classes)
@@ -11,7 +13,7 @@ patches=clock,multiplier,nolazy,onepoint
 files (sha256 of the copied file; patched files also give the upstream sha256):
   b5dc8154ec673f1522c129131ace62d6ea6913e8f8afb8e8242fac1549b0d1ed  de/westnordost/streetcomplete/data/elementfilter/BooleanExpression.kt
   af9ee66cfc6e286bbf6c4bf76ff43f7fde01bd04454fe529528db13d8fceecac  de/westnordost/streetcomplete/data/elementfilter/BooleanExpressionBuilder.kt
-  6d15276119ff080031968b463cf3194bb604a58287566a55817f1a7c5899fb24  de/westnordost/streetcomplete/data/elementfilter/ElementFilterExpression.kt
+  f3ddca534d002e2d3d99d16020968912345569f39936ee4143ace821eeb1068d  de/westnordost/streetcomplete/data/elementfilter/ElementFilterExpression.kt  (patch fastreject; upstream 6d15276119ff080031968b463cf3194bb604a58287566a55817f1a7c5899fb24)
   9b5d5afc93bd38ced47569d5142d37a0e0f6ed5fec9f42ae44f1564623311ecf  de/westnordost/streetcomplete/data/elementfilter/ElementFiltersParser.kt
   f9d744dc425637ab7a54da20584c8a9e2f9b6b0c78bbf6e25c96f467e8838338  de/westnordost/streetcomplete/data/elementfilter/NumberWithUnitParser.kt
   ad55e63ce728924b0174cfd2f82a724bc25c9dd8cb3f1285326bfa26a65120bb  de/westnordost/streetcomplete/data/elementfilter/OverpassQueryCreator.kt

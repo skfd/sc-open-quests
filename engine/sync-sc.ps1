@@ -28,6 +28,10 @@
     multiplier  data/elementfilter/filters/RelativeDate.kt: `RelativeDate.MULTIPLIER` (the app's
            resurvey setting) reads a thread-local override first, so that one pass can count the
            age quests at 0.5, 1 and 2. Same verbatim-line rule.
+    fastreject  data/elementfilter/ElementFilterExpression.kt: matches() first asks openquests.KeyReject,
+           which rejects an element holding none of the keys the expression cannot match without
+           (engine/src/main/kotlin/openquests/TagMap.kt). It only skips work, so no result changes;
+           TagMapTest checks every quest filter with and without it.
     nolazy  Since v64 a date filter caches its threshold (`RelativeDate.date` and the filters'
            `dateTimestamp` are `by lazy`), so the first evaluation would fix the clock and the
            multiplier for the filter's lifetime. The engine evaluates one filter instance at the
@@ -254,6 +258,28 @@ $patches = @(
             '    protected val dateTimestamp get() = dateFilter.date.toEpochMilli()'
         )
         Description = 'data/elementfilter/filters/ElementFilter.kt: `dateTimestamp` is a getter again, not `by lazy` (two classes)'
+    }
+    @{
+        Name = 'fastreject'
+        File = "$pkg/data/elementfilter/ElementFilterExpression.kt"
+        Find = '    val mayEvaluateToTrueWithNoTags = elementExprRoot?.mayEvaluateToTrueWithNoTags ?: true'
+        Replace = @(
+            '    val mayEvaluateToTrueWithNoTags = elementExprRoot?.mayEvaluateToTrueWithNoTags ?: true'
+            ''
+            '    // sc-open-quests patch: skips an element that holds none of the keys this expression needs'
+            '    private val keyReject = openquests.KeyReject.of(elementExprRoot)'
+        )
+        Description = 'data/elementfilter/ElementFilterExpression.kt: works out the keys an expression needs (`keyReject`)'
+    }
+    @{
+        Name = 'fastreject'
+        File = "$pkg/data/elementfilter/ElementFilterExpression.kt"
+        Find = '        && (element.tags.isNotEmpty() || mayEvaluateToTrueWithNoTags)'
+        Replace = @(
+            '        && (element.tags.isNotEmpty() || mayEvaluateToTrueWithNoTags)'
+            '        && keyReject.mayMatch(element)'
+        )
+        Description = 'data/elementfilter/ElementFilterExpression.kt: matches() rejects an element without those keys at once'
     }
     @{
         Name = 'onepoint'
