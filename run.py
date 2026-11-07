@@ -15,7 +15,7 @@ Subcommands:
   migrate-archive  move snapshots published before 2026-10-24 (docs/data/<region>/snapshots/) into
              data/archive/; count and history do it too, so it is idempotent and needs no flag
   update     download + backfill + history, then commit "data <asOfDate>" and push; last, check-release
-  planet     the monthly planet job (`weekly` is the old name, still accepted): refresh the planet
+  planet     the monthly planet job: refresh the planet
              history file (osm-extracts fetch planet-history; a failure leaves it as it is), re-cut every
              osm-extracts clip from it (osm-extracts recut), count the months the regions on a clip lack
              from the clip's history cut, and the weekly regions (tools/backfill_history.py weekly: clip,
@@ -1012,8 +1012,6 @@ def planet(push: bool = True) -> None:
     log("planet done")
 
 
-weekly = planet  # the job's name until 2026-11 (DESIGN.md, "Planet job: monthly while nothing counts from it")
-
 
 # --- SC releases ----------------------------------------------------------------------------------
 
@@ -1101,10 +1099,9 @@ def main(argv: list[str] | None = None) -> int:
         p.add_argument("--force", action="store_true", help="redo even if nothing changed")
         if name == "update":
             p.add_argument("--no-push", dest="push", action="store_false", help="commit but do not push")
-    for name in ("planet", "weekly"):
-        w = sub.add_parser(name, help="monthly: planet history + re-cut the clips + their months + the weekly "
-                           "regions + history + commit + push" + (" (old name of planet)" if name == "weekly" else ""))
-        w.add_argument("--no-push", dest="push", action="store_false", help="commit but do not push")
+    w = sub.add_parser("planet", help="monthly: planet history + re-cut the clips + their months + the weekly "
+                       "regions + history + commit + push")
+    w.add_argument("--no-push", dest="push", action="store_false", help="commit but do not push")
     h = sub.add_parser("history", help="rebuild history/, cities.json and compare/ from the archived snapshots")
     h.add_argument("--data-dir", type=Path, default=DATA_DIR)
     h.add_argument("--cities", type=Path, default=CITIES_CONFIG)
@@ -1130,7 +1127,7 @@ def main(argv: list[str] | None = None) -> int:
                 migrate_archive()
         elif args.command == "update":
             update(force=args.force, push=args.push)
-        elif args.command in ("planet", "weekly"):
+        elif args.command == "planet":
             planet(push=args.push)
         elif args.command == "check-release":
             check_release()

@@ -47,7 +47,7 @@ python run.py history    # archive -> docs/data/history/<city>.json, cities.json
 python run.py update     # all three, then commit "data <asOfDate>" and push (--no-push: commit only)
 python run.py planet     # monthly: osm-extracts fetch planet-history, osm-extracts recut (every clip), the
                          # months the regions on clips lack, the "cadence": "weekly" regions -> archive,
-                         # history, commit "data planet <date>", push (--no-push). `weekly` is its old name
+                         # history, commit "data planet <date>", push (--no-push)
 python tools/backfill_history.py months --region europe-west --region europe-central     --region europe-east --region europe-msk [--step 12]   # a clip's regions by hand, sharing each slice
 python tools/clip_polygon.py europe   # after adding a city to a clip's region: its polygon and .poly files
 ```

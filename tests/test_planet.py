@@ -302,7 +302,7 @@ class WeeklyRunTest(unittest.TestCase):
             self.logs.clear()
             with self.fetch(code), mock.patch.object(bh, "weekly") as counted, \
                     mock.patch.object(run, "history") as hist, mock.patch.object(run, "publish") as pub:
-                run.weekly(push=False)
+                run.planet(push=False)
             counted.assert_not_called()
             hist.assert_not_called()
             pub.assert_not_called()
@@ -317,7 +317,7 @@ class WeeklyRunTest(unittest.TestCase):
                 mock.patch.object(bh, "weekly", return_value=utc("2026-10-07T00:00:00Z")) as counted, \
                 mock.patch.object(bh, "merge", side_effect=lambda r: merged.append((r.id, self.lock.exists()))), \
                 mock.patch.object(run, "history") as hist, mock.patch.object(run, "publish") as pub:
-            run.weekly(push=False)
+            run.planet(push=False)
         counted.assert_called_once_with(["bremen-weekly"])
         self.assertEqual(merged, [("bremen-weekly", True)])  # under the pipeline lock
         hist.assert_called_once_with()
@@ -362,10 +362,9 @@ class WeeklyRunTest(unittest.TestCase):
         pub.assert_not_called()
         self.assertTrue(any("is missing after the re-cut" in m for m in self.logs), self.logs)
 
-    def test_weekly_is_the_old_name_of_planet(self):
-        self.assertIs(run.weekly, run.planet)
+    def test_planet_is_the_command(self):
         with mock.patch.object(run, "planet") as job:
-            self.assertEqual(run.main(["weekly", "--no-push"]), 0)
+            self.assertEqual(run.main(["planet", "--no-push"]), 0)
             self.assertEqual(run.main(["planet"]), 0)
         self.assertEqual(job.call_args_list, [mock.call(push=False), mock.call(push=True)])
 
@@ -375,7 +374,7 @@ class WeeklyRunTest(unittest.TestCase):
         weekly = {**BREMEN, "id": "bremen-weekly", "cadence": "weekly"}
         with self.fetch(1), mock.patch.object(run, "regions", return_value=[weekly]), \
                 self.assertRaises(RuntimeError):
-            run.weekly(push=False)
+            run.planet(push=False)
 
 
 class PublishTest(unittest.TestCase):

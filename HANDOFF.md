@@ -358,9 +358,8 @@ new cities appear by themselves.
    (west, central and east monthly to about 2020-10). Checked: 98 pytest, `run.py history` (231 files),
    and Moscow, London, Istanbul, Toronto and München in a headless browser, no page errors. From the
    next 13:15 run on, main counts the Europe regions daily (`fetch europe` is in its `download`; Docker
-   must run). **Left for the owner:** `.\schedule-planet-add.ps1` as Administrator (it removes
-   `kk-SCOpenQuests-weekly`; until then the old task runs `run.py weekly`, which is still accepted;
-   its next run is 2026-12-07).
+   must run). **Done 2026-11-06:** `.\schedule-planet-add.ps1` ran without elevation: the task is
+   `kk-SCOpenQuests-planet`, next 2026-12-07, and `run.py weekly` is gone.
 2. ~~The rest of the monthly points.~~ **Done 2026-11-03.** `logs/europe-months-4.log` ended in "months
    done" at 19:18, no FAILED (the last months took about 45 min each, europe-central 25). All 118 months
    2017-01 to 2026-10 are in for the four regions, merged and pushed as "data: every month from 2017-01
