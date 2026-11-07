@@ -19,6 +19,7 @@ val FAST_TWINS: Map<String, FastTwin> = listOf<FastTwin>(
     FastAddMaxHeight,
     FastAddHousenumber,
     FastAddIsAmenityIndoor,
+    FastAddAddressStreet,
 ).associateBy { it.name }
 
 /** Grid over bounding boxes: [query] returns every value whose box intersects the given one

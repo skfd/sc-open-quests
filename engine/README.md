@@ -221,11 +221,12 @@ download:
   once, and `-Dopenquests.verifyFast=true` checks that it ignores the clock. Which padded city boxes hold an
   element is one Int, the id of an interned set of cities (`CitySets`; it was a 64-bit mask, so at most 64
   cities a run until 2026-10-24).
-- **Fast twins** (`openquests/fast/`). Three quests compare everything with everything in SC's code, which
+- **Fast twins** (`openquests/fast/`). Four quests compare everything with everything in SC's code, which
   is fine on the app's small downloads and not on a whole city: AddMaxHeight (every road with every
   bridge; Mississauga 231 s; all cities did not finish in 30 minutes), AddIsAmenityIndoor (every node with every
   building; Ottawa 306 s) and AddHousenumber (every candidate building for every area with an address,
-  and a sort that recomputes polygon areas). Each twin is a copy of SC's code with one change that only
+  and a sort that recomputes polygon areas), and AddAddressStreet (every address with every member of every
+  `associatedStreet` relation; Paris 582 s, France maps streets that way). Each twin is a copy of SC's code with one change that only
   skips work SC's code throws away (a bounds grid where SC's own check fails on disjoint bounds; skipping
   a `removeAll` of nothing; computing a sort key once in a stable sort). AreaPass uses the twin in place
   of the port. A test ties each twin to the pinned sha256 of the SC file it copies, so a version bump

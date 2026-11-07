@@ -1447,3 +1447,15 @@ All seven runs give the same snapshots.
 - **ParallelGC buys nothing:** the same wall time, 3% less CPU, 35 to 75% more peak heap. G1 stays.
 - **Large areas gained most:** column 1 (31.4M nodes) fell from 278 s to 109 s, a
   bigger gain than column 4's 68 s to 33 s. Its peak heap is 19.5 GB, from 27.3 GB.
+
+## A fast twin for AddAddressStreet (2026-11-07)
+
+Paris took a quarter of a day's engine time on one quest. SC's AddAddressStreet asks, for every address,
+whether any `associatedStreet` or `street` relation lists it, by scanning every member of every such relation;
+France maps its streets that way. `openquests/fast/FastAddAddressStreet.kt` looks the members up in a set:
+the same members, so the same result.
+
+- **Checked:** `-Dopenquests.verifyFast=true` on Paris and Toulouse (europe-2026-11-06) ran SC's port next to the
+  twin and found no difference; the twin's snapshot equals the published one in every field of all 183 quests.
+- **Speed:** Paris's area pass 473 s to 22 s, Toulouse 79 s to 7 s, on the engine after the 2026-11-06 speed-up.
+  The quest drops out of the slowest three in both. The planet estimate's worst known cell goes with it.
