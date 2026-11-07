@@ -14,3 +14,4 @@ data/archive/
 data/cities/
 data/overture/
 .backup/
+data/pipeline.lock
