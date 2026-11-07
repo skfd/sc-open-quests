@@ -5,9 +5,9 @@ hosted elsewhere (DESIGN.md, "The whole world: measured and proposed"). Prices a
 that week, several of them conflicting, in a memory shortage that moves them monthly. Check before buying.
 
 **In short:** buy nothing until the engine speed-up is measured, because it may be worth as much as a new
-computer. Then benchmark before paying. The machine should also serve OSM servers and CI (the owner, 2026-11-06),
-so buy a tower: a used Ryzen 9 5950X if the speed-up reaches 1.8x, a Ryzen 9 9950X if it does not. Both with
-64 GB and 4 TB. Phones are not worth it.
+computer. Then benchmark before paying. The machine should also serve OSM servers (the owner, 2026-11-06), so buy
+a tower: a used Ryzen 9 5950X if the speed-up reaches 1.8x, a Ryzen 9 9950X if it does not. Both with 64 GB and
+4 TB. CI stays on GitHub. Phones are not worth it.
 
 ## The workload
 
@@ -95,7 +95,7 @@ The two towers cost about the same per L. The 5950X saves about $900 of cash and
 needs a 1.8x speed-up for 8 hours (16 / (1.8 x 1.1)); the 9950X needs 1.15x. Reaching 128 GB costs about $460
 more on the 5950X and $1,000-1,250 on the 9950X.
 
-## Other uses: OSM servers and CI
+## Other uses: OSM servers
 
 The owner's choice for what the machine does when it is not counting. Requirements are from each project's own
 docs, none measured here.
@@ -109,10 +109,8 @@ docs, none measured here.
 - **Disk:** the count (680) plus all three is about 2.9 TB, so 4 TB stops being optional.
 - **Sharing the machine:** one engine fills every thread, so nothing heavy should run beside a count. A count of
   8 hours fits inside the owner's working day and leaves the evening free.
-- **CI:** 94 of 131 GitHub repos are public, where hosted Actions cost nothing, so a runner only helps private
-  repos and long jobs. Keep it off public repos: a fork's pull request could run code on this machine. GitHub's
-  planned $0.002 a minute for self-hosted runners was postponed; check before relying on it.
-- **Windows:** Linux stays the host. Windows jobs for the XrmToolBox tools run in a VM.
+- **No local CI (the owner, 2026-11-06).** It stays on GitHub: 94 of 131 repos are public, where hosted Actions
+  cost nothing, and paid minutes for the rest should cost little beside running a runner at home.
 
 ## Life hacks
 
@@ -173,6 +171,5 @@ Prices and scores, read 2026-11-06:
 [Overpass](https://wiki.openstreetmap.org/wiki/Overpass_API/install),
 [Planetiler](https://www.github.com/onthegomap/planetiler/blob/main/PLANET.md),
 [Planetiler with mmap](https://newreleases.io/project/github/onthegomap/planetiler/release/v0.4.0),
-[self-hosted runner charge](https://github.blog/changelog/2025-12-16-coming-soon-simpler-pricing-and-a-better-experience-for-github-actions/).
-From memory, not sourced: the Mac mini M4's and 5950X's scores, power figures, Apple's refurbished discount, the
-fork risk on self-hosted runners.
+[GitHub Actions pricing](https://github.blog/changelog/2025-12-16-coming-soon-simpler-pricing-and-a-better-experience-for-github-actions/).
+From memory, not sourced: the Mac mini M4's and 5950X's scores, power figures, Apple's refurbished discount.
