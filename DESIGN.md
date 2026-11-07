@@ -1291,7 +1291,7 @@ city waits for a re-cut, the re-cut's memory grows, and series step slightly whe
   walking tag maps and collections 17%, hash lookups 8%. Most of it is a quest asking "is this you?" of an
   element that holds none of its keys. CheckExistence alone is 12%, AddLevelThing 7%, AddTactilePavingKerb 7%.
 - **Memoizing by tag set does not work:** 1.1M distinct tag sets among 1.8M tagged elements (1.6 each; names and
-  addresses make them unique), the top 1,000 covering 32%. Tried on paper only because this was measured first.
+  addresses make them unique), the top 1,000 covering 32%.
 - **A fast reject should:** each filter expression works out the keys it cannot match without and returns
   false at once when the element has none of them, in the one place all filters pass through. Exact by
   construction. Expected 1.7 to 2.5 times on the whole pass, not yet tried.
