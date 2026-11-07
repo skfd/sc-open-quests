@@ -1263,3 +1263,24 @@ Open for the cell test: a city today also counts an element that only crosses it
   time of a planet slice from the current history file.
 - **Hosting stays a separate cost:** weekly data for a million places cannot go through git. R2 at this
   size is about $1-2 a month, and needs a domain.
+
+## Canada and Germany onto a clip (2026-11-06)
+
+The owner asked whether every region can read the planet history route, as Europe does; yes, after a week
+side by side. Why: one pipeline, one timestamp (today Toronto and Berlin have different dates; on 11-06
+Bremen's newest Geofabrik extract was 11-04), 4.7 GB less to download a day, and the world count needs the
+same route. Against: Docker and one clip stop every region at once, no independent source any more, a new
+city waits for a re-cut, the re-cut's memory grows, and series step slightly when the timestamp moves to 00:00Z.
+
+- **The clip:** `config/canada-germany.geojson`, the 115 cities' boxes padded 2 km: 54 parts, 39 square
+  degrees (18 of them Wood Buffalo). Registered in osm-extracts, first `recut canada-germany` from
+  `history-261102` started 2026-11-06 20:21, log `logs/recut-canada-germany.log`. Europe's clip is untouched.
+- **The week:** task `kk-SCOpenQuests-sidebyside`, 15:10 daily, 2026-11-07 to 11-14, runs
+  `.scratch/side-by-side/compare.py` (log `logs/side-by-side.log`): fetches the clip, counts each region from
+  it into that folder, appends per-city differences from the archived Geofabrik snapshot to `report.csv`.
+  Nothing the site reads changes. Self-test on Bremen's own extract: difference 0.
+- **Reading it:** the two files are hours apart and Geofabrik can be days behind, so the numbers will not be
+  equal; a difference has to look like that gap's edits. Look at the days both timestamps are close.
+- **After the week, if it holds:** `"extract": "canada-germany"` on the 12 regions; a check that Docker is up
+  before the daily fetch, retrying; raise the re-cut's budget if the first run shows it tight. The Geofabrik
+  code stays until a monthly cycle has passed.

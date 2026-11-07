@@ -393,3 +393,5 @@ new cities appear by themselves.
    as things stand; near 1,000 the daily data leaves git history).
 7. **Asked 2026-11-06:** counting the whole planet, not cities (DESIGN.md, "The whole
    world: measured and proposed"). The owner's answers are there: cells within 0.1%, Overture boundaries, this machine only, a weekly world in about 24 hours. First the cell test.
+8. **Canada and Germany onto a clip (2026-11-06, the owner's yes):** a week side by side, to 11-14, then the
+   switch. DESIGN.md, "Canada and Germany onto a clip"; read `.scratch/side-by-side/report.csv` then.
