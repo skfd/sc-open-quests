@@ -4,10 +4,11 @@ Written 2026-11-06. The goal: every place in the world counted every day, all co
 hosted elsewhere (DESIGN.md, "The whole world: measured and proposed"). Prices are USD from web sources of
 that week, several of them conflicting, in a memory shortage that moves them monthly. Check before buying.
 
-**In short:** buy nothing until the engine speed-up is measured, because it may be worth as much as a new
-computer. Then benchmark before paying. The machine should also serve OSM servers (the owner, 2026-11-06), so buy
-a tower: a used Ryzen 9 5950X if the speed-up reaches 1.8x, a Ryzen 9 9950X if it does not. Both with 64 GB and
-4 TB. CI stays on GitHub. Phones are not worth it.
+**In short:** the engine speed-up is measured, about 2.4x with two engines at once (2026-11-07), so a planet is
+about 6.5 hours on this laptop, if it holds speed for that long. That was the only open question for the count:
+run it for hours before paying for anything. The machine should also serve OSM servers (the owner, 2026-11-06), so
+if you buy, buy a tower: the speed-up passed 1.8x, so a used Ryzen 9 5950X is enough, with 64 GB and 4 TB. Benchmark
+it first. CI stays on GitHub. Phones are not worth it.
 
 ## The workload
 
@@ -16,16 +17,16 @@ speed **1 L**.
 
 | what | measured |
 |---|---|
-| counting | 5.4 s per million nodes, in town or country |
-| the planet | 10-11 billion nodes (estimated), so about 16 L-hours |
-| limit | Not proven to be CPU. Two engines took 520 s and one 522 s, but on different work; one profiled run averaged 7.3 of 24 threads, with a busy machine (DESIGN.md, 2026-11-06) |
-| memory | about 1 GB of heap per million nodes in an area: 7.8M 7 GB, 11.8M 10 GB, 21M 18 GB, 31M 24 GB; 97.5M failed at 41 GB |
+| counting | 2.25 s per million nodes with two engines at once (Czechia, 97.5M nodes, 219 s); 5.4 before the speed-up |
+| the planet | 10-11 billion nodes (estimated), so about 6.5 L-hours; about 16 before the speed-up |
+| limit | CPU, with two engines. One uses 13 of 24 threads, two 18.6 (82% of the machine), three 20.6 (90%), and the third gains 4% |
+| memory | peak heap in an area, with room to spare: 7.8M 5 GB, 11.8M 7 GB, 21M 14 GB, 31M 20 GB; each engine needs its own. The old engine at 97.5M failed at 41 GB; the new one is untested there |
 | work units | independent files, no shared state, about 1 GB each at 130M nodes |
 | daily input | one planet diff, about 110 MB |
 
 **Count hours a day = 16 / (engine speed-up x total L).** The target is 8 hours or less, leaving room for
-diffs (1-3 h), publishing (1 h) and a bad day. The 16 includes idle threads, so a machine that overlaps cells may
-need less. The clean test below settles it.
+diffs (1-3 h), publishing (1 h) and a bad day. The speed-up is now about 2.4x, against the 5.4 s behind the 16, so
+the last row below is the one that holds.
 
 | engine speed-up | L needed for 8 hours | what that means |
 |---|---|---|
@@ -113,7 +114,7 @@ docs, none measured here.
 | Nominatim, whole planet | 128 GB strongly recommended; out-of-memory reports under 64 GB not accepted | 1 TB or more, NVMe | At the floor. Run a region, or add 64 GB first |
 
 - **Disk:** the count (680) plus all three is about 2.9 TB, so 4 TB stops being optional.
-- **Sharing the machine:** one engine fills every thread, so nothing heavy should run beside a count. A count of
+- **Sharing the machine:** two engines all but fill it, so nothing heavy should run beside a count. A count of
   8 hours fits inside the owner's working day and leaves the evening free.
 - **No local CI (the owner, 2026-11-06).** It stays on GitHub: 94 of 131 repos are public, where hosted Actions
   cost nothing, and paid minutes for the rest should cost little beside running a runner at home.
@@ -149,15 +150,14 @@ docs, none measured here.
 ## Order of work
 
 1. **Wait for the cell test.** If cells miss the 0.1% bar, the plan changes.
-2. **Run the clean engine test** on an idle machine: one column alone, then two at once (free, about 15 minutes).
-3. **Build the engine speed-up** and measure it (free). Built 2026-11-06: about 1.8x on Ontario, on a busy machine;
-   the clean test gives the real figure.
+2. **Build the engine speed-up** and measure it (free). Done 2026-11-06.
+3. **Run the clean engine test** on an idle machine (free). Done 2026-11-07: DESIGN.md, "The clean engine test".
 4. **Run 16 hours on the laptop** to see if it holds speed (free).
 5. **Benchmark candidates.** `.scratch/world-spike/cells/col4.osm.pbf`, 11.8M nodes, with this engine and
-   quest file: this laptop takes about 100 s. Compare seconds and snapshot, with the heap the machine would
+   quest file: this laptop takes about 35 s, alone. Compare seconds and snapshot, with the heap the machine would
    really have. One borrowed 5950X if one can be found.
-6. **Work out L needed** from the table above. At 1.8x or better, the 5950X tower; below that, the 9950X. Check
-   prices that week.
+6. **Work out L needed** from the table above. The speed-up passed 1.8x, so the 5950X tower, if one is bought at
+   all. Run two engines on it. Check prices that week.
 
 ## Sources
 
