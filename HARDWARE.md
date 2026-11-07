@@ -82,18 +82,23 @@ Treat them as a shortlist until benchmarked.
 
 | option | L (est.) | price | $ per L | power | note |
 |---|---|---|---|---|---|
-| Mac mini M4, 32 GB, 512 GB | 1.0 | $1,199 (2025 list; the 256 GB model is gone) | 1,200 | about 40 W | Silent; memory is included; needs the job queue and disk elsewhere for the store |
-| Mac mini M4 Pro, 14 cores, 64 GB, 1 TB | 1.45 | about $2,400 (2024 list) | 1,650 | about 60 W | Score 22,285; refurbished is cheaper |
+| Mac mini M6, 12 cores, 32 GB, 512 GB | 1.4 | about $1,499 (worked out from upgrade prices) | 1,070 | not found | Score about 21,000; 32 GB is the most it takes; needs the job queue and disk elsewhere for the store |
+| Mac mini M5 Pro, 15 cores, 48 GB, 512 GB | 1.95 | about $2,299 (worked out from upgrade prices) | 1,180 | not found | Score about 29,300; 64 GB is the most it takes; SSD soldered; no sustained test found |
 | Ryzen AI Max+ 395 mini PC, 64 GB (GMKtec EVO-X2) | 1.3 | about $1,500 | 1,150 | about 120 W | Memory soldered; prices conflict a lot |
 | Ryzen AI Max+ 395, 128 GB (Bosgame M5) | 1.3 | about $2,400 | 1,850 | about 120 W | The extra memory buys no speed here |
 | Framework Desktop, 64 GB | 1.3 | about $1,640 | 1,250 | about 120 W | Reported after its price rises |
 | **Used Ryzen 9 5950X tower, 64 GB DDR4, 4 TB** | **1.1** | **about $1,450** | **about 1,300** | **about 180 W** | Score from memory; CPU about $280 used, 2x32 GB $459, 4 TB $280-590, the rest a guess of $300; no warranty |
-| **Ryzen 9 9950X desktop, 64 GB, built** | **1.75** | **about $2,200-2,600** | **about 1,350** | **about 200 W** | Score about 27,000; no queue needed; CPU price not confirmed |
+| **Ryzen 9 9950X desktop, 64 GB, built** | **1.4-1.8** | **about $2,200-2,600** | **about 1,350-1,700** | **about 200 W** | Scores found run from 20,550 to 27,000; no queue needed; CPU price not confirmed |
 | Used EPYC 7702 (64 cores) | 2.5-3.5, a guess | CPU about $500; board and DDR4 not priced | ? | 250-300 W | Loud; many cores may not scale; run several engines |
 
-The two towers cost about the same per L. The 5950X saves about $900 of cash and gives up 0.65 L. It alone
-needs a 1.8x speed-up for 8 hours (16 / (1.8 x 1.1)); the 9950X needs 1.15x. Reaching 128 GB costs about $460
-more on the 5950X and $1,000-1,250 on the 9950X.
+The 5950X saves about $900 of cash and gives up 0.3-0.7 L. It alone needs a 1.8x speed-up for 8 hours
+(16 / (1.8 x 1.1)); the 9950X needs 1.15-1.45x. Reaching 128 GB costs about $460 more on the 5950X and
+$1,000-1,250 on the 9950X.
+
+**Newer chips.** The M5 Pro is the fastest thing here on paper: about 2 L, so 8 hours with no engine speed-up, if
+a short benchmark holds for 8 hours on a JVM, which nothing has tested. It stays off the shortlist because of
+the OSM servers: 64 GB at most, soldered storage, and software that expects Linux. Zen 6 desktop chips are expected
+around the first half of 2027, on AM5, with up to 24 cores in leaks. If they land before the buy, look again.
 
 ## Other uses: OSM servers
 
@@ -117,7 +122,7 @@ docs, none measured here.
 **Worth doing**
 - **Speed up the engine first.** A 2x gain is worth one new desktop, for nothing.
 - **Buy memory inside a computer, or buy DDR4.** 64 GB of DDR5 alone was reported at $1,000-1,250 this year. A
-  whole 64 GB mini PC costs about $1,500, and a 32 GB Mac mini about $1,200. 64 GB of DDR4 is about $460, which
+  whole 64 GB mini PC costs about $1,500, and a 32 GB Mac mini about the same. 64 GB of DDR4 is about $460, which
   is what makes the 5950X tower work.
 - **Rent before you buy.** Scaleway rents M4 Mac minis (reported about EUR 149 a month, billed hourly, 24-hour
   minimum): one day answers what a Mac does on this workload for a few euros.
@@ -132,7 +137,7 @@ docs, none measured here.
 - **Cheap phones.** A 12 GB phone leaves perhaps 6-8 GB of heap, so files of 5M nodes and 2,000+ of them. It
   slows down from heat within minutes under full load, perhaps 0.1-0.2 L (a guess). So 10 phones for 1-2 L, each
   on a charger 24 hours a day (battery swelling is a real risk), on Wi-Fi, with Android killing background
-  work. A $1,200 Mac mini beats the lot. Fun as an experiment, not as infrastructure.
+  work. A $1,500 Mac mini beats the lot. Fun as an experiment, not as infrastructure.
 - **Raspberry Pis.** Same sums: about 0.2 L at best (a guess), with 16 GB at most.
 - **128 GB machines.** The count does not use it. Only a planet Nominatim would, and a tower can add it later.
 - **GPUs.** The work is hash lookups and tag filters in JVM code, nothing a GPU does well.
@@ -152,8 +157,12 @@ docs, none measured here.
 ## Sources
 
 Prices and scores, read 2026-11-06:
-[Mac mini M4 Pro scores](https://duelvs.com/mini-pc/apple-mac-mini-2024-m4-pro),
-[Mac mini M4 Pro prices](https://www.refurb.me/stats/mac-mini/mac-mini-m4-pro-late-2024),
+[Mac mini M5 Pro scores](https://browser.geekbench.com/macs/mac-mini-2026-15c-cpu-16c-gpu),
+[Mac mini M6 and M5 Pro prices](https://www.macworld.com/article/3140334/should-you-buy-a-mac-mini-now-or-wait.html),
+[Mac mini upgrade prices](https://www.macworld.com/article/3239233/mac-mini-m5-pro-review-killer-performance-at-a-lethal-price.html),
+[Mac mini M6 scores](https://www.ithinkdiff.com/m6-mac-mini-review-roundup-what-critics-are-saying/),
+[9950X scores, lower](https://www.tweaktown.com/news/101464/apples-new-m4-max-beats-intels-core-ultra-9-285k-amd-ryzen-9950x-in-geekbench-6-run/index.html),
+[Zen 6 desktop](https://www.digitalcitizen.life/amd-confirms-zen-6-ryzen-desktop-and-mobile-families-for-am5-and-fp10/),
 [9950X and HX 370 scores](https://www.3dtested.com/pc-components/cpus/ryzen-ai-9-hx-375-shines-in-geekbench-6-benchmark-strix-point-has-higher-single-core-performance-than-core-i9-14900hx),
 [DDR5 price index](https://www.tomshardware.com/pc-components/ram/ram-price-index-2026-lowest-price-on-ddr5-and-ddr4-memory-of-all-capacities),
 [64 GB kits](https://en.gamegpu.com/news/zhelezo/tseny-na-ddr5-vzleteli-za-18-mesyatsev-na-500-i-prevysili-usd1250-za-64-gb),
@@ -162,8 +171,6 @@ Prices and scores, read 2026-11-06:
 [Ryzen AI Max roundup](https://www.layer3labs.io/gear/ryzen-ai-mini-pcs),
 [EPYC 7702](https://www.amcompute.com/appraisals/epyc-7702),
 [Scaleway via Green Mini](https://www.greenmini.nl/compare/scaleway-alternative/),
-[Mac mini 32 GB list](https://9to5toys.com/2025/08/21/rare-deal-mac-mini/),
-[256 GB Mac mini dropped](https://seekingalpha.com/news/4584299-apple-discontinues-256gb-mac-mini-starting-price-climbs-to-799),
 [used 5950X](https://yomotherboard.com/?p=467699),
 [64 GB DDR4](https://datacenterdisk.com/ram/ddr4/64gb),
 [4 TB NVMe](https://datacenterdisk.com/best/4tb-nvme-ssd),
@@ -172,4 +179,4 @@ Prices and scores, read 2026-11-06:
 [Planetiler](https://www.github.com/onthegomap/planetiler/blob/main/PLANET.md),
 [Planetiler with mmap](https://newreleases.io/project/github/onthegomap/planetiler/release/v0.4.0),
 [GitHub Actions pricing](https://github.blog/changelog/2025-12-16-coming-soon-simpler-pricing-and-a-better-experience-for-github-actions/).
-From memory, not sourced: the Mac mini M4's and 5950X's scores, power figures, Apple's refurbished discount.
+From memory, not sourced: the 5950X's score, power figures, Apple's refurbished discount.
