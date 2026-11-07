@@ -1244,7 +1244,7 @@ cost about 4% of a pass today (Ontario 216 s against 208 s, 790 parts).
 **Only this machine: measured the same evening.**
 - **CPU is the limit, not memory.** Czechia's five columns, two engines at once at 20 GB heap each: 520 s
   of wall clock, against 522 s for one engine. One engine fills the 24 threads; running more buys nothing.
-  (Not proven: the two runs did different work. See "A rewrite in a systems language", 2026-11-06.)
+  (Not so: measured again with equal work on 2026-11-07, below, two engines at once are 1.38 times faster.)
   A 31M-node area needs under 24 GB.
 - **`osmium extract` holds 4.2 GB per output:** five outputs 21 GB, and 15 were killed by docker's 43 GB.
   Five outputs of Czechia took 121 s for 951 MB, 7.9 MB/s, so a stage over the planet is about 3 hours.
@@ -1463,3 +1463,19 @@ the same members, so the same result.
   twin and found no difference; the twin's snapshot equals the published one in every field of all 183 quests.
 - **Speed:** Paris's area pass 473 s to 22 s, Toulouse 79 s to 7 s, on the engine after the 2026-11-06 speed-up.
   The quest drops out of the slowest three in both. The planet estimate's worst known cell goes with it.
+
+## Two engines at once: measured with equal work (2026-11-07)
+
+The same five Czechia column files (`.scratch/world-spike/par.py`), each engine at 20 GB heap, on the engine
+after the 2026-11-06 speed-up and the AddAddressStreet twin, the machine otherwise idle:
+
+| engines at once | wall | each file |
+|---|---|---|
+| 1 | 342 s | 30-126 s |
+| 2 | 248 s | 39-178 s, about 1.4 times slower each |
+
+- **One engine does not fill the machine: two give 1.38 times the throughput.** The first measurement compared
+  different work. So a world run counts two cells at once, about 20 GB of heap each.
+- **The rate is now about 2.5 s per million nodes with two engines** (3.4 alone; 5.4 on 2026-11-06 before the
+  speed-up). The planet's count is then about 7 hours, not 15-17, close to the 6.5 the speed-up session found.
+  Not measured: three engines, which memory allows only at a smaller heap.
