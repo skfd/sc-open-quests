@@ -108,6 +108,13 @@ node positions), relations. Each stage decodes blocks in parallel.
   `systemTimeNow()`. `sync-sc.ps1` applies it by exact line match after the copy (and fails if the
   upstream line changed) and records both hashes in `SC-VERSION.txt`. The engine installs a clock that
   reads a thread-local override first (`EngineClock`), which is how agedOnly runs in the same pass.
+- **`fastreject`** (`data/elementfilter/ElementFilterExpression.kt`): `matches()` first asks
+  `openquests.KeyReject` (`TagMap.kt`). Worked out once per expression: clauses of keys, such that an element
+  the expression matches holds at least one key of every clause. `a and (b or c = 1)` gives `{a}` and
+  `{b, c}`; `!a`, `a != b` and `older today -1 years` give none, since they can hold without a key. An element
+  failing a clause is rejected at once, from `TagMap.keyBits`, one bit per key hash, so a lookup that says yes
+  wrongly costs an evaluation and nothing else. It only skips work: `TagMapTest` runs every quest filter with
+  and without it. `sync-sc.ps1` applies it by exact line match, as the others.
 - **`codepoints`**, dropped at the v64.1 repin: v64.0's `Element` rejected a tag key or value over 255
   UTF-16 units, so a Moscow shop's description of 255 code points with an emoji in it (node 7370179285,
   2021-11-13 to 2023-10-10) stopped every `europe-msk` count in that span. The patch backported SC's fix,
@@ -132,7 +139,7 @@ node positions), relations. Each stage decodes blocks in parallel.
   publishes an `osmfeatures-jvm` variant (an earlier version of this README wrongly said it had none and
   stubbed `GeometryType`). The opening-hours parser is `de.westnordost:osm-opening-hours:0.4.0`, as in SC.
 
-Everything else under `src/main/kotlin/sc/` is byte-identical to SC v64.1 (the third patch, `nolazy`, is
+Everything else under `src/main/kotlin/sc/` is byte-identical to SC v64.1 (the patch `nolazy` is
 described in `sync-sc.ps1`: v64 caches a date filter's threshold, which would freeze the movable clock
 and the multiplier). Stubs under `src/main/kotlin/stubs/` stand in for what the vendored files reach
 into but the engine never calls: Compose's `Locale`/`LocaleList` (the JVM's default locale),
@@ -204,8 +211,14 @@ download:
 - A result counts if it has geometry, its position is inside the padded bbox (`mayCreateQuest`) and in the
   city's polygon, and the quest is enabled there. A quest that returns an element twice (AddMaxHeight)
   gives one quest, as the app keys quests by element.
-- **agedOnly**: each map data is run again with the clock at 1900; results that disappear are agedOnly.
-- Cities run one after the other, the quests of a city in parallel. Which padded city boxes hold an
+- **agedOnly**: an age quest runs again with the clock at 1900; results that disappear are agedOnly.
+- **Map data** is `ArrayMapData`, not SC's `MutableMapDataWithGeometry`: lists and open-addressed id indexes,
+  built on every thread, with a node's geometry made when asked for. Its elements keep the order a
+  `HashMap<Long, ...>` iterates in (`hashMapOrder`, `ArrayMapDataTest`), because AddHousenumber depends on it:
+  the first building to reach a shared address node takes it, and id order moved Bremen by one.
+- Cities run one after the other. In a city every run of a quest is its own task, age quests first: asOf, and
+  for a `usesAge` quest also the resurvey settings 0.5 and 2 and LONG_AGO. A quest with `usesAge = false` runs
+  once, and `-Dopenquests.verifyFast=true` checks that it ignores the clock. Which padded city boxes hold an
   element is one Int, the id of an interned set of cities (`CitySets`; it was a 64-bit mask, so at most 64
   cities a run until 2026-10-24).
 - **Fast twins** (`openquests/fast/`). Three quests compare everything with everything in SC's code, which
@@ -217,7 +230,8 @@ download:
   a `removeAll` of nothing; computing a sort key once in a stable sort). AreaPass uses the twin in place
   of the port. A test ties each twin to the pinned sha256 of the SC file it copies, so a version bump
   that changes the file fails until the twin is redone. `-Dopenquests.verifyFast=true` runs the port
-  next to its twin on every map data and fails on any difference.
+  next to its twin on every map data and fails on any difference, and fails if a quest with
+  `usesAge = false` gives another result at LONG_AGO.
 - `--area-unit tiles` runs each z16 tile alone instead (`DOWNLOAD_TILE_ZOOM`, about 600 x 440 m here;
   SC's own `TilesRect` math), the app's smallest download; results count if inside the tile.
 
