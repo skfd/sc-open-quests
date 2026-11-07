@@ -150,7 +150,8 @@ docs, none measured here.
 
 1. **Wait for the cell test.** If cells miss the 0.1% bar, the plan changes.
 2. **Run the clean engine test** on an idle machine: one column alone, then two at once (free, about 15 minutes).
-3. **Build the engine speed-up** and measure it (free).
+3. **Build the engine speed-up** and measure it (free). Built 2026-11-06: about 1.8x on Ontario, on a busy machine;
+   the clean test gives the real figure.
 4. **Run 16 hours on the laptop** to see if it holds speed (free).
 5. **Benchmark candidates.** `.scratch/world-spike/cells/col4.osm.pbf`, 11.8M nodes, with this engine and
    quest file: this laptop takes about 100 s. Compare seconds and snapshot, with the heap the machine would
