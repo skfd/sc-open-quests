@@ -407,6 +407,10 @@ new cities appear by themselves.
    DESIGN.md, "The level quests: a grid per mall, and one ordered queue"): twins with a shared grid of level points,
    and a city's area runs from one ordered queue. Same counts, verifyFast passed on Berlin and europe-msk, 71 engine
    tests pass; Moscow's area pass 56-67 s to 24-27 s, the europe-msk pass 129-139 s to 98-102 s, London unchanged.
-   Not pushed; the 12:15 run pushes it (and runs the new engine first: watch its log). Next: AddHousenumber for
-   London's wall time (start it first in the queue, a cheap test), then AddChargingStationSocket.
+   Pushed by the 11-08 run, which ran the new engine without trouble (europe-msk pass 86 s, Moscow 23.7 s).
+   ~~AddHousenumber~~ **done 2026-11-08** (DESIGN.md, "AddHousenumber: one removeAll, not one per area"): 77% of
+   its time was one `removeAll` per address area; one at the end instead. Same counts and grid on europe-west,
+   London's area pass 67.9 s to 32.8 s, the europe-west pass 124 s to 96 s. AddChargingStationSocket was looked at
+   in the same profile: a plain scan, not a floor, nothing to fix in it. Next for the engine, proposed in the same
+   section: profile the whole area pass's CPU, then perhaps candidates by key once per map data.
    After that, the Germany world prototype (DESIGN.md, "The whole world: measured and proposed").
