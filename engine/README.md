@@ -113,7 +113,9 @@ node positions), relations. Each stage decodes blocks in parallel.
   the expression matches holds at least one key of every clause. `a and (b or c = 1)` gives `{a}` and
   `{b, c}`; `!a`, `a != b` and `older today -1 years` give none, since they can hold without a key. An element
   failing a clause is rejected at once, from `TagMap.keyBits`, one bit per key hash, so a lookup that says yes
-  wrongly costs an evaluation and nothing else. It only skips work: `TagMapTest` runs every quest filter with
+  wrongly costs an evaluation and nothing else. An untagged element fails every clause: AreaPass gives it
+  `emptyMap()`, not a `TagMap`, and SC lets such elements through when any leaf "may hold with no tags", which
+  its own table says of `key ~ regex`. It only skips work: `TagMapTest` runs every quest filter with
   and without it. `sync-sc.ps1` applies it by exact line match, as the others.
 - **`codepoints`**, dropped at the v64.1 repin: v64.0's `Element` rejected a tag key or value over 255
   UTF-16 units, so a Moscow shop's description of 255 code points with an emoji in it (node 7370179285,

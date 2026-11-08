@@ -104,6 +104,8 @@ class KeyReject private constructor(private val masks: LongArray) {
 
     fun mayMatch(element: Element): Boolean {
         val tags = element.tags
+        // an untagged element holds no key, and AreaPass gives it emptyMap(), not a TagMap
+        if (tags.isEmpty()) return masks.isEmpty()
         if (tags !is TagMap) return true
         val bits = tags.keyBits
         for (mask in masks) if (bits and mask == 0L) return false

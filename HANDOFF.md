@@ -399,6 +399,10 @@ new cities appear by themselves.
 9. **Engine, next (2026-11-07, handed off by the owner):** ~~kerbs found once per map data for AddKerbHeight and
    AddTactilePavingKerb~~ **built 2026-11-07** (c2648077, DESIGN.md "Kerbs once per map data: built"): same counts,
    verifyFast passed on Berlin and London, 9% less CPU on europe-west, but no wall-clock gain on one engine; a city's
-   area pass lasts as long as its longest task (London: AddHousenumber, one 62 s run). Next, a profile of
-   CheckExistence (CPU), and AddHousenumber for London's wall time. DESIGN.md, "Optimisation directions after the speed-up".
+   area pass lasts as long as its longest task (London: AddHousenumber, one 62 s run). ~~A profile of
+   CheckExistence~~ **done 2026-11-07** (DESIGN.md, "CheckExistence profiled"): not the feature lookup, but untagged
+   nodes slipping past the fast reject; a one-line fix, same counts, Istanbul's CheckExistence 36.5 s to 6.9 s, the
+   europe-msk pass 132 s to 117 s. **Engine test suite (`gradlew test`, log `.scratch/prof-ce/test.log`) was still
+   running when this was committed; if the session restarted, rerun it before building on the fix.** Next: AddLevel and AddLevelThing (22% of CPU, mall geometries rebuilt in every
+   run), and AddHousenumber for London's wall time. DESIGN.md, "Optimisation directions after the speed-up".
    After that, the Germany world prototype (DESIGN.md, "The whole world: measured and proposed").
