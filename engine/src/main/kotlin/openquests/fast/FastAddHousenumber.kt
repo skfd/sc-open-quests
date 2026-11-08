@@ -1,8 +1,11 @@
 package openquests.fast
 
 // SC's AddHousenumber (ported/.../AddHousenumber.kt, copied by hand), with one change in step 5 that
-// gives the same result: `buildings.removeAll(buildingsInArea)` is skipped when buildingsInArea is
-// empty (the original scans every candidate building for every area with an address).
+// gives the same result: instead of `buildings.removeAll(buildingsInArea)` for every area with an
+// address (which scans every candidate building and hashes each whole Way, per area: 77% of London's
+// 57 s), the buildings of all areas are gathered and removed once. An area's buildingsInArea depends
+// only on buildingPositions and buildingsByCenterPosition, which step 5 never changes, and they are
+// the very objects in `buildings`, so a set by identity removes the same ones.
 import de.westnordost.streetcomplete.data.elementfilter.toElementFilterExpression
 import de.westnordost.streetcomplete.data.osm.geometry.ElementPolygonsGeometry
 import de.westnordost.streetcomplete.data.osm.mapdata.Element
@@ -17,6 +20,8 @@ import de.westnordost.streetcomplete.util.math.LatLonRaster
 import de.westnordost.streetcomplete.util.math.isCompletelyInside
 import de.westnordost.streetcomplete.util.math.isInMultipolygon
 import de.westnordost.streetcomplete.util.math.measuredMultiPolygonArea
+import java.util.Collections
+import java.util.IdentityHashMap
 
 object FastAddHousenumber : FastTwin {
     override val name = "AddHousenumber"
@@ -116,14 +121,14 @@ object FastAddHousenumber : FastTwin {
             if (buildingCenterPosition != null) buildingPositions.insert(buildingCenterPosition)
         }
 
+        // the change: gathered over all areas, removed once
+        val buildingsInSomeArea = Collections.newSetFromMap(IdentityHashMap<Element, Boolean>())
         for (areaWithAddress in areasWithAddresses + areasWithAddressesOnOutline) {
             val nearbyBuildings = buildingPositions.getAll(areaWithAddress.bounds)
             val buildingPositionsInArea = nearbyBuildings.filter { it.isInMultipolygon(areaWithAddress.polygons) }
-            val buildingsInArea = buildingPositionsInArea.mapNotNull { buildingsByCenterPosition[it] }.toSet()
-
-            // the change: skipped when empty
-            if (buildingsInArea.isNotEmpty()) buildings.removeAll(buildingsInArea)
+            buildingPositionsInArea.mapNotNullTo(buildingsInSomeArea) { buildingsByCenterPosition[it] }
         }
+        if (buildingsInSomeArea.isNotEmpty()) buildings.removeAll { it in buildingsInSomeArea }
 
         return buildings
     }

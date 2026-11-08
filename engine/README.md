@@ -229,8 +229,8 @@ download:
   building; Ottawa 306 s) and AddHousenumber (every candidate building for every area with an address,
   and a sort that recomputes polygon areas), and AddAddressStreet (every address with every member of every
   `associatedStreet` relation; Paris 582 s, France maps streets that way). Each twin is a copy of SC's code with one change that only
-  skips work SC's code throws away (a bounds grid where SC's own check fails on disjoint bounds; skipping
-  a `removeAll` of nothing; computing a sort key once in a stable sort). AreaPass uses the twin in place
+  skips work SC's code throws away (a bounds grid where SC's own check fails on disjoint bounds; one
+  `removeAll` of every area's buildings at the end, by identity, not one per area; computing a sort key once in a stable sort). AreaPass uses the twin in place
   of the port. Two more twins, AddKerbHeight and AddTactilePavingKerb, share one thing instead: SC's own
   `findAllKerbNodes()`, which reads no clock, searched once per map data (`PerMapData`) where the two quests'
   four runs each searched again. A twin names such a shared search, and in a city AreaPass runs it next to
