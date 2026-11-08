@@ -1,6 +1,8 @@
 package openquests.fast
 
 import de.westnordost.streetcomplete.data.osm.mapdata.BoundingBox
+import de.westnordost.streetcomplete.data.osm.mapdata.MapDataWithGeometry
+import openquests.ArrayMapData
 import openquests.custom.AreaQuest
 import kotlin.math.floor
 
@@ -12,6 +14,10 @@ import kotlin.math.floor
  */
 interface FastTwin : AreaQuest {
     val sourceSha256: String
+
+    /** Searches this twin shares with others on the same map data. AreaPass runs them first, next to the
+     *  quests that need none, so no thread waits on one. */
+    val shared: List<PerMapData<*>> get() = emptyList()
 }
 
 /** Fast twins by quest name; AreaPass uses them instead of the port of the same name. */
@@ -20,7 +26,21 @@ val FAST_TWINS: Map<String, FastTwin> = listOf<FastTwin>(
     FastAddHousenumber,
     FastAddIsAmenityIndoor,
     FastAddAddressStreet,
+    FastAddKerbHeight,
+    FastAddTactilePavingKerb,
 ).associateBy { it.name }
+
+/** A search that reads no clock, done once per map data however many quests and runs ask for it: the
+ *  first to ask computes it, the others wait for that result. Kept for [ArrayMapData] only, which cannot
+ *  change and is equal only to itself (SC's MutableMapDataWithGeometry can, and compares by content), weakly,
+ *  so a city's map data is not kept past its pass. */
+class PerMapData<T>(val name: String, private val compute: (MapDataWithGeometry) -> T) {
+    private val results = java.util.Collections.synchronizedMap(java.util.WeakHashMap<ArrayMapData, Lazy<T>>())
+
+    fun of(mapData: MapDataWithGeometry): T =
+        if (mapData !is ArrayMapData) compute(mapData)
+        else results.computeIfAbsent(mapData) { lazy { compute(mapData) } }.value
+}
 
 /** Grid over bounding boxes: [query] returns every value whose box intersects the given one
  *  (inclusive edges, as SC's BoundingBox.intersect), and maybe others. */

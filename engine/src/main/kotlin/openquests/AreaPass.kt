@@ -527,12 +527,25 @@ class AreaPass(
         // up the whole city
         val tasks = questIndices.sortedByDescending { engine.quests[it].usesAge }.flatMap { qi -> runsOf(qi).map { qi to it } }
         class Done(val qi: Int, val run: Run, val elements: List<Element>, val seconds: Double)
-        val done = parallelMap(0, tasks.size) { k ->
-            val (qi, run) = tasks[k]
+        fun runTask(task: Pair<Int, Run>): Done {
             val t0 = System.nanoTime()
-            val elements = runQuest(mapData, qi, run)
-            Done(qi, run, elements, (System.nanoTime() - t0) / 1e9)
-        }.groupBy { it.qi }
+            val elements = runQuest(mapData, task.first, task.second)
+            return Done(task.first, task.second, elements, (System.nanoTime() - t0) / 1e9)
+        }
+        // the searches twins share run first, next to the runs that need none; the runs that need one come
+        // after, so no thread sits waiting for a search another thread is doing
+        fun sharedOf(qi: Int) = FAST_TWINS[engine.quests[qi].area!!.name]?.shared.orEmpty()
+        val shared = tasks.flatMap { sharedOf(it.first) }.distinct()
+        val (later, first) = tasks.partition { sharedOf(it.first).isNotEmpty() }
+        val sharedSeconds = DoubleArray(shared.size)
+        val done = (parallelMap(0, shared.size + first.size) { k ->
+            if (k < shared.size) {
+                val t0 = System.nanoTime()
+                shared[k].of(mapData)
+                sharedSeconds[k] = (System.nanoTime() - t0) / 1e9
+                null
+            } else runTask(first[k - shared.size])
+        }.filterNotNull() + parallelMap(0, later.size) { runTask(later[it]) }).groupBy { it.qi }
         val questIds = done.keys.toList()
         parallelMap(0, questIds.size) { k ->
             val qi = questIds[k]
@@ -542,6 +555,10 @@ class AreaPass(
         for ((qi, s) in seconds.sortedByDescending { it.second }.take(3)) if (s >= 1.0) {
             log("  %-30s %6.1f s".format(engine.quests[qi].name, s))
             engine.stats.timings["area: ${city.id} ${engine.quests[qi].name}"] = s
+        }
+        for ((k, s) in sharedSeconds.withIndex()) if (s >= 1.0) {
+            log("  %-30s %6.1f s".format("(shared) ${shared[k].name}", s))
+            engine.stats.timings["area: ${city.id} shared ${shared[k].name}"] = s
         }
     }
 }

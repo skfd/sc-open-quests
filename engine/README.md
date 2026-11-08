@@ -229,7 +229,11 @@ download:
   `associatedStreet` relation; Paris 582 s, France maps streets that way). Each twin is a copy of SC's code with one change that only
   skips work SC's code throws away (a bounds grid where SC's own check fails on disjoint bounds; skipping
   a `removeAll` of nothing; computing a sort key once in a stable sort). AreaPass uses the twin in place
-  of the port. A test ties each twin to the pinned sha256 of the SC file it copies, so a version bump
+  of the port. Two more twins, AddKerbHeight and AddTactilePavingKerb, share one thing instead: SC's own
+  `findAllKerbNodes()`, which reads no clock, searched once per map data (`PerMapData`) where the two quests'
+  four runs each searched again. A twin names such a shared search, and in a city AreaPass runs it next to
+  the quests that need none and the twins' runs after it, so no thread waits on it (the log line
+  `(shared) kerb nodes`). A test ties each twin to the pinned sha256 of the SC file it copies, so a version bump
   that changes the file fails until the twin is redone. `-Dopenquests.verifyFast=true` runs the port
   next to its twin on every map data and fails on any difference, and fails if a quest with
   `usesAge = false` gives another result at LONG_AGO.
