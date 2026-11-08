@@ -1610,5 +1610,7 @@ station`) and many elements with a level tag. `openquests/fast/FastLevel.kt`:
   Old AddLevelThing and AddLevel in Moscow: 51-54 s and 43-49 s. New, neither is among the city's slowest three
   (the third was 13 s). Moscow's slowest are now AddChargingStationSocket, CheckExistence and AddHousenumber,
   13-17 s each. **London is unchanged** (78.9 s against 78.6 s): AddHousenumber's one long run still sets its floor.
+- **Not run:** `--area-unit tiles` (there the first level twin of a tile gathers the points and the other
+  reuses them). `.scratch/prof-level/` (scripts, logs, outputs) can be deleted.
 - **Next:** AddHousenumber, the floor in London; now that the queue keeps its order, starting it first is
   a cheap test. AddChargingStationSocket leads Istanbul and Moscow.
