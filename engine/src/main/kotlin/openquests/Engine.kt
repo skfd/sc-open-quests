@@ -615,6 +615,21 @@ class SortedIdMap<T : Any>(blocks: List<Pair<LongArray, Array<T?>>>) {
 fun <T> parallelMap(from: Int, until: Int, f: (Int) -> T): List<T> =
     IntStream.range(from, until).parallel().mapToObj { f(it) }.toList()
 
+/** [f] of 0 until [size] on all threads, started strictly in order: a free thread takes the next index.
+ *  [parallelMap] splits its range between threads, so an index late in it may start first. */
+fun <T> parallelInOrder(size: Int, f: (Int) -> T): List<T> {
+    val next = java.util.concurrent.atomic.AtomicInteger()
+    val out = java.util.concurrent.atomic.AtomicReferenceArray<T>(size)
+    parallelMap(0, java.util.concurrent.ForkJoinPool.getCommonPoolParallelism() + 1) {
+        while (true) {
+            val k = next.getAndIncrement()
+            if (k >= size) break
+            out.set(k, f(k))
+        }
+    }
+    return List(size) { out.get(it) }
+}
+
 /** First blob index whose kind is >= [kind]; kinds are monotonic in a Type_then_ID sorted file. */
 fun lowerBound(blobs: List<ByteArray>, kind: BlockKind): Int {
     var lo = 0; var hi = blobs.size

@@ -532,20 +532,22 @@ class AreaPass(
             val elements = runQuest(mapData, task.first, task.second)
             return Done(task.first, task.second, elements, (System.nanoTime() - t0) / 1e9)
         }
-        // the searches twins share run first, next to the runs that need none; the runs that need one come
-        // after, so no thread sits waiting for a search another thread is doing
+        // the searches twins share start first, then the runs that need none, then the runs that need one:
+        // these start only once every other run has started, so a thread seldom waits for a search another
+        // thread is doing, and none waits for the slowest run of the others to end
         fun sharedOf(qi: Int) = FAST_TWINS[engine.quests[qi].area!!.name]?.shared.orEmpty()
         val shared = tasks.flatMap { sharedOf(it.first) }.distinct()
         val (later, first) = tasks.partition { sharedOf(it.first).isNotEmpty() }
+        val ordered = first + later
         val sharedSeconds = DoubleArray(shared.size)
-        val done = (parallelMap(0, shared.size + first.size) { k ->
+        val done = parallelInOrder(shared.size + ordered.size) { k ->
             if (k < shared.size) {
                 val t0 = System.nanoTime()
                 shared[k].of(mapData)
                 sharedSeconds[k] = (System.nanoTime() - t0) / 1e9
                 null
-            } else runTask(first[k - shared.size])
-        }.filterNotNull() + parallelMap(0, later.size) { runTask(later[it]) }).groupBy { it.qi }
+            } else runTask(ordered[k - shared.size])
+        }.filterNotNull().groupBy { it.qi }
         val questIds = done.keys.toList()
         parallelMap(0, questIds.size) { k ->
             val qi = questIds[k]
