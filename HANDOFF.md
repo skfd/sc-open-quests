@@ -396,6 +396,9 @@ new cities appear by themselves.
    What to buy for daily runs, and when: HARDWARE.md.
 8. **Canada and Germany onto a clip (2026-11-06, the owner's yes):** a week side by side, to 11-14, then the
    switch. DESIGN.md, "Canada and Germany onto a clip"; read `.scratch/side-by-side/report.csv` then.
-9. **Engine, next (2026-11-07, handed off by the owner):** kerbs found once per map data for AddKerbHeight and
-   AddTactilePavingKerb, then a profile of CheckExistence. DESIGN.md, "Optimisation directions after the speed-up".
+9. **Engine, next (2026-11-07, handed off by the owner):** ~~kerbs found once per map data for AddKerbHeight and
+   AddTactilePavingKerb~~ **built 2026-11-07** (c2648077, DESIGN.md "Kerbs once per map data: built"): same counts,
+   verifyFast passed on Berlin and London, 9% less CPU on europe-west, but no wall-clock gain on one engine; a city's
+   area pass lasts as long as its longest task (London: AddHousenumber, one 62 s run). Next, a profile of
+   CheckExistence (CPU), and AddHousenumber for London's wall time. DESIGN.md, "Optimisation directions after the speed-up".
    After that, the Germany world prototype (DESIGN.md, "The whole world: measured and proposed").
