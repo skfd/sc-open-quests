@@ -29,6 +29,9 @@ class CustomQuestsTest {
         for (twin in FAST_TWINS.values) {
             assertTrue(twin.name in AREA_QUESTS, "${twin.name} has a twin but no port")
             assertEquals(sha[twin.name], twin.sourceSha256, "SC's ${twin.name} moved on: redo its fast twin")
+            for ((helper, pin) in twin.helperSha256) {
+                assertEquals(sha[helper], pin, "SC's $helper moved on: redo the fast twin of ${twin.name}")
+            }
         }
     }
 

@@ -235,8 +235,12 @@ download:
   `findAllKerbNodes()`, which reads no clock, searched once per map data (`PerMapData`) where the two quests'
   four runs each searched again. A twin names such a shared search, and in a city AreaPass runs it next to
   the quests that need none and the twins' runs after it, so no thread waits on it (the log line
-  `(shared) kerb nodes`). A test ties each twin to the pinned sha256 of the SC file it copies, so a version bump
-  that changes the file fails until the twin is redone. `-Dopenquests.verifyFast=true` runs the port
+  `(shared) kerb nodes`). AddLevel and AddLevelThing do both: they share the position and level of every
+  element with a level tag (`(shared) level points`), and a grid of those positions replaces SC's walk over all
+  of them for every mall (`LevelUtils.kt`), as another grid does for the shops and things inside the malls
+  (Moscow 52-86 s each, about 2 s for the shared walk). A test ties each twin to the pinned sha256 of the SC
+  file it copies, and of the helper files it copies (`helperSha256`), so a version bump that changes one fails
+  until the twin is redone. `-Dopenquests.verifyFast=true` runs the port
   next to its twin on every map data and fails on any difference, and fails if a quest with
   `usesAge = false` gives another result at LONG_AGO.
 - `--area-unit tiles` runs each z16 tile alone instead (`DOWNLOAD_TILE_ZOOM`, about 600 x 440 m here;

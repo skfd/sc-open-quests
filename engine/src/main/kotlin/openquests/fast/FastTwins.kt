@@ -15,6 +15,9 @@ import kotlin.math.floor
 interface FastTwin : AreaQuest {
     val sourceSha256: String
 
+    /** Pins of the SC helper files it copies too, by their PORTED-QUESTS.txt name (`helper:...`). */
+    val helperSha256: Map<String, String> get() = emptyMap()
+
     /** Searches this twin shares with others on the same map data. AreaPass runs them first, next to the
      *  quests that need none, so no thread waits on one. */
     val shared: List<PerMapData<*>> get() = emptyList()
@@ -28,6 +31,8 @@ val FAST_TWINS: Map<String, FastTwin> = listOf<FastTwin>(
     FastAddAddressStreet,
     FastAddKerbHeight,
     FastAddTactilePavingKerb,
+    FastAddLevel,
+    FastAddLevelThing,
 ).associateBy { it.name }
 
 /** A search that reads no clock, done once per map data however many quests and runs ask for it: the
