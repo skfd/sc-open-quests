@@ -403,6 +403,10 @@ new cities appear by themselves.
    CheckExistence~~ **done 2026-11-07** (DESIGN.md, "CheckExistence profiled"): not the feature lookup, but untagged
    nodes slipping past the fast reject; a one-line fix, same counts, Istanbul's CheckExistence 36.5 s to 6.9 s, the
    europe-msk pass 132 s to 117 s. 69 engine tests pass after it, SnapshotReproductionTest included (TorontoRegressionTest
-   skips, its extract pruned). Not pushed; the 13:15 run pushes it. Next: AddLevel and AddLevelThing (22% of CPU, mall geometries rebuilt in every
-   run), and AddHousenumber for London's wall time. DESIGN.md, "Optimisation directions after the speed-up".
+   skips, its extract pruned). ~~AddLevel and AddLevelThing~~ **done 2026-11-07, late evening** (b637a40b, 9614f8bd;
+   DESIGN.md, "The level quests: a grid per mall, and one ordered queue"): twins with a shared grid of level points,
+   and a city's area runs from one ordered queue. Same counts, verifyFast passed on Berlin and europe-msk, 71 engine
+   tests pass; Moscow's area pass 56-67 s to 24-27 s, the europe-msk pass 129-139 s to 98-102 s, London unchanged.
+   Not pushed; the 12:15 run pushes it (and runs the new engine first: watch its log). Next: AddHousenumber for
+   London's wall time (start it first in the queue, a cheap test), then AddChargingStationSocket.
    After that, the Germany world prototype (DESIGN.md, "The whole world: measured and proposed").
