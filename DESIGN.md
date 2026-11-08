@@ -1539,3 +1539,6 @@ for it; the log names it `(shared) kerb nodes` (London 13-16 s, Berlin 5-8 s, on
   age quest's runs in the task order (age quests first); started first it would at least not start late, and only a
   faster AddHousenumber lowers the floor. CheckExistence is about 62 s over its four runs, about 16 s each: it costs
   CPU, but it does not set the floor.
+- **Not shown:** whether running the search ahead of the kerb runs gains anything over letting seven threads wait
+  for it; with AddHousenumber setting the floor, these runs cannot tell. `--area-unit tiles` was not run (there the
+  first kerb run of a tile searches and the other seven reuse it).
