@@ -1859,11 +1859,15 @@ crosses both.
 - **Cells** (`tools/world_cells.py`): no `countryCodes`; the zone that holds most of the cell's nodes
   (timezonefinder at each 0.05° square of the node grid); a notes clip per file in one pass over the dump;
   the baseline one run per zone, as the daily regions; `plan --cities` for a check without Overture places.
+- **The production runs are unchanged:** the four baselines are the daily Europe regions' configuration
+  (typed codes, the JVM in the region's zone) on the same extract (same sha256) as the archived 11-08
+  snapshots, and all 32 cities equal them in every quest entry and denominator.
 - **Tests:** GatingTest (a cell across the Dutch-German border at Enschede and Gronau: AddHousenumber counts
   the German house only, AddAcceptsCash the Dutch bakery only, as two small cells do; typed codes still gate
   the whole city) and ZoneTest (a filter under an override equals a JVM started in that zone, for Auckland,
   Los Angeles and Moscow; two cities in two zones in one run equal each counted alone in its zone). 79 engine
-  tests, SnapshotReproductionTest unchanged.
+  tests, SnapshotReproductionTest unchanged. ZoneTest sets
+  the JVM's default zone while it runs, so the suite must stay sequential in one JVM (it is).
 
 **The check: the Europe clip as cells.** `europe-2026-11-08` (127.8M nodes, the 32 European cities' 20 km
 rings, asOf 2026-11-08T00:00Z), `.scratch/world-eu/` (gitignored, about 6 GB with the cut and the clips;
@@ -1873,9 +1877,10 @@ cells 228 and 231 s (one engine at a time: two at 30 GB each failed on Windows' 
 
 - **Every city within 0.004% of its whole-city count** (app default quests), 18 of 32 exact: far inside the
   owner's 0.1%. In all quests together, 11 cities differ by 1 to 4.
-- **What differs, element by element:** area quests at a cell's edge, as in Germany (AddHousenumber +-1 or 2
-  in Barcelona, Budapest, Dublin, London, München; AddMaxHeight, AddCrossing, AddBarrierOnRoad, AddBarrierOnPath,
-  AddPathSurface 1-2 each). **Bratislava +4 AddCycleway is the gate at work:** the quest is on in Austria and
+- **What differs:** 1-2 elements of a quest, most of them area quests (AddHousenumber in Barcelona, Budapest,
+  Dublin, London, München; AddMaxHeight, AddCrossing, AddBarrierOnRoad, AddBarrierOnPath, AddPathSurface): a
+  cell's edge, as Germany's check supposed, or the part's copy of the city polygon, as Athens shows below;
+  not dumped one by one. **Bratislava +4 AddCycleway is the gate at work:** the quest is on in Austria and
   Hungary, not Slovakia, and four cycleways inside Bratislava's polygon (Petržalka, Jarovce, Devínska Nová Ves)
   lie where SC's boundary data says Austria; the app shows them there, the typed `["SK"]` city does not count
   them. Athens +1 on three road quests is the check's own polygon copy: dumped, both runs match the same
