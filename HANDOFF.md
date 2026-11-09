@@ -244,7 +244,7 @@ Next, in order:
    show the owner the list.
 4. The step from a request to a counted region: place id to relation, country codes, time zone, a
    region per time zone over the shared clip. `add_city.py` cannot do it today.
-Housekeeping still open: the weekly-to-monthly rename (above).
+Housekeeping: the weekly-to-monthly rename is done (2026-11-06, `run.py planet`, `kk-SCOpenQuests-planet`).
 
 **The European pilot: where it stands (2026-11-01, 01:00).** Read DESIGN.md from "World: a seeded bar
 plus requests" to the end first. In short:
