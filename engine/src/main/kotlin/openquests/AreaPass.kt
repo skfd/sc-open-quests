@@ -31,6 +31,22 @@ const val AREA_PADDING_M = 1000.0
  *  fail on any difference (slow on whole cities: the ports' quadratic parts run too). */
 val VERIFY_FAST = System.getProperty("openquests.verifyFast") == "true"
 
+/** `-Dopenquests.taskTrace=<file>`: append a tab-separated line per area task (city, task, thread,
+ *  start and end in seconds from the city's first task, thread CPU seconds), to see whether a city's
+ *  area pass waits on one run or on the CPU. Counts do not change. */
+private val TASK_TRACE: java.io.File? = System.getProperty("openquests.taskTrace")?.let { java.io.File(it) }
+private val threadMx = java.lang.management.ManagementFactory.getThreadMXBean()
+
+private class Traced(val label: String, val thread: String, val start: Long, val end: Long, val cpu: Long)
+
+private inline fun <T> traced(out: ConcurrentLinkedQueue<Traced>?, label: () -> String, f: () -> T): T {
+    if (out == null) return f()
+    val t0 = System.nanoTime(); val c0 = threadMx.currentThreadCpuTime
+    val r = f()
+    out += Traced(label(), Thread.currentThread().name, t0, System.nanoTime(), threadMx.currentThreadCpuTime - c0)
+    return r
+}
+
 /** The app's download unit (ApplicationConstants.DOWNLOAD_TILE_ZOOM). */
 const val AREA_TILE_ZOOM = 16
 
@@ -540,18 +556,30 @@ class AreaPass(
         val (later, first) = tasks.partition { sharedOf(it.first).isNotEmpty() }
         val ordered = first + later
         val sharedSeconds = DoubleArray(shared.size)
+        val trace = if (TASK_TRACE != null) ConcurrentLinkedQueue<Traced>() else null
+        val traceT0 = System.nanoTime()
         val done = parallelInOrder(shared.size + ordered.size) { k ->
-            if (k < shared.size) {
+            if (k < shared.size) traced(trace, { "(shared) ${shared[k].name}" }) {
                 val t0 = System.nanoTime()
                 shared[k].of(mapData)
                 sharedSeconds[k] = (System.nanoTime() - t0) / 1e9
                 null
-            } else runTask(ordered[k - shared.size])
+            } else ordered[k - shared.size].let { task ->
+                traced(trace, { "${engine.quests[task.first].name} ${task.second}" }) { runTask(task) }
+            }
         }.filterNotNull().groupBy { it.qi }
         val questIds = done.keys.toList()
         parallelMap(0, questIds.size) { k ->
             val qi = questIds[k]
-            tally(mapData, box, qi, listOf(city.index), done.getValue(qi).associate { it.run to it.elements })
+            traced(trace, { "(tally) ${engine.quests[qi].name}" }) {
+                tally(mapData, box, qi, listOf(city.index), done.getValue(qi).associate { it.run to it.elements })
+            }
+        }
+        if (trace != null) synchronized(TASK_TRACE!!) {
+            TASK_TRACE.appendText(trace.joinToString("") {
+                "%s\t%s\t%s\t%.3f\t%.3f\t%.3f\n".format(city.id, it.label, it.thread,
+                    (it.start - traceT0) / 1e9, (it.end - traceT0) / 1e9, it.cpu / 1e9)
+            })
         }
         val seconds = done.map { (qi, runs) -> qi to runs.sumOf { it.seconds } }
         for ((qi, s) in seconds.sortedByDescending { it.second }.take(3)) if (s >= 1.0) {
