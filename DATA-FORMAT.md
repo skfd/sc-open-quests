@@ -29,7 +29,9 @@ This is the contract between the engine (writes snapshots), the pipeline (keeps 
   (optional) names the city's country in the city picker when its region spans several. `name` is the English
   one. `aka` (optional) lists other names the picker finds the city by: `"Vienna"`, `["Wien"]`. `boundary` is a path to an Overpass `out geom`
   relation element; `region` is the region whose extract holds the city, and its `timeZone` must be the
-  region's. Adding a city means adding an entry and its boundary file (`tools/add_city.py <relation>`
+  region's. The engine also takes `countryCodes: null` (gated at each quest's position, for a world run's
+  cells, engine/README.md item 4) and cities in different zones (each evaluated in its own); the
+  configured cities have neither. Adding a city means adding an entry and its boundary file (`tools/add_city.py <relation>`
   makes both; `tools/import_farmland_cities.py` made the ontario-farmland set). The engine gets the
   region's cities only (`data/cities/<region>.json`, cut by `run.py`).
 - An `.osm.pbf` extract with timestamps. Its header `osmosis_replication_timestamp` is the snapshot's

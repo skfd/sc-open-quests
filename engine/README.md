@@ -57,11 +57,12 @@ dated file, not `ontario-latest.osm.pbf`. The store keeps 14 days of extracts, p
    skips untagged elements in the main pass; the area pass sees them.
 2. **Clock**: SC's age filters (`older today -N`, `< today`) read the wall clock. The `clock` patch
    makes that clock settable; the engine sets it to the extract's replication timestamp. Dates are
-   computed in the JVM's default zone, pinned to `America/Toronto` by the launcher
-   (`-Duser.timezone`); the engine refuses to run if a city's `timeZone` differs. Cities in another
-   zone (Berlin, Hamburg, Bremen: `Europe/Berlin`) need their own run, with
-   `JAVA_OPTS=-Duser.timezone=Europe/Berlin` (the launcher puts `JAVA_OPTS` after its defaults, and the
-   last `-D` wins).
+   computed in a city's `timeZone`. A region run starts the JVM in its zone (`America/Toronto` is the
+   launcher's default `-Duser.timezone`; `run.py` passes `JAVA_OPTS=-Duser.timezone=Europe/Berlin` and so
+   on, and the last `-D` wins), and then nothing is overridden. When cities differ from the JVM's zone (a
+   world run's cells), the `zone` patch evaluates each city's matches in its own zone, in both passes;
+   cities that overlap must share one, and `--area-unit tiles` needs one zone. The snapshot's date is
+   asOf in the JVM's zone (2026-11-09; before, the engine refused cities in another zone).
 3. **agedOnly**: each match of a `usesAge` quest is re-evaluated on the same thread with the clock at
    1900-01-01, where every `older today -N` and `x < today` test is false. Matches that disappear are
    `agedOnly`. Besides `older`, this catches four date-tag comparisons with today: `opening_date < today`
@@ -77,6 +78,12 @@ dated file, not `ontario-latest.osm.pbf`. The store keeps 14 days of extracts, p
    redundant for cities wholly inside CA-ON. A German position gets only the id `DE` (SC's data has no
    German subdivisions), so a German city's `countryCodes` should be `["DE"]`; no SC v63.4 quest lists
    a `DE-*` code.
+   A city without `countryCodes` (a world run's cell, which may cross a border) is gated as the app gates:
+   per quest, its bbox is asked first (a region that contains the whole box turns it on or off, one that
+   does not touch it settles it too), and where the box cannot decide, each quest's position is asked
+   (`isInAny`), in the main pass, the area pass and for notes (`Gating.kt`, GatingTest). SC's
+   `getContainingIds` is conservative in a raster cell a border crosses, so a box near a border is asked
+   per position even when it lies in one country; that costs a lookup, not a count.
 5. **Quest position** from SC's own `ElementGeometryCreator` (vendored): a node is its position; a way
    with fewer than 2 distinct positions or a missing node has no geometry (no quest); a closed way that
    `isArea()` (SC's `IS_AREA_EXPRESSION`) gets the polygon centroid, any other way the point at half its
@@ -137,6 +144,11 @@ node positions), relations. Each stage decodes blocks in parallel.
   data and stopped every `europe-msk` count there; in the app it would fail the download. The patch makes
   `intersectsWith` answer false for a polyline of one point (a point crosses nothing), so only a count
   that used to fail changes. v64.1 and upstream master (2026-11-02) have the same check, so it stays.
+- **`zone`** (`util/ktx/Instant.kt`, `LocalDate.kt`, `LocalDateTime.kt`): every "system default timezone"
+  read goes through `systemTimeZone()`, which takes the thread's `systemTimeZoneOverride` before the
+  JVM's zone. The engine sets it per city when cities are in different zones (`EngineZone.at`); with
+  no override nothing changes. ZoneTest checks a filter under an override against a JVM started in
+  that zone, and a run of two cities in two zones against each counted alone in its own.
 - **Stub** `src/main/kotlin/stubs/de/westnordost/streetcomplete/ui/common/street_side_select/Side.kt`: SC
   declares `enum class Side { LEFT, RIGHT }` in a Compose UI file; the vendored `osm/Sides.kt` imports it.
 - **Stubs** `resources/Res.kt` and `ui/ktx/Res.kt` (`Res.readBytesOrNull`): SC reads its
