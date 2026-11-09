@@ -33,6 +33,8 @@ val FAST_TWINS: Map<String, FastTwin> = listOf<FastTwin>(
     FastAddTactilePavingKerb,
     FastAddLevel,
     FastAddLevelThing,
+    FastAddSummitRegister,
+    FastAddSummitCross,
 ).associateBy { it.name }
 
 /** A search that reads no clock, done once per map data however many quests and runs ask for it: the

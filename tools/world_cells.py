@@ -248,8 +248,12 @@ def cut(pbf: Path, out: Path) -> None:
     p = read_json(out / "plan.json")
     cutdir = out / "cut"
     cutdir.mkdir(exist_ok=True)
+    # null copies the input's value: the engine refuses a file without its replication timestamp
+    header = {k: None for k in ("osmosis_replication_timestamp", "osmosis_replication_sequence_number",
+                                "osmosis_replication_base_url", "timestamp")}
     cfg = {"directory": "/out", "extracts": [
-        {"output": f"{f['id']}.osm.pbf", "output_format": "pbf", "bbox": f["bbox"]} for f in p["files"]]}
+        {"output": f"{f['id']}.osm.pbf", "output_format": "pbf", "bbox": f["bbox"], "output_header": header}
+        for f in p["files"]]}
     write_json(cutdir / "extract.json", cfg)
     t = time.time()
     cmd = ["docker", "run", "--rm", "--name", f"world-cells-cut-{os.getpid()}",
