@@ -1,5 +1,6 @@
 package openquests.fast
 
+import openquests.candidates
 import de.westnordost.osmfeatures.Feature
 import de.westnordost.streetcomplete.data.elementfilter.toElementFilterExpression
 import de.westnordost.streetcomplete.data.osm.geometry.ElementPolygonsGeometry
@@ -49,8 +50,8 @@ object FastAddIsAmenityIndoor : FastTwin {
 
     override fun getApplicableElements(mapData: MapDataWithGeometry): Iterable<Element> {
         val bbox = mapData.boundingBox ?: return listOf()
-        val nodes = mapData.nodes.filter { nodesFilter.matches(it) && getFeature(it) != null }
-        val buildings = mapData.filter { buildingFilter.matches(it) }.toMutableList()
+        val nodes = mapData.candidates(mapData.nodes, nodesFilter).filter { nodesFilter.matches(it) && getFeature(it) != null }
+        val buildings = mapData.candidates(buildingFilter).filter { buildingFilter.matches(it) }.toMutableList()
 
         val buildingGeometriesById = buildings.associate {
             it.id to mapData.getGeometry(it.type, it.id) as? ElementPolygonsGeometry

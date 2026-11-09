@@ -100,7 +100,11 @@ class TagMap(capacity: Int) : AbstractMap<String, String>() {
  * hold without a key (`!a`, `a != b`, `older today -1 years`) gives no clause, and an expression with
  * no clause rejects nothing. [mayMatch] may say yes wrongly but never no wrongly, so counts do not change.
  */
-class KeyReject private constructor(private val masks: LongArray) {
+class KeyReject private constructor(
+    private val masks: LongArray,
+    /** every clause worked out, not only the [MAX_CLAUSES] smallest the masks use ([candidates]) */
+    val clauses: List<Set<String>>,
+) {
 
     fun mayMatch(element: Element): Boolean {
         val tags = element.tags
@@ -120,7 +124,7 @@ class KeyReject private constructor(private val masks: LongArray) {
             val smallestFirst = clauses.sortedBy { it.size }.take(MAX_CLAUSES)
             return KeyReject(LongArray(smallestFirst.size) { i ->
                 smallestFirst[i].fold(0L) { mask, key -> mask or keyBit(key) }
-            })
+            }, clauses)
         }
 
         /** every clause must hold for [e] to hold */

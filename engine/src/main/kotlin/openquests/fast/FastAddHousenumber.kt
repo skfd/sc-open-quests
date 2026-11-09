@@ -6,6 +6,7 @@ package openquests.fast
 // 57 s), the buildings of all areas are gathered and removed once. An area's buildingsInArea depends
 // only on buildingPositions and buildingsByCenterPosition, which step 5 never changes, and they are
 // the very objects in `buildings`, so a set by identity removes the same ones.
+import openquests.candidates
 import de.westnordost.streetcomplete.data.elementfilter.toElementFilterExpression
 import de.westnordost.streetcomplete.data.osm.geometry.ElementPolygonsGeometry
 import de.westnordost.streetcomplete.data.osm.mapdata.Element
@@ -31,7 +32,7 @@ object FastAddHousenumber : FastTwin {
     override fun getApplicableElements(mapData: MapDataWithGeometry): Iterable<Element> {
         val bbox = mapData.boundingBox ?: return listOf()
 
-        val addressNodesById = mapData.nodes
+        val addressNodesById = mapData.candidates(mapData.nodes, nodesWithAddressFilter)
             .filter { nodesWithAddressFilter.matches(it) }
             .associateByTo(HashMap()) { it.id }
         val addressNodeIds = addressNodesById.keys
@@ -39,7 +40,7 @@ object FastAddHousenumber : FastTwin {
         /** 1. filter: only buildings with no address that usually should have an address
                and that do not have an address node on their outline */
 
-        val buildings = mapData.filter {
+        val buildings = mapData.candidates(buildingsWithMissingAddressFilter).filter {
             buildingsWithMissingAddressFilter.matches(it)
             && !it.consumeAnyContainedNode(addressNodeIds, mapData)
         }.toMutableList()
@@ -48,7 +49,7 @@ object FastAddHousenumber : FastTwin {
 
         /** 2. exclude buildings which are included in relations that have an address */
 
-        val relationsWithAddress = mapData.relations.filter { nonMultipolygonRelationsWithAddressFilter.matches(it) }
+        val relationsWithAddress = mapData.candidates(mapData.relations, nonMultipolygonRelationsWithAddressFilter).filter { nonMultipolygonRelationsWithAddressFilter.matches(it) }
 
         buildings.removeAll { building ->
             relationsWithAddress.any { it.containsWay(building.id) }

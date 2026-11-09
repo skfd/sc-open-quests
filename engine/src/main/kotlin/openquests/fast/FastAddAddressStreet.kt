@@ -1,5 +1,6 @@
 package openquests.fast
 
+import openquests.candidates
 import de.westnordost.streetcomplete.data.elementfilter.toElementFilterExpression
 import de.westnordost.streetcomplete.data.osm.mapdata.Element
 import de.westnordost.streetcomplete.data.osm.mapdata.ElementType
@@ -43,7 +44,7 @@ object FastAddAddressStreet : FastTwin {
     """.toElementFilterExpression() }
 
     override fun getApplicableElements(mapData: MapDataWithGeometry): Iterable<Element> {
-        val excludedWayNodeIds = mapData.ways
+        val excludedWayNodeIds = mapData.candidates(mapData.ways, excludedWaysFilter)
             .filter { excludedWaysFilter.matches(it) }
             .flatMapTo(HashSet()) { it.nodeIds }
 
@@ -56,7 +57,7 @@ object FastAddAddressStreet : FastTwin {
             }
         }
 
-        val addressesWithoutStreet = mapData.filter { address ->
+        val addressesWithoutStreet = mapData.candidates(filter).filter { address ->
             filter.matches(address)
             && address.id !in streetMembers.getValue(address.type)
             && address.id !in excludedWayNodeIds

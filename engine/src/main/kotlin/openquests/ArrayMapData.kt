@@ -109,6 +109,18 @@ class ArrayMapData(
         return if (i < 0) null else relationGeometries[i]
     }
 
+    private val nodeKeys by lazy { KeyIndex(nodes) }
+    private val wayKeys by lazy { KeyIndex(ways) }
+    private val relationKeys by lazy { KeyIndex(relations) }
+
+    /** the [KeyIndex] of [list] if it is this map data's own nodes, ways or relations ([candidates]) */
+    fun keyIndexOf(list: Collection<*>): KeyIndex? = when {
+        list === nodes -> nodeKeys
+        list === ways -> wayKeys
+        list === relations -> relationKeys
+        else -> null
+    }
+
     override fun iterator(): Iterator<Element> =
         (nodes.asSequence() + ways.asSequence() + relations.asSequence()).iterator()
 }

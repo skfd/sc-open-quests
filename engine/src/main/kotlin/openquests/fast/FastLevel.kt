@@ -1,5 +1,6 @@
 package openquests.fast
 
+import openquests.candidates
 import de.westnordost.streetcomplete.data.elementfilter.ElementFilterExpression
 import de.westnordost.streetcomplete.data.elementfilter.toElementFilterExpression
 import de.westnordost.streetcomplete.data.osm.geometry.ElementPolygonsGeometry
@@ -101,7 +102,8 @@ private fun inMalls(
     isCandidate: (Element) -> Boolean,
 ): List<Element> {
     val elements = ArrayList<Element>(); val positions = ArrayList<LatLon>()
-    for (element in mapData.filter(filter)) {
+    for (element in mapData.candidates(filter)) {
+        if (!filter.matches(element)) continue
         val pos = mapData.getGeometry(element.type, element.id)?.center ?: continue
         elements.add(element); positions.add(pos)
     }

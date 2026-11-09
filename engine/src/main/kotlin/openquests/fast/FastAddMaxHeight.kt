@@ -1,5 +1,6 @@
 package openquests.fast
 
+import openquests.candidates
 import de.westnordost.streetcomplete.data.elementfilter.toElementFilterExpression
 import de.westnordost.streetcomplete.data.osm.geometry.ElementGeometry
 import de.westnordost.streetcomplete.data.osm.geometry.ElementPolylinesGeometry
@@ -78,33 +79,33 @@ object FastAddMaxHeight : FastTwin {
     """
 
     override fun getApplicableElements(mapData: MapDataWithGeometry): Iterable<Element> {
-        val roadsNodeIds = mapData.ways
+        val roadsNodeIds = mapData.candidates(mapData.ways, allRoadsFilter)
             .filter { allRoadsFilter.matches(it) }
             .flatMapTo(HashSet()) { it.nodeIds }
 
-        val pathNodeIds = mapData.ways
+        val pathNodeIds = mapData.candidates(mapData.ways, allPathsFilter)
             .filter { allPathsFilter.matches(it) }
             .flatMapTo(HashSet()) { it.nodeIds }
 
-        val nodesWithoutHeight = mapData.nodes
+        val nodesWithoutHeight = mapData.candidates(mapData.nodes, nodeFilter)
             .filter { nodeFilter.matches(it) && it.id in roadsNodeIds }
 
-        val electrifiedRailwayNodeIds = mapData.ways
+        val electrifiedRailwayNodeIds = mapData.candidates(mapData.ways, electrifiedRailwaysFilter)
             .filter { electrifiedRailwaysFilter.matches(it) }
             .flatMapTo(HashSet()) { it.nodeIds }
 
-        val railwayCrossingNodesWithoutHeight = mapData.nodes
+        val railwayCrossingNodesWithoutHeight = mapData.candidates(mapData.nodes, railwayCrossingsFilter)
             .filter {
                 railwayCrossingsFilter.matches(it)
                 && (it.id in roadsNodeIds || it.id in pathNodeIds)
                 && it.id in electrifiedRailwayNodeIds
             }
 
-        val roadsWithoutHeight = mapData.ways.filter { roadsWithoutMaxHeightFilter.matches(it) }
+        val roadsWithoutHeight = mapData.candidates(mapData.ways, roadsWithoutMaxHeightFilter).filter { roadsWithoutMaxHeightFilter.matches(it) }
 
         val tunnelsWithoutHeight = roadsWithoutHeight.filter { tunnelFilter.matches(it) }
 
-        val bridges = mapData.ways.filter { bridgeFilter.matches(it) }
+        val bridges = mapData.candidates(mapData.ways, bridgeFilter).filter { bridgeFilter.matches(it) }
         // the change: bridges by bounds (a bridge without geometry never matches, as in SC), and what SC
         // works out again for every road and bridge pair (the bridge's geometry, layer and node set) once
         // per bridge
