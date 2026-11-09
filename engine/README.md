@@ -244,7 +244,7 @@ download:
   next to its twin on every map data and fails on any difference, and fails if a quest with
   `usesAge = false` gives another result at LONG_AGO.
 - `-Dopenquests.taskTrace=<file>` appends a line per area task (city, quest and run, thread, start and end in
-  seconds from the city's first task, thread CPU seconds) and changes no count; `.scratch/prof-area/trace.py`
+  seconds from the city's first task, thread CPU seconds) and changes no count; `tools/task_trace.py`
   reads it. It shows whether a city's area pass waits on one run or on the CPU.
 - `--area-unit tiles` runs each z16 tile alone instead (`DOWNLOAD_TILE_ZOOM`, about 600 x 440 m here;
   SC's own `TilesRect` math), the app's smallest download; results count if inside the tile.

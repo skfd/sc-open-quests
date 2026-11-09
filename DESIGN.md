@@ -1667,7 +1667,8 @@ JFR on London alone, 11-08 clip (`.scratch/prof-hn/`).
 Next by the AddHousenumber session. London alone, europe-west 11-08, the engine after AddHousenumber's fix, idle
 machine. A new opt-in trace, `-Dopenquests.taskTrace=<file>` (engine/README.md), writes each area task's start,
 end, thread and CPU time. JFR alone cannot say how many threads are busy, because it samples only a few threads
-per tick. Scripts and outputs are in `.scratch/prof-area/` (`run.py`, `trace.py`, `cpu.py`). Same counts: London's
+per tick. Scripts and outputs are in `.scratch/prof-area/` (`run.py`, `region.py`, `cpu.py`); the trace reader is kept as
+`tools/task_trace.py`. Same counts: London's
 snapshot with the trace equals the published one.
 
 - **London's run phase is 26.7 s; perfectly spread, its CPU would take about 15-18 s.** It is 252 s of thread CPU:
@@ -1701,7 +1702,7 @@ snapshot with the trace equals the published one.
 
 Proposed, none built, in order of how little each costs:
 1. **FastAddMaxHeight: the filter before the set lookup.** Two lines; it shortens one of the 3 tail runs by
-   perhaps a third. Check: same snapshots. verifyFast proves nothing more here, since the port is unchanged.
+   perhaps a third. Check: same snapshots, and verifyFast, since the twin is what changes.
 2. **Start the longest runs first.** Order the queue by the cost each run had last time, or by a fixed list:
    AddHousenumber, AddMaxHeight, AddLevelThing, then the rest. If the tail runs started at 0, London's run phase
    would end near the longest run's own length under load, about 21 s instead of 26.7, near the 15-18 s floor
@@ -1722,8 +1723,10 @@ ways 16 s, the area's ways and nodes 18 s, for all of europe-west's 128M nodes, 
 ## AddMaxHeight and the queue: built (2026-11-08, late)
 
 The first two proposals above, at the owner's word. Same counts: europe-west and europe-msk (all six cities)
-give snapshots equal to the published 11-08 ones, `parts` aside (these runs leave out grid and parts); 71
-engine tests pass. All timings are clean runs with the task trace on, the machine otherwise idle.
+give snapshots equal to the published 11-08 ones. europe-west with the daily run's grid and parts gives a
+snapshot equal as text (parts included) and a grid equal byte for byte. `-Dopenquests.verifyFast=true` on
+Dublin and Lisboa (16 map data runs, 144 s) found every twin equal to its port, the new AddMaxHeight
+included. 71 engine tests pass. All timings are clean runs with the task trace on, the machine otherwise idle.
 
 - **AddMaxHeight** (`FastAddMaxHeight.kt`): the tag filter before the node id sets, as proposed. That alone
   took London's run from 14.1 to 11.8 s of CPU, not the 42% the profile suggested. A second JFR run, by source
@@ -1747,6 +1750,8 @@ engine tests pass. All timings are clean runs with the task trace on, the machin
   | Istanbul | 10.9 s | | 10.8 s |
   | Minsk | 4.6 s | | 3.7 s |
 
+  London's last two columns are not like for like: London alone, then London after Dublin and Lisboa in one
+  JVM, so its 0.4 s is noise. Moscow's is the like-for-like gain from the queue.
   Area pass with map data: London 35.7 s to 31.1, Moscow 26.6 to 23.1, Istanbul 15.3 to 14.4, Minsk 6.0 to 4.9;
   the europe-msk pass 93.8 s to 87.7.
 - **What is left: the long runs themselves.** Starting them at 0 means they run while all 24 threads are busy,
