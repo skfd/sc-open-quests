@@ -1788,7 +1788,11 @@ element "is this you?". Now a scan walks only the elements that hold a key its f
 - **Same counts.** europe-west and europe-msk (six cities) equal the published 11-08 snapshots. europe-west with
   grid and parts: snapshot equal as text, grid equal byte for byte. Bremen and Bremerhaven (Geofabrik, 11-07)
   equal their published snapshot. verifyFast on Dublin and Lisboa passed (16 runs), though both sides now use
-  `candidates`, so the snapshots from the older engine are the check that matters here. 71 engine tests pass.
+  `candidates`, so the snapshots from the older engine are the check that matters here. A new `KeyIndexTest`
+  runs every quest filter of v64.1 (and a few edge cases) over random nodes, ways and relations, a third untagged,
+  and checks that `candidates(list, f).filter(f::matches)` equals `list.filter(f::matches)`, order included, per
+  list and for the whole map data. 73 engine tests pass. Peak heap is unchanged within noise (europe-west 30.9 to
+  28.1 GB, europe-msk 27.4 to 29.3). Not run: `--area-unit tiles`, where each tile builds its own index.
 - **Run CPU down by a quarter to a third**, run phase down less (the long runs still set it):
 
   | city | run CPU before | after | run phase before | after |

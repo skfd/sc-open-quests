@@ -422,7 +422,7 @@ new cities appear by themselves.
    to 24.0, Moscow 20.7 to 18.1, Minsk 4.6 to 3.7. Not pushed until the 12:15 run. The floor is now the long
    runs themselves (AddHousenumber, AddLevelThing, AddMaxHeight, at half a core each under load). ~~(3) Candidates
    by key~~ **built 2026-11-08, late** (DESIGN.md, "Candidates by key: built"): run CPU London 241 s to 162, Moscow
-   161 to 121, same counts (six Europe cities, Bremen, grid byte for byte, verifyFast, 71 tests). Not pushed
+   161 to 121, same counts (six Europe cities, Bremen, grid byte for byte, verifyFast, a new KeyIndexTest, 73 tests). Not pushed
    until the 12:15 run, which is its first daily use. Next, if more is wanted: a JFR run of the new engine; the
    hand-ported custom quests' `isApplicableTo` scans; or a faster AddHousenumber or AddLevelThing.
    After that, the Germany world prototype (DESIGN.md, "The whole world: measured and proposed").
