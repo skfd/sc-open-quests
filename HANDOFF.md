@@ -431,3 +431,10 @@ new cities appear by themselves.
    counted German city within 0.002% of its whole-city count; 39,446 Overture places with a number. It found
    the summit quests' all-against-all, now a fast twin (same counts). Next, the owner's call: country rules and
    time zone by position, per-file notes clips, then a larger country or a continent stage.
+11. **Country rules and time zone by position: started 2026-11-09 08:40** (owner: "continue"). Plan: (a) a city
+   without `countryCodes` is gated by position, SC's own `isInAny(position, enabledInCountries)`, resolved per
+   (city, quest) from its bbox first; typed `countryCodes` mean what they do today; (b) a `zone` patch on SC's
+   ktx date helpers so each city's matches run in its own time zone, not one per JVM; (c) world_cells gives a
+   cell the zone at its centre (timezonefinder); (d) a notes clip per file. Check: the Europe clip
+   (`~/Code/.osm-data/europe/`, 4 zones, about 25 countries) as cells against the 32 cities counted whole on the
+   same file and notes clip, in `.scratch/world-eu/`. No engine run 11:50-14:15 (the daily run).
