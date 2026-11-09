@@ -31,6 +31,12 @@ const val AREA_PADDING_M = 1000.0
  *  fail on any difference (slow on whole cities: the ports' quadratic parts run too). */
 val VERIFY_FAST = System.getProperty("openquests.verifyFast") == "true"
 
+/** Area quests whose one run is among a city's longest in the traces (DESIGN.md, "The whole area pass
+ *  profiled"), started before every other run so none of them starts late and runs on alone. Order
+ *  only: counts do not depend on it. */
+private val LONG_RUNS = listOf("AddHousenumber", "AddLevelThing", "AddMaxHeight")
+private fun longRank(name: String) = LONG_RUNS.indexOf(name).let { if (it < 0) LONG_RUNS.size else it }
+
 /** `-Dopenquests.taskTrace=<file>`: append a tab-separated line per area task (city, task, thread,
  *  start and end in seconds from the city's first task, thread CPU seconds), to see whether a city's
  *  area pass waits on one run or on the CPU. Counts do not change. */
@@ -539,30 +545,33 @@ class AreaPass(
     private fun countCity(city: City, mapData: MapDataWithGeometry, questIndices: List<Int>) {
         val box = mapData.boundingBox!!
         engine.dumpAreaElements(city, mapData)
-        // every run is its own task, the age quests' first: they take longest, and one left for last holds
-        // up the whole city
-        val tasks = questIndices.sortedByDescending { engine.quests[it].usesAge }.flatMap { qi -> runsOf(qi).map { qi to it } }
+        // every run is its own task: the runs known to be long first, then the age quests' (four runs each),
+        // then the rest; a run left for last holds up the whole city
+        val tasks = questIndices.sortedWith(compareBy({ longRank(engine.quests[it].name) }, { !engine.quests[it].usesAge }))
+            .flatMap { qi -> runsOf(qi).map { qi to it } }
         class Done(val qi: Int, val run: Run, val elements: List<Element>, val seconds: Double)
         fun runTask(task: Pair<Int, Run>): Done {
             val t0 = System.nanoTime()
             val elements = runQuest(mapData, task.first, task.second)
             return Done(task.first, task.second, elements, (System.nanoTime() - t0) / 1e9)
         }
-        // the searches twins share start first, then the runs that need none, then the runs that need one:
-        // these start only once every other run has started, so a thread seldom waits for a search another
-        // thread is doing, and none waits for the slowest run of the others to end
+        // the searches twins share start first; a run that needs one is taken only once it is done, so no
+        // thread sits waiting for a search another thread is doing
         fun sharedOf(qi: Int) = FAST_TWINS[engine.quests[qi].area!!.name]?.shared.orEmpty()
         val shared = tasks.flatMap { sharedOf(it.first) }.distinct()
-        val (later, first) = tasks.partition { sharedOf(it.first).isNotEmpty() }
-        val ordered = first + later
+        val ordered = tasks
+        val needs = ordered.map { t -> sharedOf(t.first).map { shared.indexOf(it) }.toIntArray() }
+        val sharedDone = BooleanArray(shared.size)
         val sharedSeconds = DoubleArray(shared.size)
         val trace = if (TASK_TRACE != null) ConcurrentLinkedQueue<Traced>() else null
         val traceT0 = System.nanoTime()
-        val done = parallelInOrder(shared.size + ordered.size) { k ->
+        val done = parallelWhenReady(shared.size + ordered.size,
+            ready = { k -> k < shared.size || needs[k - shared.size].all { sharedDone[it] } }) { k ->
             if (k < shared.size) traced(trace, { "(shared) ${shared[k].name}" }) {
                 val t0 = System.nanoTime()
                 shared[k].of(mapData)
                 sharedSeconds[k] = (System.nanoTime() - t0) / 1e9
+                sharedDone[k] = true
                 null
             } else ordered[k - shared.size].let { task ->
                 traced(trace, { "${engine.quests[task.first].name} ${task.second}" }) { runTask(task) }

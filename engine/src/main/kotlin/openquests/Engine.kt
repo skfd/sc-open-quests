@@ -615,16 +615,32 @@ class SortedIdMap<T : Any>(blocks: List<Pair<LongArray, Array<T?>>>) {
 fun <T> parallelMap(from: Int, until: Int, f: (Int) -> T): List<T> =
     IntStream.range(from, until).parallel().mapToObj { f(it) }.toList()
 
-/** [f] of 0 until [size] on all threads, started strictly in order: a free thread takes the next index.
- *  [parallelMap] splits its range between threads, so an index late in it may start first. */
-fun <T> parallelInOrder(size: Int, f: (Int) -> T): List<T> {
-    val next = java.util.concurrent.atomic.AtomicInteger()
+/** [f] of 0 until [size] on all threads: a free thread takes the lowest index not yet taken for which
+ *  [ready] holds, and waits while none does. [ready] is asked under a lock that is taken after each [f]
+ *  returns, so it may read what an earlier [f] wrote; some index must always be ready or running, or a
+ *  thread waits for ever. [parallelMap] splits its range between threads, so an index late in it may
+ *  start first. */
+fun <T> parallelWhenReady(size: Int, ready: (Int) -> Boolean, f: (Int) -> T): List<T> {
+    val lock = Object()
+    val taken = BooleanArray(size)
+    var left = size
+    var failed = false
     val out = java.util.concurrent.atomic.AtomicReferenceArray<T>(size)
     parallelMap(0, java.util.concurrent.ForkJoinPool.getCommonPoolParallelism() + 1) {
         while (true) {
-            val k = next.getAndIncrement()
-            if (k >= size) break
-            out.set(k, f(k))
+            var k = -1
+            synchronized(lock) {
+                while (left > 0 && !failed) {
+                    k = (0 until size).firstOrNull { !taken[it] && ready(it) } ?: -1
+                    if (k >= 0) { taken[k] = true; left--; break }
+                    (lock as Object).wait()
+                }
+            }
+            if (k < 0) break
+            var ok = false
+            try { out.set(k, f(k)); ok = true } finally {
+                synchronized(lock) { if (!ok) failed = true; (lock as Object).notifyAll() }
+            }
         }
     }
     return List(size) { out.get(it) }
