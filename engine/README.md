@@ -117,6 +117,13 @@ node positions), relations. Each stage decodes blocks in parallel.
   `emptyMap()`, not a `TagMap`, and SC lets such elements through when any leaf "may hold with no tags", which
   its own table says of `key ~ regex`. It only skips work: `TagMapTest` runs every quest filter with
   and without it. `sync-sc.ps1` applies it by exact line match, as the others.
+  **Candidates by key** builds on the same clauses (`KeyIndex.kt`, not an SC patch). Each map data keeps an
+  index from tag key to the positions of the elements holding it, built the first time a quest asks.
+  `mapData.candidates(list, expr)` gives the elements of `list` that hold a key of `expr`'s clause with the
+  fewest elements, in `list`'s order. Every element `expr` matches is among them, and the caller's predicate
+  still runs on each, so a scan gives the same result without walking the rest. `port_area_quests.py`
+  rewrites the ports' scans to use it (`CANDIDATES`, the one change to their kept code), and the fast twins
+  call it directly.
 - **`codepoints`**, dropped at the v64.1 repin: v64.0's `Element` rejected a tag key or value over 255
   UTF-16 units, so a Moscow shop's description of 255 code points with an emoji in it (node 7370179285,
   2021-11-13 to 2023-10-10) stopped every `europe-msk` count in that span. The patch backported SC's fix,
