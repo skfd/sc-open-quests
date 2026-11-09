@@ -426,10 +426,8 @@ new cities appear by themselves.
    until the 12:15 run, which is its first daily use. Next, if more is wanted: a JFR run of the new engine; the
    hand-ported custom quests' `isApplicableTo` scans; or a faster AddHousenumber or AddLevelThing.
    After that, the Germany world prototype (DESIGN.md, "The whole world: measured and proposed").
-10. **Germany world prototype (started 2026-11-09, 00:00, in progress):** `tools/world_cells.py`, all output in
-   `.scratch/world-de/` (gitignored), logs `logs/world-de-*.log`. Germany's Geofabrik extract
-   (`germany-2026-11-07`, 4.6 GB, 442.6M nodes) cut by node count into 4 files of about 110M nodes and 34 cells of
-   at most 15M; 40,520 Overture places of Germany (OSM-own-source, land area) as parts of every cell they touch,
-   plus the five counted German cities' own OSM polygons for the 0.1% check against a whole-city count of the same
-   file. Steps: places, plan done; cut and notes running; then count (two engines), baseline, report. A rerun
-   of a step overwrites it; `count` skips a file with `done.json`.
+10. **Germany world prototype: done 2026-11-09, night** (DESIGN.md, "Germany as cells: the world prototype").
+   `tools/world_cells.py`; Germany as 34 node-sized cells in 4 files, counted in 1,007 s with two engines; every
+   counted German city within 0.002% of its whole-city count; 39,446 Overture places with a number. It found
+   the summit quests' all-against-all, now a fast twin (same counts). Next, the owner's call: country rules and
+   time zone by position, per-file notes clips, then a larger country or a continent stage.
