@@ -209,6 +209,8 @@ class AreaPass(
     private class Bucket { val ways = IntList(); val nodes = IntList(); val relations = IntList() }
 
     private fun runTiles() {
+        // a tile's quests run once for every city it touches, so they have one zone
+        require(engine.zones.all { it == null }) { "--area-unit tiles needs every city in the JVM's time zone" }
         var t0 = System.nanoTime()
         // the tiles each way has a node in (the API's map call returns a way for each of them)
         val wayTiles: List<LongArray> = parallelMap(0, ways.size) { i ->
@@ -324,7 +326,8 @@ class AreaPass(
             if (pos !in box) continue
             val inCities = cityIndexes?.filter { cities[it].polygon.contains(pos.latitude, pos.longitude) }
                 ?: cityIndex.citiesAt(pos.latitude, pos.longitude).toList()
-            for (c in inCities) if (engine.enabled[c][qi]) engine.countArea(c, qi, e, pos, mask)
+            var ids: List<String>? = null
+            for (c in inCities) if (engine.enabledAt(c, qi) { ids ?: regionIdsAt(pos).also { ids = it } }) engine.countArea(c, qi, e, pos, mask)
         }
     }
 
@@ -565,8 +568,9 @@ class AreaPass(
         val sharedSeconds = DoubleArray(shared.size)
         val trace = if (TASK_TRACE != null) ConcurrentLinkedQueue<Traced>() else null
         val traceT0 = System.nanoTime()
+        val zone = engine.zones[city.index]
         val done = parallelWhenReady(shared.size + ordered.size,
-            ready = { k -> k < shared.size || needs[k - shared.size].all { sharedDone[it] } }) { k ->
+            ready = { k -> k < shared.size || needs[k - shared.size].all { sharedDone[it] } }) { k -> EngineZone.at(zone) {
             if (k < shared.size) traced(trace, { "(shared) ${shared[k].name}" }) {
                 val t0 = System.nanoTime()
                 shared[k].of(mapData)
@@ -576,7 +580,7 @@ class AreaPass(
             } else ordered[k - shared.size].let { task ->
                 traced(trace, { "${engine.quests[task.first].name} ${task.second}" }) { runTask(task) }
             }
-        }.filterNotNull().groupBy { it.qi }
+        } }.filterNotNull().groupBy { it.qi }
         val questIds = done.keys.toList()
         parallelMap(0, questIds.size) { k ->
             val qi = questIds[k]

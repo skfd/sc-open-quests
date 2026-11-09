@@ -24,13 +24,14 @@ import java.util.concurrent.ConcurrentHashMap
 object ScCountryInfos {
     private val countryInfos = CountryInfos(Res)
 
-    val countryBoundaries: CountryBoundaries by lazy {
+    /** the countryboundaries data itself, for the bbox questions SC's wrapper keeps private (openquests.gateOf) */
+    val boundaries: de.westnordost.countryboundaries.CountryBoundaries by lazy {
         val input = ScCountryInfos::class.java.getResourceAsStream("/sc/boundaries.ser")
             ?: error("missing resource sc/boundaries.ser")
-        CountryBoundariesImpl(input.asSource().buffered().use {
-            de.westnordost.countryboundaries.CountryBoundaries.deserializeFrom(it)
-        })
+        input.asSource().buffered().use { de.westnordost.countryboundaries.CountryBoundaries.deserializeFrom(it) }
     }
+
+    val countryBoundaries: CountryBoundaries by lazy { CountryBoundariesImpl(boundaries) }
 
     private val byIds = ConcurrentHashMap<List<String>, CountryInfo>()
 

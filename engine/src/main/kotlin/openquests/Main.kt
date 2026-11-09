@@ -118,13 +118,11 @@ fun count(opts: CountOptions): CountResult {
     val cities = loadCities(opts.cities, opts.baseDir)
     require(cities.isNotEmpty()) { "no cities in ${opts.cities}" }
 
-    // SC's date filters use the JVM's default zone; all cities must share it
+    // the snapshot's date is asOf in the JVM's zone; each city's age filters run in its own zone (the `zone`
+    // patch), which is the JVM's for every city of a region run
     val zone = TimeZone.currentSystemDefault()
     val zones = cities.map { it.timeZone }.toSet()
-    require(zones == setOf(zone.id)) {
-        "cities use time zone(s) $zones but the JVM runs in ${zone.id}; start it with -Duser.timezone=${zones.first()} " +
-            "(cities in different zones need separate runs)"
-    }
+    if (zones != setOf(zone.id)) log("time zones: ${zones.sorted().joinToString()} (each city's own); the snapshot's date in ${zone.id}")
     RelativeDate.MULTIPLIER = opts.resurveyMultiplier
     // SC's getFeature() reads osmfeatures in the default locale; only the en-CA presets are bundled
     val language = java.util.Locale.getDefault().toLanguageTag()

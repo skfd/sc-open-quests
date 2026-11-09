@@ -13,6 +13,7 @@ import de.westnordost.streetcomplete.data.osm.mapdata.Relation
 import de.westnordost.streetcomplete.data.osm.mapdata.RelationMember
 import de.westnordost.streetcomplete.data.osm.mapdata.Way
 import de.westnordost.streetcomplete.util.math.measuredLength
+import kotlinx.datetime.TimeZone
 import java.io.Writer
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicLongArray
@@ -151,9 +152,25 @@ class Engine(val registry: Registry, val cities: List<City>, val parts: List<Par
     private fun countParts(qi: Int, hits: IntArray) {
         for (part in hits) partOpen.incrementAndGet(part * quests.size + qi)
     }
-    /** enabled[city][quest] */
-    val enabled: Array<BooleanArray> = Array(cities.size) { c ->
-        BooleanArray(quests.size) { quests[it].countries.isEnabledIn(cities[c].countryCodes) }
+    /** gate[city][quest]: [Gate.ON], [Gate.OFF] or [Gate.BY_POSITION] (see gateOf) */
+    val gate: Array<ByteArray> = Array(cities.size) { c -> ByteArray(quests.size) { gateOf(cities[c], quests[it].countries) } }
+
+    /** enabled[city][quest]: the quest may count somewhere in the city; where [gate] is BY_POSITION, only
+     *  where [enabledAt] says so */
+    val enabled: Array<BooleanArray> = Array(cities.size) { c -> BooleanArray(quests.size) { gate[c][it] != Gate.OFF } }
+
+    /** whether quest [qi] counts at [p] in city [c], given [ids], the region ids at [p] (asked only when needed) */
+    inline fun enabledAt(c: Int, qi: Int, ids: () -> List<String>): Boolean = when (gate[c][qi]) {
+        Gate.ON -> true
+        Gate.OFF -> false
+        else -> quests[qi].countries.isEnabledIn(ids())
+    }
+
+    /** the zone each city's age filters run in; null for all when every city is in the JVM's zone (nothing is
+     *  overridden, as before cities could differ) */
+    val zones: Array<TimeZone?> = run {
+        val jvm = TimeZone.currentSystemDefault()
+        if (cities.all { it.zone == jvm }) arrayOfNulls(cities.size) else Array(cities.size) { cities[it].zone }
     }
     private val questsByType: Array<IntArray> = Array(3) { t ->
         val type = ElementType.entries[t]
@@ -252,8 +269,22 @@ class Engine(val registry: Registry, val cities: List<City>, val parts: List<Par
     // ---------------------------------------------------------------------------------------------
     // matching
 
-    private fun offer(e: Element, type: Int, cityIdx: IntArray, center: LatLon) {
+    /** the zone of the cities in [cityIdx], null when no city's zone is overridden; cities that overlap must share one */
+    private fun zoneOf(cityIdx: IntArray, center: LatLon): TimeZone? {
+        val z = zones[cityIdx[0]] ?: return null
+        for (c in cityIdx) require(zones[c] == z) {
+            "cities ${cities[cityIdx[0]].id} and ${cities[c].id} both hold $center but are in different time zones ($z, ${zones[c]})"
+        }
+        return z
+    }
+
+    private fun offer(e: Element, type: Int, cityIdx: IntArray, center: LatLon) =
+        EngineZone.at(zoneOf(cityIdx, center)) { offerInZone(e, type, cityIdx, center) }
+
+    private fun offerInZone(e: Element, type: Int, cityIdx: IntArray, center: LatLon) {
         if (dumpElementsCity >= 0 && dumpElementsCity in cityIdx) elementLines += elementJson(e, type, center)
+        // the region ids at the position, for quests gated by position; looked up once, when first needed
+        var ids: List<String>? = null
         // the parts holding the position, per city of cityIdx; looked up once, when a quest first counts there
         var partHits: Array<IntArray?>? = null
         for (qi in questsByType[type]) {
@@ -266,12 +297,16 @@ class Engine(val registry: Registry, val cities: List<City>, val parts: List<Par
             // agedOnly: would it still match if no `older today -N` (or `< today`) test could be true?
             val mask = matchVariants(q.usesAge) { matcher.matches(e) }
             if (mask == 0) continue
+            // mayCreateQuest: not in a country where the quest is off (only a city gated by position asks)
+            var here = false
+            for (c in cityIdx) if (enabledAt(c, qi) { ids ?: regionIdsAt(center).also { ids = it } }) { here = true; break }
+            if (!here) continue
             if (notes?.hides(center) == true) { if (mask and M_NOW != 0) stats.hiddenByNotes.incrementAndGet(); continue }
             val aged = mask and M_AGED != 0
             if (mask and M_NOW != 0) grid?.add(qi, center)
             for (k in cityIdx.indices) {
                 val c = cityIdx[k]
-                if (!enabled[c][qi]) continue
+                if (!enabledAt(c, qi) { ids ?: regionIdsAt(center).also { ids = it } }) continue
                 counts.add(c, qi, type, mask)
                 if (mask and M_NOW != 0 && partIndex[c] != null) {
                     val hits = (partHits ?: arrayOfNulls<IntArray>(cityIdx.size).also { partHits = it })
@@ -342,7 +377,7 @@ class Engine(val registry: Registry, val cities: List<City>, val parts: List<Par
         require(qi >= 0) { "notes given but the registry has no note quest" }
         for (note in notes.quests) {
             val p = note.position
-            val inCities = cityIndex.citiesAt(p.latitude, p.longitude).filter { enabled[it][qi] }
+            val inCities = cityIndex.citiesAt(p.latitude, p.longitude).filter { c -> enabledAt(c, qi) { regionIdsAt(p) } }
             for (c in inCities) {
                 counts.perQuest.incrementAndGet(counts.slot(c, qi, NOTE))
                 if (partIndex[c] != null) countParts(qi, partsAt(c, p))
@@ -353,7 +388,7 @@ class Engine(val registry: Registry, val cities: List<City>, val parts: List<Par
         for (note in notes.allQuests) {
             val p = note.position
             for (c in cityIndex.citiesAt(p.latitude, p.longitude)) {
-                if (enabled[c][qi]) counts.perQuest.incrementAndGet(counts.slot(c, qi, ALL_NOTES))
+                if (enabledAt(c, qi) { regionIdsAt(p) }) counts.perQuest.incrementAndGet(counts.slot(c, qi, ALL_NOTES))
             }
         }
         // NotesDownloader asks for at most 10,000 notes per download; more in a city's bbox and the

@@ -1,5 +1,6 @@
 package openquests
 
+import kotlinx.datetime.TimeZone
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
@@ -15,12 +16,17 @@ class City(
     val id: String,
     val name: String,
     val relation: Long,
-    val countryCodes: List<String>,
+    /** the region ids the city is in (e.g. [CA, CA-ON]), which gate every quest for the whole city; null: gated
+     *  at each quest's position, as the app does (a world run's cell, which may cross a border; see gateOf) */
+    val countryCodes: List<String>?,
     val timeZone: String,
     val population: Long?,
     val landAreaKm2: Double?,
     val polygon: Polygon,
-)
+) {
+    /** the zone the city's age filters are evaluated in (`today` and the start of a day) */
+    val zone: TimeZone = TimeZone.of(timeZone)
+}
 
 fun loadCities(file: File, baseDir: File): List<City> {
     val root = Json.parseToJsonElement(file.readText()).jsonObject
@@ -33,7 +39,7 @@ fun loadCities(file: File, baseDir: File): List<City> {
             id = c.str("id")!!,
             name = c.str("name")!!,
             relation = relation,
-            countryCodes = c["countryCodes"]!!.jsonArray.map { it.jsonPrimitive.content },
+            countryCodes = c["countryCodes"]?.takeIf { it !is JsonNull }?.jsonArray?.map { it.jsonPrimitive.content },
             timeZone = c.str("timeZone")!!,
             population = c["population"]?.takeIf { it !is JsonNull }?.jsonPrimitive?.long,
             landAreaKm2 = c["landAreaKm2"]?.takeIf { it !is JsonNull }?.jsonPrimitive?.double,

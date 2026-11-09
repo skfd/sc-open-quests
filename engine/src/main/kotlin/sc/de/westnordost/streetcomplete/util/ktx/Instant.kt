@@ -12,7 +12,12 @@ import kotlin.time.Instant
 fun Instant.toLocalDate(): LocalDate = toLocalDateTime().date
 
 /** Convert to local date time, using current system default timezone */
-fun Instant.toLocalDateTime(): LocalDateTime = toLocalDateTime(TimeZone.currentSystemDefault())
+fun Instant.toLocalDateTime(): LocalDateTime = toLocalDateTime(systemTimeZone())
+
+/** sc-open-quests patch: the zone behind every "system default timezone" read in the vendored code:
+ *  a thread's override first, so that one run can count cities in different zones. */
+fun systemTimeZone(): TimeZone = systemTimeZoneOverride.get() ?: TimeZone.currentSystemDefault()
+val systemTimeZoneOverride = ThreadLocal<TimeZone?>()
 
 /** Shortcut for Clock.System.now() */
 fun systemTimeNow(): Instant = systemClock.now()

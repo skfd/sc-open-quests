@@ -53,7 +53,7 @@ class CountriesTest {
             // subdivisions), US-TX and US in Texas; the gating model compares a quest's codes with these
             val ids = boundaries.getIds(longitude = lon, latitude = lat)
             assertTrue(ids.isNotEmpty(), "${city.id} at $lat,$lon: no region id")
-            assertEquals(city.countryCodes.toSet(), ids.toSet(), "${city.id} at $lat,$lon: countryCodes in config")
+            assertEquals(city.countryCodes!!.toSet(), ids.toSet(), "${city.id} at $lat,$lon: countryCodes in config")
             checked++
         }
         println("countryboundaries ids checked for $checked cities")
@@ -65,11 +65,11 @@ class CountriesTest {
         val cities = loadCities(File("config/cities.json"), File("."))
         val toronto = cities.single { it.id == "toronto" }
         val statuses = registry.quests.groupingBy { questStatus(it, toronto) }.eachCount()
-        val gatedOut = registry.countedQuests.filter { !it.countries.isEnabledIn(toronto.countryCodes) }.map { it.name }
+        val gatedOut = registry.countedQuests.filter { !it.countries.isEnabledIn(toronto.countryCodes!!) }.map { it.name }
         println("Toronto: $statuses; filter quests not in region: $gatedOut")
         assertEquals(registry.quests.size, statuses.values.sum())
         assertEquals(registry.quests.count { !it.isCounted }, statuses["unsupported"])
         // every city with Toronto's codes has the same quests gated out (German cities differ)
-        for (c in cities.filter { it.countryCodes.toSet() == toronto.countryCodes.toSet() }) assertEquals(gatedOut, registry.countedQuests.filter { questStatus(it, c) == "not-in-region" }.map { it.name })
+        for (c in cities.filter { it.countryCodes?.toSet() == toronto.countryCodes!!.toSet() }) assertEquals(gatedOut, registry.countedQuests.filter { questStatus(it, c) == "not-in-region" }.map { it.name })
     }
 }

@@ -2,13 +2,18 @@
 # rerun the script instead. StreetComplete is GPL-3.0 (see src/main/kotlin/sc/LICENSE).
 tag=v64.1
 commit=f8a754b1674a316d2fd01b7870d69ff371cf74e2
-patches=clock,fastreject,multiplier,nolazy,onepoint
+patches=clock,multiplier,nolazy,fastreject,zone,onepoint
   clock: util/ktx/Instant.kt: systemTimeNow() reads a settable `var systemClock: Clock` (default Clock.System)
-  fastreject: data/elementfilter/ElementFilterExpression.kt: works out the keys an expression needs (`keyReject`)
-  fastreject: data/elementfilter/ElementFilterExpression.kt: matches() rejects an element without those keys at once
   multiplier: data/elementfilter/filters/RelativeDate.kt: MULTIPLIER reads a thread-local override first (`multiplierOverride`)
   nolazy: data/elementfilter/filters/RelativeDate.kt: `date` is a getter again, not `by lazy`
   nolazy: data/elementfilter/filters/ElementFilter.kt: `dateTimestamp` is a getter again, not `by lazy` (two classes)
+  fastreject: data/elementfilter/ElementFilterExpression.kt: works out the keys an expression needs (`keyReject`)
+  fastreject: data/elementfilter/ElementFilterExpression.kt: matches() rejects an element without those keys at once
+  zone: util/ktx/Instant.kt: systemTimeZone(), a thread-local override (`systemTimeZoneOverride`) before the JVM zone
+  zone: util/ktx/LocalDate.kt: toInstant() in systemTimeZone()
+  zone: util/ktx/LocalDateTime.kt: toInstant() in systemTimeZone()
+  zone: util/ktx/LocalDateTime.kt: now() in systemTimeZone()
+  zone: util/ktx/LocalDateTime.kt: minusInSystemTimeZone() and plusInSystemTimeZone() in systemTimeZone()
   onepoint: util/math/SphericalEarthMath.kt: intersectsWith() is false for a polyline of one point instead of failing
 files (sha256 of the copied file; patched files also give the upstream sha256):
   b5dc8154ec673f1522c129131ace62d6ea6913e8f8afb8e8242fac1549b0d1ed  de/westnordost/streetcomplete/data/elementfilter/BooleanExpression.kt
@@ -28,9 +33,9 @@ files (sha256 of the copied file; patched files also give the upstream sha256):
   274794b0421b88f4f7af5b4d4f6d828e82b01ee7da0cd749f379bf4641870610  de/westnordost/streetcomplete/data/osm/edits/update_tags/StringMapChanges.kt
   19f2789b907dc06d7911c5511cac364dddfa0e54708a996fcc6f9e4420f11463  de/westnordost/streetcomplete/data/osm/edits/update_tags/StringMapEntryChange.kt
   e04e27b381a282577a1cfd5cfdd1a359616648334b97ffd6183eece1fa91132d  de/westnordost/streetcomplete/util/StringWithCursor.kt
-  5f0f2ea173719b0c7ebe4f7751be7de13f6bf3068dce180161e9b41c8f1ac084  de/westnordost/streetcomplete/util/ktx/Instant.kt  (patch clock; upstream aea8dffdaa3d46a483e65d15173365da77485d9b5436d454a36c9f778265d6a6)
-  cc55bfc9ae28c123ea169d855e405260ef9273a903111a145424561fe3e41998  de/westnordost/streetcomplete/util/ktx/LocalDate.kt
-  8e433722974a585474623498902b82d426c8a0160701a64b8d382b1c288ed815  de/westnordost/streetcomplete/util/ktx/LocalDateTime.kt
+  30f039137940fbbff350181164b1bd0e0b52b8ba85e85ba3dbb7bca082fec7b8  de/westnordost/streetcomplete/util/ktx/Instant.kt  (patch clock,zone; upstream aea8dffdaa3d46a483e65d15173365da77485d9b5436d454a36c9f778265d6a6)
+  e1f0edbc7a1e565ae27f0e6f3ab760c8e7646a0c046c779cbe2da01a70f87d9a  de/westnordost/streetcomplete/util/ktx/LocalDate.kt  (patch zone; upstream cc55bfc9ae28c123ea169d855e405260ef9273a903111a145424561fe3e41998)
+  1775b7de8fed73c90dca3908320f3860d2bba04570a125970be717247efe4e65  de/westnordost/streetcomplete/util/ktx/LocalDateTime.kt  (patch zone; upstream 8e433722974a585474623498902b82d426c8a0160701a64b8d382b1c288ed815)
   b7ad0e12e905e82d3b56a9f4d10fae7aa3a07aef8a2b9c887bf5a71240237e06  de/westnordost/streetcomplete/osm/BuildingLevelsUtils.kt
   9b6890b7649428e36801dafc8e660fd6b5824ceee15be1cd2afcfcc694c8b01d  de/westnordost/streetcomplete/osm/surface/SurfaceUtils.kt
   9e091cfd65e5d7cbfd4d1485c8ec3c8045d3f3f8efeedc36d98092313c129a5f  de/westnordost/streetcomplete/osm/surface/SurfaceParser.kt

@@ -6,7 +6,7 @@ import kotlinx.datetime.atStartOfDayIn
 import kotlin.time.Instant
 
 /** Convert to `Instant`, using the current system default timezone */
-fun LocalDate.toInstant(): Instant = atStartOfDayIn(TimeZone.currentSystemDefault())
+fun LocalDate.toInstant(): Instant = atStartOfDayIn(systemTimeZone())
 
 /**  Return this in epoch milliseconds, using the current system default timezone */
 fun LocalDate.toEpochMilli(): Long = toInstant().toEpochMilliseconds()

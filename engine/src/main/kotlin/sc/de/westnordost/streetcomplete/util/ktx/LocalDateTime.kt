@@ -10,14 +10,14 @@ import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Instant
 
 /** Convert to `Instant`, using the current system default timezone */
-fun LocalDateTime.toInstant(): Instant = toInstant(TimeZone.currentSystemDefault())
+fun LocalDateTime.toInstant(): Instant = toInstant(systemTimeZone())
 
 /** Return this in epoch milliseconds, using the current system default timezone */
 fun LocalDateTime.toEpochMilli(): Long = toInstant().toEpochMilliseconds()
 
 /** Current `LocalDateTime`, using the current system default timezone */
 fun LocalDateTime.Companion.now(): LocalDateTime =
-    systemTimeNow().toLocalDateTime(TimeZone.currentSystemDefault())
+    systemTimeNow().toLocalDateTime(systemTimeZone())
 
 /**
  * Subtract some time from this, using current system default timezone.
@@ -25,7 +25,7 @@ fun LocalDateTime.Companion.now(): LocalDateTime =
  * See also https://github.com/Kotlin/kotlinx-datetime#date--time-arithmetic
  * */
 fun LocalDateTime.minusInSystemTimeZone(value: Long, unit: DateTimeUnit): LocalDateTime {
-    val tz = TimeZone.currentSystemDefault()
+    val tz = systemTimeZone()
     return toInstant(tz).minus(value, unit, tz).toLocalDateTime(tz)
 }
 
@@ -35,6 +35,6 @@ fun LocalDateTime.minusInSystemTimeZone(value: Long, unit: DateTimeUnit): LocalD
  * See also https://github.com/Kotlin/kotlinx-datetime#date--time-arithmetic
  * */
 fun LocalDateTime.plusInSystemTimeZone(value: Long, unit: DateTimeUnit): LocalDateTime {
-    val tz = TimeZone.currentSystemDefault()
+    val tz = systemTimeZone()
     return toInstant(tz).plus(value, unit, tz).toLocalDateTime(tz)
 }

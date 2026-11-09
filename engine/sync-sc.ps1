@@ -43,6 +43,10 @@
            one in Moscow's 2017-12 data and stopped the run. The patch answers false (a point crosses
            nothing); no count that ran before changes. Still in v64.1 and on upstream master as of
            2026-11-02.
+    zone   util/ktx/{Instant,LocalDate,LocalDateTime}.kt: every "system default timezone" read goes through
+           systemTimeZone(), which takes a thread's override (`systemTimeZoneOverride`) before the JVM's
+           zone. One run can then count cities in different zones, each under its own (a world run's
+           cells). With no override set nothing changes.
   (codepoints, the backport of SC 8fe4c925 to Element.kt, was dropped at the v64.1 repin: v64.1 ships it.)
 
 .EXAMPLE
@@ -280,6 +284,49 @@ $patches = @(
             '        && keyReject.mayMatch(element)'
         )
         Description = 'data/elementfilter/ElementFilterExpression.kt: matches() rejects an element without those keys at once'
+    }
+    @{
+        Name = 'zone'
+        File = "$pkg/util/ktx/Instant.kt"
+        Find = 'fun Instant.toLocalDateTime(): LocalDateTime = toLocalDateTime(TimeZone.currentSystemDefault())'
+        Replace = @(
+            'fun Instant.toLocalDateTime(): LocalDateTime = toLocalDateTime(systemTimeZone())'
+            ''
+            '/** sc-open-quests patch: the zone behind every "system default timezone" read in the vendored code:'
+            ' *  a thread''s override first, so that one run can count cities in different zones. */'
+            'fun systemTimeZone(): TimeZone = systemTimeZoneOverride.get() ?: TimeZone.currentSystemDefault()'
+            'val systemTimeZoneOverride = ThreadLocal<TimeZone?>()'
+        )
+        Description = 'util/ktx/Instant.kt: systemTimeZone(), a thread-local override (`systemTimeZoneOverride`) before the JVM zone'
+    }
+    @{
+        Name = 'zone'
+        File = "$pkg/util/ktx/LocalDate.kt"
+        Find = 'fun LocalDate.toInstant(): Instant = atStartOfDayIn(TimeZone.currentSystemDefault())'
+        Replace = @('fun LocalDate.toInstant(): Instant = atStartOfDayIn(systemTimeZone())')
+        Description = 'util/ktx/LocalDate.kt: toInstant() in systemTimeZone()'
+    }
+    @{
+        Name = 'zone'
+        File = "$pkg/util/ktx/LocalDateTime.kt"
+        Find = 'fun LocalDateTime.toInstant(): Instant = toInstant(TimeZone.currentSystemDefault())'
+        Replace = @('fun LocalDateTime.toInstant(): Instant = toInstant(systemTimeZone())')
+        Description = 'util/ktx/LocalDateTime.kt: toInstant() in systemTimeZone()'
+    }
+    @{
+        Name = 'zone'
+        File = "$pkg/util/ktx/LocalDateTime.kt"
+        Find = '    systemTimeNow().toLocalDateTime(TimeZone.currentSystemDefault())'
+        Replace = @('    systemTimeNow().toLocalDateTime(systemTimeZone())')
+        Description = 'util/ktx/LocalDateTime.kt: now() in systemTimeZone()'
+    }
+    @{
+        Name = 'zone'
+        File = "$pkg/util/ktx/LocalDateTime.kt"
+        Find = '    val tz = TimeZone.currentSystemDefault()'
+        Count = 2
+        Replace = @('    val tz = systemTimeZone()')
+        Description = 'util/ktx/LocalDateTime.kt: minusInSystemTimeZone() and plusInSystemTimeZone() in systemTimeZone()'
     }
     @{
         Name = 'onepoint'

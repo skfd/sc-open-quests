@@ -33,7 +33,7 @@ class NotesMeta(val source: NotesSource, val open: Int, val showAllNotes: Boolea
 /** Status of a quest in a city, as in DATA-FORMAT.md. */
 fun questStatus(q: QuestDef, city: City): String = when {
     !q.isCounted -> "unsupported"
-    !q.countries.isEnabledIn(city.countryCodes) -> "not-in-region"
+    gateOf(city, q.countries) == Gate.OFF -> "not-in-region"
     else -> "counted"
 }
 
