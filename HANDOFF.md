@@ -414,8 +414,8 @@ new cities appear by themselves.
    in the same profile: a plain scan, not a floor, nothing to fix in it. verifyFast on London passed late on 11-08
    (all twins equal their ports, 8 map data runs).
    ~~Profile the whole area pass~~ **done 2026-11-08, late evening** (DESIGN.md, "The whole area pass profiled"; new
-   opt-in `-Dopenquests.taskTrace`, no count changes). London's run phase is 26.7 s against 10.5 s if perfectly
-   spread: 14 s CPU-bound, then a tail of three single runs (AddHousenumber, AddMaxHeight, AddLevelThing) that
+   opt-in `-Dopenquests.taskTrace`, no count changes). London's run phase is 26.7 s against about 15-18 s if perfectly
+   spread (12 cores, 24 threads): 14 s CPU-bound, then a tail of three single runs (AddHousenumber, AddMaxHeight, AddLevelThing) that
    started late. 8 kerb runs hold threads idle for about 8 s waiting for the shared search. 30% of area CPU is the
    fast reject saying no. **Next, owner's pick, cheapest first:** (1) FastAddMaxHeight's tag filter before its
    `HashSet<Long>` lookup (42% of that quest); (2) longest runs first in the queue, and kerb runs only once their

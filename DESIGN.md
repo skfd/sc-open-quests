@@ -1658,8 +1658,9 @@ JFR on London alone, 11-08 clip (`.scratch/prof-hn/`).
   quests on 24 threads now, so it may be CPU-bound rather than held by one run.
 - `.scratch/prof-hn/` (scripts, recording, outputs) can be deleted.
 - **verifyFast on London passed (2026-11-08, late):** the fast twins, the new AddHousenumber included, matched
-  their ports on all 8 map data runs. It took 9 h of wall time, since the laptop slept on and off and SC's
-  AddMaxHeight port (all against all) ran 32,921 s on one thread.
+  their ports on all 8 map data runs. It took 9 h of wall time: SC's AddMaxHeight port (all against all) logged
+  32,921 s on one thread but used only about 6,400 s of CPU, close to the 6,710 s the last London verify took in
+  all. The rest is the laptop sleeping or throttling the JVM while the owner was away, not the port.
 
 ## The whole area pass profiled: a tail of three runs, and 30% spent rejecting (2026-11-08)
 
@@ -1669,9 +1670,12 @@ end, thread and CPU time. JFR alone cannot say how many threads are busy, becaus
 per tick. Scripts and outputs are in `.scratch/prof-area/` (`run.py`, `trace.py`, `cpu.py`). Same counts: London's
 snapshot with the trace equals the published one.
 
-- **London's run phase is 26.7 s, against 10.5 s if its CPU were spread perfectly** (252 s of thread CPU over
-  24 threads; the tally after it is 1.8 s, and the whole area pass 35.7 s with the map data). The first 14 s are
-  CPU-bound with all 24 threads busy. Then a tail: 3 single runs go on alone for about 10 s.
+- **London's run phase is 26.7 s; perfectly spread, its CPU would take about 15-18 s.** It is 252 s of thread CPU:
+  10.5 s over 24 hardware threads, 21 s over 12 cores. The tail runs earned their CPU alone on a core, at full
+  speed, and the same work costs more thread time while both threads of a core are busy, so the floor lies
+  between the two. The tail costs about 8-11 s, not 16. The tally after the runs is 1.8 s, and the whole area
+  pass is 35.7 s with the map data. The first 14 s are CPU-bound with all 24 threads busy. Then a tail: 3
+  single runs go on alone for about 10 s.
 
   | run | starts | wall | CPU |
   |---|---|---|---|
@@ -1700,7 +1704,8 @@ Proposed, none built, in order of how little each costs:
    perhaps a third. Check: same snapshots. verifyFast proves nothing more here, since the port is unchanged.
 2. **Start the longest runs first.** Order the queue by the cost each run had last time, or by a fixed list:
    AddHousenumber, AddMaxHeight, AddLevelThing, then the rest. If the tail runs started at 0, London's run phase
-   would end near the longest run's own length, about 21 s instead of 26.7. This is the cheap test the level
+   would end near the longest run's own length under load, about 21 s instead of 26.7, near the 15-18 s floor
+   once (1) shortens AddMaxHeight. This is the cheap test the level
    session named for AddHousenumber. Start the kerb runs only once the search is done, not once every other run
    has started, so they never hold a thread while they wait.
 3. **Candidates by key once per map data**, as proposed in the AddHousenumber section. It targets the 30% spent
