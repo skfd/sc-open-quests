@@ -62,6 +62,7 @@ class CountResult(val engine: Engine, val meta: SnapshotMeta, val registry: Regi
 fun main(args: Array<String>) {
     try {
         if (args.isEmpty() || args[0] in setOf("-h", "--help", "help")) { println(USAGE); return }
+        if (args[0] == "nodegrid") { nodeGrid(args.drop(1)); return }
         require(args[0] == "count") { "unknown command ${args[0]}\n$USAGE" }
         val opts = parseArgs(args.drop(1))
         count(opts)

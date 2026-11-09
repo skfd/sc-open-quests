@@ -53,6 +53,8 @@ class Part(val index: Int, val id: String, val city: Int, val polygon: Polygon)
  *  and parts"); geometry paths are relative to [baseDir]. In city order, each city's in registry order. */
 fun loadParts(dir: File, cities: List<City>, baseDir: File): List<Part> {
     val parts = ArrayList<Part>()
+    // a place in many cells (a world run's country or county) is read once; a Polygon is immutable
+    val polygons = HashMap<String, Polygon>()
     for (city in cities) {
         val file = File(dir, "${city.id}.json")
         if (!file.isFile) continue
@@ -63,7 +65,9 @@ fun loadParts(dir: File, cities: List<City>, baseDir: File): List<Part> {
             val p = e.jsonObject
             val id = p.str("id")!!
             require(seen.add(id)) { "${file.path}: part $id twice" }
-            parts += Part(parts.size, id, city.index, Polygon.fromGeoJson(File(baseDir, p.str("geometry")!!)))
+            val geometry = p.str("geometry")!!
+            parts += Part(parts.size, id, city.index,
+                polygons.getOrPut(geometry) { Polygon.fromGeoJson(File(baseDir, geometry)) })
         }
     }
     return parts
