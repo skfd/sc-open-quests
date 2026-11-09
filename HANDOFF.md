@@ -411,6 +411,13 @@ new cities appear by themselves.
    ~~AddHousenumber~~ **done 2026-11-08** (DESIGN.md, "AddHousenumber: one removeAll, not one per area"): 77% of
    its time was one `removeAll` per address area; one at the end instead. Same counts and grid on europe-west,
    London's area pass 67.9 s to 32.8 s, the europe-west pass 124 s to 96 s. AddChargingStationSocket was looked at
-   in the same profile: a plain scan, not a floor, nothing to fix in it. Next for the engine, proposed in the same
-   section: profile the whole area pass's CPU, then perhaps candidates by key once per map data.
+   in the same profile: a plain scan, not a floor, nothing to fix in it. verifyFast on London passed late on 11-08
+   (all twins equal their ports, 8 map data runs).
+   ~~Profile the whole area pass~~ **done 2026-11-08, late evening** (DESIGN.md, "The whole area pass profiled"; new
+   opt-in `-Dopenquests.taskTrace`, no count changes). London's run phase is 26.7 s against 10.5 s if perfectly
+   spread: 14 s CPU-bound, then a tail of three single runs (AddHousenumber, AddMaxHeight, AddLevelThing) that
+   started late. 8 kerb runs hold threads idle for about 8 s waiting for the shared search. 30% of area CPU is the
+   fast reject saying no. **Next, owner's pick, cheapest first:** (1) FastAddMaxHeight's tag filter before its
+   `HashSet<Long>` lookup (42% of that quest); (2) longest runs first in the queue, and kerb runs only once their
+   search is done; (3) candidates by key once per map data, for world runs mostly.
    After that, the Germany world prototype (DESIGN.md, "The whole world: measured and proposed").
