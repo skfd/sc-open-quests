@@ -438,9 +438,8 @@ new cities appear by themselves.
    cell the zone at its centre (timezonefinder); (d) a notes clip per file. Check: the Europe clip
    (`~/Code/.osm-data/europe/`, 4 zones, about 25 countries) as cells against the 32 cities counted whole on the
    same file and notes clip, in `.scratch/world-eu/`. No engine run 11:50-14:15 (the daily run).
-   **Progress (09:00):** (a) and (b) built, 92cc9ab0 (GatingTest, ZoneTest; 79 engine tests pass, the snapshot
-   reproduction unchanged). (c), (d) in `tools/world_cells.py` (`plan --cities`, cells with `countryCodes: null`
-   and the zone of most of their nodes, `notes` one pass with a clip per file, `baseline` one run per zone).
-   Europe: 16 cells in 2 files, both counted (228 and 231 s; two 30 GB engines at once failed on the page file
-   this time, so one at a time). 14% of the clip's nodes lie in a zone whose offset differs from their cell's.
-   Baselines running; then `world_cells.py report --out .scratch/world-eu` and a DESIGN.md section.
+   **Done 2026-11-09 09:40** (DESIGN.md, "Country rules and time zone by position: built, checked on Europe"):
+   engine 92cc9ab0, world_cells 0af8f5c1. The Europe clip as 16 cells: every one of the 32 cities within 0.004%
+   of its whole-city count; Bratislava's +4 AddCycleway is the border gate doing what the app does; the zone
+   per cell showed nothing at a 00:00Z asOf. `.scratch/world-eu/` can be deleted. Next is the owner's: a larger
+   country or a continent stage.
