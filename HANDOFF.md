@@ -417,7 +417,10 @@ new cities appear by themselves.
    opt-in `-Dopenquests.taskTrace`, no count changes). London's run phase is 26.7 s against about 15-18 s if perfectly
    spread (12 cores, 24 threads): 14 s CPU-bound, then a tail of three single runs (AddHousenumber, AddMaxHeight, AddLevelThing) that
    started late. 8 kerb runs hold threads idle for about 8 s waiting for the shared search. 30% of area CPU is the
-   fast reject saying no. **Next, owner's pick, cheapest first:** (1) FastAddMaxHeight's tag filter before its
-   `HashSet<Long>` lookup (42% of that quest); (2) longest runs first in the queue, and kerb runs only once their
-   search is done; (3) candidates by key once per map data, for world runs mostly.
+   fast reject saying no. ~~(1) AddMaxHeight, (2) the queue~~ **built 2026-11-08, late** (DESIGN.md, "AddMaxHeight
+   and the queue: built"): same counts on europe-west and europe-msk, 71 engine tests pass; run phase London 26.7 s
+   to 24.0, Moscow 20.7 to 18.1, Minsk 4.6 to 3.7. Not pushed until the 12:15 run. The floor is now the long
+   runs themselves (AddHousenumber, AddLevelThing, AddMaxHeight, at half a core each under load). **Next, owner's
+   pick:** (3) candidates by key once per map data, the saving for world runs; or make AddHousenumber or
+   AddLevelThing faster, for a city's wall time.
    After that, the Germany world prototype (DESIGN.md, "The whole world: measured and proposed").
