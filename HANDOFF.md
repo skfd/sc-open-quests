@@ -611,3 +611,30 @@ new cities appear by themselves.
    - **Later, after a week:** take the daily data out of git history (the reason for the move);
      README's site link; the token was shown once in a session transcript, so the owner may roll it
      (Cloudflare: My Profile, API Tokens, Roll; then replace the value in the token file).
+
+## Idea: a phone widget for daily progress (owner, 2026-11-10)
+
+Not planned and nothing built. The owner's idea: a home-screen widget showing the graph of one quest, or of
+a city or neighbourhood, so an active StreetComplete player sees the day's progress at a glance.
+
+What the data gives it today, and what it lacks:
+
+- **City and quest series exist**: `docs/data/history/<cityId>.json` has every quest's `open` per date.
+  It is too big for a widget (Toronto 177 KB; `cities.json` 314 KB), so a widget wants its own small
+  file per city, something like the last 30 days of `open` and of a few quests.
+- **Neighbourhood counts exist but aren't published as a series**: the archived daily snapshots carry
+  `parts` since 2026-10-28 (Toronto: 218 parts, 10 days so far), and the site shows the newest only. A
+  per-part series file is a new output of `run.py history`, no recount needed for the days since then.
+- **Freshness is the weak point for "daily"**: one count a day from an extract, published around 13:00
+  local, and on 11-10 Toronto's newest date was 11-08 (11-04 is missing). A player would see
+  yesterday's or older edits, never today's.
+- **It measures the place, not the player**: the count moves with everyone's edits and with aging
+  (`agedOnly`), and per-user stats are a non-goal. A widget of "my solves today" would be a different
+  source (changesets with `StreetComplete:quest_type`).
+- **Request budget**: every widget refresh is a Worker request against the 100,000 a day, for data that
+  changes once a day, so the widget's file must be cacheable for hours (unlike `app.js`'s `no-cache`
+  fetches). Any Worker change waits for the flip.
+
+Open, for the owner when it comes up: the platform (a native Android or iOS widget, or just a small JSON
+or image address that generic widget apps such as KWGT or Scriptable can show, which needs no app of
+ours); and which view comes first (city total, one quest, or a neighbourhood).
