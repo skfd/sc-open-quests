@@ -608,6 +608,31 @@ new cities appear by themselves.
      storage, R2 operations, compression, and edge caching (a Worker runs before the cache; Workers
      Cache hits still count as requests). Dated snapshots aren't safe as `immutable`: a rerun rewrote
      2026-11-02.
+   - **The goal is a traffic spike (the owner, 2026-11-10, 13:30): the site is in stealth with no
+     readers and should survive being posted.** That supersedes the ranking above: the cap is the
+     risk, about 1,400 first city views a UTC day (100,000 / 71), then error 1027 until midnight UTC
+     (what a custom-domain visitor sees then is not verified). Static assets for page and icons only
+     raises it to about 6,600; only two things remove it:
+     - **All of `docs/` as static assets on the same Worker, tried and not live.**
+       `cloudflare/assets-trial/wrangler.jsonc` is the live Worker plus an `assets` block
+       (`../../docs`, `auto-trailing-slash`, `not_found_handling: none`); a path with a matching
+       file never runs the Worker, anything else falls through to the R2 script as today. Locally
+       (`wrangler dev`, launch config `assets-trial`, port 8791): all 4,836 files byte-equal, Toronto
+       loads with no console errors, a missing file is a real 404, `/index.html` redirects to `/`,
+       ETag gives 304, JSON goes out Brotli. Deployed once as `sc-open-quests-assets-trial` with no
+       route and no workers.dev, then deleted: first upload 42 s, an unchanged redeploy 20 s.
+       Differences from today: every file is `max-age=0, must-revalidate` (icons lose their day in
+       the browser unless a `docs/_headers` file says otherwise; revalidations are free), JSON's
+       type has no charset. Limits: 20,000 files and 25 MiB each on Free; `docs/` is 4,836 and grows
+       about 2 files a city. Not verified: that production asset requests leave the invocation
+       count flat (Cloudflare's docs say "free and unlimited"; a full `--check` after the switch
+       proves it), and that the Task Scheduler job finds node. The switch itself: the `assets`
+       block into `cloudflare/wrangler.jsonc`, `wrangler deploy` in the daily run behind
+       `check_source`, after the flip (flip.sh was tested against today's Worker).
+     - **Workers Paid, no build:** $5 a month, 10M requests included (about 140,000 first city
+       views), then $0.30 a million; R2 reads past 10M a month $0.36 a million. Together about
+       $4.70 per 100,000 first views past the included amounts.
+     The owner chooses; nothing live was changed.
    - **Later, after a week:** take the daily data out of git history (the reason for the move);
      README's site link; the token was shown once in a session transcript, so the owner may roll it
      (Cloudflare: My Profile, API Tokens, Roll; then replace the value in the token file).
