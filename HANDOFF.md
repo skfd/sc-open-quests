@@ -547,3 +547,16 @@ new cities appear by themselves.
    needed"). At the owner's word (2026-11-10, 10:40) `data/backfill/replay`, `.scratch/due/`,
    `.scratch/world-eu/` and `.scratch/oracle-v64.1/` were deleted (27 GB), so a planet up to about 105 GB
    passes. If it still stops, free more and rerun chain2.sh.
+20. **New hosting: the owner's answers (2026-11-10, noon).** Nothing built yet; waiting on the owner's token.
+   - **The whole site moves to Cloudflare** at `https://street-complete-statistics.comentality.com`, not only
+     the data (this replaces DESIGN.md's "site stays on Pages, `DATA` points at R2"). Planned shape: a Worker
+     serves the page (static assets) and `data/` + `places/` from an R2 bucket bound to it, same origin, no
+     CORS; the daily run uploads only changed files instead of committing them. `docs/` today: 4,836 files,
+     133 MB, none over 20 MB.
+   - **Access:** one Cloudflare API token in a file outside the repo (not in chat); wrangler installed by Claude
+     creates the bucket, the Worker, the custom domain and the job's R2 S3 key.
+   - **Cutover:** Claude may switch the live site once the copy checks out (every file equal, four cities load
+     with no page errors); the old Pages URL then redirects to the new address, query string kept, and the Pages
+     copy stays a week as a fallback.
+   - **Waiting on the owner:** comentality.com on Cloudflare DNS, R2 enabled (billing), the token file. While
+     the planet chain (item 19) runs: no engine rebuild; uploads and the Worker don't touch it.
