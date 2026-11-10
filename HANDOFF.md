@@ -792,3 +792,33 @@ since `at` and `on` are taken. Otherwise no share button: networks read the prev
 tags, so a pasted address is enough.
 Constraint for whoever builds it: crawlers fetch the page without running `app.js`, so each place needs
 its own static page or a Worker that rewrites the head; the state is in the query, which crawlers see.
+
+### Share previews: proposed architecture (2026-11-10, evening; nothing built)
+
+- **Static pages at path URLs, no Worker.** Crawlers ignore `app.js`, and static assets ignore the query,
+  so each previewable view gets its own folder: `/<cityId>/` and `/<cityId>/<slug>/` (147 cities, 4,214
+  parts). The slug is frozen in `config/parts` when a part is added (the 12-hex GERS id stays the key; a
+  rename must not break a posted link). `app.js` reads the path and writes it for city and part views, so
+  the address bar is the share link; old `?city=`/`?place=` links still open. The rest of the state stays
+  in the query. Rejected: a Worker rewriting the head, because it brings back the request cap the
+  assets switch removed.
+- **Generator, a new `run.py` step after history and before the cloud publish:** per place,
+  `docs/<cityId>[/<slug>]/index.html` = `index.html` with the head replaced (title, description, `og:*`,
+  `twitter:card` summary_large_image, canonical, `<base href="/">` so relative paths survive the depth)
+  and `docs/cards/...png`. `og:image` carries `?v=<asOfDate>` so networks refetch it when the data
+  moves. Gitignored: the cloud sync uploads them, git never sees them. Byte-stable like the rest.
+- **Rendering:** an SVG template filled in Python, made into a PNG by resvg (`resvg_py` wheel). Measured
+  on the mockup: 0.30 s and 61 KB per card, with system fonts loaded each call; 4,361 cards is about
+  22 min on one core. Not measured: a bundled font file and a process pool, which should cut it a lot.
+- **What the data supports:** cities, everything in the mockup (history with `agedOnly`, per-quest counts,
+  the outline, the z14 grid as dots). Parts: per-quest counts only, no aged split (one-colour
+  sparkline), a series only since 10-28 in `data/archive` (11-04 missing; the chip says "since 28 Oct"
+  until 30 days exist), and z14 tiles (2.2 x 1.6 km) are too coarse for dots inside a neighbourhood:
+  the panel becomes a locator, the city's outline with the part filled.
+- **Budget:** 4,836 + 2 x 4,361 = about 13,560 of the 20,000 asset files, which competes with publishing
+  the archive (2,145 + 16 a day). Every PNG changes daily (the date), about 265 MB uploaded a day.
+- **Dated-link button: parked.** It needs a page and an image per place per day, so it needs a script on
+  its own route. Rendering takes about 300 ms against Workers Free's 10 ms CPU limit.
+- **Phases:** (1) per-place pages with text tags plus one site-wide image: no renderer, half the files.
+  (2) per-place PNGs. Sequencing: `cloudflare/` stays untouched until the flip and the `assets-switch`
+  merge; the generator can be built and checked on `wrangler dev` before that.
