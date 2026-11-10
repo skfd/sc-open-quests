@@ -24,8 +24,9 @@ import kotlin.math.cos
 
 /** How far around a city's bounding box elements are collected, in metres: more than a z16 tile, so
  *  every tile that touches the city finds all its elements (and, in city mode, the area reaches that
- *  far past the city's bounding box). */
-const val AREA_PADDING_M = 1000.0
+ *  far past the city's bounding box). `-Dopenquests.areaPaddingM=<metres>` sets another ring, for
+ *  tests that count small patches (DESIGN.md, "The stream, tier 2"); snapshots use the default. */
+val AREA_PADDING_M: Double = System.getProperty("openquests.areaPaddingM")?.toDouble() ?: 1000.0
 
 /** `-Dopenquests.verifyFast=true`: run every port that has a [FAST_TWINS] entry next to its twin and
  *  fail on any difference (slow on whole cities: the ports' quadratic parts run too). */

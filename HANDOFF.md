@@ -463,8 +463,17 @@ new cities appear by themselves.
    changesets; 63 of 69 StreetComplete changesets show their quest closing (the six traced: no quest left
    open after its answer). No engine
    change: versions as a synthetic PBF through `count --dump-matches`. `.scratch/stream-replay/` holds it.
-   **Next: tier 2 (plan step 4)**, the neighbourhood test and the store, before due dates (step 3). Not
-   started. World-scale cost is unmeasured.
+   Tier 2 is item 15.
+15. **The stream, tier 2 done as a daily test (2026-11-10, night):** DESIGN.md, "The stream, tier 2". The 40
+   area quests recounted only on the ground diff 5171 touched (90 rectangles, 12 km2 of London's 1,595, 1.1% of
+   the tier-2 matches): the patch counts' own flips applied to the old state give the full count of 11-09
+   exactly, at rings of 100 m, 300 m and 1 km; all 350 flips an edit caused are inside a rectangle; the other
+   8 are aged. Replacing the state by a patch count was off by one match at 100 m and at 1 km (two
+   differences between a patch and the whole city, not traced). Engine: opt-in
+   `-Dopenquests.areaPaddingM` (default 1 km). `.scratch/tier2/` (58 MB; `inputs.pickle` saves the 20-minute
+   read of the diff and clips). No radius settled, nothing faster yet: the engine still scans the file.
+   **Next: due dates (step 3), then the store and one planet day's cost (step 5);** the stored week if a
+   radius is wanted. Keep `.scratch/diff-flips/` until then.
 15. **Faster cells, asked 2026-11-10 (00:40):** read off Germany's logs, nothing run (DESIGN.md, "Where a cell
    run's time goes"). Runs 51%, map data 19%, two reads of the file 30%; AddChargingStationSocket and CheckExistence
    still scan every element and top most cells. **Next, when the owner says:** one traced Germany file and the
