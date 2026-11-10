@@ -584,6 +584,24 @@ new cities appear by themselves.
      Compare, Places and Map load with no errors (15-16 requests each). If traffic nears the cap: Workers
      Paid, or the page and icons as static assets (the owner's call). `flip.sh` was tested dry on a
      synthetic log (passes; refuses a failed or missing cloud step) and syncs once more before its check.
+   - **Cost review (2026-11-10, evening; nothing built, the owner decides):** the bill is $0 and can't
+     grow as built: Workers Free never bills, egress is free, and the Worker is the only reader of R2,
+     so its 100,000 requests a day hold R2 reads to 3M a month against 10M free. The one limit is that
+     daily cap (resets 00:00 UTC; past it readers get error 1027; Workers Paid is $5 a month for 10M).
+     Measured today from Cloudflare's analytics: 25,255 Worker requests, all ours (one `--check` is
+     4,836, 5% of a day, so it stays out of the daily run); R2 30,787 reads, 4,958 writes, 1,270 lists;
+     `docs/` is 128 MB (places 95, data 32, icons 0.6) against 10 GB free. `sc-open-quests` is the
+     account's only Worker. Real demand isn't known (Pages counts no visitors; the repo had 12 views in
+     14 days); the zone's Web Analytics will show it after the flip.
+     Levers, in order: (1) page, icons and img as Workers static assets (193 files, 0.7 MB; asset
+     requests are free and unlimited, 20,000 files and 25 MiB each on Free), taking a first city view
+     from 71 Worker requests to about 15; it needs `wrangler deploy` whenever `app.js` or icons change.
+     All of `docs/` as assets fits today (4,836 files) and would need no Worker or R2, but places grow
+     towards the 20,000 cap. (2) `app.js` fetches every data file with `cache: "no-cache"`, so
+     `max-age=300` never applies and each one revalidates through the Worker on every view. Not levers:
+     storage, R2 operations, compression, and edge caching (a Worker runs before the cache; Workers
+     Cache hits still count as requests). Dated snapshots aren't safe as `immutable`: a rerun rewrote
+     2026-11-02.
    - **Later, after a week:** take the daily data out of git history (the reason for the move);
      README's site link; the token was shown once in a session transcript, so the owner may roll it
      (Cloudflare: My Profile, API Tokens, Roll; then replace the value in the token file).
