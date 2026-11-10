@@ -612,7 +612,8 @@ new cities appear by themselves.
      readers and should survive being posted.** That supersedes the ranking above: the cap is the
      risk, about 1,400 first city views a UTC day (100,000 / 71), then error 1027 until midnight UTC
      (what a custom-domain visitor sees then is not verified). Static assets for page and icons only
-     raises it to about 6,600; only two things remove it:
+     raises it to several thousand (an estimate: a first Toronto view made 5 `data/` requests, more
+     with a snapshot and parts); only two things remove it:
      - **All of `docs/` as static assets on the same Worker, tried and not live.**
        `cloudflare/assets-trial/wrangler.jsonc` is the live Worker plus an `assets` block
        (`../../docs`, `auto-trailing-slash`, `not_found_handling: none`); a path with a matching
@@ -623,7 +624,11 @@ new cities appear by themselves.
        route and no workers.dev, then deleted: first upload 42 s, an unchanged redeploy 20 s.
        Differences from today: every file is `max-age=0, must-revalidate` (icons lose their day in
        the browser unless a `docs/_headers` file says otherwise; revalidations are free), JSON's
-       type has no charset. Limits: 20,000 files and 25 MiB each on Free; `docs/` is 4,836 and grows
+       type has no charset. **A path with no file still runs the Worker** (and reads R2), so misses
+       count against the cap: a Toronto view made none, but `index.html` declares no icon and
+       `docs/` has no `favicon.ico`, so each new browser asks once and misses; give the page an icon
+       before the switch. Stray paths and bots count too. Whether assets keep being served once the
+       cap is spent is not verified. Limits: 20,000 files and 25 MiB each on Free; `docs/` is 4,836 and grows
        about 2 files a city. Not verified: that production asset requests leave the invocation
        count flat (Cloudflare's docs say "free and unlimited"; a full `--check` after the switch
        proves it), and that the Task Scheduler job finds node. The switch itself: the `assets`
