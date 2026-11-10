@@ -35,6 +35,8 @@ val FAST_TWINS: Map<String, FastTwin> = listOf<FastTwin>(
     FastAddLevelThing,
     FastAddSummitRegister,
     FastAddSummitCross,
+    FastCheckExistence,
+    FastAddChargingStationSocket,
 ).associateBy { it.name }
 
 /** A search that reads no clock, done once per map data however many quests and runs ask for it: the
@@ -49,13 +51,19 @@ class PerMapData<T>(val name: String, private val compute: (MapDataWithGeometry)
         else results.computeIfAbsent(mapData) { lazy { compute(mapData) } }.value
 }
 
+/** A grid cell as a HashMap key. The plain `(x shl 32) or y` hashes to `x xor y` (Long.hashCode), so the
+ *  cells of a diagonal share a bucket and a dense grid's buckets turn into trees (a quarter of the level
+ *  grids' time in a cell of 15M nodes). The odd multiplier keeps distinct cells distinct and spreads them. */
+internal fun gridKey(x: Int, y: Int): Long =
+    ((x.toLong() shl 32) or (y.toLong() and 0xffffffffL)) * -0x61c8864680b583ebL
+
 /** Grid over bounding boxes: [query] returns every value whose box intersects the given one
  *  (inclusive edges, as SC's BoundingBox.intersect), and maybe others. */
 class BoundsGrid<T>(private val cellDegrees: Double = 0.005) {
     private val cells = HashMap<Long, MutableList<T>>()
 
     private fun cell(d: Double) = floor(d / cellDegrees).toInt()
-    private fun key(x: Int, y: Int) = (x.toLong() shl 32) or (y.toLong() and 0xffffffffL)
+    private fun key(x: Int, y: Int) = gridKey(x, y)
 
     fun insert(b: BoundingBox, value: T) {
         for (x in cell(b.min.longitude)..cell(b.max.longitude)) for (y in cell(b.min.latitude)..cell(b.max.latitude)) {

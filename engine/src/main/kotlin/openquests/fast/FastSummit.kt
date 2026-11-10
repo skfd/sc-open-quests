@@ -75,7 +75,7 @@ class HikingSegments(geometries: List<de.westnordost.streetcomplete.data.osm.geo
     }
 
     private fun cell(d: Double) = floor(d / CELL_DEG).toInt()
-    private fun key(x: Int, y: Int) = (x.toLong() shl 32) or (y.toLong() and 0xffffffffL)
+    private fun key(x: Int, y: Int) = gridKey(x, y)
 
     companion object {
         const val PAD_M = 50.0

@@ -258,7 +258,10 @@ download:
   `(shared) kerb nodes`). AddLevel and AddLevelThing do both: they share the position and level of every
   element with a level tag (`(shared) level points`), and a grid of those positions replaces SC's walk over all
   of them for every mall (`LevelUtils.kt`), as another grid does for the shops and things inside the malls
-  (Moscow 43-86 s each in the daily runs, about 2 s for the shared walk). A test ties each twin to the pinned sha256 of the SC
+  (Moscow 43-86 s each in the daily runs, about 2 s for the shared walk). CheckExistence and
+  AddChargingStationSocket (`FastScans.kt`) are twins for a smaller reason: age quests, four runs each, whose
+  scans walked every element of the map data (`mapData.filter { isApplicableTo(it) }` and SC's own
+  `mapData.filter(expr)`, which the `CANDIDATES` rewrite cannot reach); the twins ask for candidates by key. A test ties each twin to the pinned sha256 of the SC
   file it copies, and of the helper files it copies (`helperSha256`), so a version bump that changes one fails
   until the twin is redone. `-Dopenquests.verifyFast=true` runs the port
   next to its twin on every map data and fails on any difference, and fails if a quest with

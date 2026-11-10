@@ -21,7 +21,7 @@ class PointGrid(private val points: List<LatLon>, private val cellDegrees: Doubl
     private val cells = HashMap<Long, MutableList<Int>>()
 
     private fun cell(d: Double) = floor(d / cellDegrees).toInt()
-    private fun key(x: Int, y: Int) = (x.toLong() shl 32) or (y.toLong() and 0xffffffffL)
+    private fun key(x: Int, y: Int) = gridKey(x, y)
 
     init {
         for ((i, p) in points.withIndex()) cells.getOrPut(key(cell(p.longitude), cell(p.latitude))) { ArrayList(4) }.add(i)
