@@ -8,7 +8,7 @@ Subcommands:
              of this extract already exists, unless it lacks notes and a notes dump now reaches it).
              Needs a notes dump that reaches the extract.
   backfill   count every dated extract of every region still in the shared store
-  history    rebuild docs/data/history/<cityId>.json, cities.json, quests.json and compare/<quest>.json
+  history    rebuild docs/data/history/<cityId>.json, cities.json, trends.json, quests.json and compare/<quest>.json
              from the archive of all regions, and copy each region's newest snapshot into docs/data;
              docs/data/parts/<cityId>.json from the parts registry (config/parts); docs/data/coverage.json,
              the map's city boundaries
@@ -607,7 +607,7 @@ def build_history(snapshots: list[dict], city_config: list[dict], disabled: set[
     city_akas = {c["id"]: c["aka"] for c in city_config if c.get("aka")}
     dates = sorted({s["asOfDate"] for s in snapshots})  # each region has its own snapshot of a date
     city_ids = sorted({cid for s in snapshots for cid in s["cities"]})
-    history, index = {}, []
+    history, index, trends = {}, [], {}
     compare = {}  # quest -> {cityId: open in the city's newest snapshot}: what the compare view ranks
     for cid in city_ids:
         rows = [(s, s["cities"][cid]) for s in snapshots if cid in s["cities"]]
@@ -638,9 +638,10 @@ def build_history(snapshots: list[dict], city_config: list[dict], disabled: set[
         }
         history[cid] = series
         headline = {k: v for k, v in last["quests"].items() if k not in disabled}
-        # totals on every snapshot date, null where the city wasn't counted, for the site's sparklines
+        # totals on every snapshot date, null where the city wasn't counted, for Compare's sparklines;
+        # in trends.json, not cities.json, so a first visit doesn't download them
         by_date = {s["asOfDate"]: c for s, c in rows}
-        trend = [total_open(by_date[d], disabled) if d in by_date else None for d in dates]
+        trends[cid] = [total_open(by_date[d], disabled) if d in by_date else None for d in dates]
         index.append({
             "id": cid,
             "name": series["name"],
@@ -657,7 +658,6 @@ def build_history(snapshots: list[dict], city_config: list[dict], disabled: set[
             "agedOnly": sum(q.get("agedOnly") or 0 for q in headline.values()),
             "openAll": sum(q.get("open") or 0 for q in last["quests"].values()),
             "questsCounted": len(last["quests"]),
-            "trend": trend,
         })
     index.sort(key=lambda c: c["name"])
     latest = snapshots[-1] if snapshots else {}
@@ -666,7 +666,7 @@ def build_history(snapshots: list[dict], city_config: list[dict], disabled: set[
               "dates": dates, "cities": index}
     if region_config:
         cities["regions"] = [{k: r[k] for k in ("id", "name", "group", "source")} for r in region_config]
-    return {"history": history, "cities": cities,
+    return {"history": history, "cities": cities, "trends": {"dates": dates, "trend": trends},
             "compare": {q: {"quest": q, "open": dict(sorted(v.items()))} for q, v in sorted(compare.items())}}
 
 
@@ -858,6 +858,7 @@ def history(data_dir: Path = DATA_DIR, cities_config: Path = CITIES_CONFIG, arch
             stale.unlink()
             changed += 1
     changed += write_json(data_dir / "cities.json", out["cities"], compact=True)
+    changed += write_json(data_dir / "trends.json", out["trends"], compact=True)
     if separate:
         changed += publish_newest(data_dir, archive)
     log(f"history: {len(out['history'])} cities over {len(snapshots)} snapshot(s), {changed} file(s) changed")

@@ -209,9 +209,17 @@ the file the switch is hidden.
     "open": 0,          // headline: counted quests, default-disabled excluded
     "agedOnly": 0,      // of `open`
     "openAll": 0,       // default-disabled included
-    "questsCounted": 0,
-    "trend": [0]        // `open` on each of `dates`; null where the city wasn't counted
+    "questsCounted": 0
 } ] }
+```
+
+`docs/data/trends.json` holds each city's `open` over time for Compare's trend column. The page asks for
+it when Compare first opens, so a first visit doesn't download it (it was `trend` in `cities.json` until
+2026-11-10, 116 KB of that file's 124 KB gzipped):
+
+```jsonc
+{ "dates": ["2026-07-16"],             // the same as cities.json's
+  "trend": { "toronto": [0] } }        // `open` on each of `dates`; null where the city wasn't counted
 ```
 
 `docs/data/compare/<quest>.json` holds one quest's open count in every city, each from the city's newest

@@ -720,6 +720,20 @@ async function compareRows() {
   return rows;
 }
 
+// Each city's default total on every snapshot date, for the trend column: data/trends.json, asked for
+// when Compare first opens so a first visit doesn't carry it. Data written before 2026-11-10 has the
+// arrays in cities.json; a file that fails to load leaves the column out.
+let trendsFile = null;
+function cityTrends() {
+  if (!trendsFile) {
+    const old = cities.cities.some((c) => c.trend);
+    trendsFile = old
+      ? Promise.resolve({ dates: cities.dates, trend: Object.fromEntries(cities.cities.map((c) => [c.id, c.trend])) })
+      : getJSON("trends.json").catch(() => null);
+  }
+  return trendsFile;
+}
+
 async function renderCompare() {
   const sel = $("#compare-quest");
   if (!sel.options.length) {
@@ -730,7 +744,9 @@ async function renderCompare() {
   }
   sel.value = state.compareQuest;
 
-  const rows = await compareRows();
+  // cities.json and trends.json carry totals over time, not each quest's, so the trend column is for
+  // all quests only
+  const [rows, trends] = await Promise.all([compareRows(), state.compareQuest ? null : cityTrends()]);
   const { key, dir } = state.compareSort;
   const val = { name: (r) => r.c.name.toLowerCase(), open: (r) => r.open, perKm2: (r) => r.perKm2,
                 perRoadKm: (r) => r.perRoadKm, per1k: (r) => r.per1k }[key];
@@ -745,8 +761,6 @@ async function renderCompare() {
   const barKey = key === "name" ? "perKm2" : key;
   const max = Math.max(0, ...rows.map((r) => r[barKey === "open" ? "open" : barKey] || 0));
   const fmt = (v, f) => (v == null ? "—" : f.format(v));
-  // cities.json carries totals over time, not each quest's, so the trend column is for all quests only
-  const trends = !state.compareQuest && cities.dates;
   for (const th of document.querySelectorAll("#compare-table th.c-trend")) th.hidden = !trends;
   // The app offers some quests only in some countries, so totals cover different sets of quests.
   const kinds = cities.cities.map((c) => c.questsCounted).filter((n) => n != null);
@@ -759,12 +773,12 @@ async function renderCompare() {
     (!state.compareQuest && lo < hi ? ` The app offers some quests only in some countries, so a city's total covers ${lo}–${hi} quest types depending on where it is.` : "");
   $("#compare-table tbody").replaceChildren(...rows.map((r, i) => {
     const v = r[barKey];
-    const trend = trends && r.c.trend;
+    const trend = trends && trends.trend[r.c.id];
     const where = r.notOffered && offeredWhere(questByName.get(state.compareQuest).enabledInCountries, r.c.id);
     return el("tr", { class: [r.c.id === state.city ? "picked" : "", r.notOffered ? "off" : ""].join(" ").trim() || null },
       el("td", { class: "num" }, r.notOffered ? null : i + 1),
       el("td", {}, el("a", { href: "#", onclick: (e) => { e.preventDefault(); setCity(r.c.id); setView("city"); } }, r.c.name)),
-      trends ? el("td", { class: "c-trend" }, trend ? sparkline(cities.dates, trend, r.c.name) : null) : null,
+      trends ? el("td", { class: "c-trend" }, trend ? sparkline(trends.dates, trend, r.c.name) : null) : null,
       el("td", { class: "num" }, r.notOffered ? el("span", { title: where ? where.title : null }, where ? where.text : "not offered") : fmt(r.open, nf)),
       el("td", { class: "num" }, rate(r.perKm2)),
       el("td", { class: "num" }, rate(r.perRoadKm)),
@@ -1458,11 +1472,10 @@ async function partCards(ref, counted) {
 // cities.json for its name and count. Everything not coloured is not counted. A city is a few pixels at
 // the zoom that shows both continents, so it also has a dot, and each dot goes the moment its own city
 // covers more of the screen than the dot does — small cities keep theirs longer than big ones.
-// Leaflet is the one page's library, so it loads with the tab.
+// Leaflet is the one page's library, so it loads with the tab. It and uPlot are served from vendor/, the
+// npm packages' own dist files (docs/vendor/README.md), so the page needs no CDN.
 
-const LEAFLET = "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet";
-const LEAFLET_JS_SRI = "sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH";
-const LEAFLET_CSS_SRI = "sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H";
+const LEAFLET = "vendor/leaflet-1.9.4/leaflet";
 const DOT_RADIUS = 5;                   // px, plus the 1 px white ring
 const DOT_AREA = Math.PI * (DOT_RADIUS + 1) ** 2;
 let coverageMap = null;                 // promise of the Leaflet map, built the first time the tab opens
@@ -1486,14 +1499,14 @@ function pixelAreaAtZoom0(geometry) {
 
 function loadLeaflet() {
   const load = (tag, attrs) => new Promise((done, fail) => {
-    const e = el(tag, { ...attrs, crossorigin: "anonymous" });
+    const e = el(tag, attrs);
     e.onload = done;
     e.onerror = () => fail(new Error("the map library did not load"));
     document.head.append(e);
   });
   return Promise.all([
-    load("link", { rel: "stylesheet", href: `${LEAFLET}.css`, integrity: LEAFLET_CSS_SRI }),
-    load("script", { src: `${LEAFLET}.js`, integrity: LEAFLET_JS_SRI }),
+    load("link", { rel: "stylesheet", href: `${LEAFLET}.css` }),
+    load("script", { src: `${LEAFLET}.js` }),
   ]);
 }
 
