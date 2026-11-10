@@ -472,7 +472,7 @@ new cities appear by themselves.
    stretched cell made two arrays of 5.7 GB; a sparse world cell would not fit at all. **Next:** that section's
    list, item 1 first (the planner must not make giant boxes), then the file's records as arrays. The first
    reading of the logs (charging stations top every cell) was wrong and is corrected there.
-   `.scratch/cells-fast/` (1 GB with two engine copies) and `.scratch/world-de/` are needed to repeat any of it.
+   `.scratch/cells-fast/` (212 MB with two engine copies) and `.scratch/world-de/` are needed to repeat any of it.
 16. **The stream, tier 2 done as a daily test (2026-11-10, night):** DESIGN.md, "The stream, tier 2". The 40
    area quests recounted only on the ground diff 5171 touched (90 rectangles, 12 km2 of London's 1,595, 1.1% of
    the tier-2 matches): the patch counts' own flips applied to the old state give the full count of 11-09
