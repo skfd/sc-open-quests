@@ -495,3 +495,12 @@ new cities appear by themselves.
    europe-west, 140 to 360 come due a day. No engine change; `.scratch/due/` (3 GB of dumps, can be deleted).
    So every flip of the measured day is explained by one of three parts. **Next: step 5, the store and one
    planet day's cost.** Nothing built towards it. The table of due dates itself is not built either.
+18. **The stream, step 5 started (2026-11-10, 02:25; the owner: "continue building"):** the store and one
+   planet day's cost. `.scratch/store/` (gitignored): `store.py` builds a node location store for the planet
+   (pyosmium `dense_file_array`, **`planet.loc`, 107 GiB on C:**, 8 bytes a node id) from the history file in
+   one node pass, and keeps the last version before 11-08 of every element the day's minute files touch;
+   `day.py` replays 11-08's 1,415 minute files through tier 1 for the whole world on that store. A pilot on
+   the Europe history cut passed (store read back equal). **Running detached since 02:25:**
+   `.scratch/store/planet.sh`, log `logs/store-planet.log`; expected under an hour, no engine in it. To go
+   on after a stop: run it again (it starts over; delete `planet.loc` first). **`planet.loc` must be deleted
+   before the planet job of 2026-12-07**, which needs about 170 GB free; nothing else reads it.
