@@ -544,7 +544,6 @@ new cities appear by themselves.
    dumped). A state dump later is a recount of the kept cut (about 100 GB in `.scratch/planet/world/cut/`), not
    a new slice and cut, so keep the cut while that is wanted; it must be gone before the planet job of 12-07.
    **Disk:** the cut needs the planet's size plus 40 GB free beside the planet, or it stops ("cut: N GB free, M
-   needed"). A planet over about 95 GB will not pass with what C: holds now. Deletable, per this file: the
-   replay's `data/backfill/replay*` (19 GB), `.scratch/due/` (3 GB), `.scratch/world-eu/` (5 GB),
-   `.scratch/oracle-v64.1/`; asked of the owner on 2026-11-10 (the deletion needs their word). Then rerun
-   chain2.sh.
+   needed"). At the owner's word (2026-11-10, 10:40) `data/backfill/replay`, `.scratch/due/`,
+   `.scratch/world-eu/` and `.scratch/oracle-v64.1/` were deleted (27 GB), so a planet up to about 105 GB
+   passes. If it still stops, free more and rerun chain2.sh.
