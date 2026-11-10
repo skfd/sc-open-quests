@@ -579,6 +579,11 @@ new cities appear by themselves.
      14:00) was refused to Claude by the auto-mode classifier; the owner registers it, or runs the script
      by hand after a run with a cloud step. Revert: `gh api -X PUT repos/skfd/sc-open-quests/pages -f
      "source[branch]=main" -f "source[path]=/docs"`.
+   - **Requests:** a first city view is 71 Worker requests (53 of them icons) against Workers Free's 100,000 a
+     day; icons and images now cache a day in the browser (2e059b56), so a returning reader costs about 10.
+     Compare, Places and Map load with no errors (15-16 requests each). If traffic nears the cap: Workers
+     Paid, or the page and icons as static assets (the owner's call). `flip.sh` was tested dry on a
+     synthetic log (passes; refuses a failed or missing cloud step) and syncs once more before its check.
    - **Later, after a week:** take the daily data out of git history (the reason for the move);
      README's site link; the token was shown once in a session transcript, so the owner may roll it
      (Cloudflare: My Profile, API Tokens, Roll; then replace the value in the token file).
