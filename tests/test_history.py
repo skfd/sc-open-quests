@@ -75,10 +75,15 @@ class HistoryTest(unittest.TestCase):
         idx = self.load("cities.json")
         self.assertEqual(idx["dates"], ["2026-07-16", "2026-07-17", "2026-07-18"])
         ottawa, toronto = idx["cities"]
-        self.assertEqual(ottawa["trend"][0], None)   # not in the first snapshot
-        self.assertEqual(toronto["trend"][-1], toronto["open"])
-        self.assertEqual(toronto["trendAll"][-1], toronto["openAll"])
-        self.assertEqual(toronto["trend"][1], 9 + 6 + 4)   # AddC counted that day only
+        for c in idx["cities"]:                      # a first visit loads cities.json, not the trends
+            self.assertNotIn("trend", c)
+            self.assertNotIn("trendAll", c)          # nothing on the page read it
+        trends = self.load("trends.json")
+        self.assertEqual(trends["dates"], idx["dates"])
+        self.assertEqual(sorted(trends["trend"]), ["ottawa", "toronto"])
+        self.assertEqual(trends["trend"]["ottawa"][0], None)   # not in the first snapshot
+        self.assertEqual(trends["trend"]["toronto"][-1], toronto["open"])
+        self.assertEqual(trends["trend"]["toronto"][1], 9 + 6 + 4)   # AddC counted that day only
 
     def test_rerun_changes_nothing(self):
         before = {p: p.read_bytes() for p in self.data.rglob("*.json")}

@@ -1,2 +1,3 @@
 docs/data/** text eol=lf
 docs/places/** text eol=lf
+docs/vendor/** -text
