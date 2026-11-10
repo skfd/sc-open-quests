@@ -1454,14 +1454,33 @@ async function partCards(ref, counted) {
 // ---------- map view ----------
 // What is counted, on a map: each city's boundary from coverage.json (DATA-FORMAT.md), joined by id to
 // cities.json for its name and count. Everything not coloured is not counted. A city is a few pixels at
-// the zoom that shows both continents, so it also has a dot until its boundary is big enough to see.
+// the zoom that shows both continents, so it also has a dot, and each dot goes the moment its own city
+// covers more of the screen than the dot does — small cities keep theirs longer than big ones.
 // Leaflet is the one page's library, so it loads with the tab.
 
 const LEAFLET = "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet";
 const LEAFLET_JS_SRI = "sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH";
 const LEAFLET_CSS_SRI = "sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H";
-const DOTS_BELOW_ZOOM = 9;              // a 10 km city is about 40 px wide from zoom 9 on
+const DOT_RADIUS = 5;                   // px, plus the 1 px white ring
+const DOT_AREA = Math.PI * (DOT_RADIUS + 1) ** 2;
 let coverageMap = null;                 // promise of the Leaflet map, built the first time the tab opens
+
+// A GeoJSON (Multi)Polygon's area in Web Mercator pixels at zoom 0; at zoom z it is this times 4^z, which
+// is what the reader sees, unlike km² (a northern city looks bigger than its land).
+function pixelAreaAtZoom0(geometry) {
+  const polygons = geometry.type === "Polygon" ? [geometry.coordinates] : geometry.coordinates;
+  const ring = (coords) => {
+    let twice = 0, prev = null;
+    for (const [lon, lat] of coords) {
+      const p = L.CRS.EPSG3857.latLngToPoint(L.latLng(lat, lon), 0);
+      if (prev) twice += prev.x * p.y - p.x * prev.y;
+      prev = p;
+    }
+    return Math.abs(twice) / 2;
+  };
+  return polygons.reduce((sum, [outer, ...holes]) =>
+    sum + ring(outer) - holes.reduce((h, r) => h + ring(r), 0), 0);
+}
 
 function loadLeaflet() {
   const load = (tag, attrs) => new Promise((done, fail) => {
@@ -1488,22 +1507,34 @@ async function buildMap() {
     maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
   }).addTo(map);
   const colour = css("--series-1");
-  const dots = L.layerGroup();
+  map.createPane("dots").style.zIndex = 450;   // above the shapes, so a hovered shape brought forward stays under
   const shapes = L.featureGroup().addTo(map);
+  const cityDots = [];                          // [dot, area at zoom 0]
   for (const f of coverage.features) {
     const c = cityById(f.id);
     if (!c) continue;
-    const shape = L.geoJSON(f, { style: { color: colour, weight: 1.5, fillOpacity: 0.35 } }).addTo(shapes);
+    const shape = L.geoJSON(f, { style: { color: colour, weight: 1.5, fillOpacity: 0.35, className: "city-shape" } }).addTo(shapes);
     const dot = L.circleMarker(shape.getBounds().getCenter(),
-      { radius: 5, color: "#fff", weight: 1, fillColor: colour, fillOpacity: 1 }).addTo(dots);
+      { pane: "dots", radius: DOT_RADIUS, color: "#fff", weight: 1, fillColor: colour, fillOpacity: 1, className: "city-dot" });
+    cityDots.push([dot, pixelAreaAtZoom0(f.geometry)]);
+    // hovering either the shape or its dot lights up both: the dot says where, the shape says how much
+    const hot = (on) => {
+      shape.eachLayer((l) => l.getElement()?.classList.toggle("hot", on));
+      dot.getElement()?.classList.toggle("hot", on);
+      if (on) shape.bringToFront();
+    };
     for (const layer of [shape, dot]) {
       layer.bindPopup(() => mapPopup(c));
+      layer.on({ mouseover: () => hot(true), mouseout: () => hot(false) });
       if (!L.Browser.mobile) layer.bindTooltip(c.name, { sticky: true }).on("click", () => layer.closeTooltip());
     }
   }
   const showDots = () => {
-    if (map.getZoom() < DOTS_BELOW_ZOOM) dots.addTo(map);
-    else dots.remove();
+    const scale = 4 ** map.getZoom();
+    for (const [dot, area0] of cityDots) {
+      if (area0 * scale < DOT_AREA) dot.addTo(map);
+      else { dot.getElement()?.classList.remove("hot"); dot.remove(); }   // no mouseout comes once it is gone
+    }
   };
   map.on("zoomend", showDots);
   const at = state.mapAt.split("/").map(Number);
