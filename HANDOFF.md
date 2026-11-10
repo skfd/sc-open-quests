@@ -558,5 +558,12 @@ new cities appear by themselves.
    - **Cutover:** Claude may switch the live site once the copy checks out (every file equal, four cities load
      with no page errors); the old Pages URL then redirects to the new address, query string kept, and the Pages
      copy stays a week as a fallback.
-   - **Waiting on the owner:** comentality.com on Cloudflare DNS, R2 enabled (billing), the token file. While
-     the planet chain (item 19) runs: no engine rebuild; uploads and the Worker don't touch it.
+   - **Access in place (2026-11-10, 12:15, set up in the owner's Chrome):** comentality.com was already an
+     active Cloudflare zone (id 0f367c49d7fd0b33de52c752a13a2b68), so nic.ua needs nothing. User API token
+     "sc-open-quests deploy" (no expiry; template "Edit Cloudflare Workers" limited to the one account, plus
+     DNS Edit and Zone Read on comentality.com only) in `~/.config/sc-open-quests/cloudflare.env`
+     (`CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`), outside the repo; `set -a; . that file` to use it.
+     R2 bucket `sc-open-quests` (ENAM) created by API and a test object `healthcheck.txt` written and read
+     back, although the dashboard's R2 page still offers "Add R2 subscription" (not clicked). Next: wrangler,
+     the Worker, the upload, the cutover. While the planet chain (item 19) runs: no engine rebuild; uploads
+     and the Worker don't touch it.
