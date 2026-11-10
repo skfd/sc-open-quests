@@ -457,3 +457,10 @@ new cities appear by themselves.
    (new engine command "evaluate these elements"; the match dumps in `.scratch/diff-flips/` are its ground
    truth, keep them). Not started. No engine run 11:50-14:15 or at 15:10. Real-time updates and solved quests
    from changesets were non-goals above; the owner lifted them for this test.
+14. **The stream, step 1 done (2026-11-10, 00:15; the owner: "do it now"):** DESIGN.md, "The stream, step 1".
+   11-08's 1,415 minute files replayed for europe-west through the 153 element-only quests: 606 net flips,
+   exactly the measured ones on touched elements, no element's final state off; 660 events from 113
+   changesets; 63 of 69 StreetComplete changesets show their quest closing (six not traced). No engine
+   change: versions as a synthetic PBF through `count --dump-matches`. `.scratch/stream-replay/` holds it.
+   **Next: plan step 3** (due dates for the date quests, against the 331 aged flips), then tier 2 and the
+   store. Not started.

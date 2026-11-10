@@ -2001,3 +2001,42 @@ billion nodes scanned: about two thousand times less to look at.
 **Other routes to a daily world, not ruled out:** recounting only the cells a day's diff touched (measured
 2026-11-06 as tiles: 8.5% of Ontario's nodes, 64% of Hamburg's); an own Overpass instance, which keeps a
 planet with augmented diffs (HARDWARE.md: fits 64 GB and 300 GB); a faster scan, now the larger half of a pass.
+
+## The stream, step 1: a day of minute diffs replayed, exact (2026-11-10, just past midnight)
+
+The owner: "do it now". Plan step 1 and 2 above. `.scratch/stream-replay/` (gitignored; `fetch.py`,
+`replay.py`, `RESULT.txt`, `events.tsv`; 120 MB of minute files). No engine change.
+
+**How.** The 1,415 minute files of 2026-11-08 (sequences 7363129 to 7364543, found from the feed's state
+files; 3.93M node, 747k way and 49k relation versions) read in order. Every node and way version inside the
+three city boxes, 3,304 of them on 3,078 elements, became its own element in a synthetic PBF (a new id per
+version, a way's nodes beside it), which the unchanged engine counted with `--dump-matches` in 2.7 s. Each
+version's match set, in stream order, against the element's state before (the 11-08 dump) gives the events,
+each with its minute and changeset. Tier 1 only, the 153 quests decided from the element alone.
+
+**Result: the stream reproduces the day.**
+- **606 net flips, the same 606 the two full counts show on touched elements; none extra, none missing.**
+  No element ends the day in a state other than the 11-09 dump's.
+- **The other 335 measured tier-1 flips have no event, as expected:** 331 opened by ageing, 4 by the two notes.
+- **660 events from 113 changesets, in 82 of the 1,415 minutes.** 54 are a quest opened and closed again within
+  the day, which a daily diff cannot see. One changeset made 100.
+- **By editor (opened / closed):** iD 215 / 22, StreetComplete 46 / 111, JOSM 114 / 26, Every Door 17 / 73,
+  StreetComplete_ee 11 / 8. Mappers with other editors open quests; StreetComplete and Every Door close them.
+- **The changeset feed as a second check:** 69 StreetComplete changesets name a tier-1 quest and touch an
+  element in the boxes; the stream shows that quest closing in 63. The other six (one each of AddBusStopShelter,
+  AddOpeningHours, CheckShopExistence, AddSidewalk, AddParkingType, AddParkingAccess) were not traced: an
+  element outside the city polygon, a quest hidden by a note, or an answer that leaves the quest open would
+  each do it.
+
+**What the replay did not have to do, and a live stream must:**
+- **Hold the state.** The before-state came from the 11-08 dump, and a way's node positions from the stream
+  or the two clips (the day's last position, not the one at that minute). A stream needs the open-quest set
+  and a node location store of its own.
+- **Find the elements without the boxes' help at world scale:** here 3,304 of 4.7M versions were in the boxes;
+  for the world all are, about 55 a second on average.
+- **The clock.** Every version was evaluated at 11-09T00:00Z, not at its minute.
+- **Relations** (49k versions) were not replayed; none flipped that day in these cities.
+- **Tier 2,** ageing and notes, as planned.
+
+**Next:** step 3, due dates for the date quests against the 331 aged flips; then tier 2 (step 4), which is
+where the store is decided. One more day or region of this replay costs about 10 minutes if wanted.
