@@ -464,10 +464,15 @@ new cities appear by themselves.
    open after its answer). No engine
    change: versions as a synthetic PBF through `count --dump-matches`. `.scratch/stream-replay/` holds it.
    Tier 2 is item 16.
-15. **Faster cells, asked 2026-11-10 (00:40):** read off Germany's logs, nothing run (DESIGN.md, "Where a cell
-   run's time goes"). Runs 51%, map data 19%, two reads of the file 30%; AddChargingStationSocket and CheckExistence
-   still scan every element and top most cells. **Next, when the owner says:** one traced Germany file and the
-   same without parts (`.scratch/world-de/` is needed for it: keep it), then candidates by key for those scans.
+15. **Faster cells (2026-11-10, 00:40 to 02:40; the owner: "lets do what you suggest"):** DESIGN.md, "Where a
+   cell run's time goes: one Germany file measured". One Germany file traced and profiled alone: the quest runs
+   are 27% of the CPU, the collector about 29%, the main pass 23%; places cost nothing measurable. **Built, same
+   counts:** twins for CheckExistence and AddChargingStationSocket (`FastScans.kt`) and a grid key that spreads
+   (`gridKey`); the file about 410 s to 333 s alone. **Found: a cell's box sizes SC's `LatLonRaster`,** and a
+   stretched cell made two arrays of 5.7 GB; a sparse world cell would not fit at all. **Next:** that section's
+   list, item 1 first (the planner must not make giant boxes), then the file's records as arrays. The first
+   reading of the logs (charging stations top every cell) was wrong and is corrected there.
+   `.scratch/cells-fast/` (1 GB with two engine copies) and `.scratch/world-de/` are needed to repeat any of it.
 16. **The stream, tier 2 done as a daily test (2026-11-10, night):** DESIGN.md, "The stream, tier 2". The 40
    area quests recounted only on the ground diff 5171 touched (90 rectangles, 12 km2 of London's 1,595, 1.1% of
    the tier-2 matches): the patch counts' own flips applied to the old state give the full count of 11-09
