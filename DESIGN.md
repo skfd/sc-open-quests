@@ -2555,7 +2555,9 @@ third parties were looked up; nothing here touches the engine or the Worker.
   update` and `planet` run it last, after the site sync; a failure is logged "archive backup FAILED"
   and the run goes on. The per-region `quests.json` files change every count, about 1.6 MB a day
   into `replaced/` (0.6 GB a year against R2's 10 GB free); prune old `replaced/` dates by hand if
-  it matters. `data/grid/` (316 MB, the z14 tile grids) and `data/notes/` (255 MB) are not in it.
+  it matters. `data/grid/` (2,145 files, 316 MB, the z14 tile grids) goes to the same bucket under
+  `grid/` at the owner's word, checked equal too; `data/notes/` (255 MB) is not in it, as the clips
+  can be cut again from the notes dumps.
 - **Third parties (looked up 2026-11-10 by an agent through a summarising fetch; re-read a sentence
   before relying on it):**
   - *tile.openstreetmap.org*: the tile policy gives no number. It asks for visible attribution, a
@@ -2565,7 +2567,7 @@ third parties were looked up; nothing here touches the engine or the Worker.
     ground, with no page error; the rest of the site doesn't use tiles.
     The durable fix, if wanted, is a self-hosted PMTiles basemap on R2. Keyed free tiers (Stadia
     200,000 credits a month, MapTiler 100,000 requests a month, then paused) turn a possible block
-    into a certain stop on a spike day. Not changed; the owner's call.
+    into a certain stop on a spike day. The owner chose to stay on OSM's tiles (2026-11-10).
   - *GoatCounter*: free "for reasonable public usage", no stated monthly cap; "millions of pageviews
     a day" is what it names as too much. The script is `async`, so it doesn't block parsing or
     drawing (a hanging host can still delay the `load` event); with its host blocked the views load
