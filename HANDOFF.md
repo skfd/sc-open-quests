@@ -443,3 +443,8 @@ new cities appear by themselves.
    of its whole-city count; Bratislava's +4 AddCycleway is the border gate doing what the app does; the zone
    per cell showed nothing at a 00:00Z asOf. `.scratch/world-eu/` can be deleted. Next is the owner's: a larger
    country or a continent stage.
+12. **Counting from the day's diff (asked 2026-11-09, late evening):** measured, nothing built (DESIGN.md,
+   "Counting from the day's diff: one day measured"). On europe-west, 11-08 to 11-09, 1,299 of 4.6M matches
+   flipped; 73.5% on an element in the diff, 26.1% by ageing, one by a neighbour within 20 m, one unexplained.
+   Next is the owner's: the same comparison over the stored week and all four Europe regions, then a prototype.
+   `.scratch/diff-flips/` (900 MB) can be deleted once that is decided.
