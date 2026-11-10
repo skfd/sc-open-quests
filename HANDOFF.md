@@ -445,6 +445,7 @@ new cities appear by themselves.
    country or a continent stage.
 12. **Counting from the day's diff (asked 2026-11-09, late evening):** measured, nothing built (DESIGN.md,
    "Counting from the day's diff: one day measured"). On europe-west, 11-08 to 11-09, 1,299 of 4.6M matches
-   flipped; 73.5% on an element in the diff, 26.1% by ageing, one by a neighbour within 20 m, one unexplained.
+   flipped; 73.5% on an element in the diff, 26.1% by ageing, four by a note, one by a neighbour within 20 m, none unexplained. A step that still scans the
+   files gains under 2 times (the scans are 48 s of an 85 s pass), so the gain needs an indexed store.
    Next is the owner's: the same comparison over the stored week and all four Europe regions, then a prototype.
    `.scratch/diff-flips/` (900 MB) can be deleted once that is decided.

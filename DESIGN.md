@@ -1911,9 +1911,9 @@ diff 5171 (3.9M nodes, 705k ways, 39k relations).
 |---|---|---|---|
 | the element itself is in the diff | 699 | 256 | 73.5% |
 | ageing: opened as agedOnly, element untouched | 339 | 0 | 26.1% |
-| a note closed at the element's exact position (note 5320352, three quests of one shop) | 3 | 0 | 0.2% |
-| a changed element within 20 m, not the element itself (AddIsAmenityIndoor) | 0 | 1 | 0.1% |
-| not explained (CheckShopType on node 3985642229, untouched, nearest change 200 m to 1 km away) | 0 | 1 | 0.1% |
+| a note at the element's exact position: 5320352 closed that day (three quests of one shop), 5622513 opened (CheckShopType, way 218331258) | 3 | 1 | 0.3% |
+| a changed element within 20 m, not the element itself (AddIsAmenityIndoor, node 302134936; which neighbour was not looked up) | 0 | 1 | 0.1% |
+| not explained | 0 | 0 | 0% |
 
 - **4,623,562 matches became 4,624,345; 1,299 flipped, on 742 elements.** 0.03% of the state moved in a day,
   and the full count reads all 128M nodes to find it.
@@ -1934,16 +1934,17 @@ diff 5171 (3.9M nodes, 705k ways, 39k relations).
 5. **A full count stays the oracle**, weekly, to reset drift and to catch what this misses; a repin or a
    changed polygon is a full count too.
 
-**The floor.** Reading the files is 16-17% of a count's CPU and the pass over them 27-30%. A daily step that
-still reads every region file gains about 3 to 5 times; more needs a store that finds an element and its
-surroundings without the scan.
+**The floor.** Since the engine speed-ups, reading is the larger half: of the 85 s pass on 11-09, the scans
+of the file took 48 s (member scan, nodes, ways, relations, and the area pass's three) and the cities' area
+runs 37 s. A daily step that still scans every region file gains under 2 times; the gain the 0.03% promises
+needs a store that finds an element and its surroundings without the scan.
 
 **A byproduct, and a listed non-goal:** every "self" flip names an element version, so a changeset: quests
 solved per day, by StreetComplete or by another editor. `changeset` is stripped today (line 54).
 
 **Not shown by one day:** a day with a building or address import; a rural region; a moved node flipping its
 way; an element whose position moved across a city or part boundary (still open, counted elsewhere: not a
-flip here); denominators. The diff's ids were taken planet-wide, positions only inside the clip.
+flip here); denominators; the note quest itself, which the dump leaves out. The diff's ids were taken planet-wide, positions only inside the clip.
 
 **Next, if wanted:** the same comparison over the stored week of clips and all four Europe regions (about 2
 minutes a region-day), to settle the radius and the unexplained share. Then a prototype of step 2 on one
