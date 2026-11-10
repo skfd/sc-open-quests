@@ -14,13 +14,15 @@ Subcommands:
              the map's city boundaries
   migrate-archive  move snapshots published before 2026-10-24 (docs/data/<region>/snapshots/) into
              data/archive/; count and history do it too, so it is idempotent and needs no flag
-  update     download + backfill + history, then commit "data <asOfDate>" and push; last, check-release
+  update     download + backfill + history, then commit "data <asOfDate>" and push, then sync docs/ to the
+             R2 bucket behind street-complete-statistics.comentality.com (tools/cloud_publish.py); last,
+             check-release
   planet     the monthly planet job: refresh the planet
              history file (osm-extracts fetch planet-history; a failure leaves it as it is), re-cut every
              osm-extracts clip from it (osm-extracts recut), count the months the regions on a clip lack
              from the clip's history cut, and the weekly regions (tools/backfill_history.py weekly: clip,
              the months not yet counted, a slice at the file's timestamp); merge, history, then commit
-             "data planet <date>" and push. With neither it only refreshes the history file
+             "data planet <date>", push and sync to R2. With neither it only refreshes the history file
   check-release  compare the pinned StreetComplete tag (engine/SC-VERSION.txt) with the newest stable
              GitHub release; if the app moved on, open a GitHub issue "Repin to StreetComplete vX.Y"
              (once; see REPIN.md) and refresh docs/data/sc-releases.json. Network and `gh` failures
@@ -892,6 +894,21 @@ def publish(data_dir: Path = DATA_DIR, message: str | None = None, push: bool = 
     return True
 
 
+def publish_cloud() -> bool:
+    """Make the R2 bucket behind street-complete-statistics.comentality.com equal to docs/
+    (tools/cloud_publish.py). Runs after the git push, so a Cloudflare failure never holds back the
+    GitHub Pages copy; it is logged as "cloud publish FAILED" and the run goes on. Returns success."""
+    r = subprocess.run([sys.executable, str(TOOLS_DIR / "cloud_publish.py")], cwd=ROOT,
+                       capture_output=True, text=True)
+    for line in (r.stdout + r.stderr).splitlines():
+        if line.strip():
+            log(line)
+    if r.returncode != 0:
+        log(f"cloud publish FAILED (exit {r.returncode}); GitHub Pages has the data")
+        return False
+    return True
+
+
 def update(force: bool = False, push: bool = True) -> None:
     with pipeline_lock():
         log("=== download ===")
@@ -904,6 +921,9 @@ def update(force: bool = False, push: bool = True) -> None:
         history()
         log("=== publish ===")
         publish(push=push)
+        if push:
+            log("=== cloud ===")
+            publish_cloud()
     log("=== check-release ===")
     try:
         check_release()
@@ -1009,6 +1029,9 @@ def planet(push: bool = True) -> None:
         history()
         log("=== publish ===")
         publish(message=f"data planet {t.date().isoformat()}", push=push)
+        if push:
+            log("=== cloud ===")
+            publish_cloud()
     log("planet done")
 
 
