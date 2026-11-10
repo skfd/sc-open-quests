@@ -822,3 +822,13 @@ its own static page or a Worker that rewrites the head; the state is in the quer
 - **Phases:** (1) per-place pages with text tags plus one site-wide image: no renderer, half the files.
   (2) per-place PNGs. Sequencing: `cloudflare/` stays untouched until the flip and the `assets-switch`
   merge; the generator can be built and checked on `wrangler dev` before that.
+
+## Countries in the place index: decided, not built (owner, 2026-11-10, evening)
+
+The owner asked whether the regional division is controversial. It was Overture's default view as
+shipped (Western Sahara wholly Moroccan, no Palestine, stateless places dropped). Decided: countries
+come from SC's own `boundaries.ser`, every country it names at a place (Crimea under both UA and RU),
+the top level named as SC names countries (the platform's CLDR names, in the browser `Intl.DisplayNames`), except that `PS` is named "Palestine" (CLDR's short form); borders are always SC's; a disputed place (SC names two countries, or SC and Overture disagree) goes under every one of them, inside its Overture region each time; names are OSM's `name` tag; English names only from sources (Overture `en`, then Wikidata), no home-made romanisation; places SC files under no country are left out; never flags; a note says the site files places where StreetComplete
+applies a country's rules and takes no position on borders. DESIGN.md, "Countries in the place index:
+StreetComplete's, not ours", has the probe results and the build steps. Next: build it, measuring first
+how many places move.
