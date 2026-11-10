@@ -363,7 +363,9 @@ function lineChart(target, h, series, { height = 260, showAged = true, questSetB
     width: Math.max(280, target.clientWidth),
     height,
     tzDate: (ts) => uPlot.tzDate(new Date(ts * 1e3), "Etc/UTC"),
-    cursor: { points: { size: 10, width: 2, fill: surface }, drag: { x: false, y: false } },
+    // every chart on the page follows the pointer on any one of them: same date, all charts at once
+    cursor: { points: { size: 10, width: 2, fill: surface }, drag: { x: false, y: false },
+              sync: { key: "city", setSeries: false } },
     scales: {
       // one snapshot: centre it in a week instead of letting the scale collapse
       x: xs.length === 1 ? { time: true, auto: false, range: [xs[0] - 3 * 86400, xs[0] + 3 * 86400] } : { time: true },
