@@ -2465,6 +2465,21 @@ prototype of 11-09):
   France inside Germany's files lose AddHousenumber (-1,501, off in those countries) and
   AddFireHydrantDiameter (-290); AddAcceptsCash rises by 174.
 
+**The rehearsal of the new paths: the 11-08 Europe clip** (`.scratch/planet/rehearse/`, files of at most 12M
+nodes so that there are two regions; three outputs a pass beside the running slice, `WORLD_CELLS_MAX_OUTPUTS`):
+- **The streamed `nodegrid`** gives Germany's grid of 11-09 byte for byte (442,630,768 nodes, 24 s, 8 GB heap).
+- **Plan and cut:** 2 regions of 8 files, 38 cells (4 with no nodes, the largest 9.30 by 9.50 degrees). The
+  regions in one pass of 192 s, their 16 files in six passes; 811 s in all. Every file accepted by the engine;
+  16 files in 488 s with two engines.
+- **Oracle 2: every one of the 32 cities within 0.004% of its published count of 11-08** (`report --archive
+  2026-11-08`, each at asOf 2026-11-08T00:00Z); 19 exactly equal, the rest within 4 matches (Bratislava's
+  AddCycleway +4 is the border gate, as on 11-09).
+- **Oracle 1, as the world run will use it:** `.scratch/planet/oracle.py rehearse` holds the cells' dump of the
+  listed elements against europe-west's full dump of 11-08 (`.scratch/diff-flips/`), inside London, Dublin and
+  Lisboa: 676 matches, 676 equal. `oracle.py world` on the same cells against the stream's state before the day:
+  all 11,021 tier-1 matches the Europe cells hold on listed elements are in the stream's state, none only in the
+  cells, agedOnly equal on all. (The other 352,257 of the stream's are outside the clip.)
+
 **The chain, with what it costs** (estimates from earlier measurements, none yet on the planet):
 
 | step | estimate | disk |
@@ -2475,5 +2490,6 @@ prototype of 11-09):
 | the cut: 16 regions in two passes, then their files | 6 to 9 h | +about 95 GB, then -90 (the planet) |
 | the canary file alone, then the rest with two engines | 15 to 17 h | each file deleted once counted |
 
-C: had 227 GB free; the peak is about 195 GB. The planet job of 2026-12-07 needs about 170 GB, so
+The slice wrote about 7 MB/s, so about 3.5 hours. C: had 227 GB free; the peak is about 195 GB. The files are
+kept until both checks pass (no `--delete-cut` yet), about 95 GB. The planet job of 2026-12-07 needs about 170 GB, so
 nothing of this may be left by then.

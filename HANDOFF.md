@@ -531,3 +531,10 @@ new cities appear by themselves.
    while the new paths are rehearsed on the 11-08 Europe clip (`.scratch/planet/rehearse/`). Once the plan is
    out: the grid's node total should be about 10,985.7M (step 5's 10,988,329,357 less the 3,025,623 nodes
    made on 11-08 plus the 425,947 deleted), and the chain is started again without `STOP_AFTER`.
+   **Rehearsal passed (10:25):** streamed grid identical, two-stage cut accepted, 32 European cities within
+   0.004% of their 11-08 counts, oracle 1 exact (676 of 676; and no tier-1 match the stream lacks). So a
+   watcher (`.scratch/planet/watch.ps1`) starts **`.scratch/planet/chain2.sh`** (the same chain, plus a gate on
+   the grid's node total, within 1.5M) when the first stops after the plan: log `logs/planet-count-2.log`.
+   Reruns use chain2.sh. Expected: plan about 14:30 today (the grid waits out the daily window), the cut to
+   about 23:00, the count to about 18:00 on 11-11, then `REPORT.md` and `oracle.log` in `.scratch/planet/world/`.
+   If both checks pass: delete the cut files (`.scratch/planet/world/cut/`), about 95 GB.
