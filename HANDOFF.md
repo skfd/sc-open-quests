@@ -692,6 +692,31 @@ new cities appear by themselves.
        (c) check the limits of jsdelivr, goatcounter and tile.openstreetmap.org for a spike;
        (d) a request path that needs no GitHub account; (e) a second R2 bucket as the archive's
        backup, never the site's bucket, which the daily sync prunes to `docs/`.
+   - **Before a spike, done 2026-11-10 afternoon (the owner: "spike-proof the page", "back up the
+     archive", drop `trendAll`):** DESIGN.md, "Before a spike: what a first visit asks of whom". On
+     main, not pushed (the 12:15 run on 11-11 pushes and syncs it; `cloud_publish.py --dry-run` says
+     16 files to copy, none to delete):
+     - (b) `cities.json` is 8 KB gzip, from 124: `trendAll` dropped, each city's `trend` moved to
+       `data/trends.json`, which Compare loads when it first opens.
+     - uPlot and Leaflet are served from `docs/vendor/` (byte-equal to jsdelivr's, hashes in its
+       README); the page asks no CDN. Headless on the real data: Toronto, Compare, Map, no errors.
+     - (c) limits looked up: jsdelivr and GoatCounter are no risk; tile.openstreetmap.org has no
+       number and may block heavy use without notice, which would cost the Map tab its ground only.
+       Not changed. **The owner's call:** stay on OSM tiles, or a self-hosted PMTiles basemap on R2.
+     - (e) `tools/archive_backup.py`: `data/archive/` is copied to the private bucket
+       `sc-open-quests-archive` (2,161 files, checked equal), replaced versions kept under
+       `replaced/<date>/`; the daily and planet runs do it last (`[backup]` lines in
+       `logs/scheduler.log`; "archive backup FAILED" doesn't stop a run). Watch its first scheduled
+       run on 11-11. **The owner's call:** `data/grid/` (316 MB) and `data/notes/` (255 MB) are
+       also only on this disk and not in the backup.
+     - `assets-switch` has main merged in (77fdbd8a, 131 tests pass) plus a year's cache for
+       `/vendor/*` in `docs/_headers`, so going live after the flip is still a clean merge.
+     - (d) is put off: the owner asked whether requests are still needed once the whole planet is
+       counted. Mostly not (every place with a polygon gets a number); what is left is monthly
+       history for a place and places with no polygon. Nothing built.
+     - Still open of that list: (a) the flip, then the owner's word to merge `assets-switch`.
+       Further trims not taken: `places/index.json` (129 KB gzip to follow one link), a part page
+       fetching its whole region snapshot, bbox columns in the region shards.
    - **Later, after a week:** take the daily data out of git history (the reason for the move);
      README's site link; the token was shown once in a session transcript, so the owner may roll it
      (Cloudflare: My Profile, API Tokens, Roll; then replace the value in the token file).
