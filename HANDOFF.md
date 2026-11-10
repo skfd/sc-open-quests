@@ -547,6 +547,13 @@ new cities appear by themselves.
    needed"). At the owner's word (2026-11-10, 10:40) `data/backfill/replay`, `.scratch/due/`,
    `.scratch/world-eu/` and `.scratch/oracle-v64.1/` were deleted (27 GB), so a planet up to about 105 GB
    passes. If it still stops, free more and rerun chain2.sh.
+   **Stage 1 done (checked 15:00):** the slice took 8,027 s (planet-261108.osm.pbf, 99.8 GB, ending 12:05);
+   `nodegrid` 521 s, **10,985,729,437 nodes, 244 off the 10,985,729,681 worked out from step 5's store**, so the
+   slice is the planet at 11-08T00Z. The plan: 16 regions, 128 files (at most 115M nodes), 2,244 cells, 346 of
+   them with no nodes, the largest 9.40 by 10.00 degrees, 308 zones; 6.4% of nodes in a zone whose offset differs
+   from their cell's. The watcher started chain2.sh at 14:24; notes clipped from planet-notes-261110 (129 clips,
+   602 s); the cut's first planet pass (regions r0-r7) started 14:35 with 166 GB free. `smart` writes nothing
+   until its last pass over the input, so the region files stay at 0 bytes for a long while.
 20. **New hosting: the owner's answers (2026-11-10, noon).** Nothing built yet; waiting on the owner's token.
    - **The whole site moves to Cloudflare** at `https://street-complete-statistics.comentality.com`, not only
      the data (this replaces DESIGN.md's "site stays on Pages, `DATA` points at R2"). Planned shape: a Worker
