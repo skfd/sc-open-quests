@@ -1,0 +1,17 @@
+// The Worker that serves the site from R2. Deploy: see cloudflare/README.md.
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "sc-open-quests",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-10-01",
+  "account_id": "699ef919f465c0a729552780cdb6c27f",
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [
+    { "pattern": "street-complete-statistics.comentality.com", "custom_domain": true }
+  ],
+  "r2_buckets": [
+    { "binding": "SITE", "bucket_name": "sc-open-quests" }
+  ],
+  "observability": { "enabled": true }
+}
