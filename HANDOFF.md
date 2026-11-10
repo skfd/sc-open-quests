@@ -448,7 +448,7 @@ new cities appear by themselves.
    flipped; 73.5% on an element in the diff, 26.1% by ageing, four by a note, one by a neighbour within 20 m, none unexplained. A step that still scans the
    files gains under 2 times (the scans are 48 s of an 85 s pass), so the gain needs an indexed store.
    Next is the owner's: the same comparison over the stored week and all four Europe regions, then a prototype.
-   `.scratch/diff-flips/` (900 MB) can be deleted once that is decided.
+   `.scratch/diff-flips/` (900 MB) is the ground truth for item 13's replay: keep it until then.
 13. **The stream (2026-11-09, near midnight; the owner: "an efficient way to reach the daily world
    processing. this is one of strategic ideas. there can be others"):** DESIGN.md, "The stream: probed, and
    the plan". Minute diffs and the changeset feed are live; no public before/after source, so the state is
