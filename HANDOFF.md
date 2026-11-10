@@ -709,7 +709,7 @@ new cities appear by themselves.
        README); the page asks no CDN. Headless on the real data: Toronto, Compare, Map, no errors.
      - (c) limits looked up: jsdelivr and GoatCounter are no risk; tile.openstreetmap.org has no
        number and may block heavy use without notice, which would cost the Map tab its ground only.
-       Not changed. **The owner's call:** stay on OSM tiles, or a self-hosted PMTiles basemap on R2.
+       **The owner chose to stay on OSM tiles.**
      - (e) `tools/archive_backup.py`: `data/archive/` is copied to the private bucket
        `sc-open-quests-archive` (2,161 files, checked equal), replaced versions kept under
        `replaced/<date>/`; the daily and planet runs do it last (`[backup]` lines in
@@ -721,8 +721,9 @@ new cities appear by themselves.
        https://street-complete-statistics.comentality.com` shows no errors and no external host but
        `gc.zgo.at` and the tile host; and `curl -sI
        https://skfd.github.io/sc-open-quests/vendor/uplot-1.6.31/uPlot.iife.min.js` is 200 (before
-       the flip turns Pages into a redirect). flip.sh's own `--check` then covers all 4,849 files. **The owner's call:** `data/grid/` (316 MB) and `data/notes/` (255 MB) are
-       also only on this disk and not in the backup.
+       the flip turns Pages into a redirect). flip.sh's own `--check` then covers all 4,849 files.
+     - `data/grid/` (2,145 files) is in the backup bucket too, under `grid/`, at the owner's word;
+       `data/notes/` is not (the clips can be cut again from the dumps).
      - `assets-switch` has main merged in (77fdbd8a, 131 tests pass) plus a year's cache for
        `/vendor/*` in `docs/_headers`, so going live after the flip is still a clean merge.
      - (d) is put off: the owner asked whether requests are still needed once the whole planet is
