@@ -23,6 +23,7 @@ import os
 import re
 import subprocess
 import sys
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -132,19 +133,27 @@ def sync(dry_run: bool = False, docs: Path = DOCS) -> None:
 BEACON = re.compile(rb'<script[^>]*static\.cloudflareinsights\.com/beacon[^>]*></script>\n?')
 
 
-def _fetch_md5(rel: str) -> tuple[str, str | None, int | str]:
+def _fetch_md5(rel: str, tries: int = 4) -> tuple[str, str | None, int | str]:
+    """The file's MD5 as served, retrying dropped connections and 5xx (a blip is not a difference)."""
     url = SITE + "/" + urllib.parse.quote(rel)
     req = urllib.request.Request(url, headers={"User-Agent": "sc-open-quests-check"})
-    try:
-        with urllib.request.urlopen(req, timeout=60) as r:
-            body = r.read()
-            if rel.endswith(".html"):
-                body = BEACON.sub(b"", body)
-            return rel, hashlib.md5(body).hexdigest(), r.status
-    except urllib.error.HTTPError as e:
-        return rel, None, e.code
-    except Exception as e:  # noqa: BLE001
-        return rel, None, str(e)
+    result: tuple[str, str | None, int | str] = (rel, None, "not fetched")
+    for attempt in range(tries):
+        if attempt:
+            time.sleep(2 * attempt)
+        try:
+            with urllib.request.urlopen(req, timeout=60) as r:
+                body = r.read()
+                if rel.endswith(".html"):
+                    body = BEACON.sub(b"", body)
+                return rel, hashlib.md5(body).hexdigest(), r.status
+        except urllib.error.HTTPError as e:
+            result = (rel, None, e.code)
+            if e.code < 500:
+                return result
+        except Exception as e:  # noqa: BLE001  (connection reset, timeout)
+            result = (rel, None, str(e))
+    return result
 
 
 def check(docs: Path = DOCS, workers: int = 16) -> int:
