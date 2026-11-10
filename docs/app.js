@@ -1503,6 +1503,7 @@ function mapPopup(c) {
 async function buildMap() {
   const [coverage] = await Promise.all([getJSON("coverage.json"), loadLeaflet()]);
   const map = L.map("coverage-map", { minZoom: 1, zoomSnap: 0.5 });
+  map.attributionControl.setPrefix('<a href="https://leafletjs.com">Leaflet</a>');   // the credit, without the flag
   L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
   }).addTo(map);
