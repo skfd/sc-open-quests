@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" font-family="Segoe UI, Roboto, Helvetica, Arial, sans-serif">
+  <!-- MOCKUP: numbers and the outline are invented. 1200x630 is the og:image size every network accepts. -->
+  <rect width="1200" height="630" fill="#ffffff"/>
+  <!-- brand band: StreetComplete indigo, reads on light and dark feeds -->
+  <rect width="1200" height="64" fill="#4141ba"/>
+  <text x="48" y="42" fill="#ffffff" font-size="26" font-weight="600">Open StreetComplete quests</text>
+  <text x="1152" y="42" fill="#d6d6ff" font-size="24" text-anchor="end">as of 8 Nov 2026</text>
+
+  <!-- left: the place and the one number -->
+  <text x="48" y="140" fill="#111111" font-size="64" font-weight="700">Agincourt North</text>
+  <text x="48" y="186" fill="#4f5250" font-size="30">Toronto, Ontario</text>
+
+  <text x="48" y="318" fill="#4141ba" font-size="120" font-weight="800">1,284</text>
+  <text x="48" y="362" fill="#4f5250" font-size="30">quests waiting for a local</text>
+
+  <!-- change chip -->
+  <rect x="48" y="388" width="392" height="52" rx="26" fill="#e3f3ec"/>
+  <text x="72" y="424" fill="#008351" font-size="28" font-weight="600">▼ 312 in 30 days (−20%)</text>
+
+  <!-- sparkline: 90 days, needs mapping (indigo) stacked under needs resurvey (orange) -->
+  <g transform="translate(48,470)">
+    <path d="M0,18 L60,20 L120,19 L180,24 L240,22 L300,26 L360,30 L420,31 L480,36 L540,38 L600,42 L600,96 L0,96 Z" fill="#4141ba" opacity="0.85"/>
+    <path d="M0,4 L60,6 L120,6 L180,10 L240,9 L300,12 L360,16 L420,17 L480,22 L540,24 L600,28 L600,42 L540,38 L480,36 L420,31 L360,30 L300,26 L240,22 L180,24 L120,19 L60,20 L0,18 Z" fill="#d14000" opacity="0.85"/>
+    <text x="0" y="124" fill="#8e9291" font-size="20">Aug</text>
+    <text x="600" y="124" fill="#8e9291" font-size="20" text-anchor="end">Nov</text>
+    <rect x="200" y="108" width="14" height="14" fill="#4141ba"/><text x="220" y="121" fill="#4f5250" font-size="20">to map</text>
+    <rect x="310" y="108" width="14" height="14" fill="#d14000"/><text x="330" y="121" fill="#4f5250" font-size="20">to resurvey</text>
+  </g>
+
+  <!-- right: the neighbourhood's own outline, with where the quests are -->
+  <g transform="translate(720,96)">
+    <rect width="432" height="330" rx="16" fill="#f2f2f4"/>
+    <path d="M70,60 L250,40 L380,70 L360,180 L390,280 L210,300 L90,270 L50,160 Z" fill="#ffffff" stroke="#4141ba" stroke-width="4"/>
+    <g fill="#4141ba">
+      <circle cx="120" cy="110" r="9" opacity="0.9"/><circle cx="150" cy="130" r="12" opacity="0.9"/><circle cx="140" cy="170" r="7" opacity="0.6"/>
+      <circle cx="200" cy="90" r="6" opacity="0.5"/><circle cx="260" cy="120" r="10" opacity="0.8"/><circle cx="300" cy="150" r="14" opacity="0.95"/>
+      <circle cx="320" cy="200" r="8" opacity="0.6"/><circle cx="250" cy="230" r="11" opacity="0.85"/><circle cx="180" cy="240" r="6" opacity="0.5"/>
+      <circle cx="110" cy="220" r="8" opacity="0.6"/><circle cx="220" cy="170" r="5" opacity="0.4"/><circle cx="340" cy="250" r="6" opacity="0.5"/>
+    </g>
+    <text x="216" y="322" fill="#8e9291" font-size="18" text-anchor="middle">where they are</text>
+  </g>
+
+  <!-- right, below: the three biggest quest types -->
+  <g transform="translate(720,452)" font-size="26" fill="#111111">
+    <circle cx="18" cy="18" r="18" fill="#4141ba"/><text x="50" y="27">Building levels</text><text x="432" y="27" text-anchor="end" font-weight="700">410</text>
+    <circle cx="18" cy="64" r="18" fill="#4141ba"/><text x="50" y="73">Road surface</text><text x="432" y="73" text-anchor="end" font-weight="700">186</text>
+    <circle cx="18" cy="110" r="18" fill="#d14000"/><text x="50" y="119">Opening hours (recheck)</text><text x="432" y="119" text-anchor="end" font-weight="700">95</text>
+  </g>
+
+  <text x="1152" y="616" fill="#8e9291" font-size="18" text-anchor="end">skfd.github.io/sc-open-quests · data © OpenStreetMap contributors</text>
+</svg>

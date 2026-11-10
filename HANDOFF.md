@@ -762,3 +762,29 @@ What the data gives it today, and what it lacks:
 Open, for the owner when it comes up: the platform (a native Android or iOS widget, or just a small JSON
 or image address that generic widget apps such as KWGT or Scriptable can show, which needs no app of
 ours); and which view comes first (city total, one quest, or a neighbourhood).
+
+## Idea: share previews for links (owner, 2026-11-10)
+
+Not planned and nothing built. The site has only a `<title>` and a `description`; no `og:`/`twitter:`
+tags and no image, so a shared link shows a bare title. The owner pictures people posting their
+neighbourhood's link. A design, ignoring how it gets built, with a mockup in `design/og-card-mockup.svg`
+(and `.png`; numbers invented):
+
+- **One card per place, 1200x630**: the place's name and its city; one big number (open quests); a
+  change chip for 30 days, green when it falls; a 90-day stacked sparkline, to map (indigo) under to
+  resurvey (orange), so aging is not read as neglect; the place's own outline with dots where the quests
+  are (locals know their shape); the three biggest quest types; "as of <date>" in the band, because
+  networks cache a preview for days.
+- **The words do half the work**: og:title "1,284 open StreetComplete quests in Agincourt North,
+  Toronto"; description with the change and the top three types; og:image:alt says the same.
+- **Tone follows the trend**: falling, a cheer; rising mostly by aging, "+120, mostly resurveys coming
+  due"; under a few dozen, "almost done: 14 left". Invite, never shame.
+- **Other views** get a variant of the same frame: one quest in a place (its icon big), compare (top
+  five places by quests per km²), the map (the outline, larger).
+- **Survives a thumbnail**: name and number sit in the left half, so a square crop (WhatsApp, Slack)
+  keeps them; SC's indigo band reads on light and dark feeds.
+
+Open, for the owner: the card's language (French for Quebec, German for the city-states?); whether the
+link shows the number when shared or the current one; a share button with prewritten text.
+Constraint for whoever builds it: crawlers fetch the page without running `app.js`, so each place needs
+its own static page or a Worker that rewrites the head; the state is in the query, which crawlers see.
