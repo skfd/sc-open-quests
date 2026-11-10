@@ -18,7 +18,7 @@ speed **1 L**.
 | what | measured |
 |---|---|
 | counting | 2.25 s per million nodes with two engines at once (Czechia, 97.5M nodes, 219 s); 5.4 before the speed-up |
-| the planet | 10-11 billion nodes (estimated), so about 6.5 L-hours; about 16 before the speed-up |
+| the planet | 10.99 billion live nodes (counted 2026-11-10 from a node store of the whole planet; the estimate had been 10-11), so about 6.5 L-hours; about 16 before the speed-up |
 | limit | CPU, with two engines. One uses 13 of 24 threads, two 18.6 (82% of the machine), three 20.6 (90%), and the third gains 4% |
 | memory | peak heap in an area, with room to spare: 7.8M 5 GB, 11.8M 7 GB, 21M 14 GB, 31M 20 GB; each engine needs its own. The old engine at 97.5M failed at 41 GB; the new one is untested there |
 | work units | independent files, no shared state, about 1 GB each at 130M nodes |

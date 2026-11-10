@@ -495,12 +495,20 @@ new cities appear by themselves.
    europe-west, 140 to 360 come due a day. No engine change; `.scratch/due/` (3 GB of dumps, can be deleted).
    So every flip of the measured day is explained by one of three parts. **Next: step 5, the store and one
    planet day's cost.** Nothing built towards it. The table of due dates itself is not built either.
-18. **The stream, step 5 started (2026-11-10, 02:25; the owner: "continue building"):** the store and one
-   planet day's cost. `.scratch/store/` (gitignored): `store.py` builds a node location store for the planet
-   (pyosmium `dense_file_array`, **`planet.loc`, 107 GiB on C:**, 8 bytes a node id) from the history file in
-   one node pass, and keeps the last version before 11-08 of every element the day's minute files touch;
-   `day.py` replays 11-08's 1,415 minute files through tier 1 for the whole world on that store. A pilot on
-   the Europe history cut passed (store read back equal). **Running detached since 02:25:**
-   `.scratch/store/planet.sh`, log `logs/store-planet.log`; expected under an hour, no engine in it. To go
-   on after a stop: run it again (it starts over; delete `planet.loc` first). **`planet.loc` must be deleted
-   before the planet job of 2026-12-07**, which needs about 170 GB free; nothing else reads it.
+18. **The stream, step 5 done (2026-11-10, 03:50; the owner: "continue building"):** DESIGN.md, "The stream,
+   step 5". A node location store for the whole planet was built (pyosmium `dense_file_array`, 107 GiB, 35
+   minutes from the history file, checked against the 11-08 and 11-09 Europe clips on 2.5M nodes each), and
+   11-08's 1,415 minute files went through tier 1 for the world on it: **about seven minutes on one thread
+   and twenty seconds of engine for a planet day; 350,162 events (240,991 opened, 109,171 closed)**;
+   europe-west gives exactly step 1's 660 events; 98.2% of the world's 7,228 StreetComplete tier-1
+   changesets show their quest closing. The planet has 10,992,811,706 live nodes (HARDWARE.md). The state
+   is sized from real dumps, not built: 6.2 bytes a match, about 12 GB for the world. The two lookups tier 2
+   needs are estimates only (about 300 GB with the node store, an Overpass instance's size).
+   Engine: opt-in `-Dopenquests.areaPass=false` (README); the test suite passes with it.
+   `.scratch/store/` holds the scripts, logs, `RESULT.txt` and `events-world.tsv` (600 MB; can be deleted).
+   **`planet.loc` is deleted**; `bash .scratch/store/planet.sh` rebuilds it in 40 minutes (107 GiB on C:,
+   and the planet job of 2026-12-07 needs about 170 GB free, so delete it again).
+   **Next is the owner's:** both ways forward wait for the first count of the whole world (it seeds the
+   stream's state and is its oracle), and that waits for item 15's list, item 1 first (no giant boxes; a
+   cell must also not span every longitude, found here). Open strategic question: tier 2's store, built
+   here or an Overpass instance.
