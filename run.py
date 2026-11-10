@@ -641,7 +641,6 @@ def build_history(snapshots: list[dict], city_config: list[dict], disabled: set[
         # totals on every snapshot date, null where the city wasn't counted, for the site's sparklines
         by_date = {s["asOfDate"]: c for s, c in rows}
         trend = [total_open(by_date[d], disabled) if d in by_date else None for d in dates]
-        trend_all = [total_open(by_date[d], set()) if d in by_date else None for d in dates]
         index.append({
             "id": cid,
             "name": series["name"],
@@ -659,7 +658,6 @@ def build_history(snapshots: list[dict], city_config: list[dict], disabled: set[
             "openAll": sum(q.get("open") or 0 for q in last["quests"].values()),
             "questsCounted": len(last["quests"]),
             "trend": trend,
-            "trendAll": trend_all,
         })
     index.sort(key=lambda c: c["name"])
     latest = snapshots[-1] if snapshots else {}

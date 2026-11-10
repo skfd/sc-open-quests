@@ -210,8 +210,7 @@ the file the switch is hidden.
     "agedOnly": 0,      // of `open`
     "openAll": 0,       // default-disabled included
     "questsCounted": 0,
-    "trend": [0],       // `open` on each of `dates`; null where the city wasn't counted
-    "trendAll": [0]     // the same for `openAll`
+    "trend": [0]        // `open` on each of `dates`; null where the city wasn't counted
 } ] }
 ```
 

@@ -77,7 +77,7 @@ class HistoryTest(unittest.TestCase):
         ottawa, toronto = idx["cities"]
         self.assertEqual(ottawa["trend"][0], None)   # not in the first snapshot
         self.assertEqual(toronto["trend"][-1], toronto["open"])
-        self.assertEqual(toronto["trendAll"][-1], toronto["openAll"])
+        self.assertNotIn("trendAll", toronto)       # nothing on the page read it
         self.assertEqual(toronto["trend"][1], 9 + 6 + 4)   # AddC counted that day only
 
     def test_rerun_changes_nothing(self):
