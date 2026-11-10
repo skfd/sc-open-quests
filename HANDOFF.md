@@ -707,7 +707,14 @@ new cities appear by themselves.
        `sc-open-quests-archive` (2,161 files, checked equal), replaced versions kept under
        `replaced/<date>/`; the daily and planet runs do it last (`[backup]` lines in
        `logs/scheduler.log`; "archive backup FAILED" doesn't stop a run). Watch its first scheduled
-       run on 11-11. **The owner's call:** `data/grid/` (316 MB) and `data/notes/` (255 MB) are
+       run on 11-11.
+     - **Unverified until the 12:15 run of 11-11:** the new page has only been served locally (a hand
+       sync to the live bucket was refused to Claude as a production deploy). After that run: the
+       `=== cloud ===` step says "copied 16" or so; `python .scratch/spike/check.py
+       https://street-complete-statistics.comentality.com` shows no errors and no external host but
+       `gc.zgo.at` and the tile host; and `curl -sI
+       https://skfd.github.io/sc-open-quests/vendor/uplot-1.6.31/uPlot.iife.min.js` is 200 (before
+       the flip turns Pages into a redirect). flip.sh's own `--check` then covers all 4,849 files. **The owner's call:** `data/grid/` (316 MB) and `data/notes/` (255 MB) are
        also only on this disk and not in the backup.
      - `assets-switch` has main merged in (77fdbd8a, 131 tests pass) plus a year's cache for
        `/vendor/*` in `docs/_headers`, so going live after the flip is still a clean merge.
