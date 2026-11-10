@@ -584,8 +584,9 @@ new cities appear by themselves.
      Compare, Places and Map load with no errors (15-16 requests each). If traffic nears the cap: Workers
      Paid, or the page and icons as static assets (the owner's call). `flip.sh` was tested dry on a
      synthetic log (passes; refuses a failed or missing cloud step) and syncs once more before its check.
-   - **Cost review (2026-11-10, evening; nothing built, the owner decides):** the bill is $0 and can't
-     grow as built: Workers Free never bills, egress is free, and the Worker is the only reader of R2,
+   - **Cost review (2026-11-10, 13:00; nothing built, the owner decides):** the bill is $0 and can't
+     grow as built: Workers Free (the plan as recorded above, not read from the API) never bills,
+     egress is free, and the Worker is the only reader of R2,
      so its 100,000 requests a day hold R2 reads to 3M a month against 10M free. The one limit is that
      daily cap (resets 00:00 UTC; past it readers get error 1027; Workers Paid is $5 a month for 10M).
      Measured today from Cloudflare's analytics: 25,255 Worker requests, all ours (one `--check` is
@@ -595,10 +596,15 @@ new cities appear by themselves.
      14 days); the zone's Web Analytics will show it after the flip.
      Levers, in order: (1) page, icons and img as Workers static assets (193 files, 0.7 MB; asset
      requests are free and unlimited, 20,000 files and 25 MiB each on Free), taking a first city view
-     from 71 Worker requests to about 15; it needs `wrangler deploy` whenever `app.js` or icons change.
-     All of `docs/` as assets fits today (4,836 files) and would need no Worker or R2, but places grow
-     towards the 20,000 cap. (2) `app.js` fetches every data file with `cache: "no-cache"`, so
-     `max-age=300` never applies and each one revalidates through the Worker on every view. Not levers:
+     from 71 Worker requests to about 15; it is a second publish path (`wrangler deploy` whenever
+     `app.js` or icons change, or page and data drift apart), so an icon sprite kept in R2 is the
+     one-path alternative (about 19 a view, needs `app.js` changes). All of `docs/` as assets fits
+     today (4,836 files; places has held at 4,202 since 10-31 and grows only as places are added)
+     and would need no Worker or R2, with a 20,000-file cap. Any Worker change waits for the flip,
+     which was tested against this Worker. (2) `app.js` fetches every data file with
+     `cache: "no-cache"` (there since the first site, 7e6516f6), so `max-age=300` never applies and
+     each one revalidates through the Worker; dropping it saves only fetches repeated within five
+     minutes. Not levers:
      storage, R2 operations, compression, and edge caching (a Worker runs before the cache; Workers
      Cache hits still count as requests). Dated snapshots aren't safe as `immutable`: a rerun rewrote
      2026-11-02.
