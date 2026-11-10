@@ -837,3 +837,6 @@ how many places move.
   page's text tags on the same day so title and picture never disagree (both say "as of 1 Nov").
   **Readable addresses** (`/toronto/agincourt-north/`, slug frozen). The file budget against the archive
   was explained; packing the archive per region and month (16 files a month, not a day) would let both fit.
+- **Next session (the owner, 2026-11-10):** neighbourhood statistics. Settle there how the archive is
+  published (bundled per region and month or otherwise), since neighbourhood series, the neighbourhood
+  cards' trend line and the widget all read it; then the share previews follow.
