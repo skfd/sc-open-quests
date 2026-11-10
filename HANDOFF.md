@@ -516,3 +516,13 @@ new cities appear by themselves.
    stream's state and is its oracle), and that waits for item 15's list, item 1 first (no giant boxes; a
    cell must also not span every longitude, found here). Open strategic question: tier 2's store, built
    here or an Overpass instance.
+19. **The whole planet, made ready (2026-11-10; the owner: "are we ready to do it now?"):** DESIGN.md, "The whole
+   planet, made ready". Not as things stood; now: cells at most 10 degrees a side, the engine refuses a box
+   over 500M raster squares by name, edges kept on the globe, `kd` and `nodegrid` at planet size, the cut in
+   two stages, `count --delete-cut --dump-ids --only` and the daily window. Cutting a box down to its data was
+   tried and dropped: SC's point-in-polygon quirk makes counts follow where the box starts. Rehearsed on
+   Germany re-planned: every city equal to the 11-09 cells, 893 s. **The date is 11-08T00Z**, so the count is
+   checked twice: the stream's 316,806 touched elements (`--dump-ids`) and Europe's 32 snapshots of that instant
+   (`report --archive 2026-11-08`). The chain: `.scratch/planet/chain.sh`, log `logs/planet-count.log`, about
+   30 hours; a rerun goes on where it stopped (the command is in the script). It deletes the planet slice
+   after the cut and each file once counted; nothing of it may be on C: by the planet job of 2026-12-07.

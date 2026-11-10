@@ -62,7 +62,7 @@ inline fun matchVariants(usesAge: Boolean, test: () -> Boolean): Int {
     if (m2) r = r or M_2 or (if (past) 0 else M_AGED_2)
     return r
 }
-private val TYPE_NAMES = listOf("node", "way", "relation")
+internal val TYPE_NAMES = listOf("node", "way", "relation")
 
 /** Ways that count towards the `highwayKm` denominator: the road network a car or bike quest
  *  could be about. Area highways (`area=yes`) are left out. */
@@ -189,6 +189,15 @@ class Engine(val registry: Registry, val cities: List<City>, val parts: List<Par
 
     /** optional: lines "quest type id version timestampMs city lat lon agedOnly" for these quests */
     var dumpQuests: Set<String> = emptySet()
+
+    /** optional: dump only these elements, as sorted keys `id * 4 + type ordinal` (--dump-ids); with no
+     *  --dump-quests, every quest of theirs */
+    var dumpIds: LongArray? = null
+
+    private fun dumps(quest: String, type: Int, id: Long): Boolean {
+        val ids = dumpIds ?: return quest in dumpQuests
+        return (dumpQuests.isEmpty() || quest in dumpQuests) && java.util.Arrays.binarySearch(ids, id * 4 + type) >= 0
+    }
     private val dumpLines = ConcurrentLinkedQueue<String>()
 
     /** optional: every tagged element whose quest position is in this city (index into [cities]), as
@@ -250,7 +259,7 @@ class Engine(val registry: Registry, val cities: List<City>, val parts: List<Par
         if (partIndex[c] != null) countParts(qi, partsAt(c, center))
         grid?.add(qi, center)
         val aged = mask and M_AGED != 0
-        if (quests[qi].name in dumpQuests) {
+        if (dumps(quests[qi].name, type, e.id)) {
             dumpLines += "${quests[qi].name}\t${TYPE_NAMES[type]}\t${e.id}\t${e.version}\t${e.timestampEdited}\t" +
                 "${cities[c].id}\t${center.latitude}\t${center.longitude}\t$aged"
         }
@@ -312,7 +321,7 @@ class Engine(val registry: Registry, val cities: List<City>, val parts: List<Par
                     val hits = (partHits ?: arrayOfNulls<IntArray>(cityIdx.size).also { partHits = it })
                     countParts(qi, hits[k] ?: partsAt(c, center).also { hits[k] = it })
                 }
-                if (mask and M_NOW != 0 && q.name in dumpQuests) {
+                if (mask and M_NOW != 0 && dumps(q.name, type, e.id)) {
                     dumpLines += "${q.name}\t${TYPE_NAMES[type]}\t${e.id}\t${e.version}\t${e.timestampEdited}\t" +
                         "${cities[c].id}\t${center.latitude}\t${center.longitude}\t$aged"
                 }

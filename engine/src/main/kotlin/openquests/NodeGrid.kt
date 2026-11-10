@@ -17,12 +17,12 @@ fun nodeGrid(args: List<String>) {
     val out = File(m["out"] ?: error("nodegrid: --out is required"))
     val step = m["step"]?.toDouble() ?: 0.05
     val t0 = System.nanoTime()
-    val file = readPbf(pbf)
     val counts = ConcurrentHashMap<Long, AtomicLong>()
     val total = AtomicLong()
-    file.dataBlobs.parallelStream().forEach { blob ->
+    // streamed, not read whole: a planet file does not fit in memory
+    streamPbfBlobs(pbf, Runtime.getRuntime().availableProcessors()) { blob ->
         val b = decodeBlock(blob)
-        if (b.kind() != BlockKind.NODES) return@forEach
+        if (b.kind() != BlockKind.NODES) return@streamPbfBlobs
         val ctx = BlockContext(b)
         val local = HashMap<Long, Long>()
         fun add(lat7: Int, lon7: Int) {

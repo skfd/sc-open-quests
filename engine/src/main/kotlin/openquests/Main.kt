@@ -19,7 +19,7 @@ import kotlin.time.Instant
 
 private const val USAGE = """usage: sc-open-quests-engine count --pbf <file.osm.pbf> --quests <data/quests/vX.json>
            --cities <config/cities.json> --out <docs/data> [--source-meta <meta.json>]
-           [--today <ISO instant or date>] [--dump-matches <file.tsv> --dump-quests <Name,Name>]
+           [--today <ISO instant or date>] [--dump-matches <file.tsv> --dump-quests <Name,Name> --dump-ids <file>]
            [--dump-elements <file.jsonl> --dump-city <cityId>] [--area-unit tiles|city]
            [--notes <clip.jsonl>] [--grid <dir>] [--resurvey-multiplier 0.5|1|2] [--parts <dir>]
 
@@ -34,6 +34,7 @@ the app's smallest download.
 hide the quests at their positions, and the note quest is counted. Without it, neither.
 Age quests are also counted at the app's other resurvey settings (0.5 and 2: open05/aged05, open2/aged2 in
 the snapshot); --resurvey-multiplier sets the default the run counts at instead of 1 (checks only).
+--dump-ids: lines "type<TAB>id"; the dump holds only those elements' matches (every quest's, unless --dump-quests).
 --grid writes <dir>/<asOfDate>.json.gz: counted quests per z14 tile, for heatmaps.
 --parts: the parts registries (config/parts); a city with <dir>/<cityId>.json gets the open quests of
 each of its parts in the snapshot, counted from the city's own quests by position. Nothing else changes."""
@@ -47,6 +48,7 @@ class CountOptions(
     val today: Instant? = null,
     val dumpMatches: File? = null,
     val dumpQuests: Set<String> = emptySet(),
+    val dumpIds: File? = null,
     val dumpElements: File? = null,
     val dumpCity: String? = null,
     val areaUnit: AreaUnit = AreaUnit.CITY,
@@ -83,7 +85,7 @@ fun parseArgs(args: List<String>): CountOptions {
         m[k.removePrefix("--")] = args[i + 1]
         i += 2
     }
-    val known = setOf("pbf", "quests", "cities", "out", "source-meta", "today", "dump-matches", "dump-quests", "dump-elements", "dump-city", "area-unit", "notes", "grid", "resurvey-multiplier", "parts")
+    val known = setOf("pbf", "quests", "cities", "out", "source-meta", "today", "dump-matches", "dump-quests", "dump-ids", "dump-elements", "dump-city", "area-unit", "notes", "grid", "resurvey-multiplier", "parts")
     require(m.keys.all { it in known }) { "unknown option(s) ${m.keys - known}\n$USAGE" }
     fun req(k: String) = File(m[k] ?: throw IllegalArgumentException("--$k is required\n$USAGE"))
     return CountOptions(
@@ -95,6 +97,7 @@ fun parseArgs(args: List<String>): CountOptions {
         today = m["today"]?.let(::parseToday),
         dumpMatches = m["dump-matches"]?.let(::File),
         dumpQuests = m["dump-quests"]?.split(',')?.map { it.trim() }?.filter { it.isNotEmpty() }?.toSet().orEmpty(),
+        dumpIds = m["dump-ids"]?.let(::File),
         dumpElements = m["dump-elements"]?.let(::File),
         dumpCity = m["dump-city"],
         areaUnit = m["area-unit"]?.let { AreaUnit.valueOf(it.uppercase()) } ?: AreaUnit.CITY,
@@ -134,6 +137,7 @@ fun count(opts: CountOptions): CountResult {
     val engine = Engine(registry, cities, parts)
     if (opts.grid != null) engine.grid = TileGrid()
     engine.dumpQuests = opts.dumpQuests
+    opts.dumpIds?.let { engine.dumpIds = readDumpIds(it) }
     engine.areaUnit = opts.areaUnit
     opts.dumpCity?.let { id ->
         engine.dumpElementsCity = cities.indexOfFirst { it.id == id }.also { require(it >= 0) { "--dump-city: no city $id" } }
@@ -248,4 +252,19 @@ private fun logStats(engine: Engine, passSeconds: Double, runSeconds: Double) {
     val peakHeap = ManagementFactory.getMemoryPoolMXBeans()
         .filter { it.type == MemoryType.HEAP }.sumOf { it.peakUsage.used }
     log("pass %.1f s, total %.1f s; peak heap (sum of pool peaks) %d MB".format(passSeconds, runSeconds, peakHeap shr 20))
+}
+
+/** --dump-ids: lines "type<TAB>id" (node, way, relation; a header line or blank lines are skipped), as the
+ *  sorted keys of Engine.dumpIds */
+fun readDumpIds(f: File): LongArray {
+    val keys = ArrayList<Long>()
+    f.forEachLine { line ->
+        val t = line.split('\t')
+        if (t.size < 2) return@forEachLine
+        val type = TYPE_NAMES.indexOf(t[0])
+        val id = t[1].toLongOrNull()
+        if (type < 0 || id == null) return@forEachLine
+        keys += id * 4 + type
+    }
+    return keys.toLongArray().also { it.sort() }
 }

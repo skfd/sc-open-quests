@@ -272,6 +272,14 @@ download:
 - `-Dopenquests.areaPass=false` skips the area pass, so the 40 area quests are not counted: for a file of
   single elements under a world-sized "city" (DESIGN.md, "The stream, step 5"), where a map data of that
   box would not fit. Snapshots never set it.
+- **A city's box is refused over 500M raster squares** (`MAX_RASTER_SLOTS`, `-Dopenquests.maxRasterSlots`
+  for tests): SC's `LatLonRaster(mapData.boundingBox, 0.0005)` in AddHousenumber and AddIsAmenityIndoor
+  would allocate 4 bytes a square. The box cannot be cut down to the data instead: SC's point-in-polygon
+  test counts some outside points as inside, so counts follow where the raster starts (DESIGN.md, "The
+  whole planet, made ready"). Boxes stay on the globe; the ring's width is taken at 85 degrees at most.
+- `--dump-ids <file>` (lines `type<TAB>id`) limits `--dump-matches` to those elements, every quest of
+  theirs unless `--dump-quests` is given: the world count's check against the stream.
+- `nodegrid` streams the file (`streamPbfBlobs`), so it reads a planet; `count` still holds its whole file.
 - `--area-unit tiles` runs each z16 tile alone instead (`DOWNLOAD_TILE_ZOOM`, about 600 x 440 m here;
   SC's own `TilesRect` math), the app's smallest download; results count if inside the tile.
 

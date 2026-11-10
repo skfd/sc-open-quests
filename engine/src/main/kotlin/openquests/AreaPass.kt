@@ -33,6 +33,16 @@ val AREA_PADDING_M: Double = System.getProperty("openquests.areaPaddingM")?.toDo
  *  of that box would not fit (DESIGN.md, "The stream, step 5"). Snapshots never set it. */
 val AREA_PASS: Boolean = System.getProperty("openquests.areaPass")?.toBoolean() ?: true
 
+/** SC's `LatLonRaster(mapData.boundingBox, 0.0005)` (AddHousenumber, AddIsAmenityIndoor and their twins)
+ *  allocates a slot per 0.0005 degree square of the box, 4 bytes each: 500M slots is 2 GB a raster. A city
+ *  whose map data needs more is refused by name instead of dying in a full collection (DESIGN.md, "Where a
+ *  cell run's time goes"). `-Dopenquests.maxRasterSlots` sets another limit, for tests. */
+val MAX_RASTER_SLOTS: Long = System.getProperty("openquests.maxRasterSlots")?.toLong() ?: 500_000_000L
+
+fun rasterSlots(box: BoundingBox): Long =
+    kotlin.math.ceil((box.max.latitude - box.min.latitude) / 0.0005).toLong() *
+        kotlin.math.ceil((box.max.longitude - box.min.longitude) / 0.0005).toLong()
+
 /** `-Dopenquests.verifyFast=true`: run every port that has a [FAST_TWINS] entry next to its twin and
  *  fail on any difference (slow on whole cities: the ports' quadratic parts run too). */
 val VERIFY_FAST = System.getProperty("openquests.verifyFast") == "true"
@@ -111,9 +121,11 @@ class AreaPass(
         for (c in cities) {
             val p = c.polygon
             val dLat = AREA_PADDING_M / 111_320.0
-            val dLon = AREA_PADDING_M / (111_320.0 * cos(Math.toRadians(maxOf(kotlin.math.abs(p.minLat), kotlin.math.abs(p.maxLat)))))
-            south[c.index] = ((p.minLat - dLat) * 1e7).toInt(); north[c.index] = ((p.maxLat + dLat) * 1e7).toInt()
-            west[c.index] = ((p.minLon - dLon) * 1e7).toInt(); east[c.index] = ((p.maxLon + dLon) * 1e7).toInt()
+            // a world cell may reach a pole or the antimeridian: the ring's width is taken at 85 degrees at
+            // most, and the box stays on the globe (in 1e-7 degrees, 180 already fills most of an Int)
+            val dLon = AREA_PADDING_M / (111_320.0 * cos(Math.toRadians(minOf(85.0, maxOf(kotlin.math.abs(p.minLat), kotlin.math.abs(p.maxLat))))))
+            south[c.index] = (maxOf(-90.0, p.minLat - dLat) * 1e7).toInt(); north[c.index] = (minOf(90.0, p.maxLat + dLat) * 1e7).toInt()
+            west[c.index] = (maxOf(-180.0, p.minLon - dLon) * 1e7).toInt(); east[c.index] = (minOf(180.0, p.maxLon + dLon) * 1e7).toInt()
         }
     }
 
@@ -470,8 +482,18 @@ class AreaPass(
     // per city
 
     private fun buildMapData(city: Int): MapDataWithGeometry {
+        // the raster's squares start at the box's corner, and SC's point-in-polygon test counts some points
+        // outside a polygon (on a vertex's latitude) as inside, so which squares a query reads moves counts:
+        // the box cannot be cut down to the data without changing them (DESIGN.md, "The whole planet, made
+        // ready"). Too large a box is refused instead.
+        val box = bbox(city)
+        val slots = rasterSlots(box)
+        require(slots <= MAX_RASTER_SLOTS) {
+            "area: ${cities[city].id}'s box spans %.2f by %.2f degrees, a LatLonRaster of %,d slots (at most %,d): cut it smaller".format(
+                box.max.latitude - box.min.latitude, box.max.longitude - box.min.longitude, slots, MAX_RASTER_SLOTS)
+        }
         val inCity = citySets.membersOf(city)
-        return assemble(bbox(city), ways.filter { inCity[it.cities] },
+        return assemble(box, ways.filter { inCity[it.cities] },
             nodes.filter { inCity[it.cities] && it.tags.isNotEmpty() }, relations.filter { inCity[it.cities] },
             parallel = true)
     }

@@ -117,3 +117,30 @@ class SortedLongMap(blocks: List<Pair<LongArray, LongArray>>) {
         return if (i >= 0) values[i] else NO_COORD
     }
 }
+
+/** Every data blob of [path] handed to [f] as it is read, [threads] at once, with at most [ahead] read
+ *  but not yet handled: memory stays bounded whatever the file's size (a planet). No hash. */
+fun streamPbfBlobs(path: String, threads: Int, ahead: Int = threads * 4, f: (ByteArray) -> Unit) {
+    val pool = java.util.concurrent.Executors.newFixedThreadPool(threads)
+    val room = java.util.concurrent.Semaphore(ahead)
+    val failure = java.util.concurrent.atomic.AtomicReference<Throwable>()
+    try {
+        DataInputStream(BufferedInputStream(FileInputStream(path), 1 shl 22)).use { inp ->
+            while (failure.get() == null) {
+                val headerLen = try { inp.readInt() } catch (_: EOFException) { break }
+                val hb = ByteArray(headerLen).also { inp.readFully(it) }
+                val blobHeader = Fileformat.BlobHeader.parseFrom(hb)
+                val data = ByteArray(blobHeader.datasize).also { inp.readFully(it) }
+                if (blobHeader.type != "OSMData") continue
+                room.acquire()
+                pool.execute {
+                    try { f(data) } catch (t: Throwable) { failure.compareAndSet(null, t) } finally { room.release() }
+                }
+            }
+        }
+    } finally {
+        pool.shutdown()
+        pool.awaitTermination(1, java.util.concurrent.TimeUnit.DAYS)
+    }
+    failure.get()?.let { throw it }
+}
