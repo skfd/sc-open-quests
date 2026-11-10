@@ -2051,3 +2051,46 @@ each with its minute and changeset. Tier 1 only, the 153 quests decided from the
 **Next:** tier 2 (step 4) before due dates (step 3): the neighbourhood test decides whether this route beats
 the others, and it is where the store is decided; due dates are low risk. What this cost at world scale is
 still unmeasured: exact is not yet efficient. One more day or region of this replay costs about 10 minutes if wanted.
+
+## Where a cell run's time goes: read off Germany's logs (2026-11-10)
+
+The owner asked what would make the recount by cells faster. Nothing run, nothing built: the four engine logs
+of the Germany prototype (`.scratch/world-de/files/f*/log.txt`, two engines at once, 30 GB heap each).
+
+| phase | engine-seconds, four files | share |
+|---|---|---|
+| main pass over the file (nodes 68 s, ways 219 s) | about 300 | 17% |
+| the area pass reading the file again (ways 159 s, nodes 66 s) | 225 | 13% |
+| map data built per cell | 331 | 19% |
+| the cells' quest runs | 909 | 51% |
+| all four passes | 1,780 (1,007 s of wall clock) | |
+
+Beside the pass: the notes dump of the file's box, 21 s a file.
+
+- **Cells run one after another**, and a cell lasts as long as its map data plus its longest single run, as a
+  city does. In f0 the three slowest runs of a cell are 20-50 s each, in a cell of 28-62 s.
+- **AddChargingStationSocket is among the three slowest in 8 of f0's 9 cells** (11-41 s), CheckExistence in 6.
+  Both still scan every element: `mapData.filter(filter)` is SC's own, and `mapData.filter { isApplicableTo(it) }`
+  is the hand-ported scan that candidates by key left alone. London's profile called the first "a plain scan,
+  nothing to fix"; in a cell of 15M nodes the plain scan is the tail.
+- **The rate did not move.** 2.3 s per million nodes here, 2.25 on Czechia on 11-07, before the kerb, level,
+  AddHousenumber, AddMaxHeight and candidates-by-key work. Germany is denser and carried 40,520 places as parts,
+  so the two are not like for like, but nothing shows what those gains are worth in a cell run.
+- **Not in the logs:** CPU by quest (the log has wall time of the three slowest runs only), idle threads, and
+  the cost of 9-13k parts a file (790 parts cost Ontario 4%).
+
+**Proposed, none built, in order:**
+1. **One traced file** (`-Dopenquests.taskTrace`, f0, about 8 minutes alone), and the same file with no parts.
+   CPU by quest and the parts' cost decide the rest.
+2. **Candidates by key for the scans left out:** AddChargingStationSocket's two `mapData.filter`, CheckExistence
+   and the other hand-ported `isApplicableTo` scans. Exact by the same argument as on 11-08.
+3. **Notes clipped to the cells' squares:** 21 s a file, 4%.
+4. **One read, not two.** Cells tile the whole file, so the area pass's map data already holds every element
+   the main pass decodes: up to the 13% of the second read. Larger change; a city run reads far more than it counts and keeps
+   two reads.
+5. **Owner's call:** world places at resurvey x1 only (the age quests run four times: now, 0.5, 2 and 1900).
+6. **Past the engine:** recount only the z14 tiles a day's diff or a due date touches, results kept per tile.
+   The reads stay (30%), so it caps near 3 times unless the files are indexed.
+
+The count is about 6.5 hours of a chain whose cut is 6 and whose daily upkeep is unmeasured, so engine work
+beyond 1-3 should wait for the continent stage.

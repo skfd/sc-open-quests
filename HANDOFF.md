@@ -465,3 +465,7 @@ new cities appear by themselves.
    change: versions as a synthetic PBF through `count --dump-matches`. `.scratch/stream-replay/` holds it.
    **Next: tier 2 (plan step 4)**, the neighbourhood test and the store, before due dates (step 3). Not
    started. World-scale cost is unmeasured.
+15. **Faster cells, asked 2026-11-10 (00:40):** read off Germany's logs, nothing run (DESIGN.md, "Where a cell
+   run's time goes"). Runs 51%, map data 19%, two reads of the file 30%; AddChargingStationSocket and CheckExistence
+   still scan every element and top most cells. **Next, when the owner says:** one traced Germany file and the
+   same without parts (`.scratch/world-de/` is needed for it: keep it), then candidates by key for those scans.
