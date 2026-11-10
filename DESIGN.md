@@ -2109,12 +2109,15 @@ two full counts of `.scratch/diff-flips/`. `.scratch/tier2/patch.py` (gitignored
   bounding box; for a way that is not in the diff but holds a changed node (a moved node does not re-version
   its ways; found by reading every way of both clips), the segments next to that node and the way's own
   quest position; a changed multipolygon's bounding box. Changed `route`, `public_transport` and
-  `restriction` relations (165) were left out: no area quest reads them.
+  `restriction` relations (165) were left out. Ferry routes would have been covered; the summit quests
+  read hiking routes and have no match in these cities; the other quests were not checked one by one.
 - **Rectangles.** The cells are merged greedily: two rectangles become their bounding box when that box with
   its ring is no larger than the two with theirs. Each rectangle is a "city" for the unchanged engine (its
   parent's country codes and time zone, the same quests file and notes clip), counted on both clips.
 - **Three comparisons**, inside the real city polygons. *Control:* the patch count against the full count of
-  the same day, inside the rectangles; any difference there has nothing to do with the diff. *Splice:* the
+  the same day, inside the rectangles; any difference there has nothing to do with the diff. (The city
+  test is even-odd over the boundary's rings; it puts all 178,000 patch matches the full counts also have
+  inside their city.) *Splice:* the
   old state with the rectangles' matches replaced by the new day's patch count. *Delta:* the patch counts'
   own flips (new less old) applied to the old state.
 
@@ -2129,12 +2132,12 @@ two full counts of `.scratch/diff-flips/`. `.scratch/tier2/patch.py` (gitignored
 The whole of London is 14.8M nodes and 26.7 s of area runs. "Exact" leaves out the aged flips, as planned.
 - **All 350 flips an edit caused lie inside a rectangle, and the delta reproduces them at every ring:** 316
   opened, 34 closed. The other 8 of the 358 measured tier-2 flips are CheckExistence opening by ageing, on
-  untouched ground: step 3's.
+  untouched ground: step 3's. (At 1 km one of the 8 falls inside a rectangle and the delta has it too.)
 - **The patches are 1.1% of the tier-2 state** (14,775 of 1,387,420 matches at 100 m) and 12 km2 of London's
   1,595. Two changed ways are three quarters of London's 2,805 touched cells: a `landuse=residential` outline
   (way 23298277, 1,249 cells) and Harrow Lodge Park (way 23051299, 894), each covered by its whole box.
 - **The two control differences**, the same on both days, so the delta cancels them and the splice does not:
-  at 100 m the patches lack AddMaxHeight on way 437671407 in Lisbon, which the 300 m ring finds (not traced;
+  at 100 m the patches lack AddMaxHeight on way 437671407 in Lisbon, which the 300 m run finds (not traced;
   a bridge further than 100 m from the rectangle is the likely cause). At 1 km a patch gives AddHousenumber
   for way 1176630809 in London where the whole city does not (not traced; AddHousenumber depends on the order
   of the map data, engine/README.md). So a local count is not always the whole-city count, at any ring.
