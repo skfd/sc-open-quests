@@ -449,3 +449,11 @@ new cities appear by themselves.
    files gains under 2 times (the scans are 48 s of an 85 s pass), so the gain needs an indexed store.
    Next is the owner's: the same comparison over the stored week and all four Europe regions, then a prototype.
    `.scratch/diff-flips/` (900 MB) can be deleted once that is decided.
+13. **The stream (2026-11-09, near midnight; the owner: "an efficient way to reach the daily world
+   processing. this is one of strategic ideas. there can be others"):** DESIGN.md, "The stream: probed, and
+   the plan". Minute diffs and the changeset feed are live; no public before/after source, so the state is
+   ours. 153 quests are decided from the element alone: 70% of matches, 72% of flips. **Next: step 1 of that
+   plan**, the replay of 11-08's minute files through those quests for europe-west against the measured day
+   (new engine command "evaluate these elements"; the match dumps in `.scratch/diff-flips/` are its ground
+   truth, keep them). Not started. No engine run 11:50-14:15 or at 15:10. Real-time updates and solved quests
+   from changesets were non-goals above; the owner lifted them for this test.
