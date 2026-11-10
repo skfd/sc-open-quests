@@ -28,6 +28,11 @@ import kotlin.math.cos
  *  tests that count small patches (DESIGN.md, "The stream, tier 2"); snapshots use the default. */
 val AREA_PADDING_M: Double = System.getProperty("openquests.areaPaddingM")?.toDouble() ?: 1000.0
 
+/** `-Dopenquests.areaPass=false` leaves the area quests uncounted: for a file of single elements with a
+ *  world-sized "city", where only the quests decided from the element alone mean anything and a map data
+ *  of that box would not fit (DESIGN.md, "The stream, step 5"). Snapshots never set it. */
+val AREA_PASS: Boolean = System.getProperty("openquests.areaPass")?.toBoolean() ?: true
+
 /** `-Dopenquests.verifyFast=true`: run every port that has a [FAST_TWINS] entry next to its twin and
  *  fail on any difference (slow on whole cities: the ports' quadratic parts run too). */
 val VERIFY_FAST = System.getProperty("openquests.verifyFast") == "true"
@@ -153,6 +158,7 @@ class AreaPass(
 
     fun run() {
         if (areaQuests.isEmpty()) return
+        if (!AREA_PASS) { log("area pass skipped (-Dopenquests.areaPass=false): the ${areaQuests.size} area quests are not counted"); return }
         var t0 = System.nanoTime()
         ways = parallelMap(wayStart, relStart) { collectWays(decodeBlock(blobs[it])) }.flatten()
         wayIds = LongArray(ways.size) { ways[it].id }

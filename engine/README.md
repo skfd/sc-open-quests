@@ -269,6 +269,9 @@ download:
 - `-Dopenquests.taskTrace=<file>` appends a line per area task (city, quest and run, thread, start and end in
   seconds from the city's first task, thread CPU seconds) and changes no count; `tools/task_trace.py`
   reads it. It shows whether a city's area pass waits on one run or on the CPU.
+- `-Dopenquests.areaPass=false` skips the area pass, so the 40 area quests are not counted: for a file of
+  single elements under a world-sized "city" (DESIGN.md, "The stream, step 5"), where a map data of that
+  box would not fit. Snapshots never set it.
 - `--area-unit tiles` runs each z16 tile alone instead (`DOWNLOAD_TILE_ZOOM`, about 600 x 440 m here;
   SC's own `TilesRect` math), the app's smallest download; results count if inside the tile.
 
