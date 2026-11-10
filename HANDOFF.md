@@ -832,3 +832,8 @@ the top level named as SC names countries (the platform's CLDR names, in the bro
 applies a country's rules and takes no position on borders. DESIGN.md, "Countries in the place index:
 StreetComplete's, not ours", has the probe results and the build steps. Next: build it, measuring first
 how many places move.
+- **Owner's answers (2026-11-10, late evening):** per-place images, yes (rendering is local, serving
+  static assets is free); **regenerated monthly**, on the 1st with the monthly history point, and the
+  page's text tags on the same day so title and picture never disagree (both say "as of 1 Nov").
+  **Readable addresses** (`/toronto/agincourt-north/`, slug frozen). The file budget against the archive
+  was explained; packing the archive per region and month (16 files a month, not a day) would let both fit.
