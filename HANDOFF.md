@@ -638,6 +638,52 @@ new cities appear by themselves.
        views), then $0.30 a million; R2 reads past 10M a month $0.36 a million. Together about
        $4.70 per 100,000 first views past the included amounts.
      The owner chooses; nothing live was changed.
+   - **The owner chose static assets (2026-11-10, 14:00). Built on branch `assets-switch` (worktree
+     `../sc-open-quests-assets`, 7325595e), not merged, not live; it goes live after the flip.**
+     It is stricter than the trial: `cloudflare/wrangler.jsonc` has no script at all, so a path
+     that matches no file is an empty 404 and nothing can count against the cap (the trial's R2
+     fallback ran the Worker on every miss). `wrangler.r2.jsonc` is today's Worker, kept as the
+     way back. `tools/cloud_publish.py` syncs R2 first (the guard), then runs `wrangler deploy`;
+     `docs/_headers` keeps icons a day; `index.html` declares an icon. Locally on `wrangler dev`:
+     4,836 files byte-equal, misses 404, icons `max-age=86400`, Toronto loads with no errors;
+     `cloud_publish.py --dry-run` passes; 128 Python tests pass. node is on the system PATH
+     (`C:\Program Files\nodejs`), so the scheduled job finds it.
+     **Do not merge before the flip:** flip.sh runs `cloud_publish.py` itself, so a merge would
+     make the flip deploy the new shape. **To go live, after the flip:** merge `assets-switch` into
+     main, `python tools/cloud_publish.py`, then `python tools/cloud_publish.py --check`; the proof
+     that asset requests are free is the Worker's invocation count staying flat over that check
+     (4,836 requests). Way back: `npx wrangler deploy --config wrangler.r2.jsonc` in `cloudflare/`.
+     Then remove the worktree and point `.claude/launch.json`'s `assets-switch` entry at
+     `cloudflare/wrangler.jsonc`.
+   - **Is the published layout still shaped by GitHub Pages? Audited 2026-11-10 (three read-only
+     agents; figures are theirs, gzip not Brotli, except where marked checked).** No rethink of the
+     shape: precomputed static JSON with no server is what the new host serves free and what
+     survives a spike; anything computed per request brings the cap back. What is open again:
+     - **Decided because of a GitHub limit:** (1) only the newest snapshot per region is published,
+       the other 2,145 (489 MB) sit in `data/archive/`, unpublished and the one copy, not backed
+       up; with them the per-neighbourhood series. Bytes are no longer the limit, files are: +2,145
+       at once and 16 a day against 20,000. (2) The name layer was cut to stay near 100 MB:
+       polygons only, no OSM id, wikidata or population in the record. (3) A site-wide place search
+       index (29 MB) was declined, so search downloads every shard of a country (Russia 14.6 MB,
+       5.3 MB gzip). (4) Publishing is a git commit of `docs/data`: the reason for "about 350 more
+       cities"; it also is the daily record, and the daily run's push is what carries code commits.
+       (5) Place requests need a GitHub account. (6) `cache: "no-cache"` on every data fetch and
+       unversioned `app.js`/`style.css`. Planned for a limit and not needed now: thinning daily
+       points to monthly, sharding `data/history/`.
+     - **Not leftovers, keep:** `compare/<quest>.json`, places sharded by region, byte-stable
+       output, static JSON.
+     - **What a first visit downloads:** 15 same-origin requests, 1.4 MB raw, about 210-230 KB
+       gzip, then up to 180 lazy icons. `cities.json` is 125 KB gzip of that, and 59 KB of it is
+       `trendAll`, which nothing in `app.js` reads (checked: zero references; written at
+       run.py:662); without both trend arrays it is 8.6 KB. A counted city's place or part page
+       fetches its whole region snapshot (Ontario 258 KB gzip; 22 of 53 Ontario cities have no
+       parts and show nothing from it). `places/index.json` is 129 KB gzip to follow one link.
+       Region shards carry bbox columns nothing reads (34.5 to 20 MB gzip over all shards).
+     - **Outside our hosting, hit by a spike too:** uPlot and Leaflet from jsdelivr, goatcounter,
+       and map tiles from tile.openstreetmap.org.
+     - **Pipeline facts:** nothing reads `docs/` back from git history; a failed push skips the
+       cloud publish (run.py:890-892); git commits `docs/data` only while the sync uploads all of
+       `docs/`; main is 11 commits ahead of origin until the next daily run pushes.
    - **Later, after a week:** take the daily data out of git history (the reason for the move);
      README's site link; the token was shown once in a session transcript, so the owner may roll it
      (Cloudflare: My Profile, API Tokens, Roll; then replace the value in the token file).
