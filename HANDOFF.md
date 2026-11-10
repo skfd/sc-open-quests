@@ -501,13 +501,17 @@ new cities appear by themselves.
    11-08's 1,415 minute files went through tier 1 for the world on it: **about seven minutes on one thread
    and twenty seconds of engine for a planet day; 350,162 events (240,991 opened, 109,171 closed)**;
    europe-west gives exactly step 1's 660 events; 98.2% of the world's 7,228 StreetComplete tier-1
-   changesets show their quest closing. The planet has 10,992,811,706 live nodes (HARDWARE.md). The state
+   changesets show their quest closing. The planet has 10,988,329,357 live nodes (HARDWARE.md). The state
    is sized from real dumps, not built: 6.2 bytes a match, about 12 GB for the world. The two lookups tier 2
    needs are estimates only (about 300 GB with the node store, an Overpass instance's size).
    Engine: opt-in `-Dopenquests.areaPass=false` (README); the test suite passes with it.
-   `.scratch/store/` holds the scripts, logs, `RESULT.txt` and `events-world.tsv` (600 MB; can be deleted).
+   `.scratch/store/` holds the scripts, logs, `RESULT.txt` and `events-world.tsv` (540 MB; can be deleted).
    **`planet.loc` is deleted**; `bash .scratch/store/planet.sh` rebuilds it in 40 minutes (107 GiB on C:,
-   and the planet job of 2026-12-07 needs about 170 GB free, so delete it again).
+   and the planet job of 2026-12-07 needs about 170 GB free, so delete it again). The script names
+   `history-261102.osh.pbf` and day diffs 5165 to 5170 (`store.py`, `DAY_DIFFS`): once the planet job
+   has retired that file or the store has pruned those diffs, it needs the new file and the sequences
+   from that file's date to the day replayed. Deletions in day diffs carry a place; `store.py` empties
+   them (that code ran by hand on this store, not yet inside `diffs`).
    **Next is the owner's:** both ways forward wait for the first count of the whole world (it seeds the
    stream's state and is its oracle), and that waits for item 15's list, item 1 first (no giant boxes; a
    cell must also not span every longitude, found here). Open strategic question: tier 2's store, built

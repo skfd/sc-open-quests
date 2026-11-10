@@ -2266,8 +2266,9 @@ opt-in: `-Dopenquests.areaPass=false` skips the area pass (snapshots never set i
   place in the store; after the day's replay, every 50th node of the 11-09 clip, 2,556,762, likewise. None
   missing, none elsewhere. So the history file, the day diffs and the minute files all land where
   osm-extracts' own clip does.
-- **The planet has 10,992,811,706 live nodes** (the slots that hold a place, 76.5% of them; counted from
-  the file in 278 s). The "10-11 billion" used for the count's hours was an estimate; it holds.
+- **The planet has 10,988,329,357 live nodes** at the end of 11-08 (the slots that hold a place, 76.5% of
+  them; counted from the file in 288 s, after the fourth trap below was mended). The "10-11 billion" used
+  for the count's hours was an estimate; it holds.
 - **Two things the pilot found** (the Europe history cut, 7.4 GiB): with the location handler in the same
   chain the ways took twelve times as long (400 s against 32 s), so nodes and ways are two readers; and a
   dense file is as large for a region as for the planet (the pilot's was 107 GiB too), so a region's store
@@ -2294,9 +2295,10 @@ its position; UTC, no notes, the area pass off.
 
 - **A planet day through tier 1 is about seven minutes on one thread and twenty seconds of engine.** A
   minute of the world's edits takes a quarter of a second on average and five seconds at worst.
-- **The node writes are the wrapper, not the disk:** the second run, with the file in the page cache, took
-  the same. Three quarters of the node versions are new nodes, and reading an absent slot through pyosmium
-  raises a Python exception. Not measured apart.
+- **The node step is the wrapper, not the disk.** Reading an absent slot through pyosmium raises a Python
+  exception: 74 µs against 11 µs for a present one (a million of each), and three quarters of the node
+  versions are new nodes, so about 225 of the 243 s. The undo of all 3,931,249 writes took 24 s. Without the
+  exception the day would be about three minutes (arithmetic, not run).
 - Of the node versions 3,025,623 made a node, 399,080 moved one, 425,947 deleted one and 80,599 changed
   only tags.
 
@@ -2325,7 +2327,7 @@ its position; UTC, no notes, the area pass off.
   interval). 4,045 more name an area quest or an overlay.
 - **Nothing else checks the world's numbers:** no full count of the planet exists for either day.
 
-**Three traps.**
+**Four traps.**
 - **A node deleted in the same minute.** 15 way versions named a node that the same minute file deletes:
   a file lists nodes before ways, and in time the way version came first. With a file's deletions applied
   after its ways, no version is left unplaced (the figures above are from that run).
@@ -2335,6 +2337,12 @@ its position; UTC, no notes, the area pass off.
   cell's sides (cells' list, item 1) covers it.
 - **The engine wants every ported quest in its quests file,** so "tier 1 only" is the switch above, not a
   shorter file.
+- **A deletion in a day diff carries the node's last place,** and the location handler stored it: 4,482,349
+  nodes deleted between 11-02 and 11-07 still held a place (found at review, after the run). No way names
+  a deleted node, so no event moves and the clip checks could not see it; only the node count was too high.
+  They were emptied by hand and `store.py` now empties them with each diff. The history file's own
+  deletions carry no place (419,657 deleted nodes of the Europe cut checked: none in the store), and the
+  replay writes the empty slot itself.
 
 **The state, sized on real data, not built.** The 11-09 dump of europe-west, 4,624,345 matches on
 2,371,321 elements (`state_size.py`):
@@ -2362,7 +2370,7 @@ a fifth as many entries (971,545 waiting against 4.6M open in europe-west), each
   is (250 to 300 GB, HARDWARE.md).
 
 **What this shows.** Tier 1 for the whole world, 70% of the matches and 72% of the flips of the measured
-day, costs minutes a day, one 107 GiB file and no new engine code. The full count is 6.5 hours of a chain
+day, costs minutes a day, one 107 GiB file and no new engine command. The full count is 6.5 hours of a chain
 that has not yet run once.
 
 **What it does not show.**
