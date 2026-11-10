@@ -70,6 +70,22 @@ sys.path.insert(0, str(ROOT / "tools"))
 import backfill_history as bh  # noqa: E402
 
 PAD_M = 2000.0  # around a file's cells: more than the engine's 1 km ring
+# kk-SCOpenQuests-sidebyside, 15:10 local daily until 2026-11-14, about 12 minutes (HANDOFF.md, item 8)
+SIDE_BY_SIDE = ((20, 5), (20, 40), "2026-11-14")
+
+
+def quiet(ahead_minutes: int = 0) -> None:
+    """Wait out the daily update's window (backfill_history.QUIET) and the side-by-side run's; with
+    ahead_minutes, also a step that long would reach either."""
+    from datetime import datetime, timedelta, timezone, time as dtime
+    while True:
+        bh.wait_for_quiet(ahead_minutes)
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        start, end = (datetime.combine(now.date(), dtime(*hm)) for hm in SIDE_BY_SIDE[:2])
+        if now.date().isoformat() > SIDE_BY_SIDE[2] or not (start - timedelta(minutes=ahead_minutes) <= now < end):
+            return
+        run.log("waiting out the side-by-side run")
+        time.sleep(300)
 OVERTURE = ROOT / "data" / "overture"
 
 
@@ -172,6 +188,7 @@ EAST_MAX = 179.9999999
 # Files are grouped into regions of at most this many, so that one osmium extract pass (4.2 GB per output)
 # fits docker: the planet is cut into regions, each region into its files.
 REGION_FILES = 8
+MAX_RASTER_SLOTS = 500_000_000  # AreaPass.kt
 
 
 def kd(items: list, step: float, rect: tuple[int, int, int, int], limit: float,
@@ -214,6 +231,28 @@ def kd(items: list, step: float, rect: tuple[int, int, int, int], limit: float,
         a, b = (r0, r1, c0, cut), (r0, r1, cut + 1, c1)
         ia = [it for it in items if it[1] <= cut]; ib = [it for it in items if it[1] > cut]
     return kd(ia, step, a, limit, cap) + kd(ib, step, b, limit, cap)
+
+
+def check_boxes(files: list[dict]) -> None:
+    """Every file box and cell rectangle the right way round, and every cell's box with the engine's 1 km
+    ring (AreaPass.kt) under MAX_RASTER_SLOTS: the engine would refuse it in the middle of a long run."""
+    bad = []
+    for f in files:
+        w, s, e, n = f["bbox"]
+        if not (w < e and s < n):
+            bad.append(f"{f['id']} box {f['bbox']}")
+        for c in f["cells"]:
+            cs, cw, cn, ce = c["rect"]
+            dlat = 1000.0 / 111_320.0
+            dlon = 1000.0 / (111_320.0 * math.cos(math.radians(min(85.0, max(abs(cs), abs(cn))))))
+            ps, pw, pn, pe = max(-90.0, cs - dlat), max(-180.0, cw - dlon), min(90.0, cn + dlat), min(180.0, ce + dlon)
+            slots = math.ceil((pn - ps) / 0.0005) * math.ceil((pe - pw) / 0.0005)
+            if not (cw < ce and cs < cn):
+                bad.append(f"{c['id']} rect {c['rect']}")
+            elif slots > MAX_RASTER_SLOTS:
+                bad.append(f"{c['id']} {slots:,} raster squares")
+    if bad:
+        raise SystemExit("plan: boxes the engine cannot take: " + "; ".join(bad[:20]))
 
 
 def rect_nodes(items) -> int:
@@ -338,6 +377,7 @@ def plan(grid_path: Path, out: Path, file_nodes: float, cell_nodes: float, ids: 
         regions.append({"id": f"r{ri}", "bbox": [min(b[0] for b in fb), min(b[1] for b in fb), max(b[2] for b in fb),
                                                  max(b[3] for b in fb)], "files": fids,
                         "nodes": sum(by_id[x]["nodes"] for x in fids)})
+    check_boxes(files)
     s, w, n, e = deg(whole)
     cell_zones = sorted({c["timeZone"] for f in files for c in f["cells"]})
     # the JVM's zone names the snapshot's date; each cell's age filters run in its own
@@ -362,10 +402,10 @@ def plan(grid_path: Path, out: Path, file_nodes: float, cell_nodes: float, ids: 
 # --- cut -----------------------------------------------------------------------------------------
 
 # osmium extract holds about 4.2 GB per output (DESIGN.md, "Only this machine: measured"); docker's VM is 43 GB
-MAX_OUTPUTS = 8
+MAX_OUTPUTS = int(os.environ.get("WORLD_CELLS_MAX_OUTPUTS", "8"))  # override for a rehearsal beside another osmium
 
 
-def extract(src: Path, outdir: Path, outputs: list[tuple[str, list]], tag: str) -> None:
+def extract(src: Path, outdir: Path, outputs: list[tuple[str, list]], tag: str, ahead_minutes: int = 0) -> None:
     """`osmium extract` of src into outdir, one bbox output per (name, bbox), strategy smart, in passes of at
     most MAX_OUTPUTS. Each output is written as .part and renamed once its pass succeeds, so an output that
     exists is whole and is skipped by a rerun."""
@@ -381,6 +421,7 @@ def extract(src: Path, outdir: Path, outputs: list[tuple[str, list]], tag: str) 
         cfg = {"directory": "/out", "extracts": [
             {"output": f"{n}.part", "output_format": "pbf", "bbox": b, "output_header": header} for n, b in batch]}
         conf = f"extract-{tag}-{i // MAX_OUTPUTS}.json"
+        quiet(ahead_minutes)  # 8 outputs hold about 34 GB of docker's memory
         write_json(outdir / conf, cfg)
         t = time.time()
         print(f"cut {src.name}: {', '.join(n for n, _ in batch)} ...", flush=True)
@@ -413,7 +454,7 @@ def cut(pbf: Path, out: Path, keep_regions: bool = False) -> None:
         extract(pbf, rdir, [(f"{r['id']}.osm.pbf", r["bbox"]) for r in need], "regions")
         for r in need:
             src = rdir / f"{r['id']}.osm.pbf"
-            extract(src, cutdir, [(f"{fid}.osm.pbf", by_id[fid]["bbox"]) for fid in r["files"]], r["id"])
+            extract(src, cutdir, [(f"{fid}.osm.pbf", by_id[fid]["bbox"]) for fid in r["files"]], r["id"], ahead_minutes=30)
             if not keep_regions:
                 src.unlink()
     print(f"cut {len(p['files'])} files in {len(regions)} region(s), {time.time() - t:.0f} s")
@@ -474,7 +515,7 @@ def count(out: Path, engines: int, heap_gb: int, delete_cut: bool = False, dump_
             return f["id"], "done before"
         pbf = out / "cut" / f"{f['id']}.osm.pbf"
         # no file starts where it would run into the daily update (two engines and its own do not fit)
-        bh.wait_for_quiet(ahead_minutes=40)
+        quiet(ahead_minutes=40)
         code, secs = engine(["count", "--pbf", str(pbf), "--quests", rel(quests), "--cities", rel(d / "cities.json"),
                              "--out", rel(d / "out"), "--notes", rel(notes_for(out, f["id"])), "--parts", rel(d / "parts"),
                              *(["--dump-matches", rel(d / "matches.tsv"), "--dump-ids", rel(dump_ids)] if dump_ids else [])],
@@ -487,10 +528,15 @@ def count(out: Path, engines: int, heap_gb: int, delete_cut: bool = False, dump_
         return f["id"], f"{secs:.0f} s"
 
     t = time.time()
+    failed = []
     with ThreadPoolExecutor(engines) as ex:  # plan.json lists the largest file first
         for fid, msg in ex.map(one, [f for f in p["files"] if not only or f["id"] in only]):
             print(f"{fid}: {msg}", flush=True)
+            if msg.startswith("FAILED"):
+                failed.append(fid)
     print(f"count: {time.time() - t:.0f} s with {engines} engine(s) at once")
+    if failed:
+        raise SystemExit(f"count: {len(failed)} file(s) failed: {', '.join(failed)}")
 
 
 def baseline(pbf: Path, cities: list[str], out: Path, heap_gb: int) -> None:

@@ -525,4 +525,9 @@ new cities appear by themselves.
    checked twice: the stream's 316,806 touched elements (`--dump-ids`) and Europe's 32 snapshots of that instant
    (`report --archive 2026-11-08`). The chain: `.scratch/planet/chain.sh`, log `logs/planet-count.log`, about
    30 hours; a rerun goes on where it stopped (the command is in the script). It deletes the planet slice
-   after the cut and each file once counted; nothing of it may be on C: by the planet job of 2026-12-07.
+   after the cut; files are kept until both checks pass (`--delete-cut` comes back then). Nothing of it may be
+   on C: by the planet job of 2026-12-07.
+   **Started 2026-11-10 09:51 with `STOP_AFTER=plan`** (slice, grid, plan; hidden, log `logs/planet-count.log`),
+   while the new paths are rehearsed on the 11-08 Europe clip (`.scratch/planet/rehearse/`). Once the plan is
+   out: the grid's node total should be about 10,985.7M (step 5's 10,988,329,357 less the 3,025,623 nodes
+   made on 11-08 plus the 425,947 deleted), and the chain is started again without `STOP_AFTER`.
