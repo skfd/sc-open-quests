@@ -684,6 +684,14 @@ new cities appear by themselves.
      - **Pipeline facts:** nothing reads `docs/` back from git history; a failed push skips the
        cloud publish (run.py:890-892); git commits `docs/data` only while the sync uploads all of
        `docs/`; main is 11 commits ahead of origin until the next daily run pushes.
+     - **Where it stopped (the owner, 2026-11-10, afternoon: "will work in that direction
+       later"):** the session ended here. Open, in order: (a) after the flip, the owner's word to
+       merge `assets-switch` and go live (steps above); (b) trim the first-visit download, starting
+       with `cities.json`; before dropping `trendAll` ask the owner whether it is kept for
+       something not built (tests/test_history.py and the fixtures mention it, the page doesn't);
+       (c) check the limits of jsdelivr, goatcounter and tile.openstreetmap.org for a spike;
+       (d) a request path that needs no GitHub account; (e) a second R2 bucket as the archive's
+       backup, never the site's bucket, which the daily sync prunes to `docs/`.
    - **Later, after a week:** take the daily data out of git history (the reason for the move);
      README's site link; the token was shown once in a session transcript, so the owner may roll it
      (Cloudflare: My Profile, API Tokens, Roll; then replace the value in the token file).
