@@ -488,3 +488,10 @@ new cities appear by themselves.
    process's CPU time, read after exit, next to wall time; Bremen 11-01: 28.6 s wall, 198.6 s CPU. Compare runs
    by CPU on a busy machine. It also follows only its own java child now, not any engine on the machine.
    Not done: CPU time per phase inside the engine (only the area task trace has it), interleaved A/B runs.
+17. **The stream, step 3 done (2026-11-10, night):** DESIGN.md, "The stream, step 3". The 11-08 clip with the
+   clock at 11-09 opens exactly the 342 quests the full counts show opening on untouched elements (339 aged, 3
+   by notes, which the notes clip replays with the clock) and closes the one note close; only the neighbour
+   flip is left, and tier 2 has it. The clock never closes a quest; about 970,000 quests wait for their date in
+   europe-west, 140 to 360 come due a day. No engine change; `.scratch/due/` (3 GB of dumps, can be deleted).
+   So every flip of the measured day is explained by one of three parts. **Next: step 5, the store and one
+   planet day's cost.** Nothing built towards it. The table of due dates itself is not built either.
