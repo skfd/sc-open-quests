@@ -784,7 +784,10 @@ neighbourhood's link. A design, ignoring how it gets built, with a mockup in `de
 - **Survives a thumbnail**: name and number sit in the left half, so a square crop (WhatsApp, Slack)
   keeps them; SC's indigo band reads on light and dark feeds.
 
-Open, for the owner: the card's language (French for Quebec, German for the city-states?); whether the
-link shows the number when shared or the current one; a share button with prewritten text.
+Owner's answers (2026-11-10): **English only** for now. **The card shows the numbers from when the link
+was shared**, not today's: the address bar always carries the data date (a new query key, since `at` and `on`
+are taken), so a copied link is dated and its card is fixed; the page itself still opens on today's data
+and, when the link is older, says what changed since ("since 8 Nov: -184"). **No share button**: networks
+read the preview from the link's own tags, so a pasted address is enough.
 Constraint for whoever builds it: crawlers fetch the page without running `app.js`, so each place needs
 its own static page or a Worker that rewrites the head; the state is in the query, which crawlers see.
