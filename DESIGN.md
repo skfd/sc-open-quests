@@ -2527,3 +2527,41 @@ has the commands.
   hash, so shared links still reproduce their view. It's served from a separate Pages branch, because
   `main:/docs` is also what R2 copies. The revert is pointing Pages back at `main:/docs`. Later, once
   the week has held, the daily data can leave git history (the reason for the move).
+
+## Before a spike: what a first visit asks of whom (2026-11-10)
+
+The owner's goal is that the site survives being posted. Three things were done on main, and the
+third parties were looked up; nothing here touches the engine or the Worker.
+
+- **No CDN.** uPlot 1.6.31 and Leaflet 1.9.4 are served from `docs/vendor/` (the npm `dist` files,
+  byte-equal to what jsdelivr served: the SRI hashes the page pinned match, `docs/vendor/README.md`).
+  jsdelivr states no limits, so this removes a dependency, not a known cap. On today's Worker the two
+  uPlot files are two more requests of a first view (71 to 73) at `max-age=300`; as static assets
+  they are free.
+- **`cities.json` is 8 KB gzipped, from 124.** `trendAll` (59 KB) was read by nothing and is gone.
+  Each city's `trend` (57 KB) is only Compare's sparkline column, so it moved to `data/trends.json`,
+  which the page asks for when Compare first opens. A page reading older data with `trend` in
+  `cities.json` still draws the column.
+- **Checked headless on the real data:** Toronto, Compare (147 sparklines) and Map load with no page
+  errors and no failed request; the only other hosts asked are `gc.zgo.at` and, on Map,
+  `tile.openstreetmap.org`.
+- **The archive has a second copy.** `tools/archive_backup.py` copies `data/archive/` to the private
+  R2 bucket `sc-open-quests-archive` under `archive/`: 2,161 files, 467 MiB, 79 s the first time,
+  checked equal by checksum. It never deletes, and a file a rerun rewrote keeps its old version under
+  `replaced/<date>/`, so it guards against a dead disk, a wrong delete and a bad rerun. `run.py
+  update` and `planet` run it last, after the site sync; a failure is logged "archive backup FAILED"
+  and the run goes on. The per-region `quests.json` files change every count, about 1.6 MB a day
+  into `replaced/` (0.6 GB a year against R2's 10 GB free); prune old `replaced/` dates by hand if
+  it matters. `data/grid/` (316 MB, the z14 tile grids) and `data/notes/` (255 MB) are not in it.
+- **Third parties (looked up 2026-11-10 by an agent through a summarising fetch; re-read a sentence
+  before relying on it):**
+  - *tile.openstreetmap.org*: the tile policy gives no number. It asks for visible attribution, a
+    valid Referer (the page sets no Referrer-Policy) and normal caching, and says access may be
+    blocked without notice if use degrades the service. Tiles load only when Map is opened. A block
+    would leave the Map tab's boundaries on a grey ground; the rest of the site doesn't use tiles.
+    The durable fix, if wanted, is a self-hosted PMTiles basemap on R2. Keyed free tiers (Stadia
+    200,000 credits a month, MapTiler 100,000 requests a month, then paused) turn a possible block
+    into a certain stop on a spike day. Not changed; the owner's call.
+  - *GoatCounter*: free "for reasonable public usage", no stated monthly cap; "millions of pageviews
+    a day" is what it names as too much. The script is `async`, so it can't hold up the page.
+  - *jsdelivr*: no bandwidth limits stated; no longer used.

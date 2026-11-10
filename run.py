@@ -923,12 +923,28 @@ def update(force: bool = False, push: bool = True) -> None:
         if push:
             log("=== cloud ===")
             publish_cloud()
+            backup_archive()
     log("=== check-release ===")
     try:
         check_release()
     except Exception as e:  # the day's data is published; a GitHub hiccup must not fail the run
         log(f"check-release failed (ignored): {e}")
     log("update done")
+
+
+def backup_archive() -> bool:
+    """Copy data/archive/ (the one copy of every snapshot, not in git) to its own R2 bucket
+    (tools/archive_backup.py). Last and on its own: a failure is logged as "archive backup FAILED"
+    and the run goes on. Returns success."""
+    r = subprocess.run([sys.executable, str(TOOLS_DIR / "archive_backup.py")], cwd=ROOT,
+                       capture_output=True, text=True)
+    for line in (r.stdout + r.stderr).splitlines():
+        if line.strip():
+            log(line)
+    if r.returncode != 0:
+        log(f"archive backup FAILED (exit {r.returncode}); data/archive is still the one copy of today's files")
+        return False
+    return True
 
 
 # --- planet: the planet history file, monthly ---------------------------------------------------------
@@ -1031,6 +1047,7 @@ def planet(push: bool = True) -> None:
         if push:
             log("=== cloud ===")
             publish_cloud()
+            backup_archive()
     log("planet done")
 
 
