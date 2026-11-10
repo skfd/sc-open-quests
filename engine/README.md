@@ -38,8 +38,9 @@ engine/build/install/sc-open-quests-engine/bin/sc-open-quests-engine.bat count `
   timestamp, city, quest position and agedOnly, for cross-checks.
 - `--dump-elements <jsonl> --dump-city <id>` and `--area-unit city`: input for the oracle, see
   "Custom quests" and "Area quests".
-- `engine/measure.ps1 count ...` runs the installed engine from the repo root and reports wall time and
-  peak working set.
+- `engine/measure.ps1 count ...` runs the installed engine from the repo root and reports wall time, the
+  java process's CPU time (exact, read after exit; it barely moves with other load on the machine, so compare
+  runs by it) and peak working set.
 - `./gradlew.bat test` (from `engine/`): unit tests; a check that recounting the newest stored extract reproduces its committed snapshot; and the spike regression on the 2026-07-16 extract (skipped since that extract was pruned from the shared store).
   `-Ppbf=<file>` points it elsewhere; it is skipped if the file is missing. One country-gating test reads
   SC's `boundaries.ser` from the SC checkout (`-PscBoundaries=<file>`), skipped if absent.

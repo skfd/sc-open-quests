@@ -479,3 +479,7 @@ new cities appear by themselves.
    **Next: due dates (step 3), then the store and one planet day's cost (step 5);** the stored week if a
    radius is wanted. Keep `.scratch/diff-flips/` until then. 79 engine tests pass with the ring setting
    (TorontoRegressionTest skips).
+17. **CPU time in `engine/measure.ps1` (2026-11-10, the owner's yes):** the summary line now gives the java
+   process's CPU time, read after exit, next to wall time; Bremen 11-01: 28.6 s wall, 198.6 s CPU. Compare runs
+   by CPU on a busy machine. It also follows only its own java child now, not any engine on the machine.
+   Not done: CPU time per phase inside the engine (only the area task trace has it), interleaved A/B runs.

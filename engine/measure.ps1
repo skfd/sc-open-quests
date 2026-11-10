@@ -1,7 +1,8 @@
 <#
 .SYNOPSIS
-  Runs the installed engine (gradlew installDist first) from the repo root and reports wall time and
-  the java process's peak working set, sampled every 0.5 s. Arguments are passed to the engine.
+  Runs the installed engine (gradlew installDist first) from the repo root and reports wall time, the
+  java process's CPU time (read after exit, so exact) and its peak working set, sampled every 0.5 s.
+  CPU time is the figure to compare between runs: other load on the machine barely moves it. Arguments are passed to the engine.
 
 .EXAMPLE
   ./engine/measure.ps1 count --pbf C:\Users\kk\Code\.osm-data\ontario\ontario-2026-10-10.osm.pbf `
@@ -19,17 +20,28 @@ $sw = [Diagnostics.Stopwatch]::StartNew()
 $p = Start-Process -FilePath $bin -ArgumentList $quoted -WorkingDirectory $repo -NoNewWindow -PassThru `
     -RedirectStandardOutput "$log.out" -RedirectStandardError $log
 $peak = 0L
+$held = @{}   # pid -> Process with an open handle, so its CPU time can still be read after it exits
 while (-not $p.HasExited) {
-    $java = Get-CimInstance Win32_Process -Filter "Name='java.exe'" |
-        Where-Object { $_.CommandLine -like '*openquests.MainKt*' }
+    $java = Get-CimInstance Win32_Process -Filter "Name='java.exe' AND ParentProcessId=$($p.Id)"
     foreach ($j in $java) {
-        $ws = (Get-Process -Id $j.ProcessId -ErrorAction SilentlyContinue).WorkingSet64
-        if ($ws -gt $peak) { $peak = $ws }
+        $id = [int]$j.ProcessId
+        if (-not $held.ContainsKey($id)) {
+            $proc = Get-Process -Id $id -ErrorAction SilentlyContinue
+            if ($proc) { try { $null = $proc.Handle; $held[$id] = $proc } catch {} }
+        }
+        if ($held.ContainsKey($id)) {
+            $held[$id].Refresh()
+            try { $ws = $held[$id].WorkingSet64; if ($ws -gt $peak) { $peak = $ws } } catch {}
+        }
     }
     Start-Sleep -Milliseconds 500
 }
 $p.WaitForExit()
 $sw.Stop()
+$cpu = 0.0
+foreach ($proc in $held.Values) { $proc.Refresh(); $cpu += $proc.TotalProcessorTime.TotalSeconds }
 Get-Content $log
-"exit {0}; process wall {1:N1} s; peak working set {2:N0} MB (sampled every 0.5 s)" -f $p.ExitCode, $sw.Elapsed.TotalSeconds, ($peak / 1MB)
+$wall = $sw.Elapsed.TotalSeconds
+"exit {0}; process wall {1:N1} s; cpu {2:N1} s ({3:N1} threads busy on average); peak working set {4:N0} MB (sampled every 0.5 s)" -f `
+    $p.ExitCode, $wall, $cpu, ($cpu / $wall), ($peak / 1MB)
 exit $p.ExitCode
