@@ -564,6 +564,21 @@ new cities appear by themselves.
      DNS Edit and Zone Read on comentality.com only) in `~/.config/sc-open-quests/cloudflare.env`
      (`CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`), outside the repo; `set -a; . that file` to use it.
      R2 bucket `sc-open-quests` (ENAM) created by API and a test object `healthcheck.txt` written and read
-     back, although the dashboard's R2 page still offers "Add R2 subscription" (not clicked). Next: wrangler,
-     the Worker, the upload, the cutover. While the planet chain (item 19) runs: no engine rebuild; uploads
-     and the Worker don't touch it.
+     back. The R2 page asked for "Add R2 subscription" once and later showed the bucket with $0 billing, so
+     nothing was clicked.
+   - **Built and live, 2026-11-10 afternoon** (DESIGN.md, "Hosting on Cloudflare"; `cloudflare/README.md`):
+     the Worker `sc-open-quests` serves the bucket at the new address (merged 856c5496, not yet pushed, so
+     the 12:15 run on 11-11 pushes it). All 4,836 files compare equal over HTTPS; four cities load headless
+     with no errors. `run.py update` and `planet` now sync to R2 after the git push (`=== cloud ===` in
+     `logs/scheduler.log`; a failure is logged "cloud publish FAILED" and doesn't stop the run). Today's
+     data went up by hand from main: 176 copied, 4 deleted, 12 s.
+   - **The flip, not yet done:** branch `pages-redirect` (local only, worktree `../sc-open-quests-redirect`)
+     holds a JS redirect that keeps path and query. `.scratch/cloudflare/flip.sh` checks that a day's
+     scheduled run synced by itself and that `--check` passes, then pushes that branch, points Pages at it,
+     sets the repo homepage and waits for the redirect. The one-off task `kk-SCOpenQuests-flip` (11-11
+     14:00) was refused to Claude by the auto-mode classifier; the owner registers it, or runs the script
+     by hand after a run with a cloud step. Revert: `gh api -X PUT repos/skfd/sc-open-quests/pages -f
+     "source[branch]=main" -f "source[path]=/docs"`.
+   - **Later, after a week:** take the daily data out of git history (the reason for the move);
+     README's site link; the token was shown once in a session transcript, so the owner may roll it
+     (Cloudflare: My Profile, API Tokens, Roll; then replace the value in the token file).
