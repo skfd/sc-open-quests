@@ -535,6 +535,16 @@ new cities appear by themselves.
    0.004% of their 11-08 counts, oracle 1 exact (676 of 676; and no tier-1 match the stream lacks). So a
    watcher (`.scratch/planet/watch.ps1`) starts **`.scratch/planet/chain2.sh`** (the same chain, plus a gate on
    the grid's node total, within 1.5M) when the first stops after the plan: log `logs/planet-count-2.log`.
-   Reruns use chain2.sh. Expected: plan about 14:30 today (the grid waits out the daily window), the cut to
-   about 23:00, the count to about 18:00 on 11-11, then `REPORT.md` and `oracle.log` in `.scratch/planet/world/`.
-   If both checks pass: delete the cut files (`.scratch/planet/world/cut/`), about 95 GB.
+   Reruns use chain2.sh. Expected: plan about 14:30 today (the grid waits out the daily window), the cut 9 to 12
+   hours, so the canary after midnight, the count about 6.5 hours, done about 07:00-11:00 on 11-11; then
+   `REPORT.md` and `oracle.log` in `.scratch/planet/world/`. A failed file is retried alone at 44 GB, and the
+   checks run either way. **While it runs: no engine rebuild (`installDist`) and no edit to chain2.sh** (bash
+   reads a script as it goes); stop it by its process tree first.
+   This run gives the world's totals and both checks, not the stream's seed state (only listed elements are
+   dumped). A state dump later is a recount of the kept cut (about 100 GB in `.scratch/planet/world/cut/`), not
+   a new slice and cut, so keep the cut while that is wanted; it must be gone before the planet job of 12-07.
+   **Disk:** the cut needs the planet's size plus 40 GB free beside the planet, or it stops ("cut: N GB free, M
+   needed"). A planet over about 95 GB will not pass with what C: holds now. Deletable, per this file: the
+   replay's `data/backfill/replay*` (19 GB), `.scratch/due/` (3 GB), `.scratch/world-eu/` (5 GB),
+   `.scratch/oracle-v64.1/`; asked of the owner on 2026-11-10 (the deletion needs their word). Then rerun
+   chain2.sh.
