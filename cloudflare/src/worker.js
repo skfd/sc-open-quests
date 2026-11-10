@@ -29,6 +29,10 @@ function contentType(key) {
 // The data changes once a day and the page with it; five minutes keeps a fresh run visible soon after
 // upload while repeat visits revalidate cheaply by ETag.
 const CACHE = "public, max-age=300";
+// Quest icons and images change only with an app repin. Every request is a Worker invocation (Workers
+// Free: 100,000 a day) and a city view asks for about 53 icons, so readers keep them a day.
+const CACHE_STATIC = "public, max-age=86400";
+const cacheFor = (key) => (key.startsWith("icons/") || key.startsWith("img/") ? CACHE_STATIC : CACHE);
 
 export default {
   async fetch(request, env) {
@@ -62,7 +66,7 @@ export default {
 
     const headers = new Headers();
     headers.set("Content-Type", contentType(key));
-    headers.set("Cache-Control", CACHE);
+    headers.set("Cache-Control", cacheFor(key));
     headers.set("ETag", object.httpEtag);
     headers.set("Last-Modified", object.uploaded.toUTCString());
     headers.set("X-Content-Type-Options", "nosniff");
