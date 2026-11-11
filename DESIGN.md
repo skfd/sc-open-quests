@@ -2813,3 +2813,8 @@ straight from the bucket with no Worker:
   for minutes.
 - **The density divisor was explained in chat,** with no decision yet. The site already shows "per km²
   of land" and "per km of road" for cities (`app.js`, Compare and the city tiles).
+- **Correction (owner):** the per-km² and per-km-of-road tiles came with the prototype; they are
+  not agreed design. A divisor is needed only where places are compared (rank, shaded children map,
+  "against the parent's average"). Proposed for the MVP: no comparison, so no divisor. A place page
+  shows its raw count, change, trend, quest types and children by raw count, and the children's
+  map shows clickable outlines without shading.
