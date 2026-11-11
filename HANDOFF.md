@@ -900,3 +900,12 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   uncommitted): `python .scratch/aged-backfill.py --sc 64.0 --engine
   ../sc-open-quests-oldengine/engine/build/install/sc-open-quests-engine`. The script starts no engine
   run after 10:30, so the 12:15 run finds `pipeline.lock` free.
+- **Countries from SC's boundaries: built on branch `countries` (worktree `../sc-open-quests-countries`,
+  c1a480d3), not merged.** Engine `regionids`, `places.py` filing by SC's countries, the site naming
+  countries from CLDR with the borders note; tests pass, checked headless. DESIGN.md on that branch,
+  "Countries in the place index: built", has the measurement (6,846 of 1,082,287 places filed
+  differently; Crimea, the dependencies, Palestine, Western Sahara as decided) and **one decision for the
+  owner: border noise**, about 150 regions shown under a neighbour with a few places where SC's simplified
+  boundaries cross the line, some of which read as positions (Kinmen and Matsu under China, Gibraltar
+  under Spain). Recommended: ignore a neighbour SC names only near the line (a radius test), and report
+  the islands upstream. Merge only after the flip and the owner's answer.
