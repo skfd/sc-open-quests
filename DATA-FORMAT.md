@@ -288,6 +288,11 @@ request"). Agreed before the work was split, so the builders, the engine and the
   the city test uses) is inside the part's polygon; parts overlap, so a quest can count in several.
   Area quests and the note quest the same way, from the city's own run: a part has no map data of its
   own. Adding parts changes no number outside `parts`.
+- **Aged split per part** (since 2026-11-11): beside `parts`, `cities.<id>.partsAged` in the same shape,
+  `{ "<placeId>": { "<Quest>": <agedOnly> } }`: of the part's `open`, those open only because of time
+  (the city's `agedOnly`, split by the same position). Every part of `parts` is listed, zeros left out,
+  `{}` when nothing is aged. Snapshots from before have no `partsAged`: not counted, which is not 0.
 - **Published part names**: `docs/data/parts/<city>.json`: `{ "schema": 1, "city", "parts": [ { "id",
   "name", "en", "subtype", "bbox" } ] }`, written by `run.py history` from the registry.
 - No monthly history for parts yet: the newest snapshot only, until a backfill recounts with parts.
+  The daily archive (`data/archive/`) holds parts since 2026-10-28.

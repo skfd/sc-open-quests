@@ -148,7 +148,9 @@ class ManyCitiesTest {
      * at a shared node, and a bench; every other column a road that runs on into the next city, so
      * that a way lies in two cities' areas. Every city's area overlaps its neighbours' (1 km padding).
      */
-    internal fun writeSyntheticPbf(file: File, rows: Int, cols: Int) {
+    /** [shop]: also a named shop in every city at (s+.004, w+.004), edited 2023-11-14 like the rest, so a
+     *  late enough --today opens its resurvey (an agedOnly quest) */
+    internal fun writeSyntheticPbf(file: File, rows: Int, cols: Int, shop: Boolean = false) {
         class N(val id: Long, val lat: Double, val lon: Double, val tags: Map<String, String> = emptyMap())
         class W(val id: Long, val refs: List<Long>, val tags: Map<String, String>)
         val nodes = ArrayList<N>(); val ways = ArrayList<W>()
@@ -162,6 +164,7 @@ class ManyCitiesTest {
             ways += W(wid++, listOf(node(s + .006, w + .002), crossing, node(s + .006, w + .008)), mapOf("highway" to "residential"))
             ways += W(wid++, listOf(node(s + .005, w + .005), crossing, node(s + .007, w + .005)), mapOf("highway" to "footway"))
             node(s + .008, w + .008, mapOf("amenity" to "bench"))
+            if (shop) node(s + .004, w + .004, mapOf("shop" to "bakery", "name" to "Bakery"))
             if (c % 2 == 0 && c + 1 < cols) {
                 ways += W(wid++, listOf(node(s + .009, w + .002), node(s + .009, w + .014)), mapOf("highway" to "service"))
             }

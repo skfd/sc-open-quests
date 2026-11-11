@@ -72,4 +72,37 @@ class PartsTest {
         assertEquals(emptyMap(), got["dddddddddddd"], "a part counts only its own city's quests")
         for ((_, q) in got) for ((name, n) in q) assertTrue(n <= cityOpen.getValue(name))
     }
+
+    @Test fun `partsAged splits a part's open quests into those open only because of time`() {
+        val dir = Files.createTempDirectory("parts-aged").toFile()
+        val helper = ManyCitiesTest()
+        val cities = helper.syntheticCities(File(dir, "cities.json"), 1, 2)
+        // a named shop at (s+.004, w+.004), last edited 2023-11-14; counted in 2040, its resurvey is due
+        val pbf = File(dir, "synthetic.osm.pbf").also { helper.writeSyntheticPbf(it, 1, 2, shop = true) }
+        val geo = File(dir, "geo").also { it.mkdirs() }
+        square(File(geo, "whole.geojson"), s, w, s + .01, w + .01)
+        square(File(geo, "shop.geojson"), s + .0038, w + .0038, s + .0042, w + .0042)
+        square(File(geo, "bench.geojson"), s + .0075, w + .0075, s + .0085, w + .0085)
+        val parts = File(dir, "parts").also { it.mkdirs() }
+        File(parts, "c0-0.json").writeText("""{"schema": 1, "city": "c0-0", "overture": "test", "parts": [
+            {"id": "aaaaaaaaaaaa", "geometry": "geo/whole.geojson"}, {"id": "bbbbbbbbbbbb", "geometry": "geo/shop.geojson"},
+            {"id": "cccccccccccc", "geometry": "geo/bench.geojson"}]}""")
+        val result = count(CountOptions(pbf = pbf, quests = File("data/quests/v64.1.json"), cities = cities, out = null,
+            baseDir = dir, parts = parts, today = parseToday("2040-01-01")))
+        val city = Json.parseToJsonElement(snapshotJson(result.meta, result.engine)).jsonObject["cities"]!!
+            .jsonObject["c0-0"]!!.jsonObject
+        fun longs(o: kotlinx.serialization.json.JsonElement) =
+            o.jsonObject.mapValues { (_, v) -> v.jsonObject.mapValues { it.value.jsonPrimitive.long } }
+        val open = longs(city["parts"]!!)
+        val aged = longs(city["partsAged"]!!)
+        assertEquals(open.keys, aged.keys, "every part is listed in both")
+        val cityAged = city["quests"]!!.jsonObject.mapValues { it.value.jsonObject["agedOnly"]!!.jsonPrimitive.long }
+            .filterValues { it > 0 }
+        assertTrue(cityAged.isNotEmpty(), "the shop's resurvey is open only because of time")
+        assertEquals(cityAged, aged["aaaaaaaaaaaa"], "the part that is the whole city has the city's agedOnly")
+        assertEquals(mapOf("CheckShopExistence" to 1L), aged["bbbbbbbbbbbb"], "the shop's resurvey is in its part")
+        assertEquals(mapOf("CheckExistence" to 1L), aged["cccccccccccc"], "the bench's resurvey is in its part")
+        assertEquals(cityAged, aged["bbbbbbbbbbbb"]!! + aged["cccccccccccc"]!!, "and those two are all the city's")
+        for ((pid, q) in aged) for ((name, n) in q) assertTrue(n <= open.getValue(pid).getValue(name), "aged is part of open")
+    }
 }

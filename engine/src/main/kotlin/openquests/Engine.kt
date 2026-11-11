@@ -140,6 +140,8 @@ class Engine(val registry: Registry, val cities: List<City>, val parts: List<Par
     }
     /** per (part, quest): the open quests at resurvey x1 whose position is in the part, as the city counts them */
     val partOpen = AtomicLongArray(parts.size * quests.size)
+    /** per (part, quest): of [partOpen], those open only because of time (the part's `agedOnly`) */
+    val partAged = AtomicLongArray(parts.size * quests.size)
 
     /** the parts of city [c] whose polygon contains [p] (indices into [parts]) */
     private fun partsAt(c: Int, p: LatLon): IntArray {
@@ -148,9 +150,13 @@ class Engine(val registry: Registry, val cities: List<City>, val parts: List<Par
         return if (local.isEmpty()) local else IntArray(local.size) { partsOfCity[c][local[it]] }
     }
 
-    /** one open quest [qi] counted in a city: count it in [hits], the parts of that city holding its position */
-    private fun countParts(qi: Int, hits: IntArray) {
-        for (part in hits) partOpen.incrementAndGet(part * quests.size + qi)
+    /** one open quest [qi] counted in a city: count it in [hits], the parts of that city holding its position;
+     *  [aged] when it is open only because of time */
+    private fun countParts(qi: Int, hits: IntArray, aged: Boolean) {
+        for (part in hits) {
+            partOpen.incrementAndGet(part * quests.size + qi)
+            if (aged) partAged.incrementAndGet(part * quests.size + qi)
+        }
     }
     /** gate[city][quest]: [Gate.ON], [Gate.OFF] or [Gate.BY_POSITION] (see gateOf) */
     val gate: Array<ByteArray> = Array(cities.size) { c -> ByteArray(quests.size) { gateOf(cities[c], quests[it].countries) } }
@@ -256,9 +262,9 @@ class Engine(val registry: Registry, val cities: List<City>, val parts: List<Par
         val type = e.type.ordinal
         counts.add(c, qi, type, mask)
         if (mask and M_NOW == 0) return
-        if (partIndex[c] != null) countParts(qi, partsAt(c, center))
-        grid?.add(qi, center)
         val aged = mask and M_AGED != 0
+        if (partIndex[c] != null) countParts(qi, partsAt(c, center), aged)
+        grid?.add(qi, center)
         if (dumps(quests[qi].name, type, e.id)) {
             dumpLines += "${quests[qi].name}\t${TYPE_NAMES[type]}\t${e.id}\t${e.version}\t${e.timestampEdited}\t" +
                 "${cities[c].id}\t${center.latitude}\t${center.longitude}\t$aged"
@@ -319,7 +325,7 @@ class Engine(val registry: Registry, val cities: List<City>, val parts: List<Par
                 counts.add(c, qi, type, mask)
                 if (mask and M_NOW != 0 && partIndex[c] != null) {
                     val hits = (partHits ?: arrayOfNulls<IntArray>(cityIdx.size).also { partHits = it })
-                    countParts(qi, hits[k] ?: partsAt(c, center).also { hits[k] = it })
+                    countParts(qi, hits[k] ?: partsAt(c, center).also { hits[k] = it }, aged)
                 }
                 if (mask and M_NOW != 0 && dumps(q.name, type, e.id)) {
                     dumpLines += "${q.name}\t${TYPE_NAMES[type]}\t${e.id}\t${e.version}\t${e.timestampEdited}\t" +
@@ -389,7 +395,7 @@ class Engine(val registry: Registry, val cities: List<City>, val parts: List<Par
             val inCities = cityIndex.citiesAt(p.latitude, p.longitude).filter { c -> enabledAt(c, qi) { regionIdsAt(p) } }
             for (c in inCities) {
                 counts.perQuest.incrementAndGet(counts.slot(c, qi, NOTE))
-                if (partIndex[c] != null) countParts(qi, partsAt(c, p))
+                if (partIndex[c] != null) countParts(qi, partsAt(c, p), aged = false)
             }
             if (inCities.isNotEmpty()) grid?.add(qi, p)
         }

@@ -115,19 +115,24 @@ fun snapshotJson(meta: SnapshotMeta, engine: Engine): String {
         val parts = engine.partsOfCity[c].map { engine.parts[it] }.sortedBy { it.id }
         if (parts.isEmpty()) sb.append("      }\n")
         else {
-            // DATA-FORMAT.md, "Places and parts": open at resurvey x1, quests with 0 left out
+            // DATA-FORMAT.md, "Places and parts": open at resurvey x1, quests with 0 left out; then
+            // partsAged, of those the ones open only because of time, in the same shape
             sb.append("      },\n")
-            sb.append("      \"parts\": {\n")
-            parts.forEachIndexed { k, part ->
-                val open = counted.filter { engine.partOpen[part.index * engine.quests.size + it] > 0 }
-                sb.append("        ${jsonString(part.id)}: {")
-                sb.append(open.joinToString(", ", " ", " ") {
-                    "${jsonString(engine.quests[it].name)}: ${engine.partOpen[part.index * engine.quests.size + it]}"
-                }.takeIf { open.isNotEmpty() } ?: "")
-                sb.append("}")
-                sb.append(if (k < parts.size - 1) ",\n" else "\n")
+            fun partsKey(key: String, counter: java.util.concurrent.atomic.AtomicLongArray, last: Boolean) {
+                sb.append("      ${jsonString(key)}: {\n")
+                parts.forEachIndexed { k, part ->
+                    val nonzero = counted.filter { counter[part.index * engine.quests.size + it] > 0 }
+                    sb.append("        ${jsonString(part.id)}: {")
+                    sb.append(nonzero.joinToString(", ", " ", " ") {
+                        "${jsonString(engine.quests[it].name)}: ${counter[part.index * engine.quests.size + it]}"
+                    }.takeIf { nonzero.isNotEmpty() } ?: "")
+                    sb.append("}")
+                    sb.append(if (k < parts.size - 1) ",\n" else "\n")
+                }
+                sb.append(if (last) "      }\n" else "      },\n")
             }
-            sb.append("      }\n")
+            partsKey("parts", engine.partOpen, last = false)
+            partsKey("partsAged", engine.partAged, last = true)
         }
         sb.append(if (ci < cities.size - 1) "    },\n" else "    }\n")
     }
