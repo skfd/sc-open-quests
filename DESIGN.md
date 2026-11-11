@@ -2818,3 +2818,8 @@ straight from the bucket with no Worker:
   "against the parent's average"). Proposed for the MVP: no comparison, so no divisor. A place page
   shows its raw count, change, trend, quest types and children by raw count, and the children's
   map shows clickable outlines without shading.
+- **Owner, same evening:** the daily R2 plan (about $13.5 a month) is fine. Comparison stays where it
+  is today, the Compare tab's city table (open, per km² of land, per km of road, per 1,000 people), and
+  places below a city are not compared. So place pages carry no divisor, and the engine needs no area or
+  road length per place. Open for later, at world scale: which places Compare lists once there is no
+  fixed list of 147 (for example, cities over a population bar with a country filter).
