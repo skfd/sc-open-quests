@@ -302,7 +302,8 @@ request"). Agreed before the work was split, so the builders, the engine and the
 
 - **Countries are StreetComplete's (since 2026-11-11, branch `countries`).** A country in `index.json` is
   one SC's boundaries name somewhere (DESIGN.md, "Countries in the place index: built"), never an Overture
-  placeholder (`X?`). A place is in the file of every country it is filed under, so one place id can be
+  placeholder (`X?`). A place SC files only elsewhere while filing ground within 3 km under its own country is
+  taken to sit on SC's simplified border and keeps its own country only. A place is in the file of every country it is filed under, so one place id can be
   in several files (Crimea's under `ua/` and `ru/`); within a country it is in one. A country no Overture
   division stands for (`PS`, `EH`, `IC`, `EA`, `AC`, `TA`) has `"id": null`, `"name"` its code and
   `"bbox": null`; the site names every country from the browser's CLDR data. Under a country that is not

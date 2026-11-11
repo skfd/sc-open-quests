@@ -2876,14 +2876,19 @@ the Canaries under `IC` and Ceuta and Melilla under `EA` as well as Spain, the W
 Palestine, Golan under Israel, Kunashir and Iturup under Russia. `.scratch/countries/` has the full
 lists (`measure-labelpoint.log`, `index-diff.txt`).
 
-**For the owner: border noise.** About 150 regions now also appear under a neighbour with 1 to 18 places
-each, where SC's simplified boundaries put a label point across the line: Canada > Maine and Vermont,
-the US > New Brunswick and Tamaulipas, Ireland > Northern Ireland (37), the UK > Cavan, Donegal,
-Monaghan, Belarus > Lublin, and so on. The rule is followed (SC does apply the neighbour's rules at
-those points), but some read as positions: **Kinmen (4) and Lienchiang/Matsu (27) under China**, Taiwan >
-Fujian (3), **Gibraltar under Spain** (SC gives `GI, ES-AN, GB` there), Japan > Senkaku, Korea > "Extent of
-Japanese claim at Liancourt Rocks", Kosovo > Central Serbia, India > Barahoti and Nilang-Jadhang. Options,
-none built: (a) keep, since it describes the app; (b) a neighbour SC names only at points within a few
-km of the line, against the place's Overture country, does not count (a radius test around each label
-point, cheap with `regionids`); (c) report the islands upstream to countryboundaries. Recommended: (b)
-for the noise, with the islands reported upstream either way.
+**Border noise: decided (Claude, with the owner's "do it all yourself", 2026-11-11 10:20).** The first
+build showed about 150 regions under a neighbour with 1 to 18 places each (Canada > Maine, Ireland >
+Northern Ireland, the UK > Donegal), where a label point sits on SC's simplified border. Its signature:
+SC files the point only under other countries, yet files ground within 3 km under the place's own
+Overture country. Such a place keeps its own country only (`on_the_line`, `RING_KM = 3`, 8 points; 360
+places tested, 2,880 lookups). Real cases do not look like that: Tifariti has no Morocco near it, and SC
+names both countries in Crimea, Puerto Rico and Gibraltar. Nothing loses its own country. After it,
+6,238 places are filed differently and 5,725 under two or more countries; the noise entries are gone,
+and about 15 entries of 2 to 5 places remain (Pando, Rivera, Omsk, Tuva, Amur: places more than 3 km
+inside SC's line, unexamined).
+
+**What SC's own data says and stays:** Gibraltar under Spain as well (`GI, ES-AN, GB`), Japan > Senkaku,
+Korea > Liancourt, China > the Paracels, and **Matsu (Lienchiang, 27) and 4 Kinmen places under China**:
+SC's boundaries give Nangan `CN-FJ, CN` (Kinmen town, Penghu and Taipei `TW`), so the app applies
+China's rules on Matsu. That is an error in SC's data, not noise; a report for countryboundaries is
+drafted in `.scratch/countries/upstream-matsu.md`, not posted (it would go out in the owner's name).

@@ -20,6 +20,7 @@ under a country are left out.
 """
 import argparse
 import json
+import math
 import os
 import re
 import subprocess
@@ -95,8 +96,25 @@ def sc_countries(ids):
     return sorted({i.split("-")[0] for i in ids})
 
 
-def attach_sc(rows):
-    """r["sc"]: the region ids SC's boundaries give at each place's label point (engine `regionids`)."""
+RING_KM = 3     # how far around a label point SC's boundaries are asked again (border noise, below)
+RING_POINTS = 8
+
+
+def ring(lon, lat, km=RING_KM, n=RING_POINTS):
+    """n points km around (lon, lat), north first, clockwise."""
+    dlat = km / 111.32
+    dlon = km / (111.32 * max(math.cos(math.radians(lat)), 0.01))
+    out = []
+    for k in range(n):
+        a = 2 * math.pi * k / n
+        y = max(-90.0, min(90.0, lat + dlat * math.cos(a)))
+        x = (lon + dlon * math.sin(a) + 180) % 360 - 180
+        out.append((x, y))
+    return out
+
+
+def regionids(points):
+    """SC's region ids at each (lon, lat), from the engine's `regionids`."""
     sys.path.insert(0, str(ROOT))
     import run
     if run.engine_is_stale():
@@ -104,19 +122,43 @@ def attach_sc(rows):
     with tempfile.TemporaryDirectory() as tmp:
         pts, out = Path(tmp) / "points.tsv", Path(tmp) / "codes.tsv"
         with open(pts, "w", encoding="utf-8", newline="\n") as f:
-            for i, r in enumerate(rows):
-                f.write(f"{i}\t{r['lx']!r}\t{r['ly']!r}\n")
+            for i, (x, y) in enumerate(points):
+                f.write(f"{i}\t{x!r}\t{y!r}\n")
         subprocess.run([str(run.ENGINE_BAT), "regionids", "--in", str(pts), "--out", str(out)],
                        cwd=ROOT, env=run.engine_env(), check=True)
+        got = [None] * len(points)
         for line in out.read_text(encoding="utf-8").splitlines():
             i, ids = line.split("\t")
-            rows[int(i)]["sc"] = [x for x in ids.split(",") if x]
+            got[int(i)] = [x for x in ids.split(",") if x]
+        return got
+
+
+def attach_sc(rows):
+    """r["sc"]: SC's region ids at each place's label point. r["ring"]: SC's countries at RING_POINTS
+    points RING_KM around it, for the places SC files only under countries other than Overture's own
+    (the border-noise test in `countries`)."""
+    for r, ids in zip(rows, regionids([(r["lx"], r["ly"]) for r in rows])):
+        r["sc"] = ids
+    odd = [r for r in rows if r["sc"] and not placeholder(r["country"])
+           and r["country"] not in sc_countries(r["sc"])]
+    got = regionids([pt for r in odd for pt in ring(r["lx"], r["ly"])])
+    for k, r in enumerate(odd):
+        r["ring"] = [sc_countries(ids) for ids in got[k * RING_POINTS:(k + 1) * RING_POINTS]]
+
+
+def on_the_line(r):
+    """Border noise: SC files the place's point only under other countries, but files ground within
+    RING_KM of it under the place's own (Overture's) country. The point sits on SC's simplified border
+    (a Northern Irish townland SC puts in Ireland, a Quebec village in Vermont), and the place is kept
+    in its own country only. A place SC files in another country all around (Tifariti, Matsu) or
+    under both (Crimea, Puerto Rico, Gibraltar) is not touched."""
+    return any(r["country"] in cs for cs in r.get("ring") or [])
 
 
 def countries(rows, by_gers):
     """r["cs"]: the countries a place is filed under. Without r["sc"] (no lookup), Overture's alone."""
     for r in rows:
-        own = set(sc_countries(r["sc"])) if "sc" in r else set()
+        own = set(sc_countries(r["sc"])) if "sc" in r and not on_the_line(r) else set()
         if not placeholder(r["country"]):
             own.add(r["country"])
         r["cs"] = own

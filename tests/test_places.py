@@ -149,5 +149,29 @@ class CountriesTest(unittest.TestCase):
         self.assertEqual([], self.by["Uotsuri-jima"]["files"])
 
 
+class BorderNoiseTest(unittest.TestCase):
+    def file(self, cc, sc, ring):
+        r = row(g(20), "P", "locality", cc, [])
+        r["sc"], r["ring"] = sc, ring
+        places.countries([r], {r["gers"]: r})
+        return r["cs"]
+
+    def test_a_point_on_scs_simplified_border_stays_in_its_own_country(self):
+        self.assertEqual(["GB"], self.file("GB", ["IE"], [["IE"], ["GB"], ["IE"], [], [], [], [], []]))
+
+    def test_another_country_all_around_counts(self):
+        self.assertEqual(["EH", "MA"], self.file("MA", ["EH"], [["EH"]] * 6 + [["MR"], []]))
+
+    def test_both_named_is_never_noise(self):
+        self.assertEqual(["RU", "UA"], self.file("UA", ["UA-43", "RU"], None))
+
+    def test_ring_points(self):
+        pts = places.ring(0.0, 60.0)
+        self.assertEqual(8, len(pts))
+        self.assertAlmostEqual(60 + 3 / 111.32, pts[0][1])
+        self.assertAlmostEqual(3 / (111.32 * 0.5), pts[2][0], places=6)
+        self.assertEqual(179.99, round(places.ring(179.99, 0.0, km=0.001)[0][0], 2), "wraps the antimeridian")
+
+
 if __name__ == "__main__":
     unittest.main()
