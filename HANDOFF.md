@@ -865,3 +865,8 @@ how many places move.
   give parts monthly points too. That is a recount of the monthly snapshots with parts on, not measured.
 - Questions put to the owner: what a part page adds first; how far back the series goes; whether
   the trend follows the quest ticks; whether the raw archive is published at all.
+- **Owner, 2026-11-10 late evening: "assume design for final product where we have full world data".**
+  The design is in DESIGN.md, "Place statistics for the whole world: the final product". In short: one
+  page for every level; place data on an R2 public bucket on its own subdomain; three cacheable
+  requests per page. That replaces the per-part-files idea above. Its open questions are the
+  owner's: R2 or static assets, the per-km² divisor, freshness.
