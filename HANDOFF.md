@@ -870,3 +870,16 @@ how many places move.
   page for every level; place data on an R2 public bucket on its own subdomain; three cacheable
   requests per page. That replaces the per-part-files idea above. Its open questions are the
   owner's: R2 or static assets, the per-km² divisor, freshness.
+
+## Overnight work, 2026-11-10 into 11-11 (the owner is away; "work all night, one task after another")
+
+Order, one at a time, mindful of the 5-hour usage windows and of the 13:15 scheduled run (the first
+with a cloud step, which gates the flip): (1) the aged split per part in the engine, then its backfill
+from 10-27; (2) countries from SC's `boundaries.ser`, measured read-only first, built on a worktree
+branch and not merged before the flip; (3) the R2 cache test, on a separate test bucket and subdomain
+only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
+`.scratch/cloudflare/flip.sh` by hand after the 13:15 run (the classifier refused the task to Claude).
+
+- **Pinned (owner, 23:50):** every region's 10-27 and 10-28 extracts (`pins.json` in the 12 regions that
+  have parts; about 12 GB), reason "sc-open-quests: backfill of the aged split per part". Unpin with
+  `python .scratch/pin-aged-backfill.py --unpin` once the backfill is in the archive.
