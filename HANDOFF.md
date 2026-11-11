@@ -932,3 +932,16 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
 - **Waiting on the owner:** (1) the flip, after the 12:15 run: `bash .scratch/cloudflare/flip.sh >>
   logs/flip.log 2>&1` in Git Bash, then the `assets-switch` merge as above; (2) the DNS step of the R2 cache
   test; (3) the border-noise decision on the countries branch, then its merge.
+
+### 2026-11-11, 10:25: the owner is away for a few days: "do it all yourself"
+
+- **Border noise: decided and built** on `countries` (63994729): a point SC files only elsewhere while
+  filing ground within 3 km under the place's own country keeps its own country only; ~150 noise entries
+  go. Matsu stays under China because SC's own data says `CN-FJ, CN` there; an upstream report is
+  drafted in `.scratch/countries/upstream-matsu.md`, not posted (it would go out in the owner's name).
+- **R2 cache test: still blocked.** The classifier refused the DNS step again after the owner's go-ahead;
+  it stays the owner's one command (`.scratch/r2-cachetest/run.py`).
+- **Plan after the 12:15 run (Claude, woken at 12:50):** check the run logged `=== cloud ===` and
+  `update done`; run `.scratch/cloudflare/flip.sh`; if it flips, merge `assets-switch`, `python
+  tools/cloud_publish.py`, `--check`, and confirm the Worker's invocations stayed flat over the check; then
+  merge `countries`, publish, check, push. Stop at the first failure and record it here.
