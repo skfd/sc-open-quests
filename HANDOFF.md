@@ -900,7 +900,7 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   uncommitted): `python .scratch/aged-backfill.py --sc 64.0 --engine
   ../sc-open-quests-oldengine/engine/build/install/sc-open-quests-engine`. The script starts no engine
   run after 10:30, so the 12:15 run finds `pipeline.lock` free.
-- **Countries from SC's boundaries: built on branch `countries` (worktree `../sc-open-quests-countries`,
+- **Countries from SC's boundaries: built on branch `countries` (worktree `../sc-open-quests-countries`, rebased on main 03:00, head e6e2c4ab;
   c1a480d3), not merged.** Engine `regionids`, `places.py` filing by SC's countries, the site naming
   countries from CLDR with the borders note; tests pass, checked headless. DESIGN.md on that branch,
   "Countries in the place index: built", has the measurement (6,846 of 1,082,287 places filed
@@ -921,3 +921,14 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   without it (DATA-FORMAT.md). Backups of every touched file: `.scratch/aged-backfill/backup/`; check:
   `python .scratch/aged-backfill/verify.py`. Extracts unpinned, the old-engine worktree removed. Nothing
   publishes `partsAged` yet beyond the newest snapshot; the part series file is the place-page work.
+- **Checks before the 12:15 run (03:00):** `run.py history` over the grafted archive into a temp dir works
+  (440 files; Toronto's series to 11-08); all 216,133 `partsAged` values are within the part's open and the
+  city's `agedOnly`; the installed engine is current; `pipeline.lock` is free; the tree is clean except an
+  untracked `hs_err_pid65112.log`, a JVM out-of-memory crash from 23:42 that predates this work (not ours).
+  The 12:15 run pushes main's unpushed commits (7), the engine change among them. `countries` exists only on
+  this disk. The empty test bucket `sc-open-quests-cachetest` stays on the account until the cache test.
+  On the branch, a fix found in the last check: a country no Overture division heads opened nothing; it now
+  opens by its code (`?place=ps`).
+- **Waiting on the owner:** (1) the flip, after the 12:15 run: `bash .scratch/cloudflare/flip.sh >>
+  logs/flip.log 2>&1` in Git Bash, then the `assets-switch` merge as above; (2) the DNS step of the R2 cache
+  test; (3) the border-noise decision on the countries branch, then its merge.
