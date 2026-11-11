@@ -883,3 +883,20 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
 - **Pinned (owner, 23:50):** every region's 10-27 and 10-28 extracts (`pins.json` in the 12 regions that
   have parts; about 12 GB), reason "sc-open-quests: backfill of the aged split per part". Unpin with
   `python .scratch/pin-aged-backfill.py --unpin` once the backfill is in the archive.
+- **Aged split per part: built (6c24f5e9).** The engine writes `cities.<id>.partsAged` beside `parts`, the
+  same shape, `agedOnly` per part and quest (DATA-FORMAT.md, "Places and parts"); `parts` is unchanged, so
+  the site and `world_cells.py` read it as before. 80 engine and 115 Python tests pass; the installed
+  engine is rebuilt, so the 12:15 run counts with it and compiles nothing.
+- **Its backfill, running (`.scratch/aged-backfill.py`, report in `.scratch/aged-backfill/report.jsonl`,
+  touched archive files copied first to `.scratch/aged-backfill/backup/`).** Each archived day from 10-27
+  is recounted from its own extract into scratch; the day is grafted (the archive keeps its header and
+  takes the recount's `cities`) only if the cities equal the archived ones once `partsAged` is dropped.
+  The 10-27 days gain `parts` too. Found on the way: **a recount with today's engine does not reproduce
+  a v64.0 day** (10-28 Ontario: only AddOpeningHours differs, all of it in `agedOnly`, Toronto +76),
+  because the v64.1 repin (3e626b74) changed the engine's own port of that custom quest, which the
+  quests file does not version. So the v64.1 days (11-02 on) go through today's engine (log
+  `logs/aged-backfill-64.1.log`), and the v64.0 days through the pre-repin engine with the patch
+  cherry-picked, built in the throwaway worktree `../sc-open-quests-oldengine` (detached at c0aed812,
+  uncommitted): `python .scratch/aged-backfill.py --sc 64.0 --engine
+  ../sc-open-quests-oldengine/engine/build/install/sc-open-quests-engine`. The script starts no engine
+  run after 10:30, so the 12:15 run finds `pipeline.lock` free.
