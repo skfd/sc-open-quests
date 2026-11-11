@@ -2861,8 +2861,10 @@ nothing that rewrites published files rides the first cloud-synced run before th
   Spratly reefs among them). Romanisation is gone; Wikidata English labels and OSM `name` tags are not
   done yet (the planet extraction is its own job).
 - **Site:** the country level is named by `Intl.DisplayNames` (Palestine by the short form), sorted by
-  that name; the borders note beside the country list and in the footer. Checked headless: 255
-  countries, Russia lists Crimea, no console errors.
+  that name; the borders note beside the country list and in the footer. A country no Overture
+  division heads opens by its code (`?place=ps`). Checked headless: 255 countries; Russia lists Crimea;
+  Palestine, Western Sahara, the Canaries and Ceuta & Melilla open with their regions; Palestine > Gaza
+  Strip and United States > Puerto Rico > San Juan open; no console errors.
 
 **Measured (Overture 2026-10-21.0, 1,082,287 places):** 1,075,781 agree with Overture's country at
 their own point; 6,846 are filed differently, 6,333 under two or more countries. 272 index countries
