@@ -271,8 +271,8 @@ request"). Agreed before the work was split, so the builders, the engine and the
     2 region, 3 county, 4 localadmin, 5 locality, 6 borough, 7 macrohood, 8 neighborhood, 9 microhood.
     `parent` the index of the parent in this file's `places`, or -1 for the region itself (the nearest
     ancestor that has an area, from `hierarchies`, when `parent_division_id` has none). bbox rounded to
-    4 decimals. `en` the English name when it differs from `names.primary`, else the name romanized when it is
-    Cyrillic (`places.romanize`), else null. The site shows `en` first; index entries carry it too, when there is one. `counted` the
+    4 decimals. `en` Overture's English name when it differs from `names.primary`, else null (no
+    home-made romanisation since 2026-11-11). The site shows `en` first; index entries carry it too, when there is one. `counted` the
     city id in config/cities.json when the place is a counted city, `"<city>/<placeId>"` when it is a
     counted part, else null. Parents come before children.
 - **Parts registry**, `config/parts/<city>.json` (committed): `{ "schema": 1, "city": "<id>", "overture":
@@ -299,3 +299,12 @@ request"). Agreed before the work was split, so the builders, the engine and the
   "name", "en", "subtype", "bbox" } ] }`, written by `run.py history` from the registry.
 - No monthly history for parts yet: the newest snapshot only, until a backfill recounts with parts.
   The daily archive (`data/archive/`) holds parts since 2026-10-28.
+
+- **Countries are StreetComplete's (since 2026-11-11, branch `countries`).** A country in `index.json` is
+  one SC's boundaries name somewhere (DESIGN.md, "Countries in the place index: built"), never an Overture
+  placeholder (`X?`). A place is in the file of every country it is filed under, so one place id can be
+  in several files (Crimea's under `ua/` and `ru/`); within a country it is in one. A country no Overture
+  division stands for (`PS`, `EH`, `IC`, `EA`, `AC`, `TA`) has `"id": null`, `"name"` its code and
+  `"bbox": null`; the site names every country from the browser's CLDR data. Under a country that is not
+  its own, a dependency's or placeholder's places sit in a file whose root is that dependency or
+  placeholder (`us/<Puerto Rico's id>.json`, `ps/<Gaza Strip's id>.json`).
