@@ -913,3 +913,11 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   the classifier refused attaching `sc-r2-cachetest.comentality.com` (DNS change). Run the one command in
   `.scratch/r2-cachetest/run.py`'s docstring, then the script. Found meanwhile (Cloudflare's docs, DESIGN.md
   "The R2 cache premise"): JSON is not cached by default, so the place-data subdomain needs a Cache Rule.
+- **The aged backfill is done (02:25).** Every archived day with parts, 10-27 to 11-08 in the 12 regions
+  (132 days), now carries `partsAged`; the 10-27 days gained `parts` too, so part history starts 10-27.
+  124 days matched their recount exactly (the 72 v64.1 days through today's engine, 52 v64.0 days through
+  the pre-repin one). 8 (Bremen and New Brunswick, 10-28 to 11-01) differed only by the parts the registry
+  dropped on 11-03; `.scratch/aged-backfill/graft_registry.py` added `partsAged` there and kept those parts
+  without it (DATA-FORMAT.md). Backups of every touched file: `.scratch/aged-backfill/backup/`; check:
+  `python .scratch/aged-backfill/verify.py`. Extracts unpinned, the old-engine worktree removed. Nothing
+  publishes `partsAged` yet beyond the newest snapshot; the part series file is the place-page work.

@@ -292,6 +292,9 @@ request"). Agreed before the work was split, so the builders, the engine and the
   `{ "<placeId>": { "<Quest>": <agedOnly> } }`: of the part's `open`, those open only because of time
   (the city's `agedOnly`, split by the same position). Every part of `parts` is listed, zeros left out,
   `{}` when nothing is aged. Snapshots from before have no `partsAged`: not counted, which is not 0.
+  The archive was backfilled to 2026-10-27 the night it was added; on Bremen's and Saint John's days
+  before 2026-11-03, `parts` still holds the parts the registry dropped that day (b1b3e557), and those
+  have no `partsAged` entry.
 - **Published part names**: `docs/data/parts/<city>.json`: `{ "schema": 1, "city", "parts": [ { "id",
   "name", "en", "subtype", "bbox" } ] }`, written by `run.py history` from the registry.
 - No monthly history for parts yet: the newest snapshot only, until a backfill recounts with parts.
