@@ -945,3 +945,11 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   `update done`; run `.scratch/cloudflare/flip.sh`; if it flips, merge `assets-switch`, `python
   tools/cloud_publish.py`, `--check`, and confirm the Worker's invocations stayed flat over the check; then
   merge `countries`, publish, check, push. Stop at the first failure and record it here.
+- **After the run (15:52):** the 12:15 run died in its first minute on a Geofabrik read timeout
+  (`osm_extracts.py fetch ontario`); Geofabrik answered again by 15:15 and the task was restarted by hand
+  (`Start-ScheduledTask kk-SCOpenQuests`). That run counted the new extracts (Ontario 11-10, Europe 11-11; Toronto's snapshot carries `partsAged`), committed, pushed, and
+  its cloud step synced (328 copied, 16 deleted). `cloud_publish.py --check`: 4,849 files equal.
+  **The flip was refused to Claude by the auto-mode classifier ("Production Deploy")**, so the plan stops
+  there: the `assets-switch` merge (a `wrangler deploy`) follows the flip, and the `countries` merge waits
+  for both. The flip's gate is met for today; the owner runs, in Git Bash, any time before tomorrow's run:
+  `bash .scratch/cloudflare/flip.sh >> logs/flip.log 2>&1` (it reads today's scheduler.log lines).
