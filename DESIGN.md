@@ -2823,3 +2823,19 @@ straight from the bucket with no Worker:
   places below a city are not compared. So place pages carry no divisor, and the engine needs no area or
   road length per place. Open for later, at world scale: which places Compare lists once there is no
   fixed list of 147 (for example, cities over a population bar with a country filter).
+
+### The R2 cache premise: half checked (2026-11-11, overnight)
+
+- **JSON is not cached by default.** Cloudflare's docs (cache/concepts/default-cache-behavior): "The
+  Cloudflare CDN does not cache HTML or JSON by default", and caching goes by file extension, not MIME
+  type; the R2 public-buckets page: "By default, only certain file types are cached. To cache all files
+  in your bucket, you must set a Cache Everything page rule." So the place-data subdomain needs a Cache
+  Rule (eligible for cache, respect origin TTL; the Free plan has 10) before launch, or every read of a
+  `place/` or `latest/` file is an R2 read. Neither page says whether a cache hit counts as a Class B
+  operation; that is what the test below measures.
+- **The test is ready but not run.** The test bucket `sc-open-quests-cachetest` exists (empty). Attaching
+  its custom domain `sc-r2-cachetest.comentality.com` is a DNS change the auto-mode classifier refused to
+  Claude, so the owner runs that one command (`.scratch/r2-cachetest/run.py` has it, and the clean-up),
+  then the script: it uploads a JSON with Cache-Control, one without, and a PNG, fetches each 30 times,
+  and compares cf-cache-status with the bucket's GetObject count from the GraphQL analytics (the deploy
+  token can read them; checked). Expected: the PNG HITs, both JSONs stay DYNAMIC until a Cache Rule.

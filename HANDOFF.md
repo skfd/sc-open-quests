@@ -909,3 +909,7 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   boundaries cross the line, some of which read as positions (Kinmen and Matsu under China, Gibraltar
   under Spain). Recommended: ignore a neighbour SC names only near the line (a radius test), and report
   the islands upstream. Merge only after the flip and the owner's answer.
+- **R2 cache test: blocked at the DNS step, for the owner.** Test bucket `sc-open-quests-cachetest` made;
+  the classifier refused attaching `sc-r2-cachetest.comentality.com` (DNS change). Run the one command in
+  `.scratch/r2-cachetest/run.py`'s docstring, then the script. Found meanwhile (Cloudflare's docs, DESIGN.md
+  "The R2 cache premise"): JSON is not cached by default, so the place-data subdomain needs a Cache Rule.
