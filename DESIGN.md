@@ -2791,3 +2791,25 @@ straight from the bucket with no Worker:
 - **What "per km²" divides by:** land area (simple, fair across city and country) or mapped elements
   (open per 1,000 tagged things, which is closer to "how done is it", but harder to explain).
 - **Freshness:** weekly for the world and daily only inside the 147 cities, or something else.
+
+### The owner's answers (2026-11-10, late evening), and what daily changes
+
+- **R2 public bucket for place data:** yes.
+- **Freshness: daily for the world is the MVP goal,** not weekly. A daily world recount does not fit
+  on this machine (a world count is about 24 hours), so daily comes from the stream (DESIGN "The
+  stream", steps 1-5), not from recounting the planet every day.
+- **Daily makes writes the cost to design around.** Ontario's 790 parts, 10-29 to 11-08: 87 to 197
+  change on a given day (11-02: 435), so about 12-25% of places a day. Measured:
+
+  | plan | R2 writes a month | about |
+  |---|---|---|
+  | every `place/` file daily | 30M | $130 |
+  | only changed `place/` files daily, plus `latest/` per parent | 5-6M + 3M | $32 |
+  | **`place/` monthly; `latest/<parentId>` daily holding its children's days since the 1st, as per-quest changes** | 1M + 3M | **$13.5** |
+
+  Proposed: the last row. A page reads the same three files: its `place/` file (history to the 1st),
+  `latest/<parent>` (its own days this month, and its siblings for rank) and `latest/<self>` (its
+  children). Daily files are cached until the next publish; a tiny `latest.json` (the date) is cached
+  for minutes.
+- **The density divisor was explained in chat,** with no decision yet. The site already shows "per km²
+  of land" and "per km of road" for cities (`app.js`, Compare and the city tiles).
