@@ -892,7 +892,10 @@ async function loadCountry(country) {
 const enName = (p) => p.en || p.name;
 const rowName = (row) => row[R.en] || row[R.name];
 const refName = (ref) => ref.kind === "country" ? enName(ref.country) : ref.kind === "region" ? enName(ref.region) : rowName(ref.shard.rows[ref.i]);
-const refId = (ref) => ref.kind === "country" ? ref.country.id : ref.kind === "region" ? ref.region.id : ref.shard.rows[ref.i][R.id];
+// A country no Overture division heads (Palestine, Western Sahara, the Canaries) is addressed by its code,
+// lower case: two letters never clash with a 12-hex place id.
+const countryId = (c) => c.id || c.cc.toLowerCase();
+const refId = (ref) => ref.kind === "country" ? countryId(ref.country) : ref.kind === "region" ? ref.region.id : ref.shard.rows[ref.i][R.id];
 const refSt = (ref) => ref.kind === "country" ? 0 : ref.kind === "region" ? 2 : ref.shard.rows[ref.i][R.st];
 const refIn = (ref) => ref.kind === "row" ? `${ref.country.cc.toLowerCase()}/${ref.region.id}` : "";
 function refCounted(ref) {
@@ -931,7 +934,7 @@ async function resolvePlace(id, hint) {
   const idx = await placesIndex();
   if (!idx) return null;
   for (const country of idx.countries) {
-    if (country.id === id) return { kind: "country", country };
+    if (countryId(country) === id) return { kind: "country", country };
     const region = country.regions.find((r) => r.id === id && r.id !== "_");
     if (region) return { kind: "region", country, region, shard: await loadShard(country, region) };
   }
