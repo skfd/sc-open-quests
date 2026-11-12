@@ -969,3 +969,14 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
     Rewrite, Redirect Rules) for a rule on `/`; or set `"html_handling": "none"` and add a `_redirects`-free
     test on a separate hostname first.
   - **Not done, on purpose:** the `countries` merge waits until the site is healthy.
+- **Fixed, 21:53 (owner: "this is not a production deployment, we are in stealth mode"):** the R2 Worker
+  redeployed from main's `wrangler.jsonc` (version 26629d07); `/` serves again; R2 synced back to main's
+  `docs/` (the merged `index.html` and a stray `_headers` object replaced). Old address checked headless:
+  skfd.github.io/sc-open-quests/?city=toronto lands on the new site with its query.
+- **`countries` merged into main and published (22:00):** 361 files copied, 23 deleted; `--check` 4,937 equal;
+  Palestine, Western Sahara, the Canaries, Ceuta & Melilla, US > Puerto Rico and Palestine > Gaza Strip open on
+  the live site with no console errors. The installed engine is rebuilt (`regionids`). Worktree removed.
+- **Still open:** (1) static assets: why `/` looped on the live domain (look for a zone rule on `/`), then
+  retry on `assets-switch` (worktree `../sc-open-quests-assets`, kept); until then the R2 Worker and its
+  100,000-requests-a-day cap stay; (2) the R2 cache test's DNS step; (3) the Matsu report upstream, drafted
+  in `.scratch/countries/upstream-matsu.md`; (4) Wikidata English labels and OSM `name` tags for places.
