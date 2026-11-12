@@ -1002,3 +1002,16 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   307 to `/`, which the rule rewrites again: the loop. Fix on our side: `html_handling: "none"` (the
   edge only ever asks for `/index.html`); the owner's alternative is narrowing the rule to the blog's
   hosts in the dashboard (Rules > Transform Rules > URL Rewrite).
+- **Static assets live (22:40), the site no longer has a request cap.** `html_handling: "none"` plus
+  `docs/_redirects` (`/ /index.html 200`), so `/` works with or without the zone rule (checked both on
+  `wrangler dev`); folders such as `/vendor/` are a 404, as they were. Main had the revert reverted,
+  then a9bb452e; deployed by `tools/cloud_publish.py` (version e2336314, 348 files uploaded). Live: `/`,
+  `/?city=toronto`, `HEAD /`, `/index.html` all 200; a missing path and `/_redirects` 404;
+  `cloud_publish.py --check` 4,938 of 4,938 equal, and it now fetches `/` too; `.scratch/spike/check.py`
+  no page errors on Toronto, Compare, Map and London; skfd.github.io/sc-open-quests/?city=toronto lands
+  on the new site with its query. **The Worker's invocations stayed flat** over the check and the
+  headless runs (03:00 UTC hour: 8 before, 8 after about 5,100 requests), so asset requests are free.
+  Merged into main (2a05c008), worktree and branch removed, `.claude/launch.json` now runs
+  `cloudflare/wrangler.jsonc`. Way back: `npx wrangler deploy --config wrangler.r2.jsonc` in
+  `cloudflare/`. The 12:15 run deploys this shape from now on; watch `=== cloud ===` for "site deployed".
+  The zone rule can stay; narrowing it to the blog's hosts is optional and the owner's.
