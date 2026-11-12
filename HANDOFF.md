@@ -993,3 +993,11 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   on the issue if wanted. Judgment calls in it: AX → Sv:Finland (mirrors "Åland"), TF → a French-titled page,
   SJ → Svalbard only. Seen on the way: the wiki's "Saint-Pierre and Miquelon" redirects to Saint Vincent
   and the Grenadines; left alone, mentioned in the draft reply.
+- **Static-assets loop: found (22:30).** A zone rule, not the assets: comentality.com's Transform Rule
+  "Serve index.html for folder paths" (`ends_with(http.request.uri.path, "/")` -> path + `index.html`,
+  added 2026-10-28 for the blog on OSS, `../comentality.com/docs/cloudflare-move.md`) is zone-wide.
+  `wrangler tail` on the live R2 Worker shows `/` arriving as `/index.html` and `/vendor/` as
+  `/vendor/index.html`. With `html_handling: auto-trailing-slash` the assets answer `/index.html` with
+  307 to `/`, which the rule rewrites again: the loop. Fix on our side: `html_handling: "none"` (the
+  edge only ever asks for `/index.html`); the owner's alternative is narrowing the rule to the blog's
+  hosts in the dashboard (Rules > Transform Rules > URL Rewrite).
