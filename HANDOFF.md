@@ -1056,3 +1056,8 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   **Not on the site, by design:** this run writes `.scratch/planet/world/REPORT.md` and `oracle.log`
   (the world's totals and two checks against the cities and the stream); publishing world numbers is
   DESIGN.md, "Place statistics for the whole world: the final product", not built.
+- **SC #7374 wiki edits done (2026-11-12, 05:54 UTC, owner's go-ahead):** the 20 redirects were created as Skfd
+  (revisions 3114184–3114203) and "Saint-Pierre and Miquelon" now points to Saint-Pierre-et-Miquelon (3114204).
+  Checked: 25 of the 29 titles redirect, and only BQ, BV, IO and SH are missing. The reply (now in past tense) sits
+  filled in the issue's comment box in Chrome for the owner to post. Next, once the maintainers answer:
+  stubs for the four, or not.
