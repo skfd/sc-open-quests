@@ -980,3 +980,7 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   retry on `assets-switch` (worktree `../sc-open-quests-assets`, kept); until then the R2 Worker and its
   100,000-requests-a-day cap stay; (2) the R2 cache test's DNS step; (3) the Matsu report upstream, drafted
   in `.scratch/countries/upstream-matsu.md`; (4) Wikidata English labels and OSM `name` tags for places.
+- **Static-assets loop, one more probe (22:10):** the same assets config deployed as a separate Worker
+  `sc-open-quests-assets-test` could not be reached, since the account has no workers.dev subdomain (an
+  account setting, left alone); deleted. So zone rule versus assets behaviour is still undecided. The R2
+  cache test's DNS step was refused again (DNS changes are refused whatever the context).
