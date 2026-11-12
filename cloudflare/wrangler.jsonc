@@ -1,8 +1,13 @@
-// The Worker that serves the site from R2. Deploy: see cloudflare/README.md.
+// The site at street-complete-statistics.comentality.com: docs/ as Workers static assets, and no
+// script. Deploy: see cloudflare/README.md (the daily run does it).
+//
+// There is deliberately no `main`. Cloudflare serves a file that matches the path without running a
+// Worker, and with no script a path that matches nothing is a plain 404, so no request to this site
+// counts against Workers Free's 100,000 a day and a traffic spike has no cap to spend.
+// wrangler.r2.jsonc is the earlier shape (a Worker reading the R2 bucket) and the way back.
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "sc-open-quests",
-  "main": "src/worker.js",
   "compatibility_date": "2026-10-01",
   "account_id": "699ef919f465c0a729552780cdb6c27f",
   "workers_dev": false,
@@ -10,8 +15,12 @@
   "routes": [
     { "pattern": "street-complete-statistics.comentality.com", "custom_domain": true }
   ],
-  "r2_buckets": [
-    { "binding": "SITE", "bucket_name": "sc-open-quests" }
-  ],
-  "observability": { "enabled": true }
+  "assets": {
+    "directory": "../docs",
+    // "/" serves index.html; "/index.html" redirects to "/"
+    "html_handling": "auto-trailing-slash",
+    // a missing file is a real 404, never index.html, so a chart that asks for a city the archive
+    // lacks fails the way it did on Pages
+    "not_found_handling": "none"
+  }
 }
