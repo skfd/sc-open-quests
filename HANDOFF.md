@@ -984,3 +984,12 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   `sc-open-quests-assets-test` could not be reached, since the account has no workers.dev subdomain (an
   account setting, left alone); deleted. So zone rule versus assets behaviour is still undecided. The R2
   cache test's DNS step was refused again (DNS changes are refused whatever the context).
+- **SC #7374 follow-up (22:30):** the country wiki-link issue was fixed upstream (eb447a03, the name is now
+  URL-encoded) and closed; matkoniecz and westnordost created 5 redirects and invited us to add the rest.
+  24 titles were still missing: 20 have a page under another name, 4 have none (BQ, BV, IO, SH).
+  Creating them from Claude's Chrome (logged in on the wiki) was refused by the classifier. **The owner's
+  step:** paste `.scratch/wiki-redirects/create-redirects.js` into the browser console on any
+  wiki.openstreetmap.org page (createonly, never overwrites), then post `.scratch/wiki-redirects/reply-7374.md`
+  on the issue if wanted. Judgment calls in it: AX → Sv:Finland (mirrors "Åland"), TF → a French-titled page,
+  SJ → Svalbard only. Seen on the way: the wiki's "Saint-Pierre and Miquelon" redirects to Saint Vincent
+  and the Grenadines; left alone, mentioned in the draft reply.
