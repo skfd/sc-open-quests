@@ -7,13 +7,25 @@ DIR holds division.parquet and division_area.parquet as tools/overture_pull.py w
 (default: data/overture/world). Only divisions that have a division_area become places. Counted
 cities (config/cities.json) are matched by OSM relation, else by name inside the city's bounds;
 counted parts come from config/parts/<city>.json when it exists. Needs duckdb (the .scratch/overture
-venv); everything else is the standard library. The input is untrusted data: it is only read.
+venv) and the engine (its `regionids` command); everything else is the standard library. The input is
+untrusted data: it is only read.
+
+Countries are StreetComplete's (DESIGN.md, "Countries in the place index: StreetComplete's, not ours"):
+a place goes under every country SC's boundaries name at its label point, and under Overture's own
+`country` unless that is a placeholder (`X?`); a region, county or anything below also goes under every
+country of the places below it, so each chain is whole. Under a country that is not its own, a place
+sits in its Overture region, or inside its own country's root when that root is itself under the
+country (United States > Puerto Rico > San Juan; Palestine > Gaza Strip > Gaza). Places no source files
+under a country are left out.
 """
 import argparse
 import json
+import math
 import os
 import re
+import subprocess
 import sys
+import tempfile
 import unicodedata
 from pathlib import Path
 
@@ -57,17 +69,106 @@ def read_divisions(src):
       SELECT id, names."primary" AS name, names.common['en'] AS en, subtype, country, parent_division_id AS parent,
         coalesce(list_filter(hierarchies, lambda h: list_contains([x.division_id for x in h], parent_division_id))[1],
                  hierarchies[1]) AS h,
-        [s.record_id for s in sources if s.dataset = 'OpenStreetMap' AND s.record_id IS NOT NULL] AS osm
+        [s.record_id for s in sources if s.dataset = 'OpenStreetMap' AND s.record_id IS NOT NULL] AS osm,
+        (bbox.xmin + bbox.xmax) / 2 AS lx, (bbox.ymin + bbox.ymax) / 2 AS ly
       FROM read_parquet('{src}/division.parquet')
     )
     SELECT d.id, d.name, d.en, d.subtype, d.country, d.parent,
       [x.division_id for x in d.h] AS anc, [x.subtype for x in d.h] AS anc_st, d.osm,
-      area.xmin, area.ymin, area.xmax, area.ymax
+      area.xmin, area.ymin, area.xmax, area.ymax, d.lx, d.ly
     FROM d JOIN area ON area.division_id = d.id
     """
+    # a division's own bbox is its label point, rounded outwards to float32: its centre is the point
     cols = ["gers", "name", "en", "subtype", "country", "parent", "anc", "anc_st", "osm",
-            "xmin", "ymin", "xmax", "ymax"]
+            "xmin", "ymin", "xmax", "ymax", "lx", "ly"]
     return [dict(zip(cols, r)) for r in con.execute(q).fetchall()]
+
+
+# --- countries: StreetComplete's ----------------------------------------------------------------
+
+def placeholder(cc):
+    """Overture's stand-ins for areas it gives no country (XW West Bank, XU Kunashir, ...); XK is Kosovo."""
+    return not cc or (len(cc) == 2 and cc[0] == "X" and cc != "XK")
+
+
+def sc_countries(ids):
+    """SC's region ids at a point -> its countries: a code's part before the hyphen (UA-43 is Ukraine)."""
+    return sorted({i.split("-")[0] for i in ids})
+
+
+RING_KM = 3     # how far around a label point SC's boundaries are asked again (border noise, below)
+RING_POINTS = 8
+
+
+def ring(lon, lat, km=RING_KM, n=RING_POINTS):
+    """n points km around (lon, lat), north first, clockwise."""
+    dlat = km / 111.32
+    dlon = km / (111.32 * max(math.cos(math.radians(lat)), 0.01))
+    out = []
+    for k in range(n):
+        a = 2 * math.pi * k / n
+        y = max(-90.0, min(90.0, lat + dlat * math.cos(a)))
+        x = (lon + dlon * math.sin(a) + 180) % 360 - 180
+        out.append((x, y))
+    return out
+
+
+def regionids(points):
+    """SC's region ids at each (lon, lat), from the engine's `regionids`."""
+    sys.path.insert(0, str(ROOT))
+    import run
+    if run.engine_is_stale():
+        run.build_engine()
+    with tempfile.TemporaryDirectory() as tmp:
+        pts, out = Path(tmp) / "points.tsv", Path(tmp) / "codes.tsv"
+        with open(pts, "w", encoding="utf-8", newline="\n") as f:
+            for i, (x, y) in enumerate(points):
+                f.write(f"{i}\t{x!r}\t{y!r}\n")
+        subprocess.run([str(run.ENGINE_BAT), "regionids", "--in", str(pts), "--out", str(out)],
+                       cwd=ROOT, env=run.engine_env(), check=True)
+        got = [None] * len(points)
+        for line in out.read_text(encoding="utf-8").splitlines():
+            i, ids = line.split("\t")
+            got[int(i)] = [x for x in ids.split(",") if x]
+        return got
+
+
+def attach_sc(rows):
+    """r["sc"]: SC's region ids at each place's label point. r["ring"]: SC's countries at RING_POINTS
+    points RING_KM around it, for the places SC files only under countries other than Overture's own
+    (the border-noise test in `countries`)."""
+    for r, ids in zip(rows, regionids([(r["lx"], r["ly"]) for r in rows])):
+        r["sc"] = ids
+    odd = [r for r in rows if r["sc"] and not placeholder(r["country"])
+           and r["country"] not in sc_countries(r["sc"])]
+    got = regionids([pt for r in odd for pt in ring(r["lx"], r["ly"])])
+    for k, r in enumerate(odd):
+        r["ring"] = [sc_countries(ids) for ids in got[k * RING_POINTS:(k + 1) * RING_POINTS]]
+
+
+def on_the_line(r):
+    """Border noise: SC files the place's point only under other countries, but files ground within
+    RING_KM of it under the place's own (Overture's) country. The point sits on SC's simplified border
+    (a Northern Irish townland SC puts in Ireland, a Quebec village in Vermont), and the place is kept
+    in its own country only. A place SC files in another country all around (Tifariti, Matsu) or
+    under both (Crimea, Puerto Rico, Gibraltar) is not touched."""
+    return any(r["country"] in cs for cs in r.get("ring") or [])
+
+
+def countries(rows, by_gers):
+    """r["cs"]: the countries a place is filed under. Without r["sc"] (no lookup), Overture's alone."""
+    for r in rows:
+        own = set(sc_countries(r["sc"])) if "sc" in r and not on_the_line(r) else set()
+        if not placeholder(r["country"]):
+            own.add(r["country"])
+        r["cs"] = own
+    for r in rows:   # a chain is whole: everything from the region down holds its descendants' countries
+        for a in r["anc"] or []:
+            up = by_gers.get(a)
+            if up is not None and up is not r and up["st"] >= ST["region"]:
+                up["cs"] |= r["cs"]
+    for r in rows:
+        r["cs"] = sorted(r["cs"])
 
 
 # --- building ------------------------------------------------------------------------------------
@@ -102,15 +203,26 @@ def assign(rows):
                     region = by_gers.get(a)  # None when the region has no area
         if region is not None and region["country"] != r["country"]:
             region = None
-        r["file"] = (r["country"], region["id"] if region else NO_REGION)
+        r["region"] = region
+    countries(rows, by_gers)
+    homes = country_roots(rows)
+    for r in rows:
+        r["files"] = []
+        home = homes.get(r["country"])
+        for cc in r["cs"]:
+            if cc != r["country"] and home is not None and cc in home["cs"]:
+                key = home["id"]   # inside its own country's root, itself under cc
+            else:
+                key = r["region"]["id"] if r["region"] else NO_REGION
+            r["files"].append((cc, key))
     return by_gers
 
 
 def country_roots(rows):
-    """cc -> the place that stands for the country: its country division, else a dependency."""
+    """Overture country -> the place that stands for it: its country division, else a dependency."""
     roots = {}
     for r in sorted(rows, key=lambda r: (r["st"], r["gers"])):
-        if r["st"] in (0, 1) and r["country"] not in roots and r["file"][1] == NO_REGION:
+        if r["st"] in (0, 1) and r["country"] not in roots and r.get("region") is None:
             roots[r["country"]] = r
     return roots
 
@@ -119,69 +231,22 @@ def sort_key(r):
     return (r["st"], (r["name"] or "").casefold(), r["id"])
 
 
-# --- romanizing Cyrillic --------------------------------------------------------------------------
-
-# A name with no English one is shown in Latin letters when it is Cyrillic: rules that hold, unlike other
-# scripts' (Japanese readings, Arabic vowels). The letters are BGN/PCGN's, simplified, for a reader.
-CYRILLIC = {
-    "а": "a", "б": "b", "в": "v", "г": "g", "д": "d", "е": "e", "ё": "yo", "ж": "zh", "з": "z", "и": "i",
-    "й": "y", "к": "k", "л": "l", "м": "m", "н": "n", "о": "o", "п": "p", "р": "r", "с": "s", "т": "t",
-    "у": "u", "ф": "f", "х": "kh", "ц": "ts", "ч": "ch", "ш": "sh", "щ": "shch", "ъ": "", "ы": "y", "ь": "",
-    "э": "e", "ю": "yu", "я": "ya", "і": "i", "ї": "yi", "є": "ye", "ґ": "g", "ў": "w",
-    "ә": "a", "ғ": "gh", "қ": "q", "ң": "ng", "ө": "o", "ұ": "u", "ү": "u", "һ": "h", "ҳ": "h",
-    "ј": "j", "љ": "lj", "њ": "nj", "ћ": "c", "ђ": "dj", "џ": "dz", "ѓ": "gj", "ќ": "kj", "ѕ": "dz",
-}
-CYRILLIC_BY_COUNTRY = {
-    "UA": {"г": "h", "и": "y", "х": "kh", "щ": "shch", "е": "e"},
-    "BY": {"г": "h", "э": "e"},
-    "BG": {"щ": "sht", "ъ": "a", "й": "y", "х": "h"},
-    "RS": {"ж": "z", "ч": "c", "ш": "s", "х": "h", "ц": "c"},
-}
-VOWELS = set("аеёиоуыэюяіїєәөұү")
-
-
-def romanize(name, cc):
-    """The name in Latin letters if Cyrillic is its only other script, else None."""
-    letters = [ch for ch in name if ch.isalpha()]
-    def cyrillic(ch):
-        return "CYRILLIC" in unicodedata.name(ch, "")
-    if not any(cyrillic(ch) for ch in letters):
-        return None
-    if not all(cyrillic(ch) or "LATIN" in unicodedata.name(ch, "") for ch in letters):
-        return None
-    table = {**CYRILLIC, **CYRILLIC_BY_COUNTRY.get(cc, {})}
-    soft_e = cc in ("RU", "BY", "KZ", "KG", "UZ", "TJ")   # е is "ye" after a vowel or at a word's start
-    out = []
-    for i, ch in enumerate(name):
-        low = ch.lower()
-        if low not in table:
-            out.append(ch)
-            continue
-        before = name[i - 1].lower() if i else " "
-        after = name[i + 1].lower() if i + 1 < len(name) else " "
-        if low == "е" and soft_e and (not before.isalpha() or before in VOWELS or before in "ьъ"):
-            r = "ye"
-        elif low == "й" and before == "ы" and not after.isalpha():
-            r = ""                                        # -ый is -y, not -yy
-        else:
-            r = table[low]
-        out.append(r.capitalize() if ch != low else r)
-    return "".join(out)
-
-
-def english(m, cc):
-    """A place's name for the site, when it differs from its own: Overture's English one, else romanized."""
-    en = m["en"] if m["en"] and m["en"] != m["name"] else None
-    return en or (romanize(m["name"], cc) if m["name"] else None)
+def english(m, cc=None):
+    """A place's English name for the site, when it differs from its own: Overture's. No home-made
+    romanisation (DESIGN.md, "Other touchy things"); Wikidata's English label is still to come."""
+    return m["en"] if m["en"] and m["en"] != m["name"] else None
 
 
 def build(rows, counted):
     """-> (index dict, {path: file dict}, stats)."""
     by_gers = assign(rows)
-    roots = country_roots(rows)
+    homes = country_roots(rows)
     files = {}
     for r in rows:
-        files.setdefault(r["file"], []).append(r)
+        for f in r["files"]:
+            files.setdefault(f, []).append(r)
+    # the place that heads a country in the index: its own root, filed at its top
+    roots = {cc: r for cc, r in homes.items() if (cc, NO_REGION) in r["files"]}
     out, stats = {}, {"orphans": 0, "noRoot": []}
     countries = {}
     for (cc, reg), members in files.items():
@@ -190,7 +255,9 @@ def build(rows, counted):
             if root is None:
                 stats["noRoot"].append(cc)
         else:
-            root = next(m for m in members if m["id"] == reg)
+            root = next((m for m in members if m["id"] == reg), None)
+            if root is None:
+                raise SystemExit(f"{cc}/{reg}: the file's root is not filed under {cc}")
         inside = {m["gers"] for m in members}
         kids = {}
         tops = []
@@ -345,11 +412,14 @@ def main(argv=None):
     cities = json.loads((ROOT / "config" / "cities.json").read_text(encoding="utf-8"))["cities"]
     rows = read_divisions(a.src)
     print(f"{len(rows)} divisions with an area", flush=True)
-    stateless = [r for r in rows if not r["country"]]
-    for r in stateless:  # disputed areas Overture gives no country: no file can hold them
-        print(f"left out, no country: {r['gers']} {r['subtype']} {r['name']!r}")
-    rows = [r for r in rows if r["country"]]
+    attach_sc(rows)
     assign(rows)
+    for r in rows:
+        if not r["files"]:   # neither SC nor Overture names a country there (Senkaku, the Spratlys)
+            print(f"left out, no country: {r['gers']} {r['subtype']} {r['name']!r}")
+    moved = sum(1 for r in rows if r["cs"] != ([] if placeholder(r["country"]) else [r["country"]]))
+    print(f"filed differently from Overture's country: {moved}; under two or more countries: "
+          f"{sum(1 for r in rows if len(r['cs']) > 1)}", flush=True)
     counted, report = match_cities(rows, cities)
     index_countries, files, stats = build(rows, counted)
     write(a.out, overture, index_countries, files)

@@ -822,9 +822,26 @@ function optionalJSON(url) {
   return optionalCache.get(url);
 }
 
+// A country is named as StreetComplete names it: the platform's locale data (CLDR), here the browser's,
+// in English like the rest of the site; Palestine by CLDR's short form (DESIGN.md, "Countries in the place
+// index"). The index's own name (the local one, or the code where no division stands for the country)
+// stays searchable.
+const shortRegionNames = new Intl.DisplayNames(["en"], { type: "region", style: "short" });
+function cldrCountry(cc) {
+  try {
+    const n = (cc === "PS" ? shortRegionNames : regionNames).of(cc);
+    return n && n !== cc ? n : null;
+  } catch { return null; }
+}
+
 function placesIndex() {
   if (!placeIndex) {
-    placeIndex = optionalJSON(`${PLACES}/index.json`);
+    placeIndex = optionalJSON(`${PLACES}/index.json`).then((idx) => {
+      if (!idx) return idx;
+      for (const c of idx.countries) c.en = cldrCountry(c.cc) || c.en || null;
+      idx.countries.sort((a, b) => enName(a).localeCompare(enName(b), "en"));
+      return idx;
+    });
     placeIndex.catch(() => { placeIndex = null; });   // a failed fetch is tried again next time
   }
   return placeIndex;
@@ -875,7 +892,10 @@ async function loadCountry(country) {
 const enName = (p) => p.en || p.name;
 const rowName = (row) => row[R.en] || row[R.name];
 const refName = (ref) => ref.kind === "country" ? enName(ref.country) : ref.kind === "region" ? enName(ref.region) : rowName(ref.shard.rows[ref.i]);
-const refId = (ref) => ref.kind === "country" ? ref.country.id : ref.kind === "region" ? ref.region.id : ref.shard.rows[ref.i][R.id];
+// A country no Overture division heads (Palestine, Western Sahara, the Canaries) is addressed by its code,
+// lower case: two letters never clash with a 12-hex place id.
+const countryId = (c) => c.id || c.cc.toLowerCase();
+const refId = (ref) => ref.kind === "country" ? countryId(ref.country) : ref.kind === "region" ? ref.region.id : ref.shard.rows[ref.i][R.id];
 const refSt = (ref) => ref.kind === "country" ? 0 : ref.kind === "region" ? 2 : ref.shard.rows[ref.i][R.st];
 const refIn = (ref) => ref.kind === "row" ? `${ref.country.cc.toLowerCase()}/${ref.region.id}` : "";
 function refCounted(ref) {
@@ -914,7 +934,7 @@ async function resolvePlace(id, hint) {
   const idx = await placesIndex();
   if (!idx) return null;
   for (const country of idx.countries) {
-    if (country.id === id) return { kind: "country", country };
+    if (countryId(country) === id) return { kind: "country", country };
     const region = country.regions.find((r) => r.id === id && r.id !== "_");
     if (region) return { kind: "region", country, region, shard: await loadShard(country, region) };
   }
@@ -1228,6 +1248,8 @@ function countriesCard(idx) {
     el("h2", {}, "Countries"),
     el("p", { class: "sub" }, "Every named place, from Overture Maps' divisions. Choose a country, then a region, " +
       "and on down; places this site counts link to their numbers, and any other can be asked for."),
+    el("p", { class: "sub" }, "Places are filed where StreetComplete applies that country's rules, so a few " +
+      "appear under two countries. This site describes the app; it takes no position on borders."),
     el("ul", { class: "place-grid" }, idx.countries.map((c) => el("li", {},
       placeLink({ kind: "country", country: c }),
       el("span", { class: "place-n" }, nf.format(c.regions.reduce((s, r) => s + (r.n || 0), 0)))))));
