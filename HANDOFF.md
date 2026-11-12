@@ -991,8 +991,9 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   step:** paste `.scratch/wiki-redirects/create-redirects.js` into the browser console on any
   wiki.openstreetmap.org page (createonly, never overwrites), then post `.scratch/wiki-redirects/reply-7374.md`
   on the issue if wanted. Judgment calls in it: AX → Sv:Finland (mirrors "Åland"), TF → a French-titled page,
-  SJ → Svalbard only. Seen on the way: the wiki's "Saint-Pierre and Miquelon" redirects to Saint Vincent
-  and the Grenadines; left alone, mentioned in the draft reply.
+  SJ → Svalbard only. The wiki's "Saint-Pierre and Miquelon" redirected to Saint Vincent and the Grenadines
+  (since 2021); the owner chose to fix it, and the script does (only if the page still holds that text).
+  The reply (three tables) asks the maintainers whether to write stubs for BQ, BV, IO, SH.
 - **Static-assets loop: found (22:30).** A zone rule, not the assets: comentality.com's Transform Rule
   "Serve index.html for folder paths" (`ends_with(http.request.uri.path, "/")` -> path + `index.html`,
   added 2026-10-28 for the blog on OSS, `../comentality.com/docs/cloudflare-move.md`) is zone-wide.
