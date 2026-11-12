@@ -953,3 +953,19 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   there: the `assets-switch` merge (a `wrangler deploy`) follows the flip, and the `countries` merge waits
   for both. The flip's gate is met for today; the owner runs, in Git Bash, any time before tomorrow's run:
   `bash .scratch/cloudflare/flip.sh >> logs/flip.log 2>&1` (it reads today's scheduler.log lines).
+- **Evening, 21:03–21:15 (owner: "do it yourself, you have my permission"):**
+  - **Flipped (21:05).** `flip.sh` passed its checks and switched Pages: skfd.github.io/sc-open-quests now
+    redirects to street-complete-statistics.comentality.com (`logs/flip.log`).
+  - **`assets-switch` merged and deployed (02:07 UTC), and it broke the home page.** Every file serves equal
+    (4,848 of 4,849), a missing path is a real 404, but **`/` and `/index.html` both answer 307 `Location: /`**
+    at the edge (`cfOrigin;dur=0`), a loop, also with a query. `wrangler dev` with the same config serves `/`
+    fine, so it is something on the live side; a zone URL-rewrite rule (`/` → `/index.html`) would explain
+    exactly this, but the token cannot read rulesets, so that is unconfirmed.
+  - **The rollback was refused to Claude ("Production Deploy").** The owner was notified. To restore, in Git
+    Bash: `cd cloudflare && set -a && . ~/.config/sc-open-quests/cloudflare.env && set +a && npx wrangler
+    deploy --config wrangler.r2.jsonc` (the earlier R2 Worker; it served `/` fine).
+  - **The merge is reverted on main (8824b9e2)**, so the 12:15 run syncs R2 only and does not redeploy the
+    broken shape. Before trying static assets again: look in the dashboard (Rules > Transform Rules / URL
+    Rewrite, Redirect Rules) for a rule on `/`; or set `"html_handling": "none"` and add a `_redirects`-free
+    test on a separate hostname first.
+  - **Not done, on purpose:** the `countries` merge waits until the site is healthy.
