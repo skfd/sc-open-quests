@@ -1036,3 +1036,11 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   `cloudflare/wrangler.jsonc`. Way back: `npx wrangler deploy --config wrangler.r2.jsonc` in
   `cloudflare/`. The 12:15 run deploys this shape from now on; watch `=== cloud ===` for "site deployed".
   The zone rule can stay; narrowing it to the blog's hosts is optional and the owner's.
+- **The world count never ran (found 22:55 on 11-11).** `logs/planet-count-2.log` ends at 2026-11-10
+  23:42: the cut finished (128 files, 32,827 s, 87 GB kept in `.scratch/planet/world/cut/`), the planet
+  slice was deleted, and the canary `f21` failed in 18 s: the JVM could not commit 9 GB ("The paging file
+  is too small", `.scratch/planet/world/files/f21/log.txt`). The untracked `hs_err_pid65112.log` written
+  off above as "not ours" is this crash. Not a heap limit: the machine's commit limit is 104 GB (88 RAM +
+  16 pagefile) and about 70 GB is committed with no process showing it (top process 4 GB), so only about
+  34 GB is left for engines, against the chain's 40 GB canary and 2 x 30 GB count. A rerun of chain2.sh
+  goes on from the canary (cut and notes are done).
