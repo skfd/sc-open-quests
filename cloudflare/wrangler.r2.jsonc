@@ -1,0 +1,20 @@
+// The way back, not the live config: the Worker that serves the site from the R2 bucket, as it ran
+// from 2026-11-10 until wrangler.jsonc (static assets, no script) replaced it. Every request to it is
+// a Worker invocation (Workers Free: 100,000 a day). The daily run still keeps the bucket equal to
+// docs/, so `npx wrangler deploy --config wrangler.r2.jsonc` puts this shape back at once.
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "sc-open-quests",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-10-01",
+  "account_id": "699ef919f465c0a729552780cdb6c27f",
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [
+    { "pattern": "street-complete-statistics.comentality.com", "custom_domain": true }
+  ],
+  "r2_buckets": [
+    { "binding": "SITE", "bucket_name": "sc-open-quests" }
+  ],
+  "observability": { "enabled": true }
+}
