@@ -495,9 +495,42 @@ def notes_for(out: Path, fid: str | None) -> Path:
 
 # --- count ---------------------------------------------------------------------------------------
 
-def engine(args: list[str], tz: str, heap_gb: int, log: Path) -> tuple[int, float]:
+def commit_free_gb() -> float | None:
+    """Windows' commit headroom in GiB: the commit limit (RAM plus page file) less what is committed.
+    A JVM that cannot commit its heap dies ("The paging file is too small"), however much RAM is idle.
+    None off Windows."""
+    if sys.platform != "win32":
+        return None
+    import ctypes
+    from ctypes import wintypes
+
+    class Info(ctypes.Structure):
+        _fields_ = [("cb", wintypes.DWORD)] + [(n, ctypes.c_size_t) for n in (
+            "CommitTotal", "CommitLimit", "CommitPeak", "PhysicalTotal", "PhysicalAvailable", "SystemCache",
+            "KernelTotal", "KernelPaged", "KernelNonpaged", "PageSize")] + [
+            (n, wintypes.DWORD) for n in ("HandleCount", "ProcessCount", "ThreadCount")]
+    info = Info()
+    info.cb = ctypes.sizeof(info)
+    if not ctypes.windll.psapi.GetPerformanceInfo(ctypes.byref(info), info.cb):
+        return None
+    return (info.CommitLimit - info.CommitTotal) * info.PageSize / 2**30
+
+
+# An engine starts only with its whole heap free plus this much (the JVM's own memory beyond the heap).
+MARGIN_GB = 4
+# Each engine commits its whole heap at start (-Xms = -Xmx), so the headroom read after this long counts it.
+STARTUP_S = 45
+# What a JVM prints when Windows refuses it memory: the file goes back in the queue, it did not fail.
+MEMORY_REFUSED = ("paging file is too small", "insufficient memory for the Java Runtime",
+                  "Could not reserve enough space")
+
+
+def engine(args: list[str], tz: str, heap_gb: int, log: Path, commit_all: bool = False) -> tuple[int, float]:
     env = run.engine_env(tz)  # no heap=True: the -Xmx below is what two engines at once can each have
-    env["JAVA_OPTS"] = (env.get("JAVA_OPTS", "") + f" -Xmx{heap_gb}g").strip()
+    opts = f" -Xmx{heap_gb}g -XX:ErrorFile={log.parent / 'hs_err_%p.log'}"
+    if commit_all:  # the heap committed up front, so the next engine's memory check sees all of it
+        opts += f" -Xms{heap_gb}g"
+    env["JAVA_OPTS"] = (env.get("JAVA_OPTS", "") + opts).strip()
     t = time.time()
     with open(log, "w", encoding="utf-8") as f:
         r = subprocess.run([str(run.ENGINE_BAT), *args], cwd=ROOT, env=env, stdout=f, stderr=subprocess.STDOUT)
@@ -505,36 +538,89 @@ def engine(args: list[str], tz: str, heap_gb: int, log: Path) -> tuple[int, floa
 
 
 def count(out: Path, engines: int, heap_gb: int, delete_cut: bool = False, dump_ids: Path | None = None,
-          only: list[str] | None = None) -> None:
+          only: list[str] | None = None, give_up_s: float = 7200) -> None:
+    """Up to `engines` at once, as memory allows: a file starts only when Windows can commit its heap
+    (commit_free_gb), so the count runs one engine while something else holds memory and two when it
+    is free. A file Windows refused memory goes back in the queue. With no engine of ours running and
+    still no room after give_up_s, the files left are reported failed."""
     p = read_json(out / "plan.json")
     quests = run.newest_quests_file()
+    gated = commit_free_gb() is not None
 
     def one(f):
         d = out / "files" / f["id"]
-        if (d / "done.json").exists():
-            return f["id"], "done before"
         pbf = out / "cut" / f"{f['id']}.osm.pbf"
-        # no file starts where it would run into the daily update (two engines and its own do not fit)
-        quiet(ahead_minutes=40)
+        log = d / "log.txt"
         code, secs = engine(["count", "--pbf", str(pbf), "--quests", rel(quests), "--cities", rel(d / "cities.json"),
                              "--out", rel(d / "out"), "--notes", rel(notes_for(out, f["id"])), "--parts", rel(d / "parts"),
                              *(["--dump-matches", rel(d / "matches.tsv"), "--dump-ids", rel(dump_ids)] if dump_ids else [])],
-                            p["timeZone"], heap_gb, d / "log.txt")
+                            p["timeZone"], heap_gb, log, commit_all=gated)
         if code:
-            return f["id"], f"FAILED ({code}), see {d / 'log.txt'}"
+            text = log.read_text(encoding="utf-8", errors="replace")
+            if any(s in text for s in MEMORY_REFUSED):
+                return f, "memory"
+            return f, f"FAILED ({code}), see {log}"
         write_json(d / "done.json", {"wallSeconds": round(secs, 1)})
         if delete_cut:
             pbf.unlink()
-        return f["id"], f"{secs:.0f} s"
+        return f, f"{secs:.0f} s"
 
+    from collections import deque
+    queue = deque()  # plan.json lists the largest file first
+    for f in p["files"]:
+        if only and f["id"] not in only:
+            continue
+        if (out / "files" / f["id"] / "done.json").exists():
+            print(f"{f['id']}: done before", flush=True)
+        else:
+            queue.append(f)
     t = time.time()
-    failed = []
-    with ThreadPoolExecutor(engines) as ex:  # plan.json lists the largest file first
-        for fid, msg in ex.map(one, [f for f in p["files"] if not only or f["id"] in only]):
-            print(f"{fid}: {msg}", flush=True)
-            if msg.startswith("FAILED"):
-                failed.append(fid)
-    print(f"count: {time.time() - t:.0f} s with {engines} engine(s) at once")
+    failed, running, refused = [], {}, {}
+    last_start = idle_since = 0.0
+    last_wait_log = 0.0
+    most = 0
+    with ThreadPoolExecutor(engines) as ex:
+        while queue or running:
+            for fut in [x for x in running if x.done()]:
+                running.pop(fut)
+                f, msg = fut.result()
+                if msg == "memory":
+                    refused[f["id"]] = refused.get(f["id"], 0) + 1
+                    if refused[f["id"]] >= 5:
+                        print(f"{f['id']}: FAILED (Windows refused its memory 5 times)", flush=True)
+                        failed.append(f["id"])
+                    else:
+                        print(f"{f['id']}: Windows refused its memory ({refused[f['id']]}x), queued again", flush=True)
+                        queue.append(f)
+                else:
+                    print(f"{f['id']}: {msg}", flush=True)
+                    if msg.startswith("FAILED"):
+                        failed.append(f["id"])
+            if queue and len(running) < engines and time.time() - last_start >= STARTUP_S:
+                # no file starts where it would run into the daily update (an engine and its own do not fit)
+                quiet(ahead_minutes=40)
+                free = commit_free_gb()
+                if free is None or free >= heap_gb + MARGIN_GB:
+                    f = queue.popleft()
+                    running[ex.submit(one, f)] = f
+                    most = max(most, len(running))
+                    last_start, idle_since = time.time(), 0.0
+                    run.log(f"count: {f['id']} started, {len(running)} engine(s) running"
+                            + (f", {free:.0f} GiB was free" if free is not None else ""))
+                    continue
+                if time.time() - last_wait_log >= 600:
+                    run.log(f"count: waiting for memory, {free:.0f} GiB free, an engine needs {heap_gb + MARGIN_GB}; "
+                            f"{len(running)} running, {len(queue)} queued")
+                    last_wait_log = time.time()
+                if not running:
+                    idle_since = idle_since or time.time()
+                    if time.time() - idle_since >= give_up_s:
+                        for f in queue:
+                            print(f"{f['id']}: FAILED (no memory for {heap_gb} GiB in {give_up_s:.0f} s)", flush=True)
+                            failed.append(f["id"])
+                        queue.clear()
+            time.sleep(5)
+    print(f"count: {time.time() - t:.0f} s, up to {most} engine(s) at once")
     if failed:
         raise SystemExit(f"count: {len(failed)} file(s) failed: {', '.join(failed)}")
 

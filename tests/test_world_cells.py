@@ -50,3 +50,53 @@ def test_limit_and_cap():
     # without the cap the sparse corner stays one long cell
     uncapped = w.kd(items, 0.05, _whole(items), 2_000_000)
     assert max(c1 - c0 + 1 for (_, _, c0, c1), _ in uncapped) > 200
+
+
+def _count_setup(tmp_path, monkeypatch, free, outcomes):
+    """A plan of files a, b, c; a fake engine that answers from `outcomes` (file id -> list of
+    (exit code, log text)) and a commit headroom read from `free` (a list, last value repeats)."""
+    w.write_json(tmp_path / "plan.json", {"timeZone": "UTC", "files": [{"id": i} for i in "abc"]})
+    for i in "abc":
+        (tmp_path / "files" / i).mkdir(parents=True)
+    started = []
+
+    def engine(args, tz, heap_gb, log, commit_all=False):
+        fid = log.parent.name
+        started.append((fid, commit_all))
+        code, text = outcomes[fid].pop(0) if outcomes.get(fid) else (0, "ok")
+        log.write_text(text, encoding="utf-8")
+        return code, 1.0
+
+    monkeypatch.setattr(w, "engine", engine)
+    monkeypatch.setattr(w, "commit_free_gb", lambda: free.pop(0) if len(free) > 1 else free[0])
+    monkeypatch.setattr(w, "quiet", lambda ahead_minutes=0: None)
+    monkeypatch.setattr(w, "rel", str)
+    monkeypatch.setattr(w.run, "newest_quests_file", lambda: tmp_path / "q.json")
+    monkeypatch.setattr(w.run, "log", lambda msg: None)
+    monkeypatch.setattr(w, "STARTUP_S", 0)
+    monkeypatch.setattr(w.time, "sleep", lambda s: None)
+    return started
+
+
+def test_count_queues_again_a_file_windows_refused_memory(tmp_path, monkeypatch):
+    started = _count_setup(tmp_path, monkeypatch, [100.0],
+                           {"b": [(1, "error='The paging file is too small for this operation'")]})
+    w.count(tmp_path, engines=2, heap_gb=30)
+    assert sorted(f for f, _ in started) == ["a", "b", "b", "c"]
+    assert all(commit_all for _, commit_all in started)  # each engine commits its heap up front
+    assert all((tmp_path / "files" / i / "done.json").exists() for i in "abc")
+
+
+def test_count_gives_up_when_memory_never_comes(tmp_path, monkeypatch):
+    started = _count_setup(tmp_path, monkeypatch, [10.0], {})
+    import pytest
+    with pytest.raises(SystemExit, match="3 file"):
+        w.count(tmp_path, engines=2, heap_gb=30, give_up_s=0)
+    assert started == []
+
+
+def test_count_still_fails_a_real_engine_error(tmp_path, monkeypatch):
+    _count_setup(tmp_path, monkeypatch, [100.0], {"a": [(1, "java.lang.OutOfMemoryError: Java heap space")]})
+    import pytest
+    with pytest.raises(SystemExit, match="1 file.*a"):
+        w.count(tmp_path, engines=1, heap_gb=30)
