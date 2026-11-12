@@ -2529,31 +2529,6 @@ has the commands.
   `main:/docs` is also what R2 copies. The revert is pointing Pages back at `main:/docs`. Later, once
   the week has held, the daily data can leave git history (the reason for the move).
 
-### Static assets, no script (2026-11-10, built on `assets-switch`; live after the flip)
-
-The owner wants the site to survive being posted somewhere busy; so far it has no readers. As a
-Worker reading R2, every request was an invocation: about 71 for a first city view, so Workers Free's
-100,000 a day ran out after about 1,400 of them, and past it readers get an error until midnight UTC.
-
-- **Shape:** `cloudflare/wrangler.jsonc` deploys `docs/` as Workers static assets with no `main`.
-  A path that matches a file is served without running code, and Cloudflare bills no asset request,
-  so nothing a reader does counts against the cap. There is no script on purpose: with one, a path
-  that matches nothing (a favicon, a scanner's `/wp-login.php`) would still run it. Without one such
-  a path is an empty 404.
-- **Publish:** `tools/cloud_publish.py` syncs R2 first, then runs `wrangler deploy`, which uploads
-  the files that changed: 42 s for all 4,836, 20 s when nothing changed. The R2 bucket stays equal
-  to `docs/`. It's the way back (`wrangler.r2.jsonc`), and its object count is what the partial-site
-  guard compares against.
-- **What changed for the reader:** nothing in the bytes (all 4,836 files compare equal on a local
-  `wrangler dev`). Data is `max-age=0, must-revalidate` where it was five minutes; `app.js` already
-  asks with `no-cache`, so that is the same in practice. `docs/_headers` keeps icons and images a
-  day. JSON's Content-Type has no charset. `/index.html` redirects to `/`. The page declares the
-  StreetComplete mark as its icon.
-- **Limits now:** 20,000 files in a version and 25 MiB a file. `docs/` is 4,836, of which 4,202 are
-  the name layer and don't grow with cities; a city adds about two.
-- **Not shown before the switch:** production serving. The trial Worker had no route. A full
-  `--check` after the switch should pass and leave the Worker's invocation count where it was.
-
 ## Before a spike: what a first visit asks of whom (2026-11-10)
 
 The owner's goal is that the site survives being posted. Three things were done on main, and the

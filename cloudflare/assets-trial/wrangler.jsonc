@@ -1,0 +1,24 @@
+// A trial, not the live site: the same Worker with docs/ attached as static assets, to measure what
+// that costs to deploy and whether it serves the same bytes. It has no route and no workers.dev URL,
+// so nothing reaches it from outside. The live config is ../wrangler.jsonc.
+//
+// With `assets`, a path that matches a file in docs/ is served by Cloudflare without running the
+// Worker (asset requests are free and don't count against Workers Free's 100,000 a day). Only a path
+// with no matching file runs src/worker.js, which then answers from R2 as it does today.
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "sc-open-quests-assets-trial",
+  "main": "../src/worker.js",
+  "compatibility_date": "2026-10-01",
+  "account_id": "699ef919f465c0a729552780cdb6c27f",
+  "workers_dev": false,
+  "preview_urls": false,
+  "assets": {
+    "directory": "../../docs",
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "none"
+  },
+  "r2_buckets": [
+    { "binding": "SITE", "bucket_name": "sc-open-quests" }
+  ]
+}
