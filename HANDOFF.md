@@ -1056,6 +1056,14 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   **Not on the site, by design:** this run writes `.scratch/planet/world/REPORT.md` and `oracle.log`
   (the world's totals and two checks against the cities and the stream); publishing world numbers is
   DESIGN.md, "Place statistics for the whole world: the final product", not built.
+- **World count stalled overnight at 19 of 128 files; restarted 15:09 on 11-12.** One engine at 30 GB did
+  f0–f17 and f21 at about 3 min each, until midnight. Then something outside the count took about 6 GB, so
+  commit headroom stayed at 28–29 GiB until at least 04:00, below the 34 an engine needs. After 2 h with
+  none running, all 109 left failed, and so did the 40 GB pass. `report` then crashed on the first file
+  with no snapshot (StopIteration), and no REPORT.md was written; chain3's closing "report and oracle
+  written" line is printed either way. At 15:08 headroom was 37 GiB, so chain3.sh was started again
+  (old log kept as `logs/planet-count-3a.log`). It waits out the side-by-side window until 15:40, then
+  about 5.5 h if memory holds. If it stalls again the same way, the 2 h give-up is what to change.
 - **SC #7374 wiki edits done (2026-11-12, 05:54 UTC, owner's go-ahead):** the 20 redirects were created as Skfd
   (revisions 3114184–3114203) and "Saint-Pierre and Miquelon" now points to Saint-Pierre-et-Miquelon (3114204).
   Checked: 25 of the 29 titles redirect, and only BQ, BV, IO and SH are missing. The reply (now in past tense) sits
