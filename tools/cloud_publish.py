@@ -196,7 +196,7 @@ def _fetch_md5(rel: str, tries: int = 4) -> tuple[str, str | None, int | str]:
         try:
             with urllib.request.urlopen(req, timeout=60) as r:
                 body = r.read()
-                if rel.endswith(".html"):
+                if rel == "" or rel.endswith(".html"):
                     body = BEACON.sub(b"", body)
                 return rel, hashlib.md5(body).hexdigest(), r.status
         except urllib.error.HTTPError as e:
@@ -209,9 +209,16 @@ def _fetch_md5(rel: str, tries: int = 4) -> tuple[str, str | None, int | str]:
 
 
 def check(docs: Path = DOCS, workers: int = 16) -> int:
-    """Fetch every file of docs/ through the site and compare bytes. Returns the number that differ."""
+    """Fetch every file of docs/ through the site and compare bytes. Returns the number that differ.
+
+    "/" itself is fetched too and must be index.html: on 2026-11-11 every file compared equal while "/"
+    redirected to itself (DESIGN.md, "Hosting on Cloudflare").
+    """
     files = [f for f in local_files(docs) if f not in NOT_SERVED]
     want = {f: hashlib.md5((docs / f).read_bytes()).hexdigest() for f in files}
+    if "index.html" in want:
+        files.append("")
+        want[""] = want["index.html"]
     bad = []
     with concurrent.futures.ThreadPoolExecutor(workers) as ex:
         for rel, got, status in ex.map(_fetch_md5, files):

@@ -76,8 +76,20 @@ def test_check_skips_the_files_cloudflare_does_not_serve(tmp_path, monkeypatch):
 
     def fetch(rel):
         asked.append(rel)
-        return rel, cp.hashlib.md5((docs / rel).read_bytes()).hexdigest(), 200
+        return rel, cp.hashlib.md5((docs / (rel or "index.html")).read_bytes()).hexdigest(), 200
 
     monkeypatch.setattr(cp, "_fetch_md5", fetch)
     assert cp.check(docs=docs, workers=2) == 0
-    assert "_headers" not in asked and sorted(asked) == sorted(WHOLE)
+    assert "_headers" not in asked and sorted(asked) == sorted(WHOLE + [""])
+
+
+def test_check_fails_when_the_root_is_not_the_page(tmp_path, monkeypatch):
+    docs = _site(tmp_path)
+
+    def fetch(rel):
+        if rel == "":
+            return rel, None, "HTTP Error 307: redirect loop"
+        return rel, cp.hashlib.md5((docs / rel).read_bytes()).hexdigest(), 200
+
+    monkeypatch.setattr(cp, "_fetch_md5", fetch)
+    assert cp.check(docs=docs, workers=2) == 1

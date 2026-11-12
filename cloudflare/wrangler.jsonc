@@ -17,8 +17,12 @@
   ],
   "assets": {
     "directory": "../docs",
-    // "/" serves index.html; "/index.html" redirects to "/"
-    "html_handling": "auto-trailing-slash",
+    // Files are served at their exact path only. The comentality.com zone has a URL Rewrite rule,
+    // "Serve index.html for folder paths", that turns every path ending in "/" into ".../index.html"
+    // before the assets see it; with "auto-trailing-slash" the assets answered that "/index.html" with
+    // a 307 to "/", a loop. "/" itself is served by docs/_redirects ("/ /index.html 200"), so the home
+    // page works with or without that rule.
+    "html_handling": "none",
     // a missing file is a real 404, never index.html, so a chart that asks for a city the archive
     // lacks fails the way it did on Pages
     "not_found_handling": "none"

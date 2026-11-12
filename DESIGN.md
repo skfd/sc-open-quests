@@ -2547,8 +2547,15 @@ Worker reading R2, every request was an invocation: about 71 for a first city vi
 - **What changed for the reader:** nothing in the bytes (all 4,836 files compare equal on a local
   `wrangler dev`). Data is `max-age=0, must-revalidate` where it was five minutes; `app.js` already
   asks with `no-cache`, so that is the same in practice. `docs/_headers` keeps icons and images a
-  day. JSON's Content-Type has no charset. `/index.html` redirects to `/`. The page declares the
-  StreetComplete mark as its icon.
+  day. JSON's Content-Type has no charset. The page declares the StreetComplete mark as its icon.
+- **The first switch looped on `/` (2026-11-11), fixed the same night.** The comentality.com zone has a
+  URL Rewrite rule for the blog, "Serve index.html for folder paths", that turns every path ending in `/`
+  into `…/index.html` before a Worker or its assets see it (`wrangler tail` on the R2 Worker showed `/`
+  arriving as `/index.html`). The assets' `auto-trailing-slash` answered `/index.html` with 307 to `/`,
+  and the rule rewrote that again. Now `html_handling: "none"` serves files at their exact path only,
+  and `docs/_redirects` (`/ /index.html 200`) serves `/` whether or not the rule stays; `/vendor/` and
+  other folders are a 404, as they were in practice. `cloud_publish.py --check` fetches `/` too, since
+  every file had compared equal while `/` was broken.
 - **Limits now:** 20,000 files in a version and 25 MiB a file. `docs/` is 4,836, of which 4,202 are
   the name layer and don't grow with cities; a city adds about two.
 - **Not shown before the switch:** production serving. The trial Worker had no route. A full
