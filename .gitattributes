@@ -1,3 +1,5 @@
 docs/data/** text eol=lf
 docs/places/** text eol=lf
 docs/vendor/** -text
+docs/_headers text eol=lf
+docs/_redirects text eol=lf
