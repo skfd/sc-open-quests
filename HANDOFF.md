@@ -1044,3 +1044,15 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   16 pagefile) and about 70 GB is committed with no process showing it (top process 4 GB), so only about
   34 GB is left for engines, against the chain's 40 GB canary and 2 x 30 GB count. A rerun of chain2.sh
   goes on from the canary (cut and notes are done).
+- **World count restarted (23:02), fitted to memory (owner: "be adaptable to memory").** `world_cells.py
+  count` (f780c44c) now starts an engine only when Windows can commit its heap plus 4 GiB
+  (`commit_free_gb`, GetPerformanceInfo); each engine commits its heap up front (`-Xms` = `-Xmx`) so the
+  next reading counts it; up to `--engines` at once, so one engine while the hidden 70 GB is held, two
+  when it is not; a file refused memory is queued again (5 times at most); with none of ours running and
+  no room for 2 h, the rest fail. Crash files go to the file's folder. `.scratch/planet/chain3.sh`
+  (hidden, log `logs/planet-count-3.log`): canary f21 at 30 GB, then every file at 30 GB, a failed file
+  once more alone at 40 GB, then `report` and `oracle`. Rerun: the Start-Process line in its header. It
+  waits out the 12:15 run by itself. Expect about 13 h on one engine, less if memory frees up.
+  **Not on the site, by design:** this run writes `.scratch/planet/world/REPORT.md` and `oracle.log`
+  (the world's totals and two checks against the cities and the stream); publishing world numbers is
+  DESIGN.md, "Place statistics for the whole world: the final product", not built.
