@@ -894,16 +894,17 @@ def publish(data_dir: Path = DATA_DIR, message: str | None = None, push: bool = 
 
 
 def publish_cloud() -> bool:
-    """Make the R2 bucket behind street-complete-statistics.comentality.com equal to docs/
-    (tools/cloud_publish.py). Runs after the git push, so a Cloudflare failure never holds back the
-    GitHub Pages copy; it is logged as "cloud publish FAILED" and the run goes on. Returns success."""
+    """Publish docs/ to street-complete-statistics.comentality.com (tools/cloud_publish.py: sync to
+    the R2 bucket, then deploy as the site's static assets). Runs after the git push, so a Cloudflare
+    failure never holds back the commit; it is logged as "cloud publish FAILED" and the run goes on,
+    the site keeping the data it had. Returns success."""
     r = subprocess.run([sys.executable, str(TOOLS_DIR / "cloud_publish.py")], cwd=ROOT,
                        capture_output=True, text=True)
     for line in (r.stdout + r.stderr).splitlines():
         if line.strip():
             log(line)
     if r.returncode != 0:
-        log(f"cloud publish FAILED (exit {r.returncode}); GitHub Pages has the data")
+        log(f"cloud publish FAILED (exit {r.returncode}); the site keeps the data it had")
         return False
     return True
 

@@ -1,13 +1,20 @@
-"""Make the R2 bucket that serves street-complete-statistics.comentality.com equal to docs/.
+"""Publish docs/ to street-complete-statistics.comentality.com.
 
-    python tools/cloud_publish.py            sync docs/ to the bucket (uploads changed files, deletes gone ones)
+    python tools/cloud_publish.py            publish: sync docs/ to the R2 bucket, then deploy it as the site
     python tools/cloud_publish.py --dry-run  say what it would do
     python tools/cloud_publish.py --check    compare every file over HTTPS through the site, change nothing
+
+The site is docs/ deployed as Workers static assets (cloudflare/wrangler.jsonc): `wrangler deploy`
+uploads the files that changed. The R2 bucket is no longer what readers get; it is kept equal to
+docs/ as the way back (cloudflare/wrangler.r2.jsonc serves from it) and because its object count is
+what the partial-site guard compares against. The sync runs first, so a docs/ it refuses is never
+deployed.
 
 The Cloudflare token lives outside the repo, in ~/.config/sc-open-quests/cloudflare.env
 (CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID); SC_OPEN_QUESTS_CLOUDFLARE_ENV names another file.
 R2's S3 credentials are derived from it (access key = the token's id, secret = SHA-256 of its value),
-so there is one secret, not two. Needs rclone on PATH.
+so there is one secret, not two. Needs rclone and node on PATH, and wrangler installed once
+(`cd cloudflare && npm install`).
 
 It refuses a docs/ that looks partial (no index.html or data/cities.json, or far fewer files than the
 bucket holds) and never deletes more than MAX_DELETE objects in one run, so a broken checkout cannot
@@ -37,6 +44,11 @@ ENV_FILE = Path(os.environ.get("SC_OPEN_QUESTS_CLOUDFLARE_ENV",
                                Path.home() / ".config" / "sc-open-quests" / "cloudflare.env"))
 MAX_DELETE = 2000          # a day retires a few hundred snapshot files at most
 MIN_SHARE = 0.5            # docs/ must hold at least half as many files as the bucket
+CLOUDFLARE_DIR = ROOT / "cloudflare"
+WRANGLER = CLOUDFLARE_DIR / "node_modules" / "wrangler" / "bin" / "wrangler.js"
+MAX_ASSETS = 20_000        # Workers Free: files in one deployed version
+# Files in docs/ that Cloudflare reads as instructions and does not serve.
+NOT_SERVED = {"_headers", "_redirects", ".assetsignore"}
 
 
 def log(msg: str) -> None:
@@ -128,6 +140,46 @@ def sync(dry_run: bool = False, docs: Path = DOCS) -> None:
     log(f"{'would copy' if dry_run else 'copied'} {copied}, {'would delete' if dry_run else 'deleted'} {deleted}")
 
 
+def deploy_summary(output: str) -> str:
+    """One line out of wrangler's output: how many files went up and the version it made."""
+    uploaded = re.findall(r"Uploaded (\d+) of (\d+) assets", output)
+    if uploaded:
+        files = f"{uploaded[-1][0]} of {uploaded[-1][1]} files uploaded"
+    elif "No updated asset files" in output:
+        files = "no file changed"
+    else:
+        files = "upload count not reported"
+    version = re.search(r"Current Version ID: (\S+)", output)
+    return f"{files}, version {version.group(1) if version else 'not reported'}"
+
+
+def deploy(dry_run: bool = False, docs: Path = DOCS) -> None:
+    """Deploy docs/ as the site's static assets. Call it only after sync() has accepted docs/."""
+    served = [f for f in local_files(docs) if f not in NOT_SERVED]
+    if len(served) > MAX_ASSETS:
+        raise RuntimeError(f"docs/ holds {len(served)} files; Workers Free takes {MAX_ASSETS} in one version")
+    if not WRANGLER.exists():
+        raise RuntimeError(f"wrangler is not installed ({WRANGLER}); run `npm install` in cloudflare/")
+    env = dict(os.environ)
+    env.update(read_env())
+    args = ["node", str(WRANGLER), "deploy"] + (["--dry-run"] if dry_run else [])
+    try:
+        r = subprocess.run(args, cwd=CLOUDFLARE_DIR, env=env, capture_output=True, text=True,
+                           encoding="utf-8", errors="replace", timeout=1800)
+    except FileNotFoundError:
+        raise RuntimeError("node is not on PATH; the site was not deployed") from None
+    except subprocess.TimeoutExpired:
+        raise RuntimeError("wrangler deploy did not finish in 30 minutes") from None
+    output = (r.stdout or "") + (r.stderr or "")
+    if r.returncode != 0:
+        tail = "\n".join(l for l in output.splitlines() if l.strip())[-1500:]
+        raise RuntimeError(f"wrangler deploy failed (exit {r.returncode}):\n{tail}")
+    if dry_run:
+        log(f"would deploy {len(served)} files as the site")
+    else:
+        log(f"site deployed: {deploy_summary(output)}")
+
+
 # The comentality.com zone has Cloudflare Web Analytics on, which adds one beacon script before </body>
 # of every HTML page; the check takes it out again before comparing.
 BEACON = re.compile(rb'<script[^>]*static\.cloudflareinsights\.com/beacon[^>]*></script>\n?')
@@ -158,7 +210,7 @@ def _fetch_md5(rel: str, tries: int = 4) -> tuple[str, str | None, int | str]:
 
 def check(docs: Path = DOCS, workers: int = 16) -> int:
     """Fetch every file of docs/ through the site and compare bytes. Returns the number that differ."""
-    files = local_files(docs)
+    files = [f for f in local_files(docs) if f not in NOT_SERVED]
     want = {f: hashlib.md5((docs / f).read_bytes()).hexdigest() for f in files}
     bad = []
     with concurrent.futures.ThreadPoolExecutor(workers) as ex:
@@ -179,7 +231,8 @@ def main() -> int:
     try:
         if a.check:
             return 1 if check() else 0
-        sync(dry_run=a.dry_run)
+        sync(dry_run=a.dry_run)      # first: it holds the guard against a partial docs/
+        deploy(dry_run=a.dry_run)
         return 0
     except RuntimeError as e:
         log(f"FAILED: {e}")
