@@ -763,6 +763,27 @@ Open, for the owner when it comes up: the platform (a native Android or iOS widg
 or image address that generic widget apps such as KWGT or Scriptable can show, which needs no app of
 ours); and which view comes first (city total, one quest, or a neighbourhood).
 
+### Widget: decided (owner, 2026-11-11, evening), its own repo `~/Code/sc-open-quests-widget`
+
+- **A native Android app on Google Play**, "Open Quests for StreetComplete", package
+  `com.comentality.openquests` (permanent after the first upload). No Play developer account yet: a
+  personal account made now must run a closed test with 12 testers for 14 days before production, so
+  plan that before release.
+- **Place only**: the big number is the place's open quests from this site's data, "as of <date>". The
+  live "my answers today" line (the public OSM API returns `StreetComplete:quest_type` on changesets,
+  checked) was offered and declined; the per-user non-goal stands.
+- **First view: a city, optionally one quest type**, read from the live `data/history/<cityId>.json`
+  (Toronto 36 KB brotli on the wire, ETag, `max-age=300`, checked 11-11). No pipeline change needed for
+  v1. Neighbourhoods wait for a per-part series file; the small cacheable widget file waits for the R2
+  data subdomain.
+- **Defaults stated, not objected to**: Kotlin + Glance, graph drawn on the device (theme and size
+  follow the widget), refresh once or twice a day after the ~13:00 publish with conditional requests,
+  daily tail only with a missing day drawn as a gap, sizes 2x1 (number + 4-week chip), 4x2 (+ stacked
+  map/resurvey sparkline), 4x3 (+ top three quests), tap opens the place on the site, tone follows the
+  trend (as the share-card idea).
+- **Load on this site**: every refresh is a Worker request against the 100,000 a day until the R2 data
+  subdomain exists; two a day per widget is fine for thousands of installs, not for a hit.
+
 ## Idea: share previews for links (owner, 2026-11-10)
 
 Not planned and nothing built. The site has only a `<title>` and a `description`; no `og:`/`twitter:`
