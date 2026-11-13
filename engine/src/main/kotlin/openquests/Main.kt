@@ -71,8 +71,10 @@ fun main(args: Array<String>) {
         count(opts)
     } catch (e: Throwable) {
         System.err.println("error: ${e.message ?: e}")
-        // a bare require() says only "Failed requirement.": show where
-        if (e !is IllegalArgumentException || e.message == "Failed requirement.") e.printStackTrace()
+        // a bare require() says only "Failed requirement.": show where. An argument error from deep inside
+        // the count (an invalid LatLon) is not a usage error either: -Dopenquests.trace=1 shows where.
+        if (e !is IllegalArgumentException || e.message == "Failed requirement." ||
+            System.getProperty("openquests.trace") != null) e.printStackTrace()
         exitProcess(1)
     }
 }
