@@ -1113,3 +1113,23 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
     the wide-bbox places in Polygon.contains. (4) Only then a new planet slice, cut and count, in a **new**
     `--out` (never `.scratch/planet/world`: its done.json files would skip every file). That run is its own
     step with the owner: about 9 h cut plus about 7 h count, on memory that stalled twice.
+- **World place index built and tested (11-13, 00:50); the planet run with places is next, the owner's step.**
+  - `.scratch/world-places/world/places.json` (395 MB) and `geo/<2 digits>/<id>.geojson`: 1,069,532 places,
+    built in 26 min from `data/overture/world/division_area_outlines.parquet` (`overture_pull.py 2026-10-21.0
+    --outlines`, 3 min). Commits 2dc9cb4d and the report fix after it.
+  - **Checks:** (1) the world's DE subset, and DE through the new code, equal `.scratch/world-de` exactly:
+    40,520 places, every field, every outline. (2) Id join (`.scratch/world-places/idjoin.py`): all but 12 are
+    in the name layer; the 12 are XR/XT/no-country places (Spratly reefs and the like) that the name layer
+    leaves out, so they would be counted but have no page. (3) **Latvia end to end** (`.scratch/world-places/lv.sh`,
+    the 10-27 extract, the world's places.json as parts): Riga's whole-city count, its cells and its Overture
+    place are all 82,390 (exact); 3,183 places have a number; Latvija 2,068,870 (default 873,590). The same
+    file cut into 14 cells and into 2 gives the same number for every place but 4, which differ by the same 2
+    quests (AddMaxHeight, AddOneway, near a cell edge in Dobele): the known cell effect, well inside 0.1%
+    (`.scratch/world-places/invariance.py`). Peak heap 11–13 GB for 27k part entries; the planet's worst file has
+    49,840 (rehearsal above).
+  - **For the planet run** (owner's go-ahead and timing; nothing started): a new out dir (for example
+    `.scratch/planet/world-places/`), the world's places.json copied in, then plan (same nodegrid and `--cities`
+    as chain2), a new planet slice and cut (about 9 h), notes, count (about 7 h at 30 GB, longer if part
+    polygons slow the big files), report. Countries crossing the antimeridian (Russia, the US, Fiji, ...) are
+    tested only by reasoning: their box spans every longitude, so they are tested in every cell of their
+    latitudes, correct but slower; Latvia's run included Russia without trouble.
