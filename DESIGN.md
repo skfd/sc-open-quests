@@ -2924,3 +2924,54 @@ Korea > Liancourt, China > the Paracels, and **Matsu (Lienchiang, 27) and 4 Kinm
 SC's boundaries give Nangan `CN-FJ, CN` (Kinmen town, Penghu and Taipei `TW`), so the app applies
 China's rules on Matsu. That is an error in SC's data, not noise; a report for countryboundaries is
 drafted in `.scratch/countries/upstream-matsu.md`, not posted (it would go out in the owner's name).
+## The stream: its state (2026-11-13)
+
+The owner (2026-11-13, midday): "were building current world processing as an etalone for data and performance.
+big hopes that streaming version will be faster." So the full count is the reference twice over: for the
+numbers (the stream must reproduce it) and for the cost (the stream must beat it). Steps 1-5 above compared two
+evaluations; nothing held a state and carried it forward. This adds that.
+
+**The reference's cost, from `logs/planet-places.log` (11-13):** plan 1 min, slice from the history file 74 min,
+notes 5 min, cut into 128 files 262 min, count 124 s a file on one engine (about 4.4 h; two engines never fit
+beside what else holds memory). About 10.5 h of machine time for one instant of the world, 60% of it slice and
+cut. Tier 1 of the stream did a planet day in about 7 min (step 5).
+
+**What the state is.** Per (element, quest): the quest's position, the bits of `matchVariants` (open now, aged,
+at 0.5, at 2), whether an open note hides it, and for a quest not open now at the default resurvey setting but
+open from some day on, that day. Notes are a layer of their own: every match is kept, flagged when hidden, and
+the checks leave notes out.
+
+**Engine `--dump-state <file.bin>`** (`StateDump.kt`): 24-byte little-endian records written as the pass goes
+(key i64 = id*4+type, lat/lon i32 at 1e-7, quest u16, flags u8, kind u8, due i32 in minutes since the epoch),
+plus `<file>.json` naming the quests in index order (the order differs between runs with and without notes).
+A main-pass age quest not open now is asked at 40 years ahead; if open then, the first whole day after asOf it
+opens is found by halving (about 14 evaluations). Without the option nothing changes (86 engine tests pass).
+Checked on step 1's 11-09 versions (europe-west): the open, unhidden records equal `--dump-matches` exactly
+(1,350); counted again with `--today 2028-06-01`, all 37 quests dated by then are open and none dated later;
+at `2034-03-01` all 208. The only quests opening that the dates did not foresee were the area quests
+CheckExistence and AddCycleway (42): **area quests are not dated yet** (AreaPass asks a whole map data at once,
+so halving per element does not fit; to do before the world seed if the Europe test shows their ageing).
+Quests that only `newer` tests open, and the dates at the 0.5 and 2 settings, are not dated either.
+
+**`world_cells.py count --state`:** every file of a kept cut again with `--dump-state` to
+`files/<f>/state.bin`, beside the count (`out-state/`, `state-done.json`), so a recount never touches the
+count's results. For the world seed from the 11-08 cut kept by chain4.sh.
+
+**`tools/stream/stream.py`:** the state of a region in memory as one sorted table (`rows.npy`); `apply` takes
+one day diff: the last version of every node and way in it (a day diff is sorted by type and id), node places
+from the seed clip's sparse index plus an overlay of the diff's nodes, the tagged ones into a small PBF (way
+nodes as synthetic nodes), the engine over that with the area pass off, and every tier-1 row of a touched
+element replaced. Ageing has no event: a row waiting for its date is open from its date on. `check` holds the
+state against a whole count's dump of the same instant, by tier. Measured on diff 5171 (11-08 to 11-09, the
+whole planet's): reading the diff 124 s in Python, the small PBF 28 s (222,496 tagged ways placed in the
+Europe clip, 209,608 outside it), the engine over europe-west's touched elements 2.4 s, the state 10 s.
+
+**Known gaps, each visible in `check`:** a way whose nodes moved but which has no version keeps its old
+position; relations are not recounted (48,899 relation versions that day); tier 2 keeps the seed's rows (the
+patch recount of "The stream, tier 2" is not wired in); area quests do not age.
+
+**The Europe test (started 11-13, 13:07):** `tools/stream/europe-test.sh`, log `logs/stream-europe.log`, state
+in `.scratch/stream/europe-west/`. After the world count ends: the Europe clips 11-08 to 11-13 counted whole for
+europe-west's cities with `--dump-state` (one engine, about 2 min each), the 11-08 one as the seed, then the day
+diffs 5171-5175 applied one at a time, each followed by a check against that day's count. The clips of those
+days are pinned in `~/Code/.osm-data/europe/pins.json` (unpin when done). Result: below, once in.

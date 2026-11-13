@@ -1148,3 +1148,18 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   with a 10 h give-up (`count --give-up-h`, new), and a failed file retried alone at 40 GB. Then report and
   oracle. Expect the count from about 13:30 and the end in the evening, longer if memory dips.
   The cut stays after the count, for the owner to delete once the checks pass.
+- **The stream: its state, being prepared (11-13, from 12:40; owner: "prepare whatever streaming prototype would
+  need to progress"; the full count is the reference for data and for speed).** DESIGN.md, "The stream: its
+  state". On main (fast-forwarded from branch `stream`, worktree `../sc-open-quests-stream`, kept while the
+  test below runs from it): engine `--dump-state` (every match plus the date each waiting quest opens; built in
+  the worktree only: **main's engine is not rebuilt while chain4 runs**), `world_cells.py count --state`,
+  `tools/stream/stream.py` (state, day diffs, check), `tools/stream/proto/` (the first scripts, out of
+  `.scratch`). **Running:** `tools/stream/europe-test.sh` (hidden, log `logs/stream-europe.log`), which waits
+  for chain4's oracle line, then counts the Europe clips 11-08..11-13 for europe-west and streams diffs
+  5171-5175 against them; checks in `.scratch/stream/europe-west/check-*.txt`. Europe clips 11-08..11-13 pinned.
+  **Next, in order:** read the checks and close the gaps they show (area quests' dates, ways whose nodes moved,
+  relations); then the world seed, `world_cells.py count --state` over chain4's kept cut (about 5-6 h, an
+  estimated 50 GB; after `installDist` in main), best started on a work day morning; then a world state store
+  (sorted on disk plus an overlay) and the node store again (`planet.loc`, 107 GiB). Disk: 262 GB free; the cut
+  (87 GB) goes after the seed; the planet job of 12-07 needs about 170 GB. A world reference beyond 11-08 needs
+  a second planet count at a later instant: the owner's call.
