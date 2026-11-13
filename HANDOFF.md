@@ -1087,3 +1087,7 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
     CheckShopExistence near 45.58,9.26).
   The 87 GB cut (`.scratch/planet/world/cut/`) is still kept: chain3 deletes it only after both checks pass,
   and that call is the owner's. Still not on the site, by design (DESIGN.md, "Place statistics for the whole world").
+- **World cut deleted (23:15 on 11-12, owner's go-ahead):** the 128 `.osm.pbf` files in
+  `.scratch/planet/world/cut/` (87 GB) are gone, as `count --delete-cut` would have done; the extract configs
+  and `cut.done` stay. The counted files, REPORT.md and oracle.log are untouched. Recounting the world now
+  needs a new planet slice and cut.
