@@ -12,13 +12,17 @@ open from its `due` on. Notes are left out of every comparison (the HIDDEN flag 
       a whole clip counted with --dump-state (D/state.bin): the seed, or a day to check against
   stream.py seed --dump X.bin --dir D
       the state from a --dump-state file (the seed's clip counted whole)
-  stream.py apply --dir D --diff N.osc.gz --today 2026-11-09T00:00:00Z --cities C.json --zone Europe/London
-      one diff: the touched elements' last versions into a small PBF, through the engine, into the state
+  stream.py ways --clip X.osm.pbf --dir D
+      every way's node refs in the seed's clip (D/ways.npz), for tier 2; later changes go into D/ways-overlay.pickle
+  stream.py apply --dir D --diff N.osc.gz --today 2026-11-09T00:00:00Z --cities C.json --zone Europe/London [--tier2-clip Y]
+      one diff: the touched elements' last versions into a small PBF, through the engine, into the state; with
+      --tier2-clip (the day's clip), also the ground the diff touched recounted whole and spliced in (tier2.py)
   stream.py check --dir D --dump Y.bin
       the state at its clock against a full count's --dump-state of the same instant
 
-Prototype limits, each reported by `check`: a way whose nodes moved but which has no version itself keeps
-its old position; relations are not recounted; tier 2 (the area quests) keeps the seed's rows.
+Prototype limits, each reported by `check`: without --tier2-clip, a way whose nodes moved but which has no
+version itself keeps its old position, relations are not recounted, and tier 2 (the area quests) keeps the
+seed's rows. Area quests have no due dates (the dump has none for them).
 """
 import argparse
 import json
@@ -147,7 +151,7 @@ class Locations:
 def read_diff(path: Path):
     """the last version of every node and way in the diff (a day diff is sorted by type, id, version)"""
     import osmium
-    last_node, last_way, relations = {}, {}, 0
+    last_node, last_way, last_rel, relations = {}, {}, {}, 0
     for o in osmium.FileProcessor(str(path)):
         if o.is_node():
             ok = o.visible and o.location.valid()
@@ -157,7 +161,8 @@ def read_diff(path: Path):
             last_way[o.id] = (o.version, o.timestamp, o.visible, {t.k: t.v for t in o.tags}, [n.ref for n in o.nodes])
         else:
             relations += 1
-    return last_node, last_way, relations
+            last_rel[o.id] = (o.visible, {t.k: t.v for t in o.tags}, [(m.type, m.ref) for m in o.members])
+    return last_node, last_way, last_rel, relations
 
 
 def write_small_pbf(path: Path, stamp: str, last_node, last_way, locs: Locations, unplaced: list | None = None) -> Counter:
@@ -205,11 +210,11 @@ def write_small_pbf(path: Path, stamp: str, last_node, last_way, locs: Locations
 
 
 def engine(pbf: Path, out: Path, today: str, cities: Path, zone: str, notes: Path | None, area_pass: bool,
-           heap_gb: int = 8, quests: Path | None = None) -> Path:
+           heap_gb: int = 8, quests: Path | None = None, base: Path | None = None, extra_opts: str = "") -> Path:
     # the engine runs where the cities file's data is (its boundaries are relative paths; data/ is not all in git)
     pbf, out, cities = pbf.resolve(), out.resolve(), cities.resolve()
     notes = notes.resolve() if notes else None
-    base = cities.parents[2]
+    base = (base or cities.parents[2]).resolve()
     quests = (quests or sorted((base / "data" / "quests").glob("v*.json"))[-1]).resolve()
     dump = out / "state.bin"
     out.mkdir(parents=True, exist_ok=True)
@@ -219,7 +224,7 @@ def engine(pbf: Path, out: Path, today: str, cities: Path, zone: str, notes: Pat
         args += ["--notes", str(notes)]
     env = dict(os.environ, JAVA_HOME=os.environ.get("JAVA_HOME", r"C:\Program Files\Android\Android Studio\jbr"),
                JAVA_OPTS=f"-Duser.timezone={zone} -Duser.language=en -Duser.country=CA -Xmx{heap_gb}g"
-                         + ("" if area_pass else " -Dopenquests.areaPass=false"))
+                         + ("" if area_pass else " -Dopenquests.areaPass=false") + (" " + extra_opts if extra_opts else ""))
     t = time.time()
     with open(out / "engine.log", "w", encoding="utf-8") as f:
         r = subprocess.run(args, cwd=base, env=env, stdout=f, stderr=subprocess.STDOUT)
@@ -229,17 +234,19 @@ def engine(pbf: Path, out: Path, today: str, cities: Path, zone: str, notes: Pat
     return dump
 
 
-def apply(d: Path, diff: Path, today: str, cities: Path, zone: str, notes: Path | None):
+def apply(d: Path, diff: Path, today: str, cities: Path, zone: str, notes: Path | None, tier2_clip: Path | None = None):
     st = State(d)
     if diff.name in st.meta["applied"]:
         log(f"{diff.name} applied before")
         return
     t = time.time()
-    last_node, last_way, relations = read_diff(diff)
-    log(f"{diff.name}: {len(last_node):,} nodes, {len(last_way):,} ways with a version; {relations:,} relation versions (not recounted); "
+    last_node, last_way, last_rel, relations = read_diff(diff)
+    log(f"{diff.name}: {len(last_node):,} nodes, {len(last_way):,} ways with a version; {relations:,} relation versions "
+        f"({'recounted where they lie in tier 2' if tier2_clip else 'not recounted'}); "
         f"read in {time.time() - t:.0f} s")
     t = time.time()
     locs = Locations(d)
+    old_pos = {nid: locs.get(nid) for nid in last_node} if tier2_clip else {}  # before the overlay takes the diff
     for nid, (_, _, alive, _, loc) in last_node.items():
         locs.overlay[nid] = loc if alive else None
     work = d / "work"
@@ -255,22 +262,62 @@ def apply(d: Path, diff: Path, today: str, cities: Path, zone: str, notes: Path 
     touched = np.unique(np.concatenate([np.fromiter(last_node, np.int64, len(last_node)) * 4,
                                         np.fromiter(last_way, np.int64, len(last_way)) * 4 + 1]))
     drop = np.isin(st.rows["key"], touched) & tier1[st.rows["quest"]]
+    rows_before = st.rows
     st.rows = np.concatenate([st.rows[~drop], new[tier1[new["quest"]]]])
+    t2stats = tier2_step(d, st, rows_before, today, cities, zone, tier2_clip, last_node, last_way, last_rel, old_pos, locs,
+                         work) if tier2_clip else {}
     after = open_codes(st.rows, minute(today), tier1)
     opened, closed = np.setdiff1d(after, before).size, np.setdiff1d(before, after).size
     st.meta["clock"] = today
     st.meta["applied"].append(diff.name)
     st.meta.setdefault("days", []).append({"diff": diff.name, "today": today, "rowsDropped": int(drop.sum()),
                                            "rowsAdded": int(len(new)), "opened": int(opened), "closed": int(closed),
-                                           "seconds": round(time.time() - T0, 1), **{k: int(v) for k, v in stats.items()}})
+                                           "seconds": round(time.time() - T0, 1), **{k: int(v) for k, v in stats.items()}, **t2stats})
+    st.meta["cities"] = str(cities.resolve())
     st.save()
     locs.save()
     # every key a diff touched so far, and the ways that could not be placed: check splits its differences by them
     for name, keys in (("touched", touched), ("unplaced", np.array(unplaced, np.int64) * 4 + 1)):
         f = d / f"{name}.npy"
         np.save(f, np.union1d(np.load(f), keys) if f.exists() else np.unique(keys))
-    log(f"state at {today}: {int(drop.sum()):,} rows of touched elements replaced by {len(new):,}; tier 1 opened {opened:,}, "
+    log(f"state at {today}: {int(drop.sum()):,} tier-1 rows of touched elements replaced by {len(new):,}; tier 1 opened {opened:,}, "
         f"closed {closed:,} (aging included); {len(st.rows):,} rows; {time.time() - T0:.0f} s in all")
+
+
+def tier2_step(d, st, rows_before, today, cities, zone, clip, last_node, last_way, last_rel, old_pos, locs, work) -> dict:
+    """the ground the day touched recounted whole (tier2.py); every row inside it and its city replaced"""
+    import tier2 as T
+    t = time.time()
+    infos = T.city_infos(cities)
+    ways = T.WayStore(d)
+    covers, cstats = T.cover(infos, rows_before, last_node, last_way, last_rel, old_pos, locs, ways, log)
+    rects = T.rectangles(covers)
+    tw = work / "t2"
+    tw.mkdir(exist_ok=True)
+    base = cities.resolve().parents[2]
+    rc = T.write_cities(infos, rects, tw, base)
+    n_rects = sum(len(r) for r in rects)
+    km2 = sum((n - s) * T.M_LAT * (e - w) * c["mlon"] for c, rs in zip(infos, rects) for s, w, n, e in rs) / 1e6
+    per_city = ", ".join(c["id"] + " " + str(len(r)) for c, r in zip(infos, rects))
+    log(f"tier 2: {n_rects:,} rectangles, {km2:.1f} km2 ({per_city}); {time.time() - t:.0f} s")
+    dump = engine(T.map_data(clip, rects), tw, today, rc, zone, None, area_pass=True, heap_gb=30, base=base,
+                  extra_opts=f"-Dopenquests.areaPaddingM={T.RING:.0f}")
+    patch = read_dump(dump, st.names)
+    notes_q = np.array([i for i, n in enumerate(st.names) if n == "OsmNoteQuestType"], np.uint16)
+    patch = patch[~np.isin(patch["quest"], notes_q)]
+    regs = T.regions(infos, rects)
+    drop = T.inside(st.rows, regs) & ~np.isin(st.rows["quest"], notes_q)
+    keep = T.inside(patch, regs)
+    st.rows = np.concatenate([st.rows[~drop], patch[keep]])
+    ways.save()
+    arr = np.array([(s, w, n, e, k) for k, rs in enumerate(rects) for s, w, n, e in rs], dtype=float).reshape(-1, 5)
+    f = d / "rects.npy"
+    np.save(f, np.concatenate([np.load(f), arr]) if f.exists() else arr)
+    np.save(d / "rects-last.npy", arr)
+    es = T.engine_area_log(tw / "engine.log")
+    log(f"tier 2: {int(drop.sum()):,} rows inside the rectangles replaced by {int(keep.sum()):,}; engine {es}")
+    return {"rects": n_rects, "rectKm2": round(km2, 2), "t2RowsDropped": int(drop.sum()), "t2RowsAdded": int(keep.sum()),
+            "t2Seconds": round(time.time() - t, 1), **es, **{k: int(v) for k, v in cstats.items()}}
 
 
 # --- seed and check ------------------------------------------------------------------------------
@@ -293,7 +340,8 @@ def check(d: Path, dump: Path):
     tier2 = ~tier1
     tier2[[i for i, n in enumerate(st.names) if n == "OsmNoteQuestType"]] = False
     lines = [f"state {d} at {clock} against {dump}", ""]
-    for name, mask in (("tier 1", tier1), ("tier 2 (kept from the seed)", tier2)):
+    patched = any("rects" in x for x in st.meta.get("days", []))
+    for name, mask in (("tier 1", tier1), ("tier 2" if patched else "tier 2 (kept from the seed)", tier2)):
         a, b = open_codes(st.rows, at, mask), open_codes(ref, at, mask)
         only_s, only_r = np.setdiff1d(a, b), np.setdiff1d(b, a)
         lines.append(f"{name}: state {a.size:,} open, full count {b.size:,}; equal {a.size - only_s.size:,}; "
@@ -314,9 +362,58 @@ def check(d: Path, dump: Path):
             lines.append(f"  {label}: by type {dict(types)}; by quest {quests}")
             lines.append(f"    e.g. {[(('n', 'w', 'r')[int(c // 1024) & 3] + str(int(c // 1024) >> 2), st.names[int(c % 1024)]) for c in codes[:6]]}")
     lines += rows_check(st, ref, tier1, d)
+    if patched:
+        lines += tier2_check(st, ref, at, clock, tier2, d)
     text = "\n".join(lines)
     print(text)
     (d / f"check-{clock[:10]}.txt").write_text(text + "\n", encoding="utf-8")
+
+
+def tier2_check(st: State, ref: np.ndarray, at: int, clock: str, tier2: np.ndarray, d: Path) -> list[str]:
+    """tier 2's differences inside a day's rectangles or outside all; and the control: the last recount against
+    the whole count inside its own rectangles (a disagreement there has nothing to do with the stream)"""
+    import tier2 as T
+    out = []
+    rects = np.load(d / "rects.npy")
+
+    def in_any(lat, lon):
+        m = np.zeros(len(lat), bool)
+        for s, w, n, e, _ in rects:
+            m |= (lat >= s) & (lat <= n) & (lon >= w) & (lon <= e)
+        return m
+
+    def open_rows(rows, mask):
+        default = (rows["flags"] & 63 == 0) | (rows["flags"] & M_NOW > 0)
+        o = ((rows["kind"] == MATCH) & (rows["flags"] & M_NOW > 0)) | ((rows["kind"] == DUE) & (rows["due"] <= at) & default)
+        return rows[o & mask[rows["quest"]]]
+
+    a, b = open_rows(st.rows, tier2), open_rows(ref, tier2)
+    ca, cb = a["key"] * 1024 + a["quest"], b["key"] * 1024 + b["quest"]
+    for label, r, other in (("only in the state", a, cb), ("only in the count", b, ca)):
+        r = r[~np.isin(r["key"] * 1024 + r["quest"], other)]
+        if len(r):
+            ins = in_any(r["lat"] * 1e-7, r["lon"] * 1e-7)
+            out.append(f"tier 2 {label}: inside some day's rectangle {int(ins.sum()):,} "
+                       f"{Counter(st.names[int(q)] for q in r['quest'][ins]).most_common(5)}; outside all {int((~ins).sum()):,} "
+                       f"{Counter(st.names[int(q)] for q in r['quest'][~ins]).most_common(5)}")
+    pd = d / "work" / "t2" / "state.bin"
+    if pd.exists() and json.loads(Path(str(pd) + ".json").read_text(encoding="utf-8"))["asOf"][:16] == clock[:16]:
+        cities = Path(st.meta["cities"])
+        infos = T.city_infos(cities)
+        last = np.load(d / "rects-last.npy")
+        rects_by_city = [[tuple(r[:4]) for r in last if int(r[4]) == k] for k in range(len(infos))]
+        regs = T.regions(infos, rects_by_city)
+        patch = read_dump(pd, st.names)
+        allq = np.array([n != "OsmNoteQuestType" for n in st.names] + [False] * 8)
+        for name, mask in (("tier 1", ~tier2 & allq), ("tier 2", tier2)):
+            pa, pb = open_rows(patch, mask), open_rows(ref, mask)
+            pa, pb = pa[T.inside(pa, regs)], pb[T.inside(pb, regs)]
+            sa, sb = set((pa["key"] * 1024 + pa["quest"]).tolist()), set((pb["key"] * 1024 + pb["quest"]).tolist())
+            name_of = lambda c: ("n", "w", "r")[(c // 1024) & 3] + str((c // 1024) >> 2) + " " + st.names[c % 1024]
+            out.append(f"control {name} (the last recount against the whole count, inside its rectangles): recount {len(sa):,}, "
+                       f"whole {len(sb):,}; only in the recount {len(sa - sb):,} {[name_of(c) for c in sorted(sa - sb)[:4]]}; "
+                       f"only in the whole {len(sb - sa):,} {[name_of(c) for c in sorted(sb - sa)[:4]]}")
+    return out
 
 
 def rows_check(st: State, ref: np.ndarray, tier1: np.ndarray, d: Path) -> list[str]:
@@ -411,7 +508,8 @@ def tsv(dump: Path, old: Path):
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("cmd", choices=["nodes", "count", "seed", "apply", "check", "tsv"])
+    ap.add_argument("cmd", choices=["nodes", "ways", "count", "seed", "apply", "check", "tsv"])
+    ap.add_argument("--tier2-clip", type=Path)
     ap.add_argument("--tsv", type=Path)
     ap.add_argument("--pbf", type=Path)
     ap.add_argument("--heap-gb", type=int, default=30)
@@ -426,12 +524,15 @@ if __name__ == "__main__":
     o = ap.parse_args()
     if o.cmd == "nodes":
         nodes(o.clip, o.dir)
+    elif o.cmd == "ways":
+        import tier2
+        tier2.build_ways(o.clip, o.dir, log)
     elif o.cmd == "count":
         engine(o.pbf, o.dir, o.today, o.cities, o.zone, o.notes, area_pass=True, heap_gb=o.heap_gb)
     elif o.cmd == "seed":
         seed(o.dump, o.dir)
     elif o.cmd == "apply":
-        apply(o.dir, o.diff, o.today, o.cities, o.zone, o.notes)
+        apply(o.dir, o.diff, o.today, o.cities, o.zone, o.notes, o.tier2_clip)
     elif o.cmd == "tsv":
         tsv(o.dump, o.tsv)
     else:
