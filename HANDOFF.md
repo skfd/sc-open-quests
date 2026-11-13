@@ -1138,3 +1138,13 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
     polygons slow the big files), report. Keep `.scratch/world-places/world/geo/`: places.json points there. A
     wide place's box spans every longitude, so it is tested in every cell of its latitudes: correct, slower.
     Make the canary the file with the most outline points (f47), not the one with the most cells.
+- **Planet count with places: running since 11-13, 01:55 (owner: "continue").** `.scratch/planet/chain4.sh`
+  (hidden; log `logs/planet-places.log`; rerun with the Start-Process line in its header, every step skips
+  what is done). Out dir `.scratch/planet/world-places/`. It uses the 11-08 slice again (same history file
+  and diffs 5165–5170), the 11-08 node grid and chain2's plan arguments, with the world's places.json added.
+  Its plan was checked to give exactly the 11-08 run's 128 files and 2,244 cells, so the cities (archive
+  11-08) and the oracle compare like for like. Then: slice (about 2.2 h), notes, cut (about 9 h; the slice
+  is deleted after), the canary f47 at 30 GB, every file at 30 GB on one or two engines as memory allows,
+  with a 10 h give-up (`count --give-up-h`, new), and a failed file retried alone at 40 GB. Then report and
+  oracle. Expect the count from about 13:30 and the end in the evening, longer if memory dips.
+  The cut stays after the count, for the owner to delete once the checks pass.
