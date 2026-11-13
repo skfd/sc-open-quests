@@ -1160,9 +1160,23 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   against the old engine's dumps in `.scratch/diff-flips/` (`stream.py tsv`): the proof that `--dump-state`
   changes nothing else, needed before main's engine is rebuilt. Restarted 13:12 with a safe wait (the
   chain's oracle line, or its log still for an hour) and an exit line, "stream europe ended (code)". Europe clips 11-08..11-13 pinned.
-  **Next, in order:** read the checks and close the gaps they show (area quests' dates, ways whose nodes moved,
-  relations); then the world seed, `world_cells.py count --state` over chain4's kept cut (about 5-6 h, an
-  estimated 50 GB; after `installDist` in main), best started on a work day morning; then a world state store
+- **Planet count with places done (11-13, 16:34).** `.scratch/planet/world-places/`: REPORT.md (every open
+  quest 1,716,132,183, app default 577,700,606, as 11-12's run; places with a number 1,016,910 of 1,069,532)
+  and oracle.log (the same 3 unexplained as 11-12). Count 07:38-16:33, 4.4 h of it engine. The cut (87 GB)
+  is kept: the world seed reads it; deleting it is the owner's call, and it must go before 12-07.
+- **The Europe test passed (11-13, 16:35-17:04; chain4 ended 16:34, oracle written).** DESIGN.md, "The Europe
+  test: the result". `--dump-state` equals the old engine's dumps exactly (days 08, 09) and costs no visible
+  time; **main's engine rebuilt with it (`installDist`, 17:06)**. Tier 1 streamed five days exact for nodes
+  and ways, ageing included; only 1-3 relations differ. Tier 2 (kept from the seed) drifts about 700 a day,
+  97% on touched elements. A day costs 3-4 min, two thirds of it Python reading the planet diff. The worktree
+  `../sc-open-quests-stream` and branch `stream` are removed; `europe-test.sh` runs from main (reruns skip
+  what is done; delete `check-*.txt` to rerun the stream part). The Europe clips stay pinned while tier 2 is
+  built against them.
+  **Next, in order:** tier 2 in `apply` (the patch recount of "The stream, tier 2", from the day clip here;
+  a world needs the map data around touched elements from a store), relations, area quests' dates; then the
+  world seed, `world_cells.py count --state` over chain4's kept cut (`.scratch/planet/world-places/cut/`,
+  87 GB; 4.4 h of engine as chain4's count, up to 9 h on the clock; an estimated 50 GB of state), started early on a day
+  the owner is away so it ends before midnight; then a world state store
   (sorted on disk plus an overlay) and the node store again (`planet.loc`, 107 GiB). Disk: 262 GB free; the cut
   (87 GB) goes after the seed; the planet job of 12-07 needs about 170 GB. A world reference beyond 11-08 needs
   a second planet count at a later instant: the owner's call.

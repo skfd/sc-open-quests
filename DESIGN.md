@@ -2974,4 +2974,36 @@ patch recount of "The stream, tier 2" is not wired in); area quests do not age.
 in `.scratch/stream/europe-west/`. After the world count ends: the Europe clips 11-08 to 11-13 counted whole for
 europe-west's cities with `--dump-state` (one engine, about 2 min each), the 11-08 one as the seed, then the day
 diffs 5171-5175 applied one at a time, each followed by a check against that day's count. The clips of those
-days are pinned in `~/Code/.osm-data/europe/pins.json` (unpin when done). Result: below, once in.
+days are pinned in `~/Code/.osm-data/europe/pins.json` (unpin when done). Result: below.
+
+**The Europe test: the result (11-13, 16:35 to 17:04, after the world count ended).**
+- **`--dump-state` changes nothing else, and costs nothing visible.** Days 08 and 09 held against the old
+  engine's `--dump-matches` of the same clips: 4,623,562 and 4,624,345 open unhidden matches, equal both ways
+  (0 only new, 0 only old). Each whole clip counted in 55.6 to 57.9 s (the old engine's count of 11-09: 89.6 s,
+  under other load), due searches included. Main's engine was rebuilt after this (`installDist`).
+- **The seed:** 5,472,907 rows from the 11-08 count, 706,179 of them waiting for a date; 6.1 s.
+- **A day through `apply`: 171 to 256 s,** of which reading the planet's day diff in Python 106 to 164 s (the
+  same for any region), the small PBF 24 to 32 s, the engine 1.7 to 2.2 s, the state 31 to 58 s (growing with
+  the node overlay, 492 MB after five days).
+- **Tier 1 is exact for nodes and ways, five days running, ageing included.** Every difference is a relation:
+
+| day | tier 1, state | full count | only in the state | only in the count | tier 2 (seed's rows), only state / only count | of the count's, on touched elements |
+|---|---|---|---|---|---|---|
+| 11-09 | 3,239,807 | 3,239,807 | 0 | 0 | 34 / 324 | 316 |
+| 11-10 | 3,240,633 | 3,240,634 | 0 | 1 relation | 178 / 956 | 922 |
+| 11-11 | 3,241,307 | 3,241,308 | 0 | 1 relation | 212 / 1,380 | 1,321 |
+| 11-12 | 3,242,161 | 3,242,160 | 2 relations | 1 relation | 272 / 2,040 | 1,960 |
+| 11-13 | 3,242,868 | 3,242,867 | 2 relations | 1 relation | 434 / 3,146 | 3,038 |
+
+  The relations: r21949748 (AddBuildingType) opened on 11-10 and the state lacks it; r5328319
+  (AddOpeningHours) and r21447069 (AddBuildingLevels) closed on 11-12 and the state still has them. No way
+  missed a place, no moved node changed a way's quest, no due date was missed or early.
+- **Tier 2, kept from the seed, drifts by about 700 differences a day** (3,580 of 1.39M after five days, 0.26%).
+  96 to 98% of the count's extra quests are on elements the diff touched (an edited building gets
+  AddRoofShape and AddHousenumber, an area quest, so tier 1's recount does not reach them); the rest (8 to 108)
+  are on untouched elements: neighbours and area quests ageing.
+- **So the next gaps, by size:** tier 2 (the patch recount of "The stream, tier 2", which needs the map data
+  around each touched element: a day clip here, a store in the world), then relations (one a day or so here;
+  48,899 to 55,199 relation versions a planet day), then area quests' due dates. The world seed is a whole
+  recount of chain4's cut: chain4's 128 files took 4.4 h of engine (15,853 s summed), 8.9 h on the clock
+  with the daily window and waits for memory.

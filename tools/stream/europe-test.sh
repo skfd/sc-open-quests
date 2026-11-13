@@ -4,11 +4,11 @@
 # state is held against that day's clip counted whole. Waits for the world count (chain4) to end and for the
 # daily window; one engine at a time. Every step skips what is done, so a rerun goes on where it stopped:
 #   Start-Process -WindowStyle Hidden 'C:\Program Files\Git\bin\bash.exe' -ArgumentList
-#     '/c/Users/kk/Code/sc-open-quests-stream/tools/stream/europe-test.sh'
+#     '/c/Users/kk/Code/sc-open-quests/tools/stream/europe-test.sh'
 #     -RedirectStandardOutput logs\stream-europe.log -RedirectStandardError logs\stream-europe.err
 set -euo pipefail
 M=/c/Users/kk/Code/sc-open-quests
-S=/c/Users/kk/Code/sc-open-quests-stream
+S=$M  # it first ran from the worktree ../sc-open-quests-stream, now removed
 D=$M/.scratch/stream/europe-west
 ST="python $S/tools/stream/stream.py"
 CITIES=$M/data/cities/europe-west.json
