@@ -39,6 +39,15 @@ val AREA_PASS: Boolean = System.getProperty("openquests.areaPass")?.toBoolean() 
  *  cell run's time goes"). `-Dopenquests.maxRasterSlots` sets another limit, for tests. */
 val MAX_RASTER_SLOTS: Long = System.getProperty("openquests.maxRasterSlots")?.toLong() ?: 500_000_000L
 
+/** The box for SC's `LatLonRaster(box, 0.0005)` in our twins of its quests. The raster rounds its north
+ *  edge up to a whole cell, so a world cell reaching latitude 90 made it build LatLon(90.0000168, ...) and
+ *  die (the world count of 2026-11-12, six files). Held two cells short of the pole: a point in the last
+ *  0.001 degree (110 m round the pole) is left out of the raster, where nobody has mapped an address or
+ *  an amenity. */
+fun rasterBox(box: BoundingBox): BoundingBox =
+    if (box.max.latitude <= 90.0 - 0.001) box
+    else BoundingBox(box.min, de.westnordost.streetcomplete.data.osm.mapdata.LatLon(90.0 - 0.001, box.max.longitude))
+
 fun rasterSlots(box: BoundingBox): Long =
     kotlin.math.ceil((box.max.latitude - box.min.latitude) / 0.0005).toLong() *
         kotlin.math.ceil((box.max.longitude - box.min.longitude) / 0.0005).toLong()

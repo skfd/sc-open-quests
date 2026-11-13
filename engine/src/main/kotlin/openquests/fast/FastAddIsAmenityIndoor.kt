@@ -1,6 +1,7 @@
 package openquests.fast
 
 import openquests.candidates
+import openquests.rasterBox
 import de.westnordost.osmfeatures.Feature
 import de.westnordost.streetcomplete.data.elementfilter.toElementFilterExpression
 import de.westnordost.streetcomplete.data.osm.geometry.ElementPolygonsGeometry
@@ -57,7 +58,7 @@ object FastAddIsAmenityIndoor : FastTwin {
             it.id to mapData.getGeometry(it.type, it.id) as? ElementPolygonsGeometry
         }
 
-        val nodesPositions = LatLonRaster(bbox, 0.0005)
+        val nodesPositions = LatLonRaster(rasterBox(bbox), 0.0005)
         for (node in nodes) {
             nodesPositions.insert(node.position)
         }

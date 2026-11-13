@@ -7,6 +7,7 @@ package openquests.fast
 // only on buildingPositions and buildingsByCenterPosition, which step 5 never changes, and they are
 // the very objects in `buildings`, so a set by identity removes the same ones.
 import openquests.candidates
+import openquests.rasterBox
 import de.westnordost.streetcomplete.data.elementfilter.toElementFilterExpression
 import de.westnordost.streetcomplete.data.osm.geometry.ElementPolygonsGeometry
 import de.westnordost.streetcomplete.data.osm.mapdata.Element
@@ -74,7 +75,7 @@ object FastAddHousenumber : FastTwin {
 
         /** 4. exclude buildings that contain an address node somewhere within their area */
 
-        val addressPositions = LatLonRaster(bbox, 0.0005)
+        val addressPositions = LatLonRaster(rasterBox(bbox), 0.0005)
         for (node in addressNodesById.values) {
             addressPositions.insert(node.position)
         }
@@ -117,7 +118,7 @@ object FastAddHousenumber : FastTwin {
 
         val buildingsByCenterPosition: Map<LatLon?, Element> = buildings.associateBy { buildingGeometriesById[it.id]?.center }
 
-        val buildingPositions = LatLonRaster(bbox, 0.0005)
+        val buildingPositions = LatLonRaster(rasterBox(bbox), 0.0005)
         for (buildingCenterPosition in buildingsByCenterPosition.keys) {
             if (buildingCenterPosition != null) buildingPositions.insert(buildingCenterPosition)
         }
