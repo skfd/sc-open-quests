@@ -141,6 +141,26 @@ class Locations:
             return None
         return (loc.lat, loc.lon) if loc.valid() else None
 
+    def get_many(self, ids) -> dict:
+        """the same as get() for many ids at once: the sparse file is sorted (id u64, x i32, y i32), zeros after"""
+        ids = np.fromiter(ids, np.int64)
+        a = np.memmap(self.d / "nodes.idx", dtype=[("id", "<u8"), ("x", "<i4"), ("y", "<i4")], mode="r")
+        n = len(a)
+        while n and a["id"][n - 1] == 0:  # trailing unused slots
+            n -= max(1, min(n, 65536) if a["id"][max(0, n - 65536)] == 0 else 1)
+        keys = a["id"][:n].astype(np.int64)
+        i = np.minimum(np.searchsorted(keys, ids), n - 1)
+        found = keys[i] == ids
+        out = {}
+        for nid, ok, k in zip(ids.tolist(), found.tolist(), i.tolist()):
+            if nid in self.overlay:
+                out[nid] = self.overlay[nid]
+            elif ok:
+                out[nid] = (a["y"][k] / 1e7, a["x"][k] / 1e7)
+            else:
+                out[nid] = None
+        return out
+
     def save(self):
         with open(self.d / "overlay.pickle", "wb") as f:
             pickle.dump(self.overlay, f)
@@ -246,7 +266,7 @@ def apply(d: Path, diff: Path, today: str, cities: Path, zone: str, notes: Path 
         f"read in {time.time() - t:.0f} s")
     t = time.time()
     locs = Locations(d)
-    old_pos = {nid: locs.get(nid) for nid in last_node} if tier2_clip else {}  # before the overlay takes the diff
+    old_pos = locs.get_many(last_node) if tier2_clip else {}  # before the overlay takes the diff
     for nid, (_, _, alive, _, loc) in last_node.items():
         locs.overlay[nid] = loc if alive else None
     work = d / "work"
@@ -305,9 +325,8 @@ def tier2_step(d, st, rows_before, today, cities, zone, clip, last_node, last_wa
     patch = read_dump(dump, st.names)
     notes_q = np.array([i for i, n in enumerate(st.names) if n == "OsmNoteQuestType"], np.uint16)
     patch = patch[~np.isin(patch["quest"], notes_q)]
-    regs = T.regions(infos, rects)
-    drop = T.inside(st.rows, regs) & ~np.isin(st.rows["quest"], notes_q)
-    keep = T.inside(patch, regs)
+    drop = T.inside(st.rows, infos, rects) & ~np.isin(st.rows["quest"], notes_q)
+    keep = T.inside(patch, infos, rects)
     st.rows = np.concatenate([st.rows[~drop], patch[keep]])
     ways.save()
     arr = np.array([(s, w, n, e, k) for k, rs in enumerate(rects) for s, w, n, e in rs], dtype=float).reshape(-1, 5)
@@ -402,12 +421,11 @@ def tier2_check(st: State, ref: np.ndarray, at: int, clock: str, tier2: np.ndarr
         infos = T.city_infos(cities)
         last = np.load(d / "rects-last.npy")
         rects_by_city = [[tuple(r[:4]) for r in last if int(r[4]) == k] for k in range(len(infos))]
-        regs = T.regions(infos, rects_by_city)
         patch = read_dump(pd, st.names)
         allq = np.array([n != "OsmNoteQuestType" for n in st.names] + [False] * 8)
         for name, mask in (("tier 1", ~tier2 & allq), ("tier 2", tier2)):
             pa, pb = open_rows(patch, mask), open_rows(ref, mask)
-            pa, pb = pa[T.inside(pa, regs)], pb[T.inside(pb, regs)]
+            pa, pb = pa[T.inside(pa, infos, rects_by_city)], pb[T.inside(pb, infos, rects_by_city)]
             sa, sb = set((pa["key"] * 1024 + pa["quest"]).tolist()), set((pb["key"] * 1024 + pb["quest"]).tolist())
             name_of = lambda c: ("n", "w", "r")[(c // 1024) & 3] + str((c // 1024) >> 2) + " " + st.names[c % 1024]
             out.append(f"control {name} (the last recount against the whole count, inside its rectangles): recount {len(sa):,}, "

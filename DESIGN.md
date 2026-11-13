@@ -3007,3 +3007,21 @@ days are pinned in `~/Code/.osm-data/europe/pins.json` (unpin when done). Result
   48,899 to 55,199 relation versions a planet day), then area quests' due dates. The world seed is a whole
   recount of chain4's cut: chain4's 128 files took 4.4 h of engine (15,853 s summed), 8.9 h on the clock
   with the daily window and waits for memory.
+
+**Every row checked, and dates for the 0.5 and 2 settings (11-13, evening).** `check` compared only the open
+set; it now holds every tier-1 row too (position, variant bits, dates; the note flag apart, since `apply`'s
+runs have no notes clip). On the first run's 11-13 that showed the default setting exact in every bit, but
+the 0.5 and 2 settings drifting (838 matches the count had and the state lacked, 173 rows with other bits:
+they had no dates), and untouched ways whose nodes moved off by a median 0.3 m (774 rows, 90% under 3.2 m,
+max 30 m; that position is what a place counts by). So `--dump-state` now dates each setting (a DUE row's
+flags carry `M_NOW`, `M_05` or `M_2`; a dump with no bit there means the default). Main's engine with it:
+still equal to the old engine's dumps on 11-08 and 11-09, snapshot unchanged with the option off (only the
+commit and run time differ); the pass 57 to 65 s against 52 to 54 s (about 12% more, so about 5 h of engine
+for the world seed); the seed 6.83M rows, 2.06M of them dates (0.71M before). Rerun of the five days: no
+variant bit differs on any day; tier 1 is left with the relations and the moved-node positions.
+
+**Untouched tier-2 differences, by quest:** on 11-13, 100 of the 108 the count has and the state lacks are
+area quests opening by age (CheckExistence 72, AddCycleway 20, AddTrafficSignalsSound and -Vibration 8);
+8, and 15 the other way, are neighbours (AddHousenumber, crossings). So area-quest dates are about 20 a day
+here, tier 1's own changes about 1,000: the first world seed goes without them (the stream reseeds with each
+StreetComplete release anyway), recorded as a known gap.

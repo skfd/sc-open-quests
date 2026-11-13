@@ -107,8 +107,10 @@ def city_infos(cities: Path):
         for r in boundary_rings(bj):  # even-odd over the rings, as the engine tests a city
             p = Polygon(r).buffer(0)
             geom = p if geom is None else geom.symmetric_difference(p)
+        segs = np.array([(p["lat"], p["lon"], q["lat"], q["lon"]) for m in bj["members"] if m["type"] == "way"
+                         for p, q in zip(m["geometry"], m["geometry"][1:])], dtype=float)
         out.append(dict(c, box=(b["minlat"], b["minlon"], b["maxlat"], b["maxlon"]), lat0=b["minlat"], lon0=b["minlon"],
-                        mlon=M_LAT * math.cos(math.radians((b["minlat"] + b["maxlat"]) / 2)), geom=geom))
+                        mlon=M_LAT * math.cos(math.radians((b["minlat"] + b["maxlat"]) / 2)), geom=geom, segs=segs))
     return out
 
 
@@ -416,28 +418,42 @@ def write_cities(infos, rects, work: Path, base: Path) -> Path:
     return f
 
 
-def regions(infos, rects):
-    """per city: its own outline cut to its rectangles (shapely), or None"""
-    from shapely.geometry import box
-    from shapely.ops import unary_union
-    out = []
-    for c, rs in zip(infos, rects):
-        out.append(c["geom"].intersection(unary_union([box(w, s, e, n) for s, w, n, e in rs])) if rs else None)
-    return out
+def evenodd(segs, lat, lon) -> np.ndarray:
+    """the engine's own test (Polygon.contains), the same arithmetic in the same order: a point on a boundary
+    falls where the engine puts it"""
+    inside = np.zeros(len(lat), bool)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        for y1, x1, y2, x2 in segs:
+            inside ^= ((y1 > lat) != (y2 > lat)) & (lon < (x2 - x1) * (lat - y1) / (y2 - y1) + x1)
+    return inside
 
 
-def inside(rows, regs) -> np.ndarray:
+def inside(rows, infos, rects) -> np.ndarray:
+    """rows whose position is inside one of its city's rectangles and inside that city, as the engine decides
+    both: shapely for the city outline, the engine's arithmetic for points within about 10 cm of it"""
     import shapely
     mask = np.zeros(len(rows), bool)
     lat, lon = rows["lat"] * 1e-7, rows["lon"] * 1e-7
-    for g in regs:
-        if g is None or g.is_empty:
+    for c, rs in zip(infos, rects):
+        if not rs:
             continue
-        x0, y0, x1, y1 = g.bounds
-        cand = np.flatnonzero((lon >= x0) & (lon <= x1) & (lat >= y0) & (lat <= y1) & ~mask)
-        if len(cand):
-            shapely.prepare(g)
-            mask[cand[shapely.contains_xy(g, lon[cand], lat[cand])]] = True
+        cand = np.zeros(len(rows), bool)
+        for s, w, n, e in rs:
+            cand |= (lat >= s) & (lat <= n) & (lon >= w) & (lon <= e)
+        idx = np.flatnonzero(cand & ~mask)
+        if not len(idx):
+            continue
+        la, lo = lat[idx], lon[idx]
+        in_rect = np.zeros(len(idx), bool)
+        for s, w, n, e in rs:  # the rectangle city's ring as write_cities writes it
+            in_rect |= evenodd([(s, w, s, e), (s, e, n, e), (n, e, n, w), (n, w, s, w)], la, lo)
+        g = c["geom"]
+        shapely.prepare(g)
+        in_city = shapely.contains_xy(g, lo, la)
+        edge = shapely.dwithin(g.boundary, shapely.points(lo, la), 1e-6)
+        if edge.any():
+            in_city[edge] = evenodd(c["segs"], la[edge], lo[edge])
+        mask[idx[in_rect & in_city]] = True
     return mask
 
 
