@@ -1150,13 +1150,16 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   The cut stays after the count, for the owner to delete once the checks pass.
 - **The stream: its state, being prepared (11-13, from 12:40; owner: "prepare whatever streaming prototype would
   need to progress"; the full count is the reference for data and for speed).** DESIGN.md, "The stream: its
-  state". On main (fast-forwarded from branch `stream`, worktree `../sc-open-quests-stream`, kept while the
+  state". On main (merged from branch `stream`, worktree `../sc-open-quests-stream`, kept while the
   test below runs from it): engine `--dump-state` (every match plus the date each waiting quest opens; built in
   the worktree only: **main's engine is not rebuilt while chain4 runs**), `world_cells.py count --state`,
   `tools/stream/stream.py` (state, day diffs, check), `tools/stream/proto/` (the first scripts, out of
   `.scratch`). **Running:** `tools/stream/europe-test.sh` (hidden, log `logs/stream-europe.log`), which waits
   for chain4's oracle line, then counts the Europe clips 11-08..11-13 for europe-west and streams diffs
-  5171-5175 against them; checks in `.scratch/stream/europe-west/check-*.txt`. Europe clips 11-08..11-13 pinned.
+  5171-5175 against them; checks in `.scratch/stream/europe-west/check-*.txt`. It first holds days 08 and 09
+  against the old engine's dumps in `.scratch/diff-flips/` (`stream.py tsv`): the proof that `--dump-state`
+  changes nothing else, needed before main's engine is rebuilt. Restarted 13:12 with a safe wait (the
+  chain's oracle line, or its log still for an hour) and an exit line, "stream europe ended (code)". Europe clips 11-08..11-13 pinned.
   **Next, in order:** read the checks and close the gaps they show (area quests' dates, ways whose nodes moved,
   relations); then the world seed, `world_cells.py count --state` over chain4's kept cut (about 5-6 h, an
   estimated 50 GB; after `installDist` in main), best started on a work day morning; then a world state store
