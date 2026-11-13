@@ -131,48 +131,69 @@ def read_json(p: Path):
 
 # --- places --------------------------------------------------------------------------------------
 
-def places(country: str, out: Path) -> None:
+def places(country: str | None, out: Path) -> None:
+    """Every countable division (an area, its own source an OSM relation or way) as places.json and one
+    GeoJSON file each under geo/<first two id digits>/. With a country, Overture's country pull
+    (data/overture/); without, the world (data/overture/world/, its outlines from overture_pull.py
+    --outlines). Rows are streamed: a million outlines do not fit in memory at once."""
     import duckdb
     con = duckdb.connect()
     con.sql("LOAD spatial")
-    src = OVERTURE.as_posix()
-    q = f"""
+    con.sql("SET memory_limit = '8GB'; SET preserve_insertion_order = false")
+    src = (OVERTURE if country else OVERTURE / "world").as_posix()
+    area_file = f"{src}/division_area.parquet" if country else f"{src}/division_area_outlines.parquet"
+    if not country and not Path(area_file).exists():
+        raise SystemExit(f"{area_file} missing: run tools/overture_pull.py <release> --outlines")
+    where = "WHERE country = $cc" if country else ""
+    params = {"cc": country} if country else {}
+    # the area picked per division (its land area first), without reading the outlines; file_row_number
+    # tells two areas of one division apart
+    con.execute(f"""
+    CREATE TEMP TABLE pick AS
     WITH d AS (
-      SELECT id, names."primary" AS name, subtype, parent_division_id AS parent,
+      SELECT id, names."primary" AS name, subtype, country, parent_division_id AS parent,
         [s.record_id FOR s IN sources IF s.dataset = 'OpenStreetMap' AND s.property = ''] AS own
-      FROM read_parquet('{src}/division.parquet') WHERE country = ?
+      FROM read_parquet('{src}/division.parquet') {where}
     ), a AS (
-      SELECT division_id, class, geometry, bbox FROM read_parquet('{src}/division_area.parquet') WHERE country = ?
-    ), pick AS (
-      SELECT a.*, row_number() OVER (PARTITION BY division_id ORDER BY (class = 'land') DESC) AS k FROM a
+      SELECT division_id, class, file_row_number AS rn,
+        row_number() OVER (PARTITION BY division_id ORDER BY (class = 'land') DESC, file_row_number) AS k
+      FROM read_parquet('{area_file}', file_row_number = true) {where}
     )
-    SELECT d.id, d.name, d.subtype, d.parent, d.own[1] AS osm, ST_AsGeoJSON(p.geometry) AS g,
-           p.bbox.xmin, p.bbox.ymin, p.bbox.xmax, p.bbox.ymax
-    FROM d JOIN pick p ON p.division_id = d.id AND p.k = 1
+    SELECT d.id, d.name, d.subtype, d.country, d.parent, d.own[1] AS osm, a.rn
+    FROM d JOIN a ON a.division_id = d.id AND a.k = 1
     WHERE len(d.own) > 0 AND (d.own[1] LIKE 'r%' OR d.own[1] LIKE 'w%')
-    ORDER BY d.id
-    """
-    rows = con.execute(q, [country, country]).fetchall()
+    """, params)
+    total = con.execute("SELECT count(*) FROM pick").fetchone()[0]
+    cur = con.execute(f"""
+    SELECT p.id, p.name, p.subtype, p.country, p.parent, p.osm, ST_AsGeoJSON(g.geometry),
+           g.bbox.xmin, g.bbox.ymin, g.bbox.xmax, g.bbox.ymax
+    FROM read_parquet('{area_file}', file_row_number = true) g JOIN pick p ON p.rn = g.file_row_number
+    """)
     geo = out / "geo"
-    geo.mkdir(parents=True, exist_ok=True)
     result, seen, skipped = [], set(), collections.Counter()
-    for gers, name, subtype, parent, osm, g, xmin, ymin, xmax, ymax in rows:
-        pid = gers.replace("-", "")[:12].lower()
-        if pid in seen:
-            raise SystemExit(f"place id {pid} twice")
-        seen.add(pid)
-        gj = json.loads(g)
-        if gj["type"] not in ("Polygon", "MultiPolygon"):
-            skipped[gj["type"]] += 1
-            continue
-        (geo / f"{pid}.geojson").write_text(json.dumps(gj), encoding="utf-8")
-        result.append({"id": pid, "gers": gers, "name": name, "subtype": subtype, "parent": parent,
-                       "osm": osm.split("@")[0], "bbox": [xmin, ymin, xmax, ymax],
-                       "geometry": rel(geo / f"{pid}.geojson")})
+    t = time.time()
+    while rows := cur.fetchmany(2000):
+        for gers, name, subtype, cc, parent, osm, g, xmin, ymin, xmax, ymax in rows:
+            pid = gers.replace("-", "")[:12].lower()
+            if pid in seen:
+                raise SystemExit(f"place id {pid} twice")
+            seen.add(pid)
+            gj = json.loads(g)
+            if gj["type"] not in ("Polygon", "MultiPolygon"):
+                skipped[gj["type"]] += 1
+                continue
+            p = geo / pid[:2] / f"{pid}.geojson"
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_text(g, encoding="utf-8")
+            result.append({"id": pid, "gers": gers, "name": name, "subtype": subtype, "country": cc, "parent": parent,
+                           "osm": osm.split("@")[0], "bbox": [xmin, ymin, xmax, ymax], "geometry": rel(p)})
+        if len(seen) % 100_000 < 2000:
+            print(f"places: {len(seen):,} of {total:,}, {time.time() - t:.0f} s", flush=True)
+    result.sort(key=lambda p: p["id"])
     write_json(out / "places.json", {"country": country, "overture": read_json(ROOT / "config/places.json")["overture"],
                                      "places": result})
     by = collections.Counter(p["subtype"] for p in result)
-    print(f"{len(result)} places ({dict(by)}); skipped geometries {dict(skipped)}")
+    print(f"{len(result)} places ({dict(by)}); skipped geometries {dict(skipped)}; {time.time() - t:.0f} s")
 
 
 # --- plan ----------------------------------------------------------------------------------------
@@ -312,6 +333,8 @@ def plan(grid_path: Path, out: Path, file_nodes: float, cell_nodes: float, ids: 
     if ids and len(extra) != len(ids):
         raise SystemExit(f"--cities: not in config: {sorted(set(ids) - {c['city'] for c in extra})}")
     places_ = pl["places"] + extra
+    import numpy as np  # the world's million places against each cell: one vectorised box test, not a loop
+    pb = np.array([p["bbox"] for p in places_], dtype=float).reshape(-1, 4)  # w s e n
     t = time.time()
     square_zone = zones_of({(r, c): n for r, c, n in items}, step)
     print(f"plan: {len(items):,} squares, time zones looked up in {time.time() - t:.0f} s", flush=True)
@@ -362,8 +385,8 @@ def plan(grid_path: Path, out: Path, file_nodes: float, cell_nodes: float, ids: 
             # no countryCodes: gated by position (Gating.kt)
             cities.append({"id": cid, "name": cid, "relation": rid, "adminLevel": 2, "countryCodes": None,
                            "timeZone": tz, "population": 1, "landAreaKm2": 1.0, "boundary": rel(bpath), "region": fid})
-            ps = [{"id": p["id"], "geometry": p["geometry"]} for p in places_
-                  if p["bbox"][0] <= e and p["bbox"][2] >= w and p["bbox"][1] <= n and p["bbox"][3] >= s]
+            hit = np.nonzero((pb[:, 0] <= e) & (pb[:, 2] >= w) & (pb[:, 1] <= n) & (pb[:, 3] >= s))[0]
+            ps = [{"id": places_[i]["id"], "geometry": places_[i]["geometry"]} for i in hit]
             write_json(d / "parts" / f"{cid}.json", {"schema": 1, "city": cid, "parts": ps})
             cells.append({"id": cid, "rect": [s, w, n, e], "nodes": rect_nodes(citems), "parts": len(ps), "timeZone": tz})
         write_json(d / "cities.json", {"cities": cities})
@@ -707,13 +730,16 @@ def report(out: Path, archive: str | None = None) -> None:
         lines.append(f"| {city} | {bd:,} | {cd:,} | {(cd - bd) / bd * 100:+.4f}% | {tot(c) - tot(b):+,} | {top or '-'} |"
                      + (f" {as_of.get(city, '-')} |" if archive else ""))
         rows.append({"city": city, "base": b, "cells": dict(c), "diff": diff})
+    by_osm = collections.defaultdict(list)
+    for k, v in pl.items():
+        by_osm[v["osm"]].append(k)
     if pl:
         lines += ["", "## The same cities as Overture places (a boundary difference, not a counting one)", "",
                   "| city | Overture place | whole city (default) | Overture place (default) | diff |", "|---|---|---|---|---|"]
         for cp in p["cityParts"]:
             city = cp["city"]
             conf = next(c for c in run.read_json(run.CITIES_CONFIG)["cities"] if c["id"] == city)
-            match = [k for k, v in pl.items() if v["osm"] == f"r{conf['relation']}"]
+            match = by_osm.get(f"r{conf['relation']}", [])
             b = {q: v.get("open") or 0 for q, v in base["cities"][city]["quests"].items()}
             if not match:
                 lines.append(f"| {city} | none with r{conf['relation']} | {tot(b, disabled):,} | - | - |")
@@ -731,7 +757,7 @@ def report(out: Path, archive: str | None = None) -> None:
 def main(argv=None) -> None:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     sub = ap.add_subparsers(dest="cmd", required=True)
-    a = sub.add_parser("places"); a.add_argument("--country", required=True); a.add_argument("--out", type=Path, required=True)
+    a = sub.add_parser("places"); a.add_argument("--country", help="a country code; the world without"); a.add_argument("--out", type=Path, required=True)
     a = sub.add_parser("plan"); a.add_argument("--grid", type=Path, required=True); a.add_argument("--out", type=Path, required=True)
     a.add_argument("--file-nodes", type=float, default=130e6); a.add_argument("--cell-nodes", type=float, default=15e6)
     a.add_argument("--cities", help="comma-separated city ids: the parts to check against, instead of a country's")
