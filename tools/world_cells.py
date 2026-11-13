@@ -561,7 +561,7 @@ def engine(args: list[str], tz: str, heap_gb: int, log: Path, commit_all: bool =
 
 
 def count(out: Path, engines: int, heap_gb: int, delete_cut: bool = False, dump_ids: Path | None = None,
-          only: list[str] | None = None, give_up_s: float = 7200) -> None:
+          only: list[str] | None = None, give_up_s: float = 7200, state: bool = False) -> None:
     """Up to `engines` at once, as memory allows: a file starts only when Windows can commit its heap
     (commit_free_gb), so the count runs one engine while something else holds memory and two when it
     is free. A file Windows refused memory goes back in the queue. With no engine of ours running and
@@ -569,21 +569,24 @@ def count(out: Path, engines: int, heap_gb: int, delete_cut: bool = False, dump_
     p = read_json(out / "plan.json")
     quests = run.newest_quests_file()
     gated = commit_free_gb() is not None
+    # --state: a recount of the same cut for the stream's seed, beside the count, not over it
+    done_name, out_name = ("state-done.json", "out-state") if state else ("done.json", "out")
 
     def one(f):
         d = out / "files" / f["id"]
         pbf = out / "cut" / f"{f['id']}.osm.pbf"
         log = d / "log.txt"
         code, secs = engine(["count", "--pbf", str(pbf), "--quests", rel(quests), "--cities", rel(d / "cities.json"),
-                             "--out", rel(d / "out"), "--notes", rel(notes_for(out, f["id"])), "--parts", rel(d / "parts"),
-                             *(["--dump-matches", rel(d / "matches.tsv"), "--dump-ids", rel(dump_ids)] if dump_ids else [])],
+                             "--out", rel(d / out_name), "--notes", rel(notes_for(out, f["id"])), "--parts", rel(d / "parts"),
+                             *(["--dump-matches", rel(d / "matches.tsv"), "--dump-ids", rel(dump_ids)] if dump_ids else []),
+                             *(["--dump-state", rel(d / "state.bin")] if state else [])],
                             p["timeZone"], heap_gb, log, commit_all=gated)
         if code:
             text = log.read_text(encoding="utf-8", errors="replace")
             if any(s in text for s in MEMORY_REFUSED):
                 return f, "memory"
             return f, f"FAILED ({code}), see {log}"
-        write_json(d / "done.json", {"wallSeconds": round(secs, 1)})
+        write_json(d / done_name, {"wallSeconds": round(secs, 1)})
         if delete_cut:
             pbf.unlink()
         return f, f"{secs:.0f} s"
@@ -593,7 +596,7 @@ def count(out: Path, engines: int, heap_gb: int, delete_cut: bool = False, dump_
     for f in p["files"]:
         if only and f["id"] not in only:
             continue
-        if (out / "files" / f["id"] / "done.json").exists():
+        if (out / "files" / f["id"] / done_name).exists():
             print(f"{f['id']}: done before", flush=True)
         else:
             queue.append(f)
@@ -777,6 +780,8 @@ def main(argv=None) -> None:
     a.add_argument("--delete-cut", action="store_true", help="delete a file's .osm.pbf once it is counted")
     a.add_argument("--dump-ids", type=Path, help="lines type<TAB>id: each file writes these elements' matches to matches.tsv")
     a.add_argument("--only", help="comma-separated file ids: count only these (a canary first)")
+    a.add_argument("--state", action="store_true",
+                   help="the stream's seed: every file again with --dump-state to files/<f>/state.bin (out-state/, state-done.json)")
     a.add_argument("--give-up-h", type=float, default=2.0,
                    help="hours with none of ours running and no memory for one before the files left fail")
     a = sub.add_parser("baseline"); a.add_argument("--pbf", type=Path, required=True); a.add_argument("--out", type=Path, required=True)
@@ -794,7 +799,7 @@ def main(argv=None) -> None:
         notes(o.out)
     elif o.cmd == "count":
         count(o.out, o.engines, o.heap_gb, o.delete_cut, o.dump_ids, o.only.split(",") if o.only else None,
-              o.give_up_h * 3600)
+              o.give_up_h * 3600, o.state)
     elif o.cmd == "baseline":
         baseline(o.pbf, o.cities.split(","), o.out, o.heap_gb)
     elif o.cmd == "report":
