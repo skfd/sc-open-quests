@@ -777,6 +777,8 @@ def main(argv=None) -> None:
     a.add_argument("--delete-cut", action="store_true", help="delete a file's .osm.pbf once it is counted")
     a.add_argument("--dump-ids", type=Path, help="lines type<TAB>id: each file writes these elements' matches to matches.tsv")
     a.add_argument("--only", help="comma-separated file ids: count only these (a canary first)")
+    a.add_argument("--give-up-h", type=float, default=2.0,
+                   help="hours with none of ours running and no memory for one before the files left fail")
     a = sub.add_parser("baseline"); a.add_argument("--pbf", type=Path, required=True); a.add_argument("--out", type=Path, required=True)
     a.add_argument("--cities", required=True); a.add_argument("--heap-gb", type=int, default=40)
     a = sub.add_parser("report"); a.add_argument("--out", type=Path, required=True)
@@ -791,7 +793,8 @@ def main(argv=None) -> None:
     elif o.cmd == "notes":
         notes(o.out)
     elif o.cmd == "count":
-        count(o.out, o.engines, o.heap_gb, o.delete_cut, o.dump_ids, o.only.split(",") if o.only else None)
+        count(o.out, o.engines, o.heap_gb, o.delete_cut, o.dump_ids, o.only.split(",") if o.only else None,
+              o.give_up_h * 3600)
     elif o.cmd == "baseline":
         baseline(o.pbf, o.cities.split(","), o.out, o.heap_gb)
     elif o.cmd == "report":
