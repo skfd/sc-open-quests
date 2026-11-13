@@ -710,8 +710,11 @@ def report(out: Path, archive: str | None = None) -> None:
 
     lines.append(f"Every open quest in the cells: {tot(cell_total):,}; app default: {tot(cell_total, disabled):,}")
     country = [k for k, v in pl.items() if v["subtype"] == "country"]
-    for k in country:
-        lines.append(f"Country place {pl[k]['name']} ({k}): every {tot(sums[k]):,}, default {tot(sums[k], disabled):,}")
+    for k in country:  # a world run lists every country; those with nothing in these cells are only counted
+        if sums[k]:
+            lines.append(f"Country place {pl[k]['name']} ({k}): every {tot(sums[k]):,}, default {tot(sums[k], disabled):,}")
+    if empty := sum(1 for k in country if not sums[k]):
+        lines.append(f"Country places with nothing in these cells: {empty}")
     lines += ["", "## Counted cities: cells (OSM polygon as a part) against the whole-city count, same file", "",
               "| city | whole city (default) | cells (default) | diff | every quest diff | quests that differ |"
               + (" city count's asOf |" if archive else ""),
@@ -740,6 +743,9 @@ def report(out: Path, archive: str | None = None) -> None:
             city = cp["city"]
             conf = next(c for c in run.read_json(run.CITIES_CONFIG)["cities"] if c["id"] == city)
             match = by_osm.get(f"r{conf['relation']}", [])
+            if city not in base["cities"]:
+                lines.append(f"| {city} | no count | | | |")
+                continue
             b = {q: v.get("open") or 0 for q, v in base["cities"][city]["quests"].items()}
             if not match:
                 lines.append(f"| {city} | none with r{conf['relation']} | {tot(b, disabled):,} | - | - |")
@@ -755,6 +761,8 @@ def report(out: Path, archive: str | None = None) -> None:
 
 
 def main(argv=None) -> None:
+    # the world's place names are in every script; a redirected Windows console is cp1252
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     sub = ap.add_subparsers(dest="cmd", required=True)
     a = sub.add_parser("places"); a.add_argument("--country", help="a country code; the world without"); a.add_argument("--out", type=Path, required=True)
