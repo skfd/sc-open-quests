@@ -193,6 +193,9 @@ class Engine(val registry: Registry, val cities: List<City>, val parts: List<Par
     /** optional: counted quests (default resurvey multiplier) per map tile, for heatmaps */
     var grid: TileGrid? = null
 
+    /** optional (--dump-state): every match and every quest waiting for its date, see [StateDump] */
+    var state: StateDump? = null
+
     /** optional: lines "quest type id version timestampMs city lat lon agedOnly" for these quests */
     var dumpQuests: Set<String> = emptySet()
 
@@ -258,8 +261,10 @@ class Engine(val registry: Registry, val cities: List<City>, val parts: List<Par
 
     /** AreaPass: one result of area quest [qi] in city [c], with the bits of [matchVariants] */
     fun countArea(c: Int, qi: Int, e: Element, center: LatLon, mask: Int) {
-        if (notes?.hides(center) == true) { if (mask and M_NOW != 0) stats.hiddenByNotes.incrementAndGet(); return }
         val type = e.type.ordinal
+        val hidden = notes?.hides(center) == true
+        state?.match(type, e.id, center.latitude, center.longitude, qi, mask, hidden)
+        if (hidden) { if (mask and M_NOW != 0) stats.hiddenByNotes.incrementAndGet(); return }
         counts.add(c, qi, type, mask)
         if (mask and M_NOW == 0) return
         val aged = mask and M_AGED != 0
@@ -311,12 +316,21 @@ class Engine(val registry: Registry, val cities: List<City>, val parts: List<Par
             if (!matcher.mayMatch(e)) continue
             // agedOnly: would it still match if no `older today -N` (or `< today`) test could be true?
             val mask = matchVariants(q.usesAge) { matcher.matches(e) }
-            if (mask == 0) continue
+            val st = state
+            // --dump-state: not open now at the default setting, but from some day on
+            val due = if (st != null && q.usesAge && mask and M_NOW == 0) StateDump.dueMinute { matcher.matches(e) } else -1
+            if (mask == 0 && due < 0) continue
             // mayCreateQuest: not in a country where the quest is off (only a city gated by position asks)
             var here = false
             for (c in cityIdx) if (enabledAt(c, qi) { ids ?: regionIdsAt(center).also { ids = it } }) { here = true; break }
             if (!here) continue
-            if (notes?.hides(center) == true) { if (mask and M_NOW != 0) stats.hiddenByNotes.incrementAndGet(); continue }
+            val hidden = notes?.hides(center) == true
+            if (st != null) {
+                if (mask != 0) st.match(type, e.id, center.latitude, center.longitude, qi, mask, hidden)
+                if (due >= 0) st.due(type, e.id, center.latitude, center.longitude, qi, hidden, due)
+            }
+            if (mask == 0) continue
+            if (hidden) { if (mask and M_NOW != 0) stats.hiddenByNotes.incrementAndGet(); continue }
             val aged = mask and M_AGED != 0
             if (mask and M_NOW != 0) grid?.add(qi, center)
             for (k in cityIdx.indices) {
