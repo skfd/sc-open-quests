@@ -12,16 +12,21 @@ S=/c/Users/kk/Code/sc-open-quests-stream
 D=$M/.scratch/stream/europe-west
 ST="python $S/tools/stream/stream.py"
 CITIES=$M/data/cities/europe-west.json
-NOTES=$M/data/notes/planet-notes-261113-europe-west.jsonl
+NOTES=$D/planet-notes-261113-europe-west.jsonl  # a copy: the daily run replaces data/notes
 EU=/c/Users/kk/Code/.osm-data/europe
 DIFFS=/c/Users/kk/Code/.osm-data/planet/diffs
 export JAVA_HOME='C:\Program Files\Android\Android Studio\jbr'
 log() { echo "$(date '+%F %T') $*"; }
 quiet() { (cd $M && python -c "import sys; sys.path.insert(0, 'tools'); import world_cells as w; w.quiet(20)"); }
 
+trap 'log "stream europe ended ($?)"' EXIT
 log "stream europe start"
-until grep -qE "oracle (written|failed)" $M/logs/planet-places.log; do sleep 120; done
-log "the world count is done"
+mkdir -p $D
+[ -f $NOTES ] || cp $M/data/notes/planet-notes-261113-europe-west.jsonl $NOTES
+# the world count ends with its oracle line; if it stops before, its log stops moving (it logs every 5 min)
+W=$M/logs/planet-places.log
+until grep -qE "oracle (written|failed)|chain done" $W || [ $(( $(date +%s) - $(stat -c %Y $W) )) -gt 3600 ]; do sleep 120; done
+log "the world count is done (or its log has not moved for an hour)"
 
 for d in 08 09 10 11 12 13; do
   [ -f $D/day-$d/state.bin.json ] && continue
@@ -31,6 +36,8 @@ for d in 08 09 10 11 12 13; do
     --zone Europe/London --notes $NOTES --dir $D/day-$d
 done
 
+# the new option changes nothing else: the old engine's dumps of the same clips (other notes clip)
+for d in 08 09; do $ST tsv --dir $D --dump $D/day-$d/state.bin --tsv $M/.scratch/diff-flips/matches-2026-11-$d.tsv; done
 [ -f $D/state.json ] || $ST seed --dump $D/day-08/state.bin --dir $D
 day=9
 for seq in 5171 5172 5173 5174 5175; do
