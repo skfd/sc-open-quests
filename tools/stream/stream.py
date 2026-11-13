@@ -202,7 +202,11 @@ def write_small_pbf(path: Path, stamp: str, last_node, last_way, locs: Locations
 
 def engine(pbf: Path, out: Path, today: str, cities: Path, zone: str, notes: Path | None, area_pass: bool,
            heap_gb: int = 8, quests: Path | None = None) -> Path:
-    quests = quests or sorted((ROOT / "data" / "quests").glob("v*.json"))[-1]
+    # the engine runs where the cities file's data is (its boundaries are relative paths; data/ is not all in git)
+    pbf, out, cities = pbf.resolve(), out.resolve(), cities.resolve()
+    notes = notes.resolve() if notes else None
+    base = cities.parents[2]
+    quests = (quests or sorted((base / "data" / "quests").glob("v*.json"))[-1]).resolve()
     dump = out / "state.bin"
     out.mkdir(parents=True, exist_ok=True)
     args = [str(ENGINE), "count", "--pbf", str(pbf), "--quests", str(quests), "--cities", str(cities),
@@ -214,7 +218,7 @@ def engine(pbf: Path, out: Path, today: str, cities: Path, zone: str, notes: Pat
                          + ("" if area_pass else " -Dopenquests.areaPass=false"))
     t = time.time()
     with open(out / "engine.log", "w", encoding="utf-8") as f:
-        r = subprocess.run(args, cwd=ROOT, env=env, stdout=f, stderr=subprocess.STDOUT)
+        r = subprocess.run(args, cwd=base, env=env, stdout=f, stderr=subprocess.STDOUT)
     if r.returncode:
         sys.exit(f"engine failed ({r.returncode}), see {out / 'engine.log'}")
     log(f"engine over {pbf.name} in {time.time() - t:.1f} s")
