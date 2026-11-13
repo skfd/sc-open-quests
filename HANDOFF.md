@@ -1124,12 +1124,17 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
     the 10-27 extract, the world's places.json as parts): Riga's whole-city count, its cells and its Overture
     place are all 82,390 (exact); 3,183 places have a number; Latvija 2,068,870 (default 873,590). The same
     file cut into 14 cells and into 2 gives the same number for every place but 4, which differ by the same 2
-    quests (AddMaxHeight, AddOneway, near a cell edge in Dobele): the known cell effect, well inside 0.1%
-    (`.scratch/world-places/invariance.py`). Peak heap 11–13 GB for 27k part entries; the planet's worst file has
-    49,840 (rehearsal above).
+    quests (AddMaxHeight, AddOneway, in Dobele). The cells' own totals differ by the same 2 (2,104,970 and
+    2,104,972), so the places only inherit the known cell effect, well inside 0.1%
+    (`.scratch/world-places/invariance.py`). 27k part entries and 8.68M outline points fit under -Xmx8g; the
+    planet's heaviest file loads 9.43M points (f47; f97 has the most places, 49,091; `points.py`), so the
+    places add about what Latvia carried to a 30 GB engine. (4) **The antimeridian** (`antimeridian.py`):
+    none of the 16 wide places has a point off the globe or an edge longer than 180 degrees, no place has
+    xmin > xmax, and points either side of 180 land right (Uelen and Anadyr in Russia; Nome, Adak and Attu
+    in the US; Taveuni in Fiji; Tokyo and the open Pacific in none).
   - **For the planet run** (owner's go-ahead and timing; nothing started): a new out dir (for example
     `.scratch/planet/world-places/`), the world's places.json copied in, then plan (same nodegrid and `--cities`
     as chain2), a new planet slice and cut (about 9 h), notes, count (about 7 h at 30 GB, longer if part
-    polygons slow the big files), report. Countries crossing the antimeridian (Russia, the US, Fiji, ...) are
-    tested only by reasoning: their box spans every longitude, so they are tested in every cell of their
-    latitudes, correct but slower; Latvia's run included Russia without trouble.
+    polygons slow the big files), report. Keep `.scratch/world-places/world/geo/`: places.json points there. A
+    wide place's box spans every longitude, so it is tested in every cell of its latitudes: correct, slower.
+    Make the canary the file with the most outline points (f47), not the one with the most cells.
