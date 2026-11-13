@@ -1075,3 +1075,15 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   `LatLonRaster.<init>` called from `FastAddIsAmenityIndoor.getApplicableElements` (FastAddIsAmenityIndoor.kt:60)
   builds its raster on a box padded past the pole. Next: clamp that box to [-90, 90] (as AreaPass.kt:127
   already does), rebuild, rerun chain3.sh (done files are skipped), then `report` and `oracle`. Not fixed yet.
+- **World count done (23:08 on 11-12): all 128 files, 2,244 cells, 10,986M nodes.** The pole bug is fixed
+  (826ac314: `rasterBox` holds the house number and amenity rasters 0.001 degree short of latitude 90; sc/
+  untouched; PoleRasterTest). The six pole files ran alone at 26 GB (only 31.6 GiB could be committed),
+  80–115 s each, log `logs/planet-count-4.log`. Results in `.scratch/planet/world/`:
+  - REPORT.md: every open quest in the cells 1,716,132,183; app default 577,700,606. All 146 counted
+    cities against their published 11-08 counts: most exactly equal, the worst Regina −0.42% (−378), Oshawa
+    −0.25%, Grande Prairie −0.22%. Their counts are from 21:21Z, a later state than the planet's.
+  - oracle.log (the cells against the stream, tier-1): 362,709 matches in both; 569 only in the stream, 566 of
+    them at an open note; 0 only in the cells; **3 unexplained** (2 AddPathSmoothness near 43.22,−2.02, 1
+    CheckShopExistence near 45.58,9.26).
+  The 87 GB cut (`.scratch/planet/world/cut/`) is still kept: chain3 deletes it only after both checks pass,
+  and that call is the owner's. Still not on the site, by design (DESIGN.md, "Place statistics for the whole world").
