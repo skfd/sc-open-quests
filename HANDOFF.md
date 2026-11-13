@@ -1069,3 +1069,9 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   Checked: 25 of the 29 titles redirect, and only BQ, BV, IO and SH are missing. The reply (now in past tense) sits
   filled in the issue's comment box in Chrome for the owner to post. Next, once the maintainers answer:
   stubs for the four, or not.
+- **World count: 122 of 128 done (checked 22:20 on 11-12); the last 6 are a North Pole bug, not memory.**
+  f96, f108, f109, f116, f119 and f127 (the files whose cells reach latitude 90) all die with "Latitude
+  90.0000168 ... is not a valid position". Traced with the new `-Dopenquests.trace=1` (set in JAVA_OPTS):
+  `LatLonRaster.<init>` called from `FastAddIsAmenityIndoor.getApplicableElements` (FastAddIsAmenityIndoor.kt:60)
+  builds its raster on a box padded past the pole. Next: clamp that box to [-90, 90] (as AreaPass.kt:127
+  already does), rebuild, rerun chain3.sh (done files are skipped), then `report` and `oracle`. Not fixed yet.
