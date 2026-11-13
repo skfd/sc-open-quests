@@ -1091,3 +1091,25 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   `.scratch/planet/world/cut/` (87 GB) are gone, as `count --delete-cut` would have done; the extract configs
   and `cut.done` stay. The counted files, REPORT.md and oracle.log are untouched. Recounting the world now
   needs a new planet slice and cut.
+- **World place index: started 11-12, 23:30 (owner: "World place index" before pages and R2).** Today's
+  world run counted only the 147 cities' outlines as parts; REPORT.md says "Places with a number: 0 of 0".
+  Measured so far, nothing built:
+  - `data/overture/world/` (2026-10-21.0, the name layer's) has every place's bbox but **no outlines**. The
+    outlines are 4.6 GB on Overture's S3 (division_area geometry, 8 files; parquet footers read).
+  - **Countable places** (own OSM source r/w, an area; the owner's rule): 1,069,532. Localities 553,827,
+    neighbourhoods 322,896, microhoods 89,205, macrohoods 46,301, counties 31,606, localadmin 21,502,
+    regions 3,923, countries 219, dependencies 53. localadmin and dependency are new to world_cells.
+  - **Against the 2,244 cells of the 11-08 run** (`.scratch/world-places/rehearse.py`, bbox only):
+    1,141,472 part entries; the worst file is f97 with 49,840, the worst cell f97c2 with 16,891.
+    16 places have a bbox wider than 180° (Russia, the US, Fiji, Kiribati, NZ, Antarctica and some of
+    their regions/counties), and 859 have no country or a placeholder one.
+  - **Plan (advisor-checked):** (1) pull the outlines once into a local parquet, staying on 2026-10-21.0 so
+    ids join the name layer. (2) Build the world's places.json and geo/ without `places()`'s single query:
+    pick each division's area from the local no-geometry file, stream geometry per country, and shard geo/
+    by id prefix. Make plan's part pick a bucketed lookup, not 2,244 x 1M comparisons. (3) Check: the world
+    output filtered to DE equals `.scratch/world-de/places.json`; every id is in the name layer; and a small
+    end-to-end count from a store extract shows places with numbers, with the osm-<city> check still
+    holding. Also check the single-`country` assumptions (places.json, plan.json, city_parts, report) and
+    the wide-bbox places in Polygon.contains. (4) Only then a new planet slice, cut and count, in a **new**
+    `--out` (never `.scratch/planet/world`: its done.json files would skip every file). That run is its own
+    step with the owner: about 9 h cut plus about 7 h count, on memory that stalled twice.
