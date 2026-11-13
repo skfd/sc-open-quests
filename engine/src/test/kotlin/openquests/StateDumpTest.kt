@@ -19,7 +19,7 @@ class StateDumpTest {
         }
         threads.forEach { it.start() }
         threads.forEach { it.join() }
-        s.due(NODE, 5, -33.9, 151.2, 3, hidden = false, dueMinute = 29_000_000)
+        s.due(NODE, 5, -33.9, 151.2, 3, hidden = false, setting = M_05, dueMinute = 29_000_000)
         s.close()
         val b = ByteBuffer.wrap(f.readBytes()).order(ByteOrder.LITTLE_ENDIAN)
         assertEquals(40_001 * StateDump.RECORD, b.limit())
@@ -33,6 +33,7 @@ class StateDumpTest {
             if (kind == StateDump.DUE) {
                 dues++
                 assertEquals(listOf(5L * 4 + NODE, -339000000L, 1512000000L, 3L, 29_000_000L), listOf(key, lat.toLong(), lon.toLong(), quest.toLong(), due.toLong()))
+                assertEquals(M_05, flags)
             } else {
                 assertEquals(listOf(436500000, -793800000, 7), listOf(lat, lon, quest))
                 assertEquals(M_NOW or M_AGED, flags and 63)

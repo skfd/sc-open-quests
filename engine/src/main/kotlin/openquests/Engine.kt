@@ -317,9 +317,16 @@ class Engine(val registry: Registry, val cities: List<City>, val parts: List<Par
             // agedOnly: would it still match if no `older today -N` (or `< today`) test could be true?
             val mask = matchVariants(q.usesAge) { matcher.matches(e) }
             val st = state
-            // --dump-state: not open now at the default setting, but from some day on
-            val due = if (st != null && q.usesAge && mask and M_NOW == 0) StateDump.dueMinute { matcher.matches(e) } else -1
-            if (mask == 0 && due < 0) continue
+            // --dump-state: not open now at a setting, but from some day on (each of the three settings)
+            var due = -1
+            var due05 = -1
+            var due2 = -1
+            if (st != null && q.usesAge) {
+                if (mask and M_NOW == 0) due = StateDump.dueMinute { matcher.matches(e) }
+                if (mask and M_05 == 0) due05 = StateDump.dueMinute { Resurvey.at(Resurvey.HALF) { matcher.matches(e) } }
+                if (mask and M_2 == 0) due2 = StateDump.dueMinute { Resurvey.at(Resurvey.DOUBLE) { matcher.matches(e) } }
+            }
+            if (mask == 0 && due < 0 && due05 < 0 && due2 < 0) continue
             // mayCreateQuest: not in a country where the quest is off (only a city gated by position asks)
             var here = false
             for (c in cityIdx) if (enabledAt(c, qi) { ids ?: regionIdsAt(center).also { ids = it } }) { here = true; break }
@@ -327,7 +334,9 @@ class Engine(val registry: Registry, val cities: List<City>, val parts: List<Par
             val hidden = notes?.hides(center) == true
             if (st != null) {
                 if (mask != 0) st.match(type, e.id, center.latitude, center.longitude, qi, mask, hidden)
-                if (due >= 0) st.due(type, e.id, center.latitude, center.longitude, qi, hidden, due)
+                if (due >= 0) st.due(type, e.id, center.latitude, center.longitude, qi, hidden, M_NOW, due)
+                if (due05 >= 0) st.due(type, e.id, center.latitude, center.longitude, qi, hidden, M_05, due05)
+                if (due2 >= 0) st.due(type, e.id, center.latitude, center.longitude, qi, hidden, M_2, due2)
             }
             if (mask == 0) continue
             if (hidden) { if (mask and M_NOW != 0) stats.hiddenByNotes.incrementAndGet(); continue }

@@ -91,7 +91,9 @@ class State:
 
 def open_codes(rows: np.ndarray, at_min: int, quest_mask: np.ndarray) -> np.ndarray:
     """(key, quest) as one int64 for every row open at `at_min` among the quests in quest_mask"""
-    is_open = ((rows["kind"] == MATCH) & (rows["flags"] & M_NOW > 0)) | ((rows["kind"] == DUE) & (rows["due"] <= at_min))
+    # a date for the default setting: flags M_NOW, or no setting bit at all (dumps before the 0.5 and 2 dates)
+    default = (rows["flags"] & 63 == 0) | (rows["flags"] & M_NOW > 0)
+    is_open = ((rows["kind"] == MATCH) & (rows["flags"] & M_NOW > 0)) | ((rows["kind"] == DUE) & (rows["due"] <= at_min) & default)
     r = rows[is_open & quest_mask[rows["quest"]]]
     return np.unique(r["key"] * 1024 + r["quest"])
 
@@ -311,9 +313,77 @@ def check(d: Path, dump: Path):
             quests = Counter(st.names[int(q)] for q in codes % 1024).most_common(8)
             lines.append(f"  {label}: by type {dict(types)}; by quest {quests}")
             lines.append(f"    e.g. {[(('n', 'w', 'r')[int(c // 1024) & 3] + str(int(c // 1024) >> 2), st.names[int(c % 1024)]) for c in codes[:6]]}")
+    lines += rows_check(st, ref, tier1, d)
     text = "\n".join(lines)
     print(text)
     (d / f"check-{clock[:10]}.txt").write_text(text + "\n", encoding="utf-8")
+
+
+def rows_check(st: State, ref: np.ndarray, tier1: np.ndarray, d: Path) -> list[str]:
+    """tier 1, every row and every field, not only the open set: the position, the variant bits, the due date.
+    A state row waiting for a date that has come is the count's open match (M_NOW, and M_AGED: it opened by
+    age). The 0.5 and 2 variants have no dates, so their bits are told apart. The note flag is reported apart
+    too: apply's runs have no notes clip, so a row keeps the seed's flag until its element is edited."""
+    at = minute(st.meta["clock"])
+    touched = np.load(d / "touched.npy") if (d / "touched.npy").exists() else np.zeros(0, np.int64)
+    a, b = st.rows[tier1[st.rows["quest"]]], ref[tier1[ref["quest"]]]
+    code = lambda r: r["key"] * 1024 + r["quest"].astype(np.int64)
+    def setting(r):  # a date's setting bit; none in dumps before the 0.5 and 2 dates: the default
+        f = r["flags"] & 63
+        return np.where(f == 0, M_NOW, f)
+
+    ma, da = a[a["kind"] == MATCH].copy(), a[a["kind"] == DUE]
+    came_n = 0
+    for bit, aged in ((M_NOW, 2), (4, 8), (16, 32)):
+        came = da[(setting(da) == bit) & (da["due"] <= at)]
+        came_n += len(came)
+        ma["flags"][np.isin(code(ma), code(came))] |= bit | aged
+        extra = came[~np.isin(code(came), code(ma))].copy()
+        extra["kind"], extra["flags"] = MATCH, (extra["flags"] & HIDDEN) | bit | aged
+        ma = np.concatenate([ma, extra])
+    da = da[da["due"] > at]
+    mb, db = b[b["kind"] == MATCH], b[b["kind"] == DUE]
+    dcode = lambda r: code(r) * 64 + setting(r)
+    name = lambda k, q: ("n", "w", "r")[int(k) & 3] + str(int(k) >> 2) + " " + st.names[int(q)]
+    out = [f"tier 1, every row: matches state {len(ma):,} / count {len(mb):,}; waiting for a date state {len(da):,} / count {len(db):,} "
+           f"({came_n:,} of the state's dates have come and count as matches)"]
+
+    def sides(label, x, y):
+        cfn = code if label == "match" else dcode
+        code_, cx, cy = cfn, cfn(x), cfn(y)
+        for side, r, other in (("only in the state", x, cy), ("only in the count", y, cx)):
+            r = r[~np.isin(code_(r), other)]
+            if len(r):
+                now = (r["flags"] & M_NOW) > 0 if label == "match" else np.zeros(len(r), bool)
+                el = r["key"]
+                out.append(f"  {label} {side}: {len(r):,} (open now {int(now.sum()):,}, only at 0.5 or 2 {int((~now).sum()):,}); "
+                           f"a relation {int(((el & 3) == 2).sum()):,}; touched {int(np.isin(el, touched).sum()):,}; by quest "
+                           f"{Counter(st.names[int(q)] for q in r['quest']).most_common(4)}; e.g. {[name(k, q) for k, q in zip(el[:4], r['quest'][:4])]}")
+        both, ix, iy = np.intersect1d(cx, cy, return_indices=True)
+        return x[ix], y[iy]
+
+    ra, rb = sides("match", ma, mb)
+    moved = (ra["lat"] != rb["lat"]) | (ra["lon"] != rb["lon"])
+    if moved.any():
+        dy = (ra["lat"][moved] - rb["lat"][moved]) * 1e-7 * 111_320
+        dx = (ra["lon"][moved] - rb["lon"][moved]) * 1e-7 * 111_320 * np.cos(np.radians(rb["lat"][moved] * 1e-7))
+        m = np.hypot(dx, dy)
+        el = ra["key"][moved]
+        out.append(f"  match in both, position differs: {int(moved.sum()):,} (touched {int(np.isin(el, touched).sum()):,}; "
+                   f"by type {dict(Counter(('node', 'way', 'relation')[int(k) & 3] for k in el))}); metres: median {np.median(m):.1f}, "
+                   f"90% {np.percentile(m, 90):.1f}, max {m.max():.0f}; over 10 m {int((m > 10).sum()):,}, over 100 m {int((m > 100).sum()):,}; "
+                   f"e.g. {[name(k, q) for k, q in zip(el[:4], ra['quest'][moved][:4])]}")
+    else:
+        out.append("  match in both, position differs: 0")
+    for label, mask in (("M_NOW", 1), ("aged-only at default", 2), ("the 0.5 and 2 bits", 60)):
+        n = int(((ra["flags"] ^ rb["flags"]) & mask > 0).sum())
+        out.append(f"  match in both, {label} differs: {n:,}")
+    n = int(((ra["flags"] ^ rb["flags"]) & HIDDEN > 0).sum())
+    out.append(f"  match in both, note flag differs (not an error): {n:,}")
+    xa, xb = sides("waiting", da, db)
+    out.append(f"  waiting in both, date differs: {int((xa['due'] != xb['due']).sum()):,}; position differs: "
+               f"{int(((xa['lat'] != xb['lat']) | (xa['lon'] != xb['lon'])).sum()):,}")
+    return out
 
 
 def tsv(dump: Path, old: Path):

@@ -19,13 +19,14 @@ import kotlin.time.Instant
  *   lat   i32  the quest's position, 1e-7 degrees
  *   lon   i32
  *   quest u16  index into the sidecar's `quests`
- *   flags u8   the M_* bits of [matchVariants] (kind 0); [HIDDEN] when an open note at asOf hides the position
- *   kind  u8   [MATCH], or [DUE]: not open now at the default resurvey setting, open from `due` on
+ *   flags u8   kind 0: the M_* bits of [matchVariants]; kind 1: the setting's bit, [M_NOW] (the default),
+ *              [M_05] or [M_2]; and [HIDDEN] when an open note at asOf hides the position
+ *   kind  u8   [MATCH], or [DUE]: not open now at that resurvey setting, open from `due` on (aged-only then)
  *   due   i32  kind DUE: minutes since the epoch from which the quest is open (whole days after asOf); else 0
  *
  * Every match is written whatever the notes say (flag [HIDDEN]), so the stream can hold notes as a layer of
  * its own. Quests waiting for their date are found for the main pass's quests only (not the area quests), at
- * the default resurvey setting, by asking the quest at [FAR] and then halving the days in between: a quest
+ * each of the three resurvey settings, by asking the quest at [FAR_DAYS] and then halving the days in between: a quest
  * that only `newer` tests open is not found (it is not open at FAR either).
  */
 class StateDump(private val file: File) : Closeable {
@@ -42,9 +43,10 @@ class StateDump(private val file: File) : Closeable {
         put(type, id, lat, lon, quest, mask or (if (hidden) HIDDEN else 0), MATCH, 0)
     }
 
-    fun due(type: Int, id: Long, lat: Double, lon: Double, quest: Int, hidden: Boolean, dueMinute: Int) {
+    /** [setting] is the variant bit of the resurvey setting the date is for: [M_NOW] (the default), [M_05] or [M_2] */
+    fun due(type: Int, id: Long, lat: Double, lon: Double, quest: Int, hidden: Boolean, setting: Int, dueMinute: Int) {
         dues.incrementAndGet()
-        put(type, id, lat, lon, quest, if (hidden) HIDDEN else 0, DUE, dueMinute)
+        put(type, id, lat, lon, quest, setting or (if (hidden) HIDDEN else 0), DUE, dueMinute)
     }
 
     private fun put(type: Int, id: Long, lat: Double, lon: Double, quest: Int, flags: Int, kind: Int, due: Int) {
