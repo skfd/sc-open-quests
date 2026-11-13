@@ -158,7 +158,7 @@ def read_diff(path: Path):
     return last_node, last_way, relations
 
 
-def write_small_pbf(path: Path, stamp: str, last_node, last_way, locs: Locations) -> Counter:
+def write_small_pbf(path: Path, stamp: str, last_node, last_way, locs: Locations, unplaced: list | None = None) -> Counter:
     import osmium
     stats = Counter()
     syn: dict[tuple[float, float], int] = {}
@@ -172,6 +172,8 @@ def write_small_pbf(path: Path, stamp: str, last_node, last_way, locs: Locations
             p = locs.get(r)
             if p is None:
                 stats["ways with a node not placed"] += 1
+                if unplaced is not None:
+                    unplaced.append(wid)
                 srefs = None
                 break
             s = syn.get(p)
@@ -240,7 +242,8 @@ def apply(d: Path, diff: Path, today: str, cities: Path, zone: str, notes: Path 
         locs.overlay[nid] = loc if alive else None
     work = d / "work"
     work.mkdir(exist_ok=True)
-    stats = write_small_pbf(work / "touched.osm.pbf", today, last_node, last_way, locs)
+    unplaced: list[int] = []
+    stats = write_small_pbf(work / "touched.osm.pbf", today, last_node, last_way, locs, unplaced)
     log(f"small PBF in {time.time() - t:.0f} s: {dict(stats)}")
     dump = engine(work / "touched.osm.pbf", work, today, cities, zone, notes, area_pass=False)
     new = read_dump(dump, st.names)
@@ -260,6 +263,10 @@ def apply(d: Path, diff: Path, today: str, cities: Path, zone: str, notes: Path 
                                            "seconds": round(time.time() - T0, 1), **{k: int(v) for k, v in stats.items()}})
     st.save()
     locs.save()
+    # every key a diff touched so far, and the ways that could not be placed: check splits its differences by them
+    for name, keys in (("touched", touched), ("unplaced", np.array(unplaced, np.int64) * 4 + 1)):
+        f = d / f"{name}.npy"
+        np.save(f, np.union1d(np.load(f), keys) if f.exists() else np.unique(keys))
     log(f"state at {today}: {int(drop.sum()):,} rows of touched elements replaced by {len(new):,}; tier 1 opened {opened:,}, "
         f"closed {closed:,} (aging included); {len(st.rows):,} rows; {time.time() - T0:.0f} s in all")
 
@@ -292,7 +299,15 @@ def check(d: Path, dump: Path):
         for label, codes in (("only in the state", only_s), ("only in the count", only_r)):
             if not codes.size:
                 continue
-            types = Counter(("node", "way", "relation")[int(k) & 3] for k in codes // 1024)
+            keys = codes // 1024
+            touched = np.load(d / "touched.npy") if (d / "touched.npy").exists() else np.zeros(0, np.int64)
+            unplaced = np.load(d / "unplaced.npy") if (d / "unplaced.npy").exists() else np.zeros(0, np.int64)
+            rel = (keys & 3) == 2
+            unpl = np.isin(keys, unplaced) & ~rel
+            tch = np.isin(keys, touched) & ~rel & ~unpl
+            lines.append(f"  {label}: a relation {int(rel.sum()):,}; a way not placed {int(unpl.sum()):,}; "
+                         f"an element a diff touched {int(tch.sum()):,}; untouched {int((~rel & ~unpl & ~tch).sum()):,}")
+            types = Counter(("node", "way", "relation")[int(k) & 3] for k in keys)
             quests = Counter(st.names[int(q)] for q in codes % 1024).most_common(8)
             lines.append(f"  {label}: by type {dict(types)}; by quest {quests}")
             lines.append(f"    e.g. {[(('n', 'w', 'r')[int(c // 1024) & 3] + str(int(c // 1024) >> 2), st.names[int(c % 1024)]) for c in codes[:6]]}")
@@ -301,9 +316,33 @@ def check(d: Path, dump: Path):
     (d / f"check-{clock[:10]}.txt").write_text(text + "\n", encoding="utf-8")
 
 
+def tsv(dump: Path, old: Path):
+    """the open, unhidden records of a --dump-state against an older engine's --dump-matches of the same clip
+    (its quests only): nothing but the new option may differ, and notes when the notes clips differ"""
+    names: list[str] = []
+    a = read_dump(dump, names)
+    T = {"node": 0, "way": 1, "relation": 2}
+    old_set, quests = set(), set()
+    with open(old, encoding="utf-8") as f:
+        next(f)
+        for line in f:
+            q, t, i = line.split("	", 3)[:3]
+            old_set.add((int(i) * 4 + T[t], q))
+            quests.add(q)
+    sel = a[(a["kind"] == MATCH) & (a["flags"] & M_NOW > 0)]
+    hidden = {(int(k), names[q]) for k, q, fl in zip(sel["key"], sel["quest"], sel["flags"]) if fl & HIDDEN and names[q] in quests}
+    new_set = {(int(k), names[q]) for k, q, fl in zip(sel["key"], sel["quest"], sel["flags"]) if not fl & HIDDEN and names[q] in quests}
+    only_new, only_old = new_set - old_set, old_set - new_set
+    print(f"{dump} against {old}: {len(new_set):,} open and unhidden, {len(old_set):,} in the old dump; "
+          f"only new {len(only_new):,}, only old {len(only_old):,} (of those hidden by a note in the new run: {len(only_old & hidden):,})")
+    for k in list(only_new)[:5] + list(only_old - hidden)[:5]:
+        print("   ", k)
+
+
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("cmd", choices=["nodes", "count", "seed", "apply", "check"])
+    ap.add_argument("cmd", choices=["nodes", "count", "seed", "apply", "check", "tsv"])
+    ap.add_argument("--tsv", type=Path)
     ap.add_argument("--pbf", type=Path)
     ap.add_argument("--heap-gb", type=int, default=30)
     ap.add_argument("--dir", type=Path, required=True)
@@ -323,5 +362,7 @@ if __name__ == "__main__":
         seed(o.dump, o.dir)
     elif o.cmd == "apply":
         apply(o.dir, o.diff, o.today, o.cities, o.zone, o.notes)
+    elif o.cmd == "tsv":
+        tsv(o.dump, o.tsv)
     else:
         check(o.dir, o.dump)
