@@ -1286,3 +1286,18 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
     `.scratch/planet/diffs-keep/` (no disk until the store's copies go); **run
     `powershell -File .scratch\planet\keep-diffs.ps1` again before 2026-12-07 07:30** to link the newer ones.
     The history file is not linked (170 GB would stay held through the job, which needs about 170 GB free).
+- **The world state store, started (11-14, 04:40).** DESIGN.md, "The world state store". `tools/stream/world_state.py
+  sort .scratch/planet/world-places` (test `tests/test_world_state.py`) sorts every seed file in place by (key,
+  quest, kind), saves each file's sorted key list (`files/fNN/state-keys.npy`, about 8.5 GB in all), and writes
+  `world-state.json` (each file's rect, rows, key range) and `world-state-shared.npy` (the keys in two files).
+  Running (log `logs/world-state-sort.log`, about half an hour on 4 processes); safe to rerun (a sorted file is
+  skipped).
+- **For the owner (evening of 11-14), to ask as a wizard:**
+  1. **The node store for a world day (`planet.loc`, 107 GiB).** Tier 1 for the world needs it. It is built from
+     `history-261102.osh.pbf`, which the 12-07 planet job retires, and it would leave about 165 GB free where that
+     job needs about 170 GB. Either build it now and stream the 11-08 seed through the next weeks (deleting it
+     before 12-07, then building it again from the new file), or wait and build it once from the 12-07 file,
+     streaming from the 12-07 seed (the 11-08 seed then only a rehearsal).
+  2. **Tier 2's store for the world** ("map data of these boxes at D and D-1"; estimated about 300 GB, more than
+     the disk has beside the 12-07 job): built here, an Overpass instance, or later.
+  3. **Push:** about 15 commits since the last push.
