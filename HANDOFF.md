@@ -1148,7 +1148,7 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   with a 10 h give-up (`count --give-up-h`, new), and a failed file retried alone at 40 GB. Then report and
   oracle. Expect the count from about 13:30 and the end in the evening, longer if memory dips.
   The cut stays after the count, for the owner to delete once the checks pass.
-- **The stream: its state, being prepared (11-13, from 12:40; owner: "prepare whatever streaming prototype would
+- **(Done; superseded by "Where the stream stands" below.) The stream: its state, being prepared (11-13, from 12:40; owner: "prepare whatever streaming prototype would
   need to progress"; the full count is the reference for data and for speed).** DESIGN.md, "The stream: its
   state". On main (merged from branch `stream`, worktree `../sc-open-quests-stream`, kept while the
   test below runs from it): engine `--dump-state` (every match plus the date each waiting quest opens; built in
@@ -1188,3 +1188,31 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   (sorted on disk plus an overlay) and the node store again (`planet.loc`, 107 GiB). Disk: 262 GB free; the cut
   (87 GB) goes after the seed; the planet job of 12-07 needs about 170 GB. A world reference beyond 11-08 needs
   a second planet count at a later instant: the owner's call.
+- **Where the stream stands (11-13, 19:45): nothing running; the owner decides the next machine step.**
+  Read DESIGN.md "The stream: its state (2026-11-13)" from the top: it holds the method and every result.
+  - **Built, on main, 13 commits not pushed (push asked, not answered):** engine `--dump-state` with dates for
+    all three resurvey settings (main's engine rebuilt; option off leaves snapshots identical); `world_cells.py
+    count --state`; `tools/stream/stream.py` (`nodes`, `ways`, `count`, `seed`, `apply [--tier2-clip]`, `check`,
+    `tsv`); `tools/stream/tier2.py`; `tools/stream/europe-test.sh` (tier 1) and `europe-t2.sh` (tier 2), both
+    rerunnable (each skips what is done; delete a state dir's `check-*.txt`, `state.json` and `rows.npy` to
+    replay it). Repo check (`python -m unittest`) passes; 86 engine tests pass.
+  - **Europe, five days (11-09..11-13, europe-west), against a whole count each day:** tier 1 exact in every
+    field on four days; tier 2 with the recount 130 wrong of 1.39M after five days (3,580 without). 5-7 min a
+    day, of which the engine 23-36 s and reading the planet diff in Python 2-2.5 min.
+  - **Known gaps, in the order to take them:** (1) the splice brings the recount's own disagreements in: 36
+    AddHousenumber on 11-12, and on 11-13 ways 71455532 and 168339841 on Dublin's boundary, which the recount
+    counts and the whole count has no row for (the engine's point test says inside; cause not traced). Try the
+    delta form (apply the recount's own day-to-day flips; DESIGN "The stream, tier 2" found it exact). (2) Area
+    quests have no dates (about 20 a day here): skipped for the first world seed, by decision. (3) `tier2.map_data`
+    returns the whole day clip; a world needs a store answering "map data of these boxes at day D". That
+    store, not the engine, decides whether the stream beats the full count (the engine's area runs were 1-8 s
+    a day against about 25 s for these cities whole).
+  - **Owner's calls:** when to run the world seed (`world_cells.py count --state` over
+    `.scratch/planet/world-places/cut/`: about 5 h of engine with the new dates, up to 9-10 h on the clock;
+    state about 25% bigger than first estimated, so about 60 GB), best started early on a day the owner is
+    away so it ends before midnight; then deleting that cut (87 GB), which must happen before the 12-07 planet
+    job (about 170 GB needed; 242 GB free now). A world reference past 11-08 needs a second planet count.
+  - **Housekeeping:** Europe clips 11-08..11-13 stay pinned in `~/Code/.osm-data/europe/pins.json` while tier 2
+    is worked on; unpin when done. `.scratch/stream/` is 13 GB (the way store 3.7 GB and node index 2 GB in
+    `europe-west/t2/`, the node index again in `europe-west/`). `hs_err_pid65112.log` in the repo root is an
+    old crash log from 11-10 (world file f21's 40 GB retry, out of memory), safe to delete.
