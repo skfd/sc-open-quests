@@ -3223,3 +3223,11 @@ far the map data reaches (some address-carrying area or building beyond 300 m de
 brings a few disagreements of its own (not traced; order is still a candidate for those). The 1,500 m ring reads
 24.6M nodes against 3.6M and took 73 s against 46 s here. For the world store this is the ring-size trade-off:
 the store must serve the ring the recount needs, and 300 m is not exact for AddHousenumber.
+
+**The world seed agrees with europe-west's 11-08 count (11-14, 05:25; `.scratch/planet/seedvseurope.py`, log
+beside it).** The read-back passes (`seedcheck.py` on the sorted files, 0 problems); every row lies in its file's
+rect but 9 on an edge (rounding); the 95 keys in two files are all relations (`seedroute.py`). On the elements both
+hold (2,152,775 keys in f34, f44, f90 and f106: Lisboa, Dublin, London), **all 5,405,119 tier-1 rows are equal in
+every field** (key, quest, kind, flags, date, position), none on one side only. The world's cells and time zones
+give the same tier-1 rows as the Europe cities, so europe-west's day dumps (11-09..11-13) can check a world-path
+stream on those elements.
