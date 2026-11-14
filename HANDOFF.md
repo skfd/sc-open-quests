@@ -1304,3 +1304,8 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
 - **World state store sorted (11-14, 04:31):** 832 s, every row kept, 95 shared keys; finding a day's touched keys
   in all 128 files takes about 30 s (DESIGN.md, "Sorted"). The store is ready for tier 1 of a world day, which now
   waits on the node store (owner's question 1).
+- **The last tier-2 row traced (11-14, 05:00):** `w1577774915 AddHousenumber` is one of about 45 houses mapped on
+  11-12 over addressed buildings in London; AddHousenumber hands shared address nodes out in map-data order, which
+  differs between a rectangle and the whole city (and in the app, by what it downloaded). Not a stream bug; not
+  fixable short of whole-city map data. DESIGN.md, "The one tier-2 row left, traced". **Nothing runs now; the next
+  machine steps wait on the owner's questions above.**
