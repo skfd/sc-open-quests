@@ -3306,3 +3306,8 @@ The design, smallest first:
   343 GB free with `planet.loc` (115 GB) and the stream's rows on disk. A 100 GB tile store would leave about
   240 GB, above the 12-07 job's 170 GB even with `planet.loc` kept; with the further 100 GB in December, both stores
   fit beside the 12-07 reseed. The disk no longer forbids (c); the measurements on europe-west come first.
+**Caught up to 11-14 (14:08):** six days (5171..5176), 7.8-13.7 min each (the files 300-505 s of it), no way unplaced on
+any day. Each day drops 0.57-0.71M tier-1 rows of touched elements and adds 0.84-1.01M: the state grows by about
+0.3M rows a day (0.015%), which the 12-07 count must confirm (new mapping opening quests, or rows a dropped key
+should have taken). On europe-west's elements, 11-10..11-13 show only tier 1's known limits, and 11-13 is the same
+row for row as europe-west's tier-1 stream and the four-file test.

@@ -1342,3 +1342,9 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   leaves it), though it must be rebuilt from the 12-07 history file anyway. The tier-2 world store (DESIGN.md, "Tier
   2 for the world") fits now; next are its two measurements on europe-west: (a) the cover without a way index, (c) a
   z14 tile store's size and a day's read and update.
+- **The world's stream is at 11-14 (14:08).** DESIGN.md, "The world's first day" and "Caught up to 11-14". Six
+  planet days, 8-14 min each, tier 1 only; Europe checks show only tier 1's known limits (ways whose nodes moved,
+  untouched relations). The state grows by about 0.3M rows a day: **hold it against the 12-07 count**. To take
+  later days: rerun `tools/stream/world-days.sh` (hidden, its Start-Process line), which links new diffs and applies
+  what is not applied; not scheduled (a daily task would be standing config: ask the owner). Disk: the stream's own
+  rows about 48 GB beside the seed's.
