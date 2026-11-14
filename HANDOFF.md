@@ -1232,3 +1232,12 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   outside; the delta keeps them out (a full fix, the engine given the real outline, is not built).
   **Gaps left:** area quests' dates (the first world seed goes without them, by decision); the store answering
   "map data of these boxes at D and D-1". The world seed has no code blocker now: ask the owner when.
+- **World seed running since 11-13, 21:29 (owner: "this project can disregard nightly quiet hours. keep working ...
+  try to work autonomous").** `.scratch/planet/chain5.sh` (hidden; log `logs/planet-seed.log`; rerun with the
+  Start-Process line in its header, every step skips what is done): `world_cells.py count --state` over
+  `.scratch/planet/world-places/cut/`, canary f47 at 30 GB, then every file on one or two engines as memory allows,
+  a failed file once more at 40 GB; then `.scratch/planet/seedcheck.py` (each file's out-state snapshot equal to
+  its count's, every state.bin whole records) and, only if that passes, the cut deleted, as the owner decided.
+  Expect about 5 h of engine, more on the clock if memory dips. Meanwhile: area-quest dates, in a worktree (main's
+  engine is not rebuilt while the seed runs from it).
+
