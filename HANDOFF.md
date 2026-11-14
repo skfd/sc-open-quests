@@ -1361,3 +1361,10 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   recount of 11-13 and 11-12, frozen in `.scratch/tiles/ref/` (cities, cells, both `state.bin`). The engine picks
   an area's ways by a node in the padded box and orders map data by id hash (AreaPass.kt), so equal rows are
   expected. Then the store's layout from the tile population (pack files with an index, not a file per tile).
+- **The tile rule holds (11-14, 17:25).** The 103 rectangles of t2n's 11-13 (dublin-0 12x7 km, the rest small): 331
+  z14 tiles under them and the 300 m ring; the extract (8.76M objects, 105 MiB, against the 1.75 GB clip) recounted
+  **row for row equal** to the recount on the whole clip, 1,116,244 rows, 0 different; on 11-12 (D-1) the same,
+  1,114,046 rows. The engine took 22 s on the extract against 35 s on the clip. Leaving the relation store's member
+  ways out (7% fewer nodes) changed nothing on this day either; it stays in, for the multipolygons that reach far.
+  Prototype timings: `geom` 8 s for node places (C++), 342 s for way refs (Python); `attrs` 930 s (Python, mostly
+  ways' tags). Next: the store cut from 11-12, its size and tile population, and the same check through it.
