@@ -1368,3 +1368,9 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   ways out (7% fewer nodes) changed nothing on this day either; it stays in, for the multipolygons that reach far.
   Prototype timings: `geom` 8 s for node places (C++), 342 s for way refs (Python); `attrs` 930 s (Python, mostly
   ways' tags). Next: the store cut from 11-12, its size and tile population, and the same check through it.
+- **The store, cut and read (11-14, 17:45).** DESIGN.md, "Measurement (c)". Europe-west 11-12: 59,026 tiles, 1.86 GiB
+  (clip 1.63 GiB) plus a 218 MiB relation store; read back for t2n's rectangles, the recount is 0 different (D-1).
+  The day's update (`tilestore.py update`: the reached tiles rebuilt from their old payloads and the diff, into a new
+  generation; no way index, a moved node's ways found in its old home tile) equals a fresh cut on a small clip
+  (`tests/test_tilestore_update.py`). Running now (`.scratch/tiles/`, logs `logs/tiles-*.log`): the fresh cut of 11-13
+  (`store13/`) and the update of `store/` by diff 5175; then compare them and recount D through the store.
