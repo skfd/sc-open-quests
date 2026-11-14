@@ -1353,3 +1353,11 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   old. The world's tier 2 then needs no 280 GB way index, only the relations' member ways and the map data store.
   **Next: measurement (c)**, a z14 tile store of the europe-west clip (size against the clip, cut time, a day's
   update and read, the recount on its data equal to the clip's).
+- **Measurement (c), the tile store, started (11-14, 17:00).** First the tile rule alone, before any store
+  (`tools/stream/tiles.py`): `geom` reads a clip's node locations, way refs and relation members into numpy
+  (`.scratch/tiles/geom-12/`, `geom-13/`); `extract` writes what the z14 tiles under the rectangles and the 300 m ring
+  would hold (nodes in the tiles; ways whose segments cross them, complete; relations with a member there, and
+  their member ways whole as a separate "relation store"); `recount` and `compare` hold it against the t2n
+  recount of 11-13 and 11-12, frozen in `.scratch/tiles/ref/` (cities, cells, both `state.bin`). The engine picks
+  an area's ways by a node in the padded box and orders map data by id hash (AreaPass.kt), so equal rows are
+  expected. Then the store's layout from the tile population (pack files with an index, not a file per tile).
