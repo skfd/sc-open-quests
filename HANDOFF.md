@@ -1301,3 +1301,6 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   2. **Tier 2's store for the world** ("map data of these boxes at D and D-1"; estimated about 300 GB, more than
      the disk has beside the 12-07 job): built here, an Overpass instance, or later.
   3. **Push:** about 15 commits since the last push.
+- **World state store sorted (11-14, 04:31):** 832 s, every row kept, 95 shared keys; finding a day's touched keys
+  in all 128 files takes about 30 s (DESIGN.md, "Sorted"). The store is ready for tier 1 of a world day, which now
+  waits on the node store (owner's question 1).

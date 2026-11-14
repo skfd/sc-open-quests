@@ -3194,3 +3194,9 @@ not fit in memory, where `stream.py`'s `State` loads and sorts all of europe-wes
   tier 1, and a store answering "map data of these boxes at D and D-1" for tier 2 (estimated about 300 GB). Both
   are the owner's call on disk and timing. The daily touched-element engine run must use the seed's cells and
   zones (one engine run, the 2,244 cells as its cities), not `stream.py`'s single `--zone`.
+
+**Sorted (11-14, 04:17-04:31):** `world_state.py sort` on 4 processes, 832 s; 2,011,107,291 rows kept, 1,061,205,175
+keys over the files, the same 95 in two files. `world_state.py find` with the five planet days' touched keys
+(25,862,383, of which 1,112,729 have rows in the state: most touched nodes carry no quest) against all 128 key lists
+takes 153 s, warm or cold: CPU, about 1.2 s a file, so about 30 s for one day's 4.6M keys. Fast enough to leave
+unindexed; a file's key range (in the manifest) could skip most files for most keys if it ever matters.
