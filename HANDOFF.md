@@ -1214,5 +1214,12 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
     job (about 170 GB needed; 242 GB free now). A world reference past 11-08 needs a second planet count.
   - **Housekeeping:** Europe clips 11-08..11-13 stay pinned in `~/Code/.osm-data/europe/pins.json` while tier 2
     is worked on; unpin when done. `.scratch/stream/` is 13 GB (the way store 3.7 GB and node index 2 GB in
-    `europe-west/t2/`, the node index again in `europe-west/`). `hs_err_pid65112.log` in the repo root is an
-    old crash log from 11-10 (world file f21's 40 GB retry, out of memory), safe to delete.
+    `europe-west/t2/`, the node index again in `europe-west/`). `hs_err_pid65112.log` deleted (11-13, 19:55).
+- **The owner's answers (11-13, 19:55):**
+  - **World seed: hold.** Not scheduled. Work on the stream's code gaps first (the delta form, the Dublin ways,
+    the 36 AddHousenumber), then ask again when to start it (a morning, a day the owner is away).
+  - **The cut (`.scratch/planet/world-places/cut/`, 87 GB): delete once the seed is checked**, i.e. as soon as
+    the seed's rows agree with the 11-08 count; no further ask needed. Still must be gone before 12-07.
+  - **Second world reference: from the 12-07 planet.** Count the world from the monthly job's download, stream
+    11-08 -> 12-07, and check against it. No dedicated earlier run.
+  - **Push: yes**, the 14 commits pushed.
