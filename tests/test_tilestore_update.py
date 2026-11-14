@@ -17,11 +17,14 @@ T1 = datetime(2026, 11, 13, 10, 0, tzinfo=timezone.utc)
 
 BASE_NODES = {1: (51.500, -0.120, {}), 2: (51.500, -0.090, {}), 3: (51.510, -0.120, {}),
               4: (51.505, -0.105, {"amenity": "bench"}), 5: (51.520, -0.100, {}), 6: (51.520, -0.095, {}),
-              7: (51.525, -0.095, {}), 8: (51.525, -0.100, {}), 9: (51.505, -0.075, {})}
+              7: (51.525, -0.095, {}), 8: (51.525, -0.100, {}), 9: (51.505, -0.075, {}),
+              11: (51.506, -0.121, {})}
 BASE_WAYS = {1: ([1, 2], {"highway": "residential"}), 2: ([1, 3], {"highway": "footway"}),
              3: ([5, 6, 7, 8, 5], {"building": "yes"}), 4: ([3, 5], {})}
 BASE_RELS = {1: ([("w", 4, "outer"), ("w", 3, "inner")], {"type": "multipolygon", "landuse": "grass"}),
-             2: ([("w", 1, "")], {"type": "route", "route": "bus"})}
+             2: ([("w", 1, "")], {"type": "route", "route": "bus"}),
+             # in the tile of nodes 1 and 3 only through an untagged node no way holds (a rebuilt tile must keep it)
+             3: ([("n", 11, "label"), ("w", 3, "")], {"type": "site", "name": "Yard"})}
 
 
 def write_pbf(path, nodes, ways, rels, versions):

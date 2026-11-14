@@ -193,13 +193,17 @@ def tile_pairs(c: Clip):
     rk.append(wk[idx])
     rr.append(np.repeat(wrel, cnt))
     rel = np.unique(np.concatenate(rk) << 28 | np.concatenate(rr))
-    # nodes: tagged nodes in the tile, and every node of every way in the tile
+    # nodes: tagged nodes in the tile, every node of every way in the tile, and the kept relations' member nodes
+    # there (an untagged one no way holds, a site's label say, is how its relation is in the tile: a rebuilt tile must
+    # find it again)
     nref = g.woffs[wr + 1] - g.woffs[wr]
     idx = np.repeat(g.woffs[wr], nref) + (np.arange(nref.sum()) - np.repeat(np.cumsum(nref) - nref, nref))
     nrow = g.wrefs[idx]
     nkey = np.repeat(wk, nref)
     ok = nrow >= 0
-    node = np.unique(np.concatenate([nkey[ok] << 28 | nrow[ok], g.nkey[c.tn_row] << 28 | c.tn_row]))
+    mrow = ni[okn]
+    node = np.unique(np.concatenate([nkey[ok] << 28 | nrow[ok], g.nkey[c.tn_row] << 28 | c.tn_row,
+                                     g.nkey[mrow] << 28 | mrow]))
     order = np.argsort(wk, kind="stable")
     way = (wk[order], wr[order])
     log(f"tile pairs: {len(node):,} node, {len(way[0]):,} way, {len(rel):,} relation copies in {time.time() - t:.0f} s")
