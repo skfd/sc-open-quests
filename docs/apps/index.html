@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="../img/streetcomplete.svg">
+<title>Open Quests apps: the StreetComplete widget on Android and iPhone</title>
+<meta name="description" content="Open Quests puts a city's open StreetComplete quests on your home screen. What is released, what is in progress, and which features each version has.">
+<script data-goatcounter="https://osm-ontario.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+<style>
+:root{color-scheme:light;--page:#f2f2f4;--surface:#fff;--ink:#111;--ink-2:#4f5250;--muted:#8e9291;--grid:#e6e6ea;
+  --brand:#4141ba;--good:#008351;--warn:#b07a00;--bad:#c1121c;--link:#3535a8;--wash:rgba(65,65,186,.08);
+  --shadow:0 1px 2px rgba(0,0,0,.10),0 3px 10px rgba(0,0,0,.06)}
+@media (prefers-color-scheme:dark){:root{color-scheme:dark;--page:#111;--surface:#222;--ink:#fff;--ink-2:#c3c3c8;
+  --grid:#303033;--brand:#34349a;--good:#3fbf7f;--warn:#ffd75e;--bad:#ff6b6b;--link:#a8a8ff;--wash:rgba(154,154,255,.12);
+  --shadow:0 1px 2px rgba(0,0,0,.5)}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--ink);font:15px/1.45 Roboto,system-ui,-apple-system,"Segoe UI",sans-serif}
+a{color:var(--link)}
+header{background:var(--brand);color:#fff;padding:28px 20px 24px}
+header a{color:#fff}
+.wrap{max-width:980px;margin:0 auto}
+h1{font-size:1.7rem;font-weight:600;margin:6px 0 4px;letter-spacing:-.01em}
+h2{font-size:1.15rem;font-weight:600;margin:0}
+.lede{margin:0;opacity:.9;max-width:44em}
+.back{font-size:.9rem;opacity:.85}
+main{padding:20px}
+.products{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:14px;margin-bottom:28px}
+.card{background:var(--surface);border-radius:14px;box-shadow:var(--shadow);padding:16px 18px}
+.product p{margin:.5em 0}
+.product-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.kind{color:var(--ink-2);font-size:.9rem;margin-top:2px!important}
+.status{font-size:.8rem;font-weight:600;padding:2px 9px;border-radius:999px;white-space:nowrap}
+.status.released{background:var(--good);color:#fff}
+.status.in_progress{background:var(--wash);color:var(--ink)}
+.status.planned{border:1px solid var(--grid);color:var(--muted)}
+.button{display:inline-block;background:var(--brand);color:#fff;text-decoration:none;font-weight:600;padding:7px 14px;border-radius:9px}
+.steps{margin:.6em 0 0;padding-left:1.3em}
+.steps li{margin:.3em 0}
+code{font:.88em ui-monospace,Consolas,monospace;background:var(--wash);padding:1px 5px;border-radius:5px}
+.table-card{padding:6px 0;overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:640px}
+th,td{text-align:left;vertical-align:top;padding:9px 14px;border-top:1px solid var(--grid)}
+thead th{border-top:0;font-size:.85rem;color:var(--ink-2);font-weight:600}
+tbody th{font-weight:400;width:40%}
+td{width:20%}
+.mark{font-weight:700;margin-right:6px}
+td.done .mark{color:var(--good)}
+td.partial .mark{color:var(--warn)}
+td.cant .mark{color:var(--bad)}
+td.planned .mark{color:var(--muted)}
+.note{color:var(--ink-2);font-size:.85rem}
+td.planned .note{color:var(--muted)}
+.legend,.foot{color:var(--ink-2);font-size:.88rem}
+.foot{margin-top:26px}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a class="back" href="../">← StreetComplete statistics</a>
+    <h1>Open Quests</h1>
+    <p class="lede">A home-screen widget: how many StreetComplete quests are open in a city, or for one quest
+      type in it, and how that has moved. The numbers are this site's, a day or more old, and they belong to the
+      place, not to you.</p>
+  </div>
+</header>
+<main class="wrap">
+<section class="products">
+<article class="card product">
+  <div class="product-head"><h2>Android</h2><span class="status in_progress">In progress</span></div>
+  <p class="kind">Home-screen widget, from Google Play</p>
+  <p>A debug build runs on the emulator. The Play release waits on a developer account and its 14-day closed test with 12 testers.</p>
+</article>
+<article class="card product">
+  <div class="product-head"><h2>iPhone, Scriptable</h2><span class="status in_progress">In progress</span></div>
+  <p class="kind">A script for the free Scriptable app, no App Store release</p>
+  <p>Not yet run on an iPhone: the first install is its test. Its numbers are tested against the same files as Android's.</p><p><a class="button" href="open-quests.js" download="open-quests.js">Download open-quests.js</a></p><ol class="steps"><li>Install <a href="https://scriptable.app/">Scriptable</a> from the App Store (free).</li><li>Tap the button above, then in Files move open-quests.js from Downloads to iCloud Drive › Scriptable (open Scriptable once first, so the folder exists).</li><li>Add a Scriptable widget to the home screen: small, medium or large.</li><li>Long-press it › Edit Widget, choose the script, and type a city as the Parameter: <code>Berlin</code>, or <code>Berlin; bus stop shelter</code> for one quest type. Empty shows Toronto.</li></ol>
+</article>
+<article class="card product">
+  <div class="product-head"><h2>iPhone, native</h2><span class="status planned">Planned</span></div>
+  <p class="kind">Home-screen widget, from the App Store</p>
+  <p>Needs a macOS build in the cloud and an Apple developer account. Until then, the Scriptable widget is the iPhone's.</p>
+</article>
+</section>
+
+<h2 id="features">What each version does</h2>
+<p class="legend">Every version should do every feature. ✓ done, ◐ partly, ✕ can't (and why); the rest is planned.</p>
+<div class="card table-card">
+<table>
+<thead><tr><th scope="col">Feature</th><th scope="col">Android</th><th scope="col">iPhone, Scriptable</th><th scope="col">iPhone, native</th></tr></thead>
+<tbody>
+<tr><th scope="row">A city's open quests, as the site counts them, &quot;as of&quot; a date</th><td class="done"><span class="mark" title="Done">✓</span></td><td class="done"><span class="mark" title="Done">✓</span></td><td class="planned"><span class="mark" title="Planned">·</span><span class="note">planned</span></td></tr>
+<tr><th scope="row">One quest type in a city instead of all of them</th><td class="done"><span class="mark" title="Done">✓</span></td><td class="done"><span class="mark" title="Done">✓</span></td><td class="planned"><span class="mark" title="Planned">·</span><span class="note">planned</span></td></tr>
+<tr><th scope="row">Change over 4 weeks, green when falling</th><td class="done"><span class="mark" title="Done">✓</span></td><td class="done"><span class="mark" title="Done">✓</span></td><td class="planned"><span class="mark" title="Planned">·</span><span class="note">planned</span></td></tr>
+<tr><th scope="row">That change split into mapping and resurvey</th><td class="done"><span class="mark" title="Done">✓</span></td><td class="done"><span class="mark" title="Done">✓</span></td><td class="planned"><span class="mark" title="Planned">·</span><span class="note">planned</span></td></tr>
+<tr><th scope="row">Sparkline of 4 weeks, zoomed to its range; missing days left out, one-day gaps bridged</th><td class="done"><span class="mark" title="Done">✓</span></td><td class="partial"><span class="mark" title="Partly">◐</span><span class="note">One tone for day and night: a drawn image can't follow the theme.</span></td><td class="planned"><span class="mark" title="Planned">·</span><span class="note">planned</span></td></tr>
+<tr><th scope="row">This week's moving quests, grouped, with chevrons sized by the move</th><td class="done"><span class="mark" title="Done">✓</span></td><td class="partial"><span class="mark" title="Partly">◐</span><span class="note">The medium widget names the biggest move and &quot;N more&quot;; Android's 4x2 shows up to six as symbols. The large one lists three.</span></td><td class="planned"><span class="mark" title="Planned">·</span><span class="note">planned</span></td></tr>
+<tr><th scope="row">On the biggest size: movers as rows with numbers, or the most open on a quiet week</th><td class="done"><span class="mark" title="Done">✓</span></td><td class="done"><span class="mark" title="Done">✓</span></td><td class="planned"><span class="mark" title="Planned">·</span><span class="note">planned</span></td></tr>
+<tr><th scope="row">StreetComplete's quest symbols</th><td class="done"><span class="mark" title="Done">✓</span></td><td class="planned"><span class="mark" title="Planned">·</span><span class="note">Scriptable can't draw SVG, so it needs PNG copies of the icons on the site. Until then, movers show as names with ▲/▼.</span></td><td class="planned"><span class="mark" title="Planned">·</span><span class="note">planned</span></td></tr>
+<tr><th scope="row">Pick the city and quest from a list, with search</th><td class="done"><span class="mark" title="Done">✓</span></td><td class="partial"><span class="mark" title="Partly">◐</span><span class="note">Typed as the widget's Parameter; names, other names and quest labels match, ignoring accents.</span></td><td class="planned"><span class="mark" title="Planned">·</span><span class="note">planned</span></td></tr>
+<tr><th scope="row">Several sizes, stepping down rather than clipping</th><td class="done"><span class="mark" title="Done">✓</span></td><td class="done"><span class="mark" title="Done">✓</span><span class="note">Small, medium, large, and the lock screen.</span></td><td class="planned"><span class="mark" title="Planned">·</span><span class="note">planned</span></td></tr>
+<tr><th scope="row">Day and night colours</th><td class="done"><span class="mark" title="Done">✓</span></td><td class="partial"><span class="mark" title="Partly">◐</span><span class="note">All but the sparkline.</span></td><td class="planned"><span class="mark" title="Planned">·</span><span class="note">planned</span></td></tr>
+<tr><th scope="row">&quot;as of&quot; turns red when the data is more than 3 days old</th><td class="done"><span class="mark" title="Done">✓</span></td><td class="done"><span class="mark" title="Done">✓</span></td><td class="planned"><span class="mark" title="Planned">·</span><span class="note">planned</span></td></tr>
+<tr><th scope="row">Tap opens that city, and quest, on the site</th><td class="done"><span class="mark" title="Done">✓</span></td><td class="done"><span class="mark" title="Done">✓</span></td><td class="planned"><span class="mark" title="Planned">·</span><span class="note">planned</span></td></tr>
+<tr><th scope="row">Keeps the last good numbers when a refresh fails; conditional requests</th><td class="done"><span class="mark" title="Done">✓</span></td><td class="done"><span class="mark" title="Done">✓</span></td><td class="planned"><span class="mark" title="Planned">·</span><span class="note">planned</span></td></tr>
+<tr><th scope="row">A quest type no longer counted in the city says so, instead of waiting forever</th><td class="done"><span class="mark" title="Done">✓</span></td><td class="done"><span class="mark" title="Done">✓</span></td><td class="planned"><span class="mark" title="Planned">·</span><span class="note">planned</span></td></tr>
+<tr><th scope="row">Says where the numbers come from, privacy, and credits</th><td class="done"><span class="mark" title="Done">✓</span></td><td class="partial"><span class="mark" title="Partly">◐</span><span class="note">On this page and in the script's header; Scriptable gives a script no screen of its own.</span></td><td class="planned"><span class="mark" title="Planned">·</span><span class="note">planned</span></td></tr>
+<tr><th scope="row">A line in words: cheer when it falls, &quot;mostly resurveys coming due&quot; when aging drives it up</th><td class="planned"><span class="mark" title="Planned">·</span><span class="note">planned</span></td><td class="planned"><span class="mark" title="Planned">·</span><span class="note">planned</span></td><td class="planned"><span class="mark" title="Planned">·</span><span class="note">planned</span></td></tr>
+</tbody>
+</table>
+</div>
+
+<p class="foot">Open Quests is GPL-3.0. Quest names and symbols are StreetComplete's (Tobias Zwick and
+  contributors, CC-BY-SA 4.0). It fetches only from this site and collects nothing.</p>
+</main>
+</body>
+</html>
