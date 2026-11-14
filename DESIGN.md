@@ -3257,3 +3257,12 @@ as the sorting run's, the 11-13 check unchanged; the files' step 47-51 s a day a
 marks with `bincount` instead of `np.add.at`, and the key list is taken from the sorted keys without `np.unique`'s
 sort: one update of f90 with a day's keys is 4.0 s in all (read, find, merge, write, key list), so the files of a
 world day at most about 8.5 min.
+
+**The world's first day (11-14, 12:56-13:08; `tools/stream/world-days.sh`, log `logs/world-days.log`).** `planet.loc`
+rebuilt (115 GB, 34 min with the six diffs to 11-08), the stream state hard-linked to the seed
+(`.scratch/planet/world-stream/`), and diff 5171 applied to all 128 files: reading the diff 114 s, the small PBF
+74 s (432,104 tagged ways, **none unplaced**: the planet store places every way), the engine 11 s over the 2,244
+cells, the files 459 s (569,034 tier-1 rows dropped, 840,698 added, none outside every file's rect); 11.5 min in
+all. On the elements europe-west's whole count of 11-09 has: matches 3,340,642 = 3,340,642 and waiting 2,064,632 =
+2,064,632, all equal but for the position of 17 + 15 rows of untouched ways (nodes moved, the way kept its version:
+tier 1's known limit).
