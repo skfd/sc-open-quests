@@ -1305,8 +1305,9 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   waits on the node store (owner's question 1).
 - **The last tier-2 row traced (11-14, 05:00):** `w1577774915 AddHousenumber` is one of about 45 houses mapped on
   11-12 over addressed buildings in London; AddHousenumber hands shared address nodes out in map-data order, which
-  may differ between a rectangle and the whole city (and in the app, by what it downloaded). A hypothesis, not
-  shown: being tested by recounting 11-12's rectangles at a 300 m and a 1,500 m ring (`.scratch/stream/ring.py`). DESIGN.md, "The one tier-2 row left, traced". 
+  may differ between a rectangle and the whole city (and in the app, by what it downloaded). Tested: at a 1,500 m
+  ring the recount agrees on all 37 (the 36 and this one) but adds 3 others; so it is mostly how far the map data
+  reaches. DESIGN.md, "Tested". The world store must serve the ring the recount needs. DESIGN.md, "The one tier-2 row left, traced". 
 - **The sorted seed read back (11-14, 05:10):** `seedcheck.py` again, 0 problems. Every row lies in its file's
   `rect` but 9 (6 keys, on the edge by rounding; `.scratch/planet/seedroute.py`, log beside it); the 95 keys in two
   files are all relations, each file placing its own part's centre. So: route nodes and ways by position, look

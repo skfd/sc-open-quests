@@ -3213,3 +3213,13 @@ changes with how much map data is loaded (the Bremen check of `ArrayMapData`, ab
 the whole city can hand these nodes out differently. The app's own answer depends on what it downloaded in the same
 way. If so, not fixable by the stream short of recounting with the whole city's map data. The 36 AddHousenumber the 11-12 recount lacked (w191632543,
 w525502455, w526944931...) are likely the same family; not traced.
+
+**Tested (11-14, 05:15; `.scratch/stream/ring.py`, `ring.txt`): mostly map data extent, not order.** 11-12's 189
+rectangles recounted on the 11-12 clip. At the stream's 300 m ring: 22,001 open AddHousenumber inside them against
+the whole count's 22,036, lacking 36 (35 of them in one block near 51.47, -0.02, one at 51.48, -0.29) and adding
+`w1577774915`. At a 1,500 m ring: 22,039, lacking none and no longer adding `w1577774915`, but adding 3 others
+(`w378203971`, `w378204031` near 51.584, -0.040; `w1176630809` near 51.474, -0.027). So 37 of the 37 came from how
+far the map data reaches (some address-carrying area or building beyond 300 m decides them), and a wider ring
+brings a few disagreements of its own (not traced; order is still a candidate for those). The 1,500 m ring reads
+24.6M nodes against 3.6M and took 73 s against 46 s here. For the world store this is the ring-size trade-off:
+the store must serve the ring the recount needs, and 300 m is not exact for AddHousenumber.
