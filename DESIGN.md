@@ -3170,3 +3170,27 @@ whole count has and the recount lacks on 11-12), and the delta applied the recou
 closed and what is left is a recount's own disagreement with the whole count; the Dublin boundary ways the 11-13
 recount still counts stay out, as in t2d. A day costs 6.5-10 min here (reading the planet diff about 2 min, the
 two tier-2 recounts 1.5-4 min, the engine's area runs 2-10 s of that).
+
+## The world state store (2026-11-14, early morning)
+
+The world seed is done (128 files, 2,011,107,291 rows, 48.3 GB, checked against its count file by file) and does
+not fit in memory, where `stream.py`'s `State` loads and sorts all of europe-west's 6.8M rows. Measured on the seed
+(`.scratch/planet/seedkeys.py`, `seedkeys.log`):
+- **The files partition the world by element:** 1,061,205,063 distinct elements (116.9M nodes, 942.7M ways, 1.7M
+  relations), and only 95 keys in more than one file (112 extra copies). An element belongs to the file whose
+  `rect` (plan.json) holds it, as the count decided; 2,244 cells, each with its time zone, are the files'
+  "cities".
+- **Lookups need the files sorted, not an index:** a file's rows come in engine-thread order. Looking five planet
+  days of touched keys (25.9M) up in one file of 18.6M rows takes 20.7 s with `np.isin` (45 min for the world), but
+  1.4 s with `searchsorted` once the file is sorted; sorting a file takes 11-14 s (about 28 min for the world,
+  once). One day's touched keys (about 4.6M) against all 128 sorted files is then well under a minute.
+- **So the store is the seed's own 128 files, sorted by (key, quest, kind)** (what `State.save` sorts by), each
+  rewritten only when a day changes it (a 450 MB file writes in about a second), with a manifest of each file's
+  rect, rows and key range. A removal searches every file (a deleted or moved element has no position to route
+  by, and searching is cheap); an addition goes to the file whose rect holds the element; the 95 keys in two files
+  stay in both, as the count has them.
+- **What a world day still needs beyond this:** the node location store (`planet.loc`, 107 GiB, built from
+  `history-261102.osh.pbf`, which the 12-07 planet job retires, and on a disk that job needs about 170 GB of) for
+  tier 1, and a store answering "map data of these boxes at D and D-1" for tier 2 (estimated about 300 GB). Both
+  are the owner's call on disk and timing. The daily touched-element engine run must use the seed's cells and
+  zones (one engine run, the 2,244 cells as its cities), not `stream.py`'s single `--zone`.
