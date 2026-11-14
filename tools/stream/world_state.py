@@ -162,9 +162,13 @@ def replace_in_file(p: Path, drop: np.ndarray, quest_mask: np.ndarray, add: np.n
     return int(gone.sum()), int(len(add))
 
 
-def subset(src: Path, dst: Path, ids: list[str]):
+def subset(src: Path, dst: Path, ids: list[str], link: bool = False):
+    """copies (or, with link, hard links: the files are only ever replaced whole, never written in place, so a link
+    keeps the source as it was) of these files and a plan of only them; "all" for every file"""
     import shutil
     plan = json.loads((src / "plan.json").read_text(encoding="utf-8"))
+    if ids == ["all"]:
+        ids = [f["id"] for f in plan["files"]]
     plan["files"] = [f for f in plan["files"] if f["id"] in ids]
     if len(plan["files"]) != len(ids):
         sys.exit(f"not all of {ids} are in the plan")
@@ -172,7 +176,8 @@ def subset(src: Path, dst: Path, ids: list[str]):
         d = dst / "files" / f["id"]
         d.mkdir(parents=True, exist_ok=True)
         for name in ("state.bin", "state.bin.json", "cities.json", "state-keys.npy"):
-            shutil.copyfile(src / "files" / f["id"] / name, d / name)
+            if not (d / name).exists():
+                (os.link if link else shutil.copyfile)(src / "files" / f["id"] / name, d / name)
     (dst / "plan.json").write_text(json.dumps(plan), encoding="utf-8")
     side = json.loads((dst / "files" / ids[0] / "state.bin.json").read_text(encoding="utf-8"))
     meta = {"clock": side["asOf"], "quests": side["quests"], "applied": [], "days": [], "source": str(src)}
@@ -205,7 +210,8 @@ def apply(w: Path, nodes_dir: Path, diff: Path, today: str):
     t0 = time.time()
     last_node, last_way, _, _ = S.read_diff(diff)
     S.log(f"{diff.name}: {len(last_node):,} nodes, {len(last_way):,} ways with a version")
-    locs = S.Locations(nodes_dir)
+    # a directory: a region's sparse index and overlay (stream.py nodes); a file: the planet's dense store, kept in place
+    locs = S.DenseLocations(nodes_dir) if nodes_dir.is_file() else S.Locations(nodes_dir)
     for nid, (_, _, alive, _, loc) in last_node.items():
         locs.overlay[nid] = loc if alive else None
     work = w / "work"
@@ -259,7 +265,8 @@ def check(w: Path, dump: Path) -> int:
     files = json.loads((w / "plan.json").read_text(encoding="utf-8"))["files"]
     parts, _ = route(ref, files)
     ref = ref[np.concatenate(parts)]
-    st = np.concatenate([np.fromfile(w / "files" / f["id"] / "state.bin", REC) for f in files])
+    near = [f for f, i in zip(files, parts) if len(i)]  # only the files the count reaches: the world's would not fit
+    st = np.concatenate([np.fromfile(w / "files" / f["id"] / "state.bin", REC) for f in near])
     st = st[tier1[st["quest"]]]
     seed_keys = np.load(w / "seed-keys.npy") if (w / "seed-keys.npy").exists() else np.zeros(0, np.int64)
     universe = np.union1d(np.unique(ref["key"]), seed_keys)
@@ -322,6 +329,7 @@ def main():
     b.add_argument("world", type=Path)
     b.add_argument("test", type=Path)
     b.add_argument("ids")
+    b.add_argument("--link", action="store_true")
     p = sub.add_parser("apply")
     p.add_argument("world", type=Path)
     p.add_argument("--nodes", type=Path, required=True)
@@ -337,7 +345,7 @@ def main():
     elif a.cmd == "find":
         find(a.world, a.keys)
     elif a.cmd == "subset":
-        subset(a.world, a.test, a.ids.split(","))
+        subset(a.world, a.test, a.ids.split(","), a.link)
     elif a.cmd == "apply":
         apply(a.world, a.nodes, a.diff, a.today)
     else:

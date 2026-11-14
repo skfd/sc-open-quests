@@ -168,6 +168,36 @@ class Locations:
             pickle.dump(self.overlay, f)
 
 
+class DenseLocations:
+    """the planet's node locations in one dense file (osmium dense_file_array, 8 bytes a node id: .scratch/store's
+    planet.loc), kept current in place: a day's changes wait in `overlay` and go into the file on save(), a deleted
+    node emptied. A month of the world's changes would not fit an overlay pickle; the file only moves forward."""
+
+    def __init__(self, path: Path):
+        import osmium.index
+        self.path = Path(path)
+        self.idx = osmium.index.create_map(f"dense_file_array,{self.path}")
+        self.overlay: dict[int, tuple[float, float] | None] = {}
+
+    def get(self, nid: int):
+        if nid in self.overlay:
+            return self.overlay[nid]
+        try:
+            loc = self.idx.get(nid)
+        except KeyError:
+            return None
+        return (loc.lat, loc.lon) if loc.valid() else None
+
+    def get_many(self, ids) -> dict:
+        return {nid: self.get(nid) for nid in ids}
+
+    def save(self):
+        import osmium
+        for nid, p in self.overlay.items():
+            self.idx.set(nid, osmium.osm.Location(p[1], p[0]) if p else osmium.osm.Location())
+        self.overlay = {}
+
+
 # --- apply ---------------------------------------------------------------------------------------
 
 def read_diff(path: Path):

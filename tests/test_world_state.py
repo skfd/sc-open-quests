@@ -65,6 +65,23 @@ class WorldStateTest(unittest.TestCase):
             self.assertEqual([4, 6, 8, 20], np.load(Path(td) / "state-keys.npy").tolist())
             self.assertEqual((0, 0), W.replace_in_file(p, np.array([99]), mask, rec([])))
 
+    def test_dense_locations(self):
+        import stream as S
+        # the index maps the file until it is collected, which Windows will not let a temp folder delete under
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as td:
+            p = Path(td) / "t.loc"
+            locs = S.DenseLocations(p)
+            locs.overlay[5], locs.overlay[9] = (52.5, 13.25), (1.0, 2.0)
+            self.assertEqual((52.5, 13.25), locs.get(5))  # from the overlay, before save
+            locs.save()
+            self.assertEqual({}, locs.overlay)
+            locs.overlay[9] = None  # deleted
+            locs.save()
+            del locs
+            again = S.DenseLocations(p)
+            self.assertEqual({5: (52.5, 13.25), 9: None, 7: None}, again.get_many([5, 9, 7]))
+            del again
+
     def test_is_sorted(self):
         self.assertTrue(W.is_sorted(rec([(1, 2, 0), (1, 2, 1), (2, 0, 0)])))
         self.assertFalse(W.is_sorted(rec([(1, 2, 1), (1, 2, 0)])))
