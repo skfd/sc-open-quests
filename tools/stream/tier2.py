@@ -457,6 +457,49 @@ def inside(rows, infos, rects) -> np.ndarray:
     return mask
 
 
+def delta(rows, old, new):
+    """the delta form: the state changed only where the recount changed from yesterday's to today's, per (element,
+    quest) group of rows (a match and up to three dates; a date that came is a match today). `old` and `new` are the
+    recounts' rows inside the rectangles and their cities. Old absent, new present: the group set to new; old present,
+    new absent: removed; both, different: set to new only if the state holds the group (one the state lacks is a
+    disagreement it keeps out); equal: untouched, so a recount that disagrees with a whole count on both days (the
+    order-dependent AddHousenumber, a way centred within a centimetre of a city boundary) changes nothing."""
+    def groups(a):
+        g = defaultdict(list)
+        codes = (a["key"] * 1024 + a["quest"]).tolist()
+        for c, b in zip(codes, (a[i].tobytes() for i in range(len(a)))):
+            g[c].append(b)
+        return {c: tuple(sorted(v)) for c, v in g.items()}
+
+    go, gn = groups(old), groups(new)
+    s_codes = rows["key"] * 1024 + rows["quest"]
+    held = set(np.unique(s_codes).tolist())
+    st = Counter()
+    put, gone = set(), set()
+    for c in go.keys() | gn.keys():
+        o, n = go.get(c), gn.get(c)
+        if o == n:
+            continue
+        if o is None:
+            put.add(c); st["added"] += 1
+            if c in held:
+                st["added, the state had it"] += 1
+        elif n is None:
+            gone.add(c); st["removed"] += 1
+            if c not in held:
+                st["removed, the state lacked it"] += 1
+        elif c in held:
+            put.add(c); st["changed"] += 1
+        else:
+            st["changed, the state lacked it (kept out)"] += 1
+    n_codes = new["key"] * 1024 + new["quest"]
+    put_a = np.fromiter(put, np.int64, len(put))
+    drop = np.isin(s_codes, np.fromiter(put | gone, np.int64, len(put | gone)))
+    add = new[np.isin(n_codes, put_a)]
+    st["rows dropped"], st["rows added"] = int(drop.sum()), len(add)
+    return np.concatenate([rows[~drop], add]), {k: int(v) for k, v in st.items()}
+
+
 def map_data(day_clip: Path, rects) -> Path:
     """the map data of the rectangles (with their ring) at the day: here the day's clip, read whole"""
     return day_clip

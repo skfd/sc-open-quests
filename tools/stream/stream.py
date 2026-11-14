@@ -16,7 +16,9 @@ open from its `due` on. Notes are left out of every comparison (the HIDDEN flag 
       every way's node refs in the seed's clip (D/ways.npz), for tier 2; later changes go into D/ways-overlay.pickle
   stream.py apply --dir D --diff N.osc.gz --today 2026-11-09T00:00:00Z --cities C.json --zone Europe/London [--tier2-clip Y]
       one diff: the touched elements' last versions into a small PBF, through the engine, into the state; with
-      --tier2-clip (the day's clip), also the ground the diff touched recounted whole and spliced in (tier2.py)
+      --tier2-clip (the day's clip), also the ground the diff touched recounted whole and spliced in (tier2.py);
+      with --tier2-old-clip (yesterday's) too, that ground also recounted on yesterday's and only the recount's own
+      changes applied (the delta form: a disagreement of the recount with a whole count never enters the state)
   stream.py check --dir D --dump Y.bin
       the state at its clock against a full count's --dump-state of the same instant
 
@@ -254,7 +256,8 @@ def engine(pbf: Path, out: Path, today: str, cities: Path, zone: str, notes: Pat
     return dump
 
 
-def apply(d: Path, diff: Path, today: str, cities: Path, zone: str, notes: Path | None, tier2_clip: Path | None = None):
+def apply(d: Path, diff: Path, today: str, cities: Path, zone: str, notes: Path | None, tier2_clip: Path | None = None,
+          tier2_old_clip: Path | None = None):
     st = State(d)
     if diff.name in st.meta["applied"]:
         log(f"{diff.name} applied before")
@@ -285,7 +288,7 @@ def apply(d: Path, diff: Path, today: str, cities: Path, zone: str, notes: Path 
     rows_before = st.rows
     st.rows = np.concatenate([st.rows[~drop], new[tier1[new["quest"]]]])
     t2stats = tier2_step(d, st, rows_before, today, cities, zone, tier2_clip, last_node, last_way, last_rel, old_pos, locs,
-                         work) if tier2_clip else {}
+                         work, tier2_old_clip) if tier2_clip else {}
     after = open_codes(st.rows, minute(today), tier1)
     opened, closed = np.setdiff1d(after, before).size, np.setdiff1d(before, after).size
     st.meta["clock"] = today
@@ -304,8 +307,10 @@ def apply(d: Path, diff: Path, today: str, cities: Path, zone: str, notes: Path 
         f"closed {closed:,} (aging included); {len(st.rows):,} rows; {time.time() - T0:.0f} s in all")
 
 
-def tier2_step(d, st, rows_before, today, cities, zone, clip, last_node, last_way, last_rel, old_pos, locs, work) -> dict:
-    """the ground the day touched recounted whole (tier2.py); every row inside it and its city replaced"""
+def tier2_step(d, st, rows_before, today, cities, zone, clip, last_node, last_way, last_rel, old_pos, locs, work,
+               old_clip: Path | None = None) -> dict:
+    """the ground the day touched recounted whole (tier2.py); every row inside it and its city replaced (the splice),
+    or, given yesterday's clip, only the recount's own changes from yesterday applied (the delta form, tier2.delta)"""
     import tier2 as T
     t = time.time()
     infos = T.city_infos(cities)
@@ -320,23 +325,35 @@ def tier2_step(d, st, rows_before, today, cities, zone, clip, last_node, last_wa
     km2 = sum((n - s) * T.M_LAT * (e - w) * c["mlon"] for c, rs in zip(infos, rects) for s, w, n, e in rs) / 1e6
     per_city = ", ".join(c["id"] + " " + str(len(r)) for c, r in zip(infos, rects))
     log(f"tier 2: {n_rects:,} rectangles, {km2:.1f} km2 ({per_city}); {time.time() - t:.0f} s")
-    dump = engine(T.map_data(clip, rects), tw, today, rc, zone, None, area_pass=True, heap_gb=30, base=base,
-                  extra_opts=f"-Dopenquests.areaPaddingM={T.RING:.0f}")
-    patch = read_dump(dump, st.names)
+    opts = f"-Dopenquests.areaPaddingM={T.RING:.0f}"
     notes_q = np.array([i for i, n in enumerate(st.names) if n == "OsmNoteQuestType"], np.uint16)
+    dstats = {}
+    if old_clip:  # the delta form: the same rectangles on yesterday's map data at yesterday's clock, first
+        od = engine(T.map_data(old_clip, rects), tw / "old", st.meta["clock"], rc, zone, None, area_pass=True, heap_gb=30,
+                    base=base, extra_opts=opts)
+        old = read_dump(od, st.names)
+        old = old[~np.isin(old["quest"], notes_q)]
+    dump = engine(T.map_data(clip, rects), tw, today, rc, zone, None, area_pass=True, heap_gb=30, base=base, extra_opts=opts)
+    patch = read_dump(dump, st.names)
     patch = patch[~np.isin(patch["quest"], notes_q)]
-    drop = T.inside(st.rows, infos, rects) & ~np.isin(st.rows["quest"], notes_q)
     keep = T.inside(patch, infos, rects)
-    st.rows = np.concatenate([st.rows[~drop], patch[keep]])
+    if old_clip:
+        st.rows, dstats = T.delta(st.rows, old[T.inside(old, infos, rects)], patch[keep])
+        dropped, added = dstats.pop("rows dropped"), dstats.pop("rows added")
+    else:
+        drop = T.inside(st.rows, infos, rects) & ~np.isin(st.rows["quest"], notes_q)
+        st.rows = np.concatenate([st.rows[~drop], patch[keep]])
+        dropped, added = int(drop.sum()), int(keep.sum())
     ways.save()
     arr = np.array([(s, w, n, e, k) for k, rs in enumerate(rects) for s, w, n, e in rs], dtype=float).reshape(-1, 5)
     f = d / "rects.npy"
     np.save(f, np.concatenate([np.load(f), arr]) if f.exists() else arr)
     np.save(d / "rects-last.npy", arr)
     es = T.engine_area_log(tw / "engine.log")
-    log(f"tier 2: {int(drop.sum()):,} rows inside the rectangles replaced by {int(keep.sum()):,}; engine {es}")
-    return {"rects": n_rects, "rectKm2": round(km2, 2), "t2RowsDropped": int(drop.sum()), "t2RowsAdded": int(keep.sum()),
-            "t2Seconds": round(time.time() - t, 1), **es, **{k: int(v) for k, v in cstats.items()}}
+    log(f"tier 2 ({'delta' if old_clip else 'splice'}): {dropped:,} rows dropped, {added:,} added {dstats}; engine {es}")
+    return {"rects": n_rects, "rectKm2": round(km2, 2), "t2RowsDropped": dropped, "t2RowsAdded": added,
+            "t2Seconds": round(time.time() - t, 1), "t2Form": "delta" if old_clip else "splice", "t2Delta": dstats, **es,
+            **{k: int(v) for k, v in cstats.items()}}
 
 
 # --- seed and check ------------------------------------------------------------------------------
@@ -528,6 +545,7 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("cmd", choices=["nodes", "ways", "count", "seed", "apply", "check", "tsv"])
     ap.add_argument("--tier2-clip", type=Path)
+    ap.add_argument("--tier2-old-clip", type=Path, help="yesterday's clip: tier 2 in the delta form")
     ap.add_argument("--tsv", type=Path)
     ap.add_argument("--pbf", type=Path)
     ap.add_argument("--heap-gb", type=int, default=30)
@@ -550,7 +568,7 @@ if __name__ == "__main__":
     elif o.cmd == "seed":
         seed(o.dump, o.dir)
     elif o.cmd == "apply":
-        apply(o.dir, o.diff, o.today, o.cities, o.zone, o.notes, o.tier2_clip)
+        apply(o.dir, o.diff, o.today, o.cities, o.zone, o.notes, o.tier2_clip, o.tier2_old_clip)
     elif o.cmd == "tsv":
         tsv(o.dump, o.tsv)
     else:
