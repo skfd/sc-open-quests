@@ -1250,3 +1250,8 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   The seed check (`seedcheck.py`) now also holds each file's open, unhidden state rows per quest against its
   snapshot (exact on f47 apart from the note quests, which are no rows).
 
+- **World seed done (11-14, 03:01): 128 files, 2,011,107,291 state rows, 48.3 GB; the seed check passed with 0
+  problems, and the 11-08 cut was deleted (271 GB free).** 19,807 s on the clock, one engine at a time almost
+  throughout (5 GiB free beside one). The seed lives in `.scratch/planet/world-places/out-state/fNN/state.bin`
+  (with `.json` sidecars and `state-done.json`); the cut folder keeps only its `extract-*.json` configs. No area
+  dates in it (as decided). `europe-area.sh` has started on its steps (engine installed 03:04).
