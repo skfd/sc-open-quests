@@ -3149,7 +3149,7 @@ opens (AddEntrance 3, AddBarrierOnRoad, AddBarrierOpening, AddChargingStationSoc
 AddTactilePavingKerb), which ageing cannot date; and **no date up to 11-13 without such an opening**. The dates on
 untouched ground reach only seed + 64 days; inside the recount rectangles the delta form rolls the horizon on (the
 recount at today's clock dates up to today + 64, the one at yesterday's clock up to yesterday + 64, and the delta
-applies the difference).
+applies the difference; both recounts print their "area dates" lines in `t2a/work/t2/`).
 
 **The five days streamed from the dated seed (`t2a/`, the delta form, 11-14 03:11-03:51).** Tier 1 exact in every
 field on all five days, as before. Tier 2 differences after each day, against the delta form without area dates

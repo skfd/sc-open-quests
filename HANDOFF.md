@@ -1270,3 +1270,19 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   by element almost exactly, each element routed by its position to its file's `rect` (plan.json). Rows inside a
   file are not sorted by key (written per engine thread): sorting a file of 18.6M rows takes about 16 s; reading
   and sorting all 128 took 900 s. Files run from 31,775 to 16.8M elements (median 8.7M).
+- **Checks after the area-date run (11-14, 04:20):**
+  - **The horizon rolls inside the rectangles, seen:** the t2a recounts print "area dates" lines at both clocks
+    (`t2a/work/t2/engine.log`, `.../old/engine.log`; e.g. dublin-0 110 and 104 candidates, all dated), so a
+    touched element's date is recomputed by the delta form, not left from the seed.
+  - **The 12-07 reseed will date area quests:** `world_cells.py count` runs the engine with its default area
+    unit, `CITY` (Main.kt), each cell being one "city" (`files/fNN/cities.json`); dating is on in that unit. Its
+    cost is not measured on a world cell (a cell's area run is 1-11 s; europe-west's 1,462 candidates took 5 s;
+    the world, about 300 times the rows, is guessed at under half an hour over all 128 files).
+  - **Old stream runs freed:** `t2/`, `t2d/` and `run1/` keep only their checks and logs (16 GB freed); their
+    scripts (`europe-t2.sh`, `europe-t2d.sh`) cannot resume them now (no `ways.npz`, `touched.npy`). `t2a/` is the
+    only tier-2 state left, at 11-13, with the only way store.
+  - **Diffs kept for the world stream:** the 12-07 planet job applies the day diffs to the history file and
+    deletes them, and retires `history-261102.osh.pbf`. The diffs from 5165 are hard-linked into
+    `.scratch/planet/diffs-keep/` (no disk until the store's copies go); **run
+    `powershell -File .scratch\planet\keep-diffs.ps1` again before 2026-12-07 07:30** to link the newer ones.
+    The history file is not linked (170 GB would stay held through the job, which needs about 170 GB free).
