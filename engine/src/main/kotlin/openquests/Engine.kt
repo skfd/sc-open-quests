@@ -259,6 +259,12 @@ class Engine(val registry: Registry, val cities: List<City>, val parts: List<Par
         }
     }
 
+    /** AreaPass, --dump-state: area quest [qi] not open now but from [dueMinute] on, at the default setting */
+    fun dueArea(qi: Int, e: Element, center: LatLon, dueMinute: Int) {
+        val hidden = notes?.hides(center) == true
+        state?.due(e.type.ordinal, e.id, center.latitude, center.longitude, qi, hidden, M_NOW, dueMinute)
+    }
+
     /** AreaPass: one result of area quest [qi] in city [c], with the bits of [matchVariants] */
     fun countArea(c: Int, qi: Int, e: Element, center: LatLon, mask: Int) {
         val type = e.type.ordinal

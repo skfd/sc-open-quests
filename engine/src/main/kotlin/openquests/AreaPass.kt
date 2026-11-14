@@ -17,10 +17,13 @@ import de.westnordost.streetcomplete.data.download.tiles.enclosingTilePos
 import de.westnordost.streetcomplete.data.download.tiles.enclosingTilesRect
 import de.westnordost.streetcomplete.data.osm.mapdata.MapDataWithGeometry
 import de.westnordost.streetcomplete.util.math.contains
+import de.westnordost.streetcomplete.util.math.enlargedBy
 import openquests.custom.AreaQuest
 import openquests.fast.FAST_TWINS
 import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.cos
+import kotlin.time.Duration.Companion.days
 
 /** How far around a city's bounding box elements are collected, in metres: more than a z16 tile, so
  *  every tile that touches the city finds all its elements (and, in city mode, the area reaches that
@@ -32,6 +35,17 @@ val AREA_PADDING_M: Double = System.getProperty("openquests.areaPaddingM")?.toDo
  *  world-sized "city", where only the quests decided from the element alone mean anything and a map data
  *  of that box would not fit (DESIGN.md, "The stream, step 5"). Snapshots never set it. */
 val AREA_PASS: Boolean = System.getProperty("openquests.areaPass")?.toBoolean() ?: true
+
+/** --dump-state: how many days ahead the area quests' dates are looked for (`-Dopenquests.areaDueDays`; 0: none).
+ *  An area quest asks a whole map data at once, so the main pass's halving per element over 40 years does not fit:
+ *  each age quest runs once more at asOf plus this many days, and every element open then but not now is dated on
+ *  a small map data round its z16 tile (DESIGN.md, "Area quests' dates"). A state's area dates are complete up to
+ *  that day only (the sidecar's `areaDueDays`): the stream must reseed before. City mode only. */
+val AREA_DUE_DAYS: Int = System.getProperty("openquests.areaDueDays")?.toInt() ?: 64
+
+/** the ring round a candidate's z16 tile that its small map data holds, in metres: the tier-2 recounts found
+ *  300 m enough to reproduce a whole city's result (DESIGN.md, "The stream, tier 2") */
+const val AREA_DUE_RING_M = 300.0
 
 /** SC's `LatLonRaster(mapData.boundingBox, 0.0005)` (AddHousenumber, AddIsAmenityIndoor and their twins)
  *  allocates a slot per 0.0005 degree square of the box, 4 bytes each: 500M slots is 2 GB a raster. A city
@@ -292,9 +306,16 @@ class AreaPass(
     /** The runs of one area quest: at asOf; for an age quest also at the resurvey multipliers 0.5 and 2
      *  (see [matchVariants]) and at LONG_AGO for agedOnly. A quest with no age test gives the same result
      *  at any clock, so it has no agedOnly and runs once. */
-    private enum class Run { NOW, AT_05, AT_2, LONG_AGO }
+    private enum class Run { NOW, AT_05, AT_2, LONG_AGO, AHEAD }
 
-    private fun runsOf(qi: Int): List<Run> = if (engine.quests[qi].usesAge) Run.entries else listOf(Run.NOW)
+    /** with --dump-state in city mode an age quest also runs at asOf + [AREA_DUE_DAYS] ([Run.AHEAD]): its dates */
+    private val dating = engine.state != null && AREA_DUE_DAYS > 0 && unit == AreaUnit.CITY
+
+    private fun runsOf(qi: Int): List<Run> = when {
+        !engine.quests[qi].usesAge -> listOf(Run.NOW)
+        dating -> Run.entries
+        else -> Run.entries - Run.AHEAD
+    }
 
     /** Area quest [qi] on [mapData] in one [run]. The clocks are the current thread's, so the runs of
      *  one quest may go on different threads. */
@@ -316,6 +337,7 @@ class AreaPass(
             Run.AT_05 -> Resurvey.at(Resurvey.HALF) { quest.getApplicableElements(mapData).toList() }
             Run.AT_2 -> Resurvey.at(Resurvey.DOUBLE) { quest.getApplicableElements(mapData).toList() }
             Run.LONG_AGO -> EngineClock.at(EngineClock.LONG_AGO) { quest.getApplicableElements(mapData).toList() }
+            Run.AHEAD -> EngineClock.at(EngineClock.asOf + AREA_DUE_DAYS.days) { quest.getApplicableElements(mapData).toList() }
         }
     }
 
@@ -328,11 +350,12 @@ class AreaPass(
      *  cities whose polygon holds it, where [qi] is enabled; [cityIndexes]: only these cities (city mode). */
     private fun tally(
         mapData: MapDataWithGeometry, box: BoundingBox, qi: Int, cityIndexes: List<Int>?, results: Map<Run, List<Element>>,
-    ) {
+    ): List<Candidate> {
         val now = results.getValue(Run.NOW)
         val at05 = results[Run.AT_05].orEmpty()
         val at2 = results[Run.AT_2].orEmpty()
-        if (now.isEmpty() && at05.isEmpty() && at2.isEmpty()) return
+        val candidates = candidatesOf(mapData, box, qi, cityIndexes, now, results[Run.AHEAD].orEmpty())
+        if (now.isEmpty() && at05.isEmpty() && at2.isEmpty()) return candidates
         val then = results[Run.LONG_AGO]?.mapTo(HashSet()) { it.type to it.id }
         val masks = LinkedHashMap<Pair<ElementType, Long>, Int>()
         val elements = HashMap<Pair<ElementType, Long>, Element>()
@@ -357,6 +380,32 @@ class AreaPass(
             var ids: List<String>? = null
             for (c in inCities) if (engine.enabledAt(c, qi) { ids ?: regionIdsAt(pos).also { ids = it } }) engine.countArea(c, qi, e, pos, mask)
         }
+        return candidates
+    }
+
+    /** An element that area quest [qi] gives at asOf + [AREA_DUE_DAYS] and not at asOf, in city [city]: its day is
+     *  looked for by [dateCandidates]. */
+    private class Candidate(val qi: Int, val element: Element, val pos: LatLon, val city: Int)
+
+    /** the [Run.AHEAD] results not in [now], with geometry, inside [box], in a city where [qi] is enabled */
+    private fun candidatesOf(
+        mapData: MapDataWithGeometry, box: BoundingBox, qi: Int, cityIndexes: List<Int>?, now: List<Element>, ahead: List<Element>,
+    ): List<Candidate> {
+        if (ahead.isEmpty()) return emptyList()
+        val nowKeys = now.mapTo(HashSet()) { it.type to it.id }
+        val out = ArrayList<Candidate>()
+        val seen = HashSet<Pair<ElementType, Long>>()
+        for (e in ahead) {
+            val k = e.type to e.id
+            if (k in nowKeys || !seen.add(k)) continue
+            val pos = mapData.getGeometry(e.type, e.id)?.center ?: continue
+            if (pos !in box) continue
+            val inCities = cityIndexes?.filter { cities[it].polygon.contains(pos.latitude, pos.longitude) }
+                ?: cityIndex.citiesAt(pos.latitude, pos.longitude).toList()
+            var ids: List<String>? = null
+            for (c in inCities) if (engine.enabledAt(c, qi) { ids ?: regionIdsAt(pos).also { ids = it } }) out += Candidate(qi, e, pos, c)
+        }
+        return out
     }
 
     private fun verifyTwin(port: AreaQuest, mapData: MapDataWithGeometry, twin: Set<Pair<ElementType, Long>>) {
@@ -485,6 +534,114 @@ class AreaPass(
                 if (r.hasInfo()) r.info.version else 1, r.info.timestamp * ctx.dateGranularity, set)
         }
         return out
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // area quests' dates (--dump-state)
+
+    /**
+     * The day each of [candidates] opens, found on a small map data: the candidate's z16 tile with a ring of
+     * [AREA_DUE_RING_M], as the API's map call returns it (every way of the city's with a node in the tiles the ring
+     * reaches, with all its nodes; the tagged nodes and tagged relations there). The SC port (not its fast twin) is
+     * asked at asOf and at asOf + [AREA_DUE_DAYS]: where that disagrees with the whole city's runs the element stays
+     * undated (counted). Then the days in between are halved, the candidates of a tile and quest together, one run
+     * per distinct middle day. Each date is a [StateDump.due] row at the default setting.
+     */
+    private fun dateCandidates(city: City, candidates: List<Candidate>) {
+        engine.state?.areaDueDays = AREA_DUE_DAYS
+        if (candidates.isEmpty()) return
+        val t0 = System.nanoTime()
+        fun key(lat7: Int, lon7: Int) = tileKey(lat7, lon7)
+        val byTile = candidates.groupBy { key((it.pos.latitude * 1e7).toInt(), (it.pos.longitude * 1e7).toInt()) }
+        fun ringOf(k: Long): BoundingBox =
+            TilePos((k shr 32).toInt(), k.toInt()).asBoundingBox(AREA_TILE_ZOOM).enlargedBy(AREA_DUE_RING_M)
+        val needed = HashSet<Long>()
+        val tilesOf = byTile.keys.associateWith { k ->
+            ringOf(k).enclosingTilesRect(AREA_TILE_ZOOM).asTilePosSequence()
+                .map { (it.x.toLong() shl 32) or (it.y.toLong() and 0xffffffffL) }.toList().also { needed += it }
+        }
+        // the city's records in the needed tiles, as runTiles buckets them
+        val inCity = citySets.membersOf(city.index)
+        val wayTiles: List<LongArray> = parallelMap(0, ways.size) { i ->
+            val w = ways[i]
+            if (!inCity[w.cities]) return@parallelMap LongArray(0)
+            val keys = LongArray(w.refs.size)
+            var n = 0
+            for (r in w.refs) {
+                val c = nodeIndex[r]
+                if (c == NO_COORD) continue
+                val k = key(unpackLat7(c), unpackLon7(c))
+                if (k in needed) keys[n++] = k
+            }
+            keys.copyOf(n).also { it.sort() }.distinctSorted()
+        }
+        val buckets = HashMap<Long, Bucket>()
+        fun bucket(k: Long) = buckets.getOrPut(k) { Bucket() }
+        for (i in ways.indices) for (k in wayTiles[i]) bucket(k).ways.add(i)
+        for (i in nodes.indices) {
+            val n = nodes[i]
+            if (n.tags.isEmpty() || !inCity[n.cities]) continue
+            val k = key(unpackLat7(n.coord), unpackLon7(n.coord))
+            if (k in needed) bucket(k).nodes.add(i)
+        }
+        for (i in relations.indices) {
+            if (!inCity[relations[i].cities]) continue
+            val keys = HashSet<Long>()
+            for (m in relations[i].members) when (m.type) {
+                ElementType.WAY -> wayIds.binarySearch(m.ref).let { if (it >= 0) wayTiles[it].forEach { k -> keys += k } }
+                ElementType.NODE -> nodeIds.binarySearch(m.ref).let {
+                    if (it >= 0) key(unpackLat7(nodes[it].coord), unpackLon7(nodes[it].coord)).let { k -> if (k in needed) keys += k }
+                }
+                ElementType.RELATION -> {}
+            }
+            for (k in keys) bucket(k).relations.add(i)
+        }
+        val groups = byTile.entries.toList()
+        val zone = engine.zones[city.index]
+        val dated = AtomicInteger(); val undated = AtomicInteger(); val runs = AtomicInteger()
+        parallelMap(0, groups.size) { gi ->
+            EngineZone.at(zone) {
+                val (k, cs) = groups[gi]
+                val w = java.util.TreeSet<Int>(); val n = java.util.TreeSet<Int>(); val r = java.util.TreeSet<Int>()
+                for (t in tilesOf.getValue(k)) buckets[t]?.let { b ->
+                    b.ways.toArray().forEach { w += it }; b.nodes.toArray().forEach { n += it }; b.relations.toArray().forEach { r += it }
+                }
+                val small = assemble(ringOf(k), w.map { ways[it] }, n.map { nodes[it] }, r.map { relations[it] })
+                dateIn(small, cs, dated, undated, runs)
+            }
+        }
+        log("area dates: %-18s %d candidates in %d tiles: %d dated, %d undated (the small map data disagreed at asOf or at +%d days); %d runs, %.1f s".format(
+            city.id, candidates.size, groups.size, dated.get(), undated.get(), AREA_DUE_DAYS, runs.get(), (System.nanoTime() - t0) / 1e9))
+        engine.stats.timings["area dates: ${city.id}"] = (System.nanoTime() - t0) / 1e9
+    }
+
+    /** the candidates [cs] of one small map data, dated by halving (see [dateCandidates]) */
+    private fun dateIn(small: MapDataWithGeometry, cs: List<Candidate>, dated: AtomicInteger, undated: AtomicInteger, runs: AtomicInteger) {
+        for ((qi, qcs) in cs.groupBy { it.qi }) {
+            val port = engine.quests[qi].area!!
+            fun keysAt(day: Int): Set<Pair<ElementType, Long>> {
+                runs.incrementAndGet()
+                return EngineClock.at(EngineClock.asOf + day.days) { port.getApplicableElements(small).mapTo(HashSet()) { it.type to it.id } }
+            }
+            val now = keysAt(0)
+            val ahead = keysAt(AREA_DUE_DAYS)
+            val live = qcs.filter { (it.element.type to it.element.id).let { k -> k in ahead && k !in now } }
+            undated.addAndGet(qcs.size - live.size)
+            val lo = IntArray(live.size)
+            val hi = IntArray(live.size) { AREA_DUE_DAYS }
+            while (true) {
+                val open = live.indices.filter { hi[it] - lo[it] > 1 }
+                if (open.isEmpty()) break
+                for ((mid, idx) in open.groupBy { (lo[it] + hi[it]) ushr 1 }) {
+                    val set = keysAt(mid)
+                    for (i in idx) if ((live[i].element.type to live[i].element.id) in set) hi[i] = mid else lo[i] = mid
+                }
+            }
+            for ((i, c) in live.withIndex()) {
+                engine.dueArea(c.qi, c.element, c.pos, ((EngineClock.asOf + hi[i].days).epochSeconds / 60).toInt())
+                dated.incrementAndGet()
+            }
+        }
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -620,12 +777,13 @@ class AreaPass(
             }
         } }.filterNotNull().groupBy { it.qi }
         val questIds = done.keys.toList()
-        parallelMap(0, questIds.size) { k ->
+        val candidates = parallelMap(0, questIds.size) { k ->
             val qi = questIds[k]
             traced(trace, { "(tally) ${engine.quests[qi].name}" }) {
                 tally(mapData, box, qi, listOf(city.index), done.getValue(qi).associate { it.run to it.elements })
             }
-        }
+        }.flatten()
+        if (dating) dateCandidates(city, candidates)
         if (trace != null) synchronized(TASK_TRACE!!) {
             TASK_TRACE.appendText(trace.joinToString("") {
                 "%s\t%s\t%s\t%.3f\t%.3f\t%.3f\n".format(city.id, it.label, it.thread,

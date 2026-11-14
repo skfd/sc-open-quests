@@ -25,9 +25,10 @@ import kotlin.time.Instant
  *   due   i32  kind DUE: minutes since the epoch from which the quest is open (whole days after asOf); else 0
  *
  * Every match is written whatever the notes say (flag [HIDDEN]), so the stream can hold notes as a layer of
- * its own. Quests waiting for their date are found for the main pass's quests only (not the area quests), at
- * each of the three resurvey settings, by asking the quest at [FAR_DAYS] and then halving the days in between: a quest
- * that only `newer` tests open is not found (it is not open at FAR either).
+ * its own. Quests waiting for their date: the main pass's at each of the three resurvey settings, by asking the
+ * quest at [FAR_DAYS] and then halving the days in between (a quest that only `newer` tests open is not found: it
+ * is not open at FAR either); the area quests' at the default setting only and only up to [AREA_DUE_DAYS] ahead
+ * (the sidecar's `areaDueDays`), on a small map data round each (AreaPass.dateCandidates).
  */
 class StateDump(private val file: File) : Closeable {
     private val channel = FileOutputStream(file).channel
@@ -37,6 +38,8 @@ class StateDump(private val file: File) : Closeable {
     }
     val matches = AtomicLong()
     val dues = AtomicLong()
+    /** how many days ahead the area quests were dated (AreaPass, [AREA_DUE_DAYS]); 0: not dated */
+    @Volatile var areaDueDays = 0
 
     fun match(type: Int, id: Long, lat: Double, lon: Double, quest: Int, mask: Int, hidden: Boolean) {
         matches.incrementAndGet()
@@ -76,7 +79,7 @@ class StateDump(private val file: File) : Closeable {
     fun writeSidecar(asOf: Instant, quests: List<String>) {
         File(file.path + ".json").writeText(
             "{\"asOf\":\"$asOf\",\"record\":\"key i64, lat i32, lon i32, quest u16, flags u8, kind u8, due i32\"," +
-                "\"matches\":${matches.get()},\"dues\":${dues.get()}," +
+                "\"matches\":${matches.get()},\"dues\":${dues.get()},\"areaDueDays\":$areaDueDays," +
                 "\"quests\":${quests.joinToString(",", "[", "]") { jsonString(it) }}}\n")
     }
 
