@@ -3321,3 +3321,43 @@ untouched ways whose node moved and whose quest point now lies outside every rec
 by 11-13 12 matches and 33 waiting rows, all within 1.2 m (t2a: 0). No open set changes. **So the world's tier 2
 needs no way index** (the 280 GB of the estimate): only the node store it has, a small store of the member ways of
 the relations the cover follows (multipolygons, streets, ferry routes; not yet sized), and the map data store (c).
+
+**Measurement (c): the z14 tile store (11-14, 17:00-; `tools/stream/tiles.py`, `tools/stream/tilestore.py`, tests
+`tests/test_tiles.py`, `tests/test_tilestore_update.py`; work in `.scratch/tiles/`).**
+
+*The tile rule.* What a tile holds, chosen from how the engine reads an area (AreaPass.kt): it takes a way when any of
+its nodes lies in the padded box, then all that way's nodes; tagged nodes in the box; tagged relations (not the
+ignored kinds) with such a way or node as member, their geometry built from **all** member ways, which the main pass
+reads off the whole file; and it orders its map data by id hash, so the order the store hands things over in cannot
+matter. So a tile holds: every tagged node located in it; every way with a segment that crosses it (a superset of
+"a node in it": a long segment can carry a way's quest point across a small rectangle), complete, all its nodes
+wherever they lie; every kept relation with a member node in it or a member way crossing it. Apart from the tiles,
+the **relation store**: per kept relation, its member ways whole with their nodes' places.
+
+*Proved first with a filter extract, no store* (`tiles.py extract`: the clip's objects that the tiles under the
+rectangles and the 300 m ring would hold, written as one PBF). t2n's 103 rectangles of 11-13 (dublin-0 12 x 7 km, the
+rest small) sit under 331 tiles; the extract is 8.76M objects, 105 MiB against the 1.75 GB clip; the recount on it is
+**row for row the recount on the whole clip** (1,116,244 rows, 0 different), and on 11-12 the same (1,114,046). The
+engine took 22 s on it against 35 s on the clip. Without the relation store's ways (7% fewer nodes) also 0 different
+on this day: it stays, for multipolygons reaching beyond the ring.
+
+*The store.* One pack file per generation (`pack-GGGG.bin`, tile payloads end to end) and a whole index per generation
+(`idx-GGGG.npy`: key, pack, offset, length): no file per tile (the planet would be tens of millions of small files).
+A payload is the tile's columns (ids and places delta-coded, versions, timestamps, tags as `k\0v\0` bytes), each
+byte-shuffled, zstd level 3 over the whole. Untagged nodes keep only id and place (the store gives them version 1, no
+timestamp): the recount does not see the difference (below). The relation store likewise (`rel-GGGG.bin`,
+`relidx-GGGG.npy`), and two pair indexes, every way's and kept relation's tiles by id (`wtiles`, `rtiles`), for a
+day's update to find a changed object's old tiles.
+
+*Cut from europe-west 11-12* (`tilestore.py cut`, from `tiles.py geom` + `attrs`): **59,026 tiles, 1.86 GiB, against
+the clip's 1.63 GiB** (1.14x), plus the relation store 218 MiB (438,232 kept relations, 1.76M member ways): 1.27x the
+clip in all. Copies: 175.6M node copies of 127.9M nodes (orphan untagged nodes dropped), 22.6M way copies of 21.4M
+ways (1.06x), 0.57M relation copies. Tile sizes: median 5 KB, 90% under 89 KB, 99% under 450 KB, largest 1.9 MB (47
+over 1 MB, 60 MB in all). Prototype times, Python: node places 8 s (pyosmium's C++ index), way refs 342 s, tags and
+versions 930 s, the cut itself 451 s (tile pairs 192 s, payloads 77 s, relation store 41 s).
+
+*Read through the store, D-1 (11-12):* the 331 tiles under the rectangles joined into one PBF (`tilestore.py read`:
+duplicates dropped, every kept relation's member ways from the relation store), recounted: **1,114,046 rows, 0
+different** from the recount on the clip. The join took 33.5 s: reading and decoding the tiles 2.3 s (92 MB of
+payloads, 9 MB of relation blobs), merging 1.3 s, writing the PBF through pyosmium 29.9 s. The write is the
+prototype's cost, not the store's: a PBF writer in the engine, or the engine reading the store, removes it.
