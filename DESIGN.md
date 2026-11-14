@@ -3058,3 +3058,52 @@ ways, 168M refs, 3.7 GB, 7 min) plus the diffs' ways since.
   0.9 to 8 s; the whole count's area pass for these cities is about 25 s), the splice and state 30 to 60 s. The
   engine still reads the whole clip for its main pass; with a store, the rectangles' map data (1 to 4M nodes a
   day here, against 14.8M in London alone) is all it needs.
+
+**Tier 2 in the delta form (11-13, night; the owner held the world seed for this).** The splice brought the
+recount's own disagreements with a whole count into the state. Two probes, before building anything, asked
+whether the delta form would keep them out: it does only if the old-day recount of the same rectangles has the
+same disagreement.
+- **The 36 AddHousenumber of 11-12:** 11-12's rectangles recounted on the 11-11 clip lack all 36 too (the whole
+  11-11 count has them). So the recount's change between the days does not touch them, and the delta leaves the
+  state's rows alone.
+- **The two Dublin ways of 11-13 (71455532, 168339841):** 11-13's rectangles on the 11-12 clip have the same 9
+  rows each, at the same position. Unchanged, so kept out.
+- **The Dublin cause, traced:** the two roads are Dublin's boundary, and their centres lie 3 and 4 mm from it
+  (2.6e-8 and 4.0e-8 degrees). The whole count, with all three cities or with Dublin alone, puts them outside
+  (no row at all); the dump stores positions at 1e-7 degrees (about 1 cm), and at that rounded position the
+  engine's even-odd test says inside. One step of 1e-7 south says outside. So `tier2.inside`, deciding on the
+  dump's position, kept rows that the engine itself had not put in the city. Any recount whose own city test is
+  a rectangle meets this for elements within a centimetre of a boundary; the delta keeps an existing
+  disagreement out, but an edit to such an element would still bring its rows in. A full fix would hand the
+  engine the real outline (the rectangle cut by the city) so the engine decides at full precision.
+- **Built:** `stream.py apply --tier2-old-clip Y` (yesterday's clip): the rectangles are counted twice, on
+  yesterday's clip at the state's clock and on today's, and `tier2.delta` compares the two per (element, quest)
+  group of rows (a match and up to three dates). Old absent and new present: set to new. Old present and new
+  absent: removed. Both present and different: set to new only if the state holds the group. Equal: untouched.
+  Each case is counted, with how often the state disagreed with the old recount (the measure of drift). The delta
+  never heals: the splice resynced everything inside a rectangle, earlier misses included, so the measure is the
+  total of tier-2 differences each day. In a world store this means "the map data of these boxes at D-1" too,
+  asked before the diff goes in. `tools/stream/europe-t2d.sh` (state `.scratch/stream/europe-west/t2d/`, log
+  `logs/stream-t2d.log`); `tests/test_stream_delta.py`.
+
+**The delta form on the five days: the result (11-13, 20:05-20:46).** Against the splice (`t2/`, same seed,
+same diffs, same rectangles):
+
+| day | tier 1, splice / delta | tier 2 differences, splice / delta | delta's inside a rectangle | seconds a day, splice / delta |
+|---|---|---|---|---|
+| 11-09 | 0 / 0 | 8 / 8 | 0 | 289 / 325 |
+| 11-10 | 0 / 0 | 30 / 30 | 1 (CheckExistence) | 302 / 298 |
+| 11-11 | 0 / 0 | 55 / 55 | 1 (CheckExistence) | 286 / 339 |
+| 11-12 | 0 / 0 | 98 / 73 | 12 CheckExistence, 1 AddHousenumber the state has extra | 405 / 457 |
+| 11-13 | 11 / 0 | 130 / 99 | 27 CheckExistence, 1 AddCycleway, the same extra AddHousenumber | 386 / 434 |
+
+- **Tier 1 exact in every field on all five days**, and the 36 AddHousenumber and the two Dublin ways stay out.
+- **What tier 2 has left is area quests ageing** (CheckExistence, AddCycleway, the traffic-signal sound and
+  vibration quests), 98 of 99 on 11-13, plus one AddHousenumber (way 1577774915) that the 11-12 recount has and
+  the whole count lacks, new that day, so the delta took it in as an addition. Inside the rectangles the delta
+  keeps the ageing misses the splice resynced (1 against 27 on 11-13): it never heals, as expected. So the next
+  gap by size is the area quests' dates, about 20 a day here.
+- **Cost:** the second engine run adds about 35-50 s a day (tier 2 160-285 s against 100-235 s).
+- **The drift counters measure the overlap with tier 1, not drift:** "added, the state had it" (449 to 1,098 a
+  day) and "removed, the state lacked it" (173 to 289) are mostly tier 1's own replacements of touched elements,
+  made before the delta. To read drift from them, count tier-2 quests only. Not done.

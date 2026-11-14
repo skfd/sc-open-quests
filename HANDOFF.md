@@ -1223,3 +1223,12 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   - **Second world reference: from the 12-07 planet.** Count the world from the monthly job's download, stream
     11-08 -> 12-07, and check against it. No dedicated earlier run.
   - **Push: yes**, the 14 commits pushed.
+- **Tier 2 in the delta form: built and run (11-13, 20:05-20:46).** DESIGN.md, "Tier 2 in the delta form" and its
+  result. `stream.py apply --tier2-old-clip`, `tier2.delta`, `tools/stream/europe-t2d.sh` (state
+  `.scratch/stream/europe-west/t2d/`, 6.6 GB; log `logs/stream-t2d.log`), `tests/test_stream_delta.py`. Five days:
+  **tier 1 exact on all five** (the splice had 11 wrong on 11-13); tier 2 differences 99 on 11-13 against the
+  splice's 130, all but one of them area quests ageing; about 40 s a day more. The Dublin ways are traced: their
+  centres lie 3-4 mm from Dublin's boundary, and the dump's 1 cm rounding puts them inside where the engine said
+  outside; the delta keeps them out (a full fix, the engine given the real outline, is not built).
+  **Gaps left:** area quests' dates (the first world seed goes without them, by decision); the store answering
+  "map data of these boxes at D and D-1". The world seed has no code blocker now: ask the owner when.

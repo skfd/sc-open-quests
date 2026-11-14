@@ -23,9 +23,9 @@ trap 'log "stream t2d ended ($?)"' EXIT
 log "stream t2d start"
 mkdir -p $T
 [ -f $T/ways.npz ] || cp $D/t2/ways.npz $T/  # the seed clip's ways, as europe-t2.sh built them
-[ -f $T/ways-overlay.pickle ] || python -c "import pickle; pickle.dump({}, open(r'$T/ways-overlay.pickle', 'wb'))"
+[ -f $T/ways-overlay.pickle ] || (cd $T && python -c "import pickle; pickle.dump({}, open('ways-overlay.pickle', 'wb'))")
 [ -f $T/nodes.idx ] || cp $D/nodes.idx $T/
-[ -f $T/overlay.pickle ] || python -c "import pickle; pickle.dump({}, open(r'$T/overlay.pickle', 'wb'))"
+[ -f $T/overlay.pickle ] || (cd $T && python -c "import pickle; pickle.dump({}, open('overlay.pickle', 'wb'))")
 [ -f $T/state.json ] || $ST seed --dump $D/day-08/state.bin --dir $T
 day=9
 for seq in 5171 5172 5173 5174 5175; do
