@@ -1264,3 +1264,9 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   disagreement (w1577774915 AddHousenumber). **The stream's known gaps are now: recount-versus-whole
   disagreements (AddHousenumber on 11-12, the Dublin boundary ways), and the world store** ("map data of these
   boxes at D and D-1", plus a state store for 2.01 billion rows that do not fit in memory).
+- **The world seed's files, measured for a state store (11-14, 04:30; `.scratch/planet/seedkeys.py`, log beside
+  it).** 128 files, 2,011,107,291 rows (48.3 GB), **1,061,205,063 distinct elements** (116.9M nodes, 942.7M ways,
+  1.7M relations); **only 95 keys lie in more than one file** (112 extra copies), so the files partition the world
+  by element almost exactly, each element routed by its position to its file's `rect` (plan.json). Rows inside a
+  file are not sorted by key (written per engine thread): sorting a file of 18.6M rows takes about 16 s; reading
+  and sorting all 128 took 900 s. Files run from 31,775 to 16.8M elements (median 8.7M).
