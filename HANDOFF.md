@@ -1324,3 +1324,7 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   4.0 s (DESIGN.md, "Rerun with the merge"), so a world day's file step is at most about 8.5 min. The first run's
   copy (`world-test-sort/`) is deleted; `.scratch/planet/world-test/` holds the merge run at 11-13 (2 GB copies plus
   the 2 GB node index). **Nothing runs now.** The next machine steps wait on the owner's three questions above.
+- **The owner's answers (11-14, 06:35):** node store: **build it now** (from `history-261102`, stream the world
+  from the 11-08 seed through the coming weeks, delete it before 12-07 07:30, then build again from the 12-07 file);
+  tier 2's world store: **design it, build later** (measure a store's size on Europe; the world runs tier 1 only
+  until the disk allows); push: **yes**.
