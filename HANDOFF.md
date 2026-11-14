@@ -1172,8 +1172,16 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   `../sc-open-quests-stream` and branch `stream` are removed; `europe-test.sh` runs from main (reruns skip
   what is done; delete `check-*.txt` to rerun the stream part). The Europe clips stay pinned while tier 2 is
   built against them.
-  **Next, in order:** tier 2 in `apply` (the patch recount of "The stream, tier 2", from the day clip here;
-  a world needs the map data around touched elements from a store), relations, area quests' dates; then the
+- **The stream, evening of 11-13 (DESIGN.md, "Every row checked..." and "Tier 2 in `apply`").** `check` now holds
+  every tier-1 row; `--dump-state` dates the 0.5 and 2 settings (main's engine rebuilt, snapshots unchanged
+  with the option off, pass about 12% slower; the 0.5/2 drift is gone). Tier 2 is in `apply --tier2-clip`
+  (`tools/stream/tier2.py`, `europe-t2.sh`): five days, tier 2 differences 130 against 3,580 without it, tier
+  1 exact on four days, 5-7 min a day. Left: area quests' dates (about 20 a day here, skipped for the first
+  seed), the splice bringing in recount disagreements (36 AddHousenumber on 11-12; two Dublin boundary ways
+  on 11-13, not traced: try the delta form), and a store answering "the map data of these boxes at day D"
+  (`tier2.map_data`). Stream state dirs: `.scratch/stream/europe-west/` (tier 1, rerun with dates; first run
+  in `run1/`) and `t2/` (tier 2; first run in `t2/run1/`).
+  **Next, in order:** the delta form and the Dublin ways; then the
   world seed, `world_cells.py count --state` over chain4's kept cut (`.scratch/planet/world-places/cut/`,
   87 GB; 4.4 h of engine as chain4's count, up to 9 h on the clock; an estimated 50 GB of state), started early on a day
   the owner is away so it ends before midnight; then a world state store

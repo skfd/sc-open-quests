@@ -3025,3 +3025,36 @@ area quests opening by age (CheckExistence 72, AddCycleway 20, AddTrafficSignals
 8, and 15 the other way, are neighbours (AddHousenumber, crossings). So area-quest dates are about 20 a day
 here, tier 1's own changes about 1,000: the first world seed goes without them (the stream reseeds with each
 StreetComplete release anyway), recorded as a known gap.
+
+**Tier 2 in `apply`: built and run on the five days (11-13, evening).** `stream.py apply --tier2-clip`,
+`tools/stream/tier2.py`, `tools/stream/europe-t2.sh` (state in `.scratch/stream/europe-west/t2/`, log
+`logs/stream-t2.log`). After tier 1's small PBF, the ground the diff touched (as "The stream, tier 2", plus
+the old position of every row of a touched element) becomes rectangles of 50 m cells with a 300 m ring; the
+rectangles are counted as cities on the day's clip (`map_data`, the one place a world store would answer);
+inside each rectangle and its own city every row (all quests, tier 1 too) is replaced by the recount's
+(splice). The parents of a changed node come from a way store of the seed clip (`stream.py ways`: 21.4M
+ways, 168M refs, 3.7 GB, 7 min) plus the diffs' ways since.
+
+| day | rectangles, km2 | nodes the area runs read | tier 1 differences | tier 2 differences (inside a rectangle / outside all) | control, inside the day's rectangles |
+|---|---|---|---|---|---|
+| 11-09 | 81, 15 | 0.95M | 0 | 8 (0 / 8) | equal (42,399 and 17,332) |
+| 11-10 | 82, 22 | 1.18M | 0 | 30 (1 / 29) | equal |
+| 11-11 | 104, 111 | 2.05M | 0 | 55 (1 / 54) | equal |
+| 11-12 | 189, 140 | 3.62M | 0 | 98 (38 / 60) | tier 2: 36 AddHousenumber the recount lacks, 1 extra |
+| 11-13 | 104, 298 | 3.71M | 11 (2 ways) | 130 (60 / 70) | tier 1 and 2: 2 Dublin ways the recount has (19 rows) |
+
+- **Against tier 2 kept from the seed (3,580 differences on 11-13), 130.** Tier 1 is exact in every field on
+  four days (positions of ways whose nodes moved, and the three relations, now right).
+- **Outside every rectangle: area quests ageing** (CheckExistence, AddCycleway, the traffic-signal sound and
+  vibration quests), 8 to 70: the area-quest dates the dump lacks.
+- **Inside: the recount's own disagreements, brought in by the splice.** 11-12: 36 AddHousenumber the whole
+  count has and the recount lacks (AddHousenumber depends on the order of the map data, engine/README.md); they
+  stay on 11-13. 11-13: ways 71455532 and 168339841 lie on Dublin's boundary; the recount counts them, the whole
+  count has no row for them at all. The engine's own point test puts both positions inside Dublin (checked with
+  its arithmetic), so the cause is elsewhere: not traced. The delta form (the recount's own flips) would keep
+  both out; the splice was the first choice because it needs only the new day's data.
+- **Cost a day: 5 to 7 min** (300 to 432 s): reading the planet's diff in Python 110 to 156 s, the small PBF
+  27 to 35 s, the cover 38 to 80 s, the engine over the whole clip for the rectangles 23 to 36 s (its area runs
+  0.9 to 8 s; the whole count's area pass for these cities is about 25 s), the splice and state 30 to 60 s. The
+  engine still reads the whole clip for its main pass; with a store, the rectangles' map data (1 to 4M nodes a
+  day here, against 14.8M in London alone) is all it needs.
