@@ -131,6 +131,22 @@ def route(rows: np.ndarray, files: list[dict]) -> tuple[list[np.ndarray], int]:
     return out, int(left.sum())
 
 
+def order_code(r: np.ndarray) -> np.ndarray:
+    """(key, quest, kind) as one int64 in the same order (keys stay under 2**39: node ids about 1.4e10, times 4)"""
+    return (r["key"] << 24) | (r["quest"].astype(np.int64) << 8) | r["kind"].astype(np.int64)
+
+
+def merge(kept: np.ndarray, add: np.ndarray) -> np.ndarray:
+    """sorted rows plus a few more, sorted: the few inserted where they belong, not the whole table sorted again
+    (a 25M-row file: 31 s to sort, about a second to merge)"""
+    if not len(add):
+        return kept
+    if max(int(kept["key"].max(initial=0)), int(add["key"].max())) >= 1 << 39:
+        sys.exit("a key past 2**39: order_code would wrap")
+    add = add[np.argsort(order_code(add), kind="stable")]
+    return np.insert(kept, np.searchsorted(order_code(kept), order_code(add), "right"), add)
+
+
 def replace_in_file(p: Path, drop: np.ndarray, quest_mask: np.ndarray, add: np.ndarray) -> tuple[int, int]:
     """drop the rows of these keys whose quest is in quest_mask, add these rows, keep the file sorted; written only
     when it changes. Returns (rows dropped, rows added)."""
@@ -138,7 +154,7 @@ def replace_in_file(p: Path, drop: np.ndarray, quest_mask: np.ndarray, add: np.n
     gone = in_keys(r["key"], drop) & quest_mask[r["quest"]]
     if not gone.any() and not len(add):
         return 0, 0
-    r = np.sort(np.concatenate([r[~gone], add]), order=ORDER)
+    r = merge(r[~gone], add)
     tmp = p.with_suffix(".bin.writing")
     r.tofile(tmp)
     os.replace(tmp, p)

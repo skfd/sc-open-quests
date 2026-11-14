@@ -3247,3 +3247,8 @@ positions with 28 touched): the world path adds no difference, and what is left 
 tier 2's recount removes (t2a). A day took 5.5-7 min here: reading the diff 2 min, the small PBF 1 min with
 europe-west's node index (200-250k ways not placed: they lie outside europe-west), the engine 2.7 s, and **writing
 the four files 140-165 s**, which at 128 files would be about half an hour: re-sorting each whole file is the cost.
+**Then merged, not sorted (11-14, 06:00):** `replace_in_file` now inserts the day's rows into the sorted file
+(`merge`: one int64 per row for (key, quest, kind), `searchsorted`, `np.insert`) instead of sorting it again: on f90
+(24.7M rows) with a day's touched keys, 1.0 s against 31 s, the same rows in the same order. A file's update is then
+about 3 s (finding the rows 1.2 s, merging 1 s, writing 0.6 s), so a world day's files about 6-7 min if every file
+changes.
