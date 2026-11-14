@@ -138,6 +138,52 @@ def geom(clip: Path, d: Path):
         f"{len(rids):,} relations {tr:.0f} s")
 
 
+def attrs(clip: Path, d: Path):
+    """what the geometry leaves out: tagged nodes (id, version, timestamp, tags), every way's and relation's version,
+    timestamp and tags, and relation member roles; tags as b"k\\0v\\0..." per object, in the clip's (id) order.
+    Untagged nodes keep only their place (geom): the store gives them version 1 and no timestamp."""
+    import osmium
+    import osmium.filter as F
+    from array import array
+    d.mkdir(parents=True, exist_ok=True)
+    out = {}
+    t0 = time.time()
+
+    def run(kind, filt=None):
+        ids, ver, ts, tlen = array("q"), array("i"), array("q"), array("i")
+        tags = bytearray()
+        rlen, roles = array("i"), bytearray()
+        fp = osmium.FileProcessor(str(clip), kind)
+        if filt is not None:
+            fp = fp.with_filter(filt)
+        for o in fp:
+            ids.append(o.id)
+            ver.append(o.version)
+            ts.append(int(o.timestamp.timestamp()))
+            b = "".join(f"{t.k}\0{t.v}\0" for t in o.tags).encode()
+            tlen.append(len(b))
+            tags += b
+            if kind == osmium.osm.RELATION:
+                for m in o.members:
+                    rb = m.role.encode()
+                    rlen.append(len(rb))
+                    roles += rb
+        p = {"ids": np.frombuffer(ids, np.int64), "ver": np.frombuffer(ver, np.int32), "ts": np.frombuffer(ts, np.int64),
+             "tlen": np.frombuffer(tlen, np.int32), "tags": np.frombuffer(bytes(tags), np.uint8)}
+        if kind == osmium.osm.RELATION:
+            p["rlen"], p["roles"] = np.frombuffer(rlen, np.int32), np.frombuffer(bytes(roles), np.uint8)
+        return p
+
+    for name, kind, filt in (("n", osmium.osm.NODE, F.EmptyTagFilter()), ("w", osmium.osm.WAY, None),
+                             ("r", osmium.osm.RELATION, None)):
+        t = time.time()
+        for k, v in run(kind, filt).items():
+            out[f"{name}_{k}"] = v
+        log(f"attrs {name}: {len(out[name + '_ids']):,} in {time.time() - t:.0f} s")
+    np.savez(d / "attrs.npz", **out)
+    log(f"attrs of {clip.name} in {time.time() - t0:.0f} s")
+
+
 class Geom:
     """a clip's geometry in memory: nodes (ids sorted, lat7, lon7, tile key), ways (ids, offs, refs as node rows,
     each way's tile keys by segment), relations (ids, offs, member type and ref)"""
@@ -310,7 +356,7 @@ def compare(a: Path, b: Path, cities: Path | None = None, base: Path | None = No
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("cmd", choices=["geom", "extract", "recount", "compare"])
+    ap.add_argument("cmd", choices=["geom", "attrs", "extract", "recount", "compare"])
     ap.add_argument("--pbf", type=Path)
     ap.add_argument("--today")
     ap.add_argument("--a", type=Path)
@@ -326,6 +372,8 @@ def main():
     o = ap.parse_args()
     if o.cmd == "geom":
         geom(o.clip, o.dir)
+    elif o.cmd == "attrs":
+        attrs(o.clip, o.dir)
     elif o.cmd == "extract":
         g = Geom(o.geom)
         tiles = tiles_of(city_boxes(o.cities, o.base), o.ring)
