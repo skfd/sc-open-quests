@@ -3266,3 +3266,39 @@ cells, the files 459 s (569,034 tier-1 rows dropped, 840,698 added, none outside
 all. On the elements europe-west's whole count of 11-09 has: matches 3,340,642 = 3,340,642 and waiting 2,064,632 =
 2,064,632, all equal but for the position of 17 + 15 rows of untouched ways (nodes moved, the way kept its version:
 tier 1's known limit).
+
+## Tier 2 for the world: the store, designed (2026-11-14, afternoon; owner: design it, build later)
+
+What a world day's tier 2 reads, as `tier2_step` does it for europe-west:
+1. **The ground the day touched** (`tier2.cover`): every changed node's old and new place, every changed way's old
+   and new segments, and **the ways whose nodes moved without a version of their own**. The old places come from
+   the node store before the day (the world has it now: `planet.loc`, kept in place, so the old place is read
+   before `save()`); the ways need **way refs and a node-to-way index** (`WayStore`, `ways.npz`). Europe-west's is
+   3.7 GB for 21.4M ways and 168M refs (22 bytes a ref: refs, a reverse index of refs, the way of each); the planet
+   has about 1.1 billion ways and of the order of 12 billion refs, so the same layout is **about 280 GB**: this is
+   most of the "about 300 GB" first estimated.
+2. **The map data of the rectangles with their ring, at D and at D-1** (`tier2.map_data`, today the whole day clip).
+   The ring matters: 300 m reproduces a whole count but for a few AddHousenumber, 1,500 m agrees on those but reads
+   seven times the nodes and brings 3 of its own ("Tested", above).
+
+The design, smallest first:
+- **(a) Try without the way index.** A way whose node moved changes only in the segments at that node, and the
+  node's old and new places are already in the cover; the rest of the way is unchanged. The cover could take, for a
+  moved node, a box of its two places and the ring, and no way index at all. What is lost: a long segment (over the
+  ring) whose far end did not move, and the way's own centre (the position of its rows), which moves with it.
+  **Measure first (no disk):** europe-west's five days in the delta form with the cover's way lookup turned off,
+  against t2a's 1 difference in 1.39M. If close, the 280 GB goes away.
+- **(b) If a way index is needed: compact it.** Refs delta-coded per way (2-3 bytes a ref), the reverse index kept
+  only for nodes of ways that carry an area quest's interest (buildings, highways, barriers...): an estimate of
+  40-80 GB, to measure on europe-west.
+- **(c) The map data: a tile store, not two planets.** z14 tiles of the planet as small PBFs, each with every
+  element that lies in it and every way that crosses it (complete ways, so a tile is valid map data alone), about
+  the planet PBF's 85 GB plus 10-20% for the duplicated ways. A day rewrites the tiles its diff touches into a new
+  generation and keeps the previous generation of only those tiles until the next day: D is the newest generation,
+  D-1 is the newest generation but one of each tile, at a cost of a day's changed tiles (a few percent). A recount
+  reads the tiles under its rectangles and ring and joins them (sorted merge, duplicates dropped). **Measure on
+  europe-west:** the store's size against the clip's, the time to cut it, a day's update, and the read of a day's
+  rectangles, and the recount on the tiles' data against the clip's (they must give the same rows).
+- **Disk:** (c) about 100 GB and (a) none, against about 130 GB free while `planet.loc` (115 GB) and the stream's
+  rows (48 GB) are kept, and the 12-07 planet job's 170 GB. So nothing big is built before 12-07; after it, with
+  `planet.loc` rebuilt from the new file, (c) fits only if the 11-08 seed's own rows (48 GB) are given up.
