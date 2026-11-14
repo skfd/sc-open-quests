@@ -3231,3 +3231,19 @@ hold (2,152,775 keys in f34, f44, f90 and f106: Lisboa, Dublin, London), **all 5
 every field** (key, quest, kind, flags, date, position), none on one side only. The world's cells and time zones
 give the same tier-1 rows as the Europe cities, so europe-west's day dumps (11-09..11-13) can check a world-path
 stream on those elements.
+
+**The world's tier 1 on five days (11-14, 05:12-05:48; `tools/stream/world-europe.sh`, log `logs/world-europe.log`).**
+`world_state.py subset` copied the four world files holding Lisboa, Dublin and London (f34, f44, f90, f106) to
+`.scratch/planet/world-test/`; `apply` ran diffs 5171..5175 through the world's cells (one engine run over the
+small PBF with the 64 cells of those files as its cities, each with its time zone, at UTC like the count) with
+europe-west's 11-08 node locations, and `check` held each day against europe-west's whole count on the 2.46M
+elements it has inside those rects plus those its 11-08 dump had. At 11-08 the copies equal the count (3,239,324
+open, 2,064,743 waiting). On 11-13, every field compared as `stream.rows_check` does: matches 3,343,307 against
+3,343,305, waiting 2,065,352 against 2,065,355; 774 matches and 706 waiting rows equal but for the position (ways
+whose nodes moved while they kept their version, 28 of them touched earlier; and 4 relation rows), and 3 + 1
+matches and 3 + 6 waiting rows on four untouched relations. **The same numbers, row for row, as europe-west's own
+tier-1-only stream** (`europe-west/check-2026-11-13.txt`: 3,343,307 / 3,343,305, the same three relations, 774
+positions with 28 touched): the world path adds no difference, and what is left is tier 1's known limits, which
+tier 2's recount removes (t2a). A day took 5.5-7 min here: reading the diff 2 min, the small PBF 1 min with
+europe-west's node index (200-250k ways not placed: they lie outside europe-west), the engine 2.7 s, and **writing
+the four files 140-165 s**, which at 128 files would be about half an hour: re-sorting each whole file is the cost.

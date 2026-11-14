@@ -23,6 +23,7 @@ import json
 import os
 import sys
 import time
+from collections import Counter
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
@@ -226,8 +227,8 @@ def apply(w: Path, nodes_dir: Path, diff: Path, today: str):
 
 
 def check(w: Path, dump: Path) -> int:
-    """tier 1 against a whole count of the same instant: rows open at the clock, and rows still waiting, compared as
-    (key, quest, kind, flags, due, position), on the dump's elements inside the files' rects and the files' elements
+    """tier 1 against a whole count of the same instant, every field (the note bit aside), as stream.rows_check
+    compares a region's state, on the dump's elements inside the files' rects and the files' elements
     the seed's dump had. Returns the number of differences."""
     import stream as S
     meta = json.loads((w / "world-stream.json").read_text(encoding="utf-8"))
@@ -248,32 +249,48 @@ def check(w: Path, dump: Path) -> int:
     universe = np.union1d(np.unique(ref["key"]), seed_keys)
     st = st[np.isin(st["key"], universe)]
 
-    def view(r):
-        # a waiting row whose date has come counts as a match: compare what is open now, then what still waits
-        default = (r["flags"] & 63 == 0) | (r["flags"] & S.M_NOW > 0)
-        came = (r["kind"] == S.DUE) & (r["due"] <= at) & default
-        waiting = (r["kind"] == S.DUE) & ~came
-        opened = S.open_codes(r, at, tier1)
-        wr = r[waiting]
-        return opened, set(zip(wr["key"].tolist(), wr["quest"].tolist(), (wr["flags"] & 63).tolist(), wr["due"].tolist(),
-                               wr["lat"].tolist(), wr["lon"].tolist())), came
+    def norm(r):
+        """every row as the count writes it at the clock: a waiting row whose date has come (in its setting: the
+        default, 0.5 or 2) becomes that setting's open-and-aged bits on the element's match, as stream.rows_check
+        does; then matches as (key, quest, flags without the note bit, position) and the rows still waiting as
+        (key, quest, setting, due, position)"""
+        code = r["key"] * 1024 + r["quest"].astype(np.int64)
+        setting = np.where(r["flags"] & 63 == 0, S.M_NOW, r["flags"] & 63)
+        m, dmask = r["kind"] == S.MATCH, r["kind"] == S.DUE
+        flags = {}
+        for c, f, la, lo in zip(code[m].tolist(), (r["flags"][m] & 63).tolist(), r["lat"][m].tolist(), r["lon"][m].tolist()):
+            flags[c] = [f, la, lo]
+        came = dmask & (r["due"] <= at)
+        for c, s, la, lo in zip(code[came].tolist(), setting[came].tolist(), r["lat"][came].tolist(), r["lon"][came].tolist()):
+            e = flags.setdefault(c, [0, la, lo])
+            e[0] |= s | {S.M_NOW: 2, 4: 8, 16: 32}[s]
+        matches = {(c, f, la, lo) for c, (f, la, lo) in flags.items()}
+        wt = dmask & ~came
+        waiting = set(zip(code[wt].tolist(), setting[wt].tolist(), r["due"][wt].tolist(), r["lat"][wt].tolist(),
+                          r["lon"][wt].tolist()))
+        return matches, waiting
 
-    so, sw, _ = view(st)
-    ro, rw, _ = view(ref)
-    only_s, only_r = np.setdiff1d(so, ro), np.setdiff1d(ro, so)
-    ws, wr_ = sw - rw, rw - sw
+    sm, sw = norm(st)
+    rm, rw = norm(ref)
     touched = np.load(w / "touched.npy") if (w / "touched.npy").exists() else np.zeros(0, np.int64)
-
-    def fmt(codes):
-        return [(("n", "w", "r")[(c >> 10) & 3] + str(c >> 12), names[c & 1023],
-                 "touched" if np.isin(c >> 10, touched) else "untouched") for c in codes[:6].tolist()]
-
+    tset = set(touched.tolist())
+    name = lambda c: ("n", "w", "r")[(c >> 10) & 3] + str(c >> 12) + " " + names[c & 1023]  # noqa: E731
+    kinds = lambda xs: dict(Counter(("n", "w", "r")[(x[0] >> 10) & 3] + (" touched" if (x[0] >> 10) in tset else " untouched") for x in xs))  # noqa: E731
     print(f"world files at {meta['clock']} against {dump}: {len(universe):,} elements compared")
-    print(f"tier 1 open: files {len(so):,}, count {len(ro):,}; only in the files {len(only_s):,} {fmt(only_s)}; "
-          f"only in the count {len(only_r):,} {fmt(only_r)}")
-    print(f"tier 1 waiting: files {len(sw):,}, count {len(rw):,}; only in the files {len(ws):,}; only in the count "
-          f"{len(wr_):,} e.g. {sorted(ws)[:2]} / {sorted(wr_)[:2]}")
-    return len(only_s) + len(only_r) + len(ws) + len(wr_)
+    total = 0
+    for label, a_, b_ in (("matches", sm, rm), ("waiting", sw, rw)):
+        xa, xb = a_ - b_, b_ - a_
+        # the same row at another position: a way whose nodes moved while it kept its version (tier 1 does not see
+        # it; tier 2's recount does), or a relation (tier 1 does not recount relations)
+        moved = {x[:-2] for x in xa} & {x[:-2] for x in xb}
+        ra = [x for x in xa if x[:-2] not in moved]
+        rb = [x for x in xb if x[:-2] not in moved]
+        total += len(xa) + len(xb)
+        print(f"tier 1 {label}: files {len(a_):,}, count {len(b_):,}; equal but for the position {len(moved):,} "
+              f"{kinds(list(moved))}; only in the files {len(ra):,} {kinds(ra)}; only in the count {len(rb):,} {kinds(rb)}")
+        if ra or rb:
+            print(f"  e.g. files {[(name(x[0]),) + x[1:] for x in sorted(ra)[:3]]} / count {[(name(x[0]),) + x[1:] for x in sorted(rb)[:3]]}")
+    return total
 
 
 def main():
