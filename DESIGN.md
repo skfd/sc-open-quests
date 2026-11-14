@@ -3211,5 +3211,5 @@ on their outlines smallest first, then drops every building whose centre lies in
 `associateBy { center }` keeps one building per centre). Map-data order follows a `HashMap`'s iteration, which
 changes with how much map data is loaded (the Bremen check of `ArrayMapData`, above), so the recount's rectangle and
 the whole city can hand these nodes out differently. The app's own answer depends on what it downloaded in the same
-way. Not fixable by the stream short of recounting with the whole city's map data; the 36 AddHousenumber the 11-12
-recount lacked are the same family, in the same newly mapped block.
+way. Not fixable by the stream short of recounting with the whole city's map data. The 36 AddHousenumber the 11-12 recount lacked (w191632543,
+w525502455, w526944931...) are likely the same family; not traced.
