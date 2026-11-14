@@ -1240,4 +1240,13 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   its count's, every state.bin whole records) and, only if that passes, the cut deleted, as the owner decided.
   Expect about 5 h of engine, more on the clock if memory dips. Meanwhile: area-quest dates, in a worktree (main's
   engine is not rebuilt while the seed runs from it).
+- **Area quests' dates: built, tested, waiting for the seed to run on Europe (11-13, 22:00).** DESIGN.md, "Area
+  quests' dates". Engine commit 0aac5d3d (`AREA_DUE_DAYS` 64, `AreaPass.dateCandidates`, `AreaDatesTest` passes);
+  **not installed yet**, because the world seed runs from `engine/build/install`. `tools/stream/europe-area.sh` is
+  running hidden (log `logs/stream-area.log`): it waits for chain5's "seed chain ended", then installs the engine,
+  runs every engine test, recounts Europe 11-08 with dates into `.scratch/stream/europe-west/area/`, writes
+  `area/areacheck.txt`, and streams the five days in `t2a/`. Expected about 03:30 plus an hour. The world seed
+  itself has no area dates (its cut is deleted when its check passes, as decided); the 12-07 reseed will have them.
+  The seed check (`seedcheck.py`) now also holds each file's open, unhidden state rows per quest against its
+  snapshot (exact on f47 apart from the note quests, which are no rows).
 
