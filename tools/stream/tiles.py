@@ -5,7 +5,8 @@ map data of these boxes at day D (and D-1)". The tile rule, what a tile holds:
   - every node located in the tile;
   - every way with a segment that crosses the tile (not only a node in it: a long segment can carry a way's quest
     point across a small rectangle), complete: all its nodes, wherever they lie;
-  - every relation with a member node in the tile or a member way that crosses it;
+  - every relation with a member node in the tile or a member way that crosses it (the store keeps only the kept
+    ones, tagged and not ignored by the app, and stores their member nodes in the tile too: tilestore.tile_pairs);
   - the member ways of those relations, complete (the engine builds a relation's geometry from all its member ways,
     which a clip has whole): kept apart, as the relation store, to size it on its own.
 The engine picks an area's ways by a node in its padded box and orders its map data by id hash (AreaPass.kt), so the

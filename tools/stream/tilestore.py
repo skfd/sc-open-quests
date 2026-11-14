@@ -10,9 +10,16 @@ Layout of a store directory:
                     with their nodes' places, for the engine's relation geometry
   store.json        generations and what each cost
 
-A tile payload: its nodes (every node of its ways, and its tagged nodes; tagged ones with version, timestamp and
-tags, the rest with a place only: the store gives them version 1 and no timestamp), its ways (all whose segments
-cross the tile, complete) and its relations (kept ones with a member node in the tile or a member way crossing it).
+A tile payload: its nodes (every node of its ways, its tagged nodes, and its relations' member nodes located in it;
+tagged ones with version, timestamp and tags, the rest with a place only: the store gives them version 1 and no
+timestamp), its ways (all whose segments cross the tile, complete) and its relations (kept ones with a member node in
+the tile or a member way crossing it).
+
+  tilestore.py update --store S --diff N.osc.gz --before G
+      a day's diff into a new generation: the reached tiles rebuilt from their old payloads and the diff (see update);
+      G is the node store before the day (a clip's nodes.idx here)
+  tilestore.py compare --a S1 --b S2 [--cities C.json --under]
+      two stores tile by tile
 
   tilestore.py cut --geom G --out S --day 2026-11-12
   tilestore.py read --store S [--gen -1] --cities C.json --out Y.osm.pbf [--ring 300]
