@@ -3361,3 +3361,44 @@ duplicates dropped, every kept relation's member ways from the relation store), 
 different** from the recount on the clip. The join took 33.5 s: reading and decoding the tiles 2.3 s (92 MB of
 payloads, 9 MB of relation blobs), merging 1.3 s, writing the PBF through pyosmium 29.9 s. The write is the
 prototype's cost, not the store's: a PBF writer in the engine, or the engine reading the store, removes it.
+
+*A day's update* (`tilestore.py update`: diff 5175, 11-12 to 11-13, the node store before the day being 11-12's node
+places, as `planet.loc` read before `save()` is for the world). The tiles a day changes are rebuilt from a working set:
+the old payloads of every tile it reaches, the old relation-store blobs of the relations it reaches, the diff over them,
+and the tile rule run again; only the reached tiles are written, into a new pack and a new index. A tile is reached
+through the old and new tiles of each changed node (its own place), each changed way and each way holding a changed node
+(found in that node's old home tile, which holds every way with a node there: **no node-to-way index**), and each changed
+relation. Result: 59,279 nodes, 16,176 ways and 1,657 relations of the diff reach the store, plus 2,459 ways holding a
+moved node; **5,669 tiles reached of 59,026 (9.6%), holding 814 MB of the pack's 1.996 GB (41%)**; 993 relation blobs
+(2.4 MB). 571 s in Python (diff 125 s, finding 40 s, reaching 109 s, the rule 251 s, writing 45 s; a first run beside a
+cut took 817 s).
+- **Held against a fresh cut of 11-13:** the 331 tiles under the rectangles byte for byte the same; of all 59,373 tiles,
+  58,610 the same and every one of the 755 others (408 different, 302 only in the update, 45 only in the cut) touches
+  the clip polygon's edge or lies outside it: the planet diff carries what the polygon clip leaves out. No tile wholly
+  inside differs. The relation store: 438,327 of 438,360 blobs the same, 32 of the rest at the edge, and one a
+  relation of relations created that day (no member ways, an empty blob in the cut, never reached by the update).
+- **The bug the check found:** a rebuilt tile lost a relation held there only by an untagged member node no way holds
+  (a site's label): the cut saw the node in the whole clip, the tile did not store it. A tile now stores its kept
+  relations' member nodes (`tests/test_tilestore_update.py` has the case).
+- **D through the updated store:** the 331 tiles joined and recounted at 11-13: **1,116,244 rows, 0 different** from
+  the recount on the clip; D-1 through generation 0 again 0 different. Both reads 34-35 s, of which the tiles 2.2 s.
+
+*What it says for the world.*
+- **Correctness: settled.** The tile rule, the store and the update reproduce the clip's recount exactly, D and D-1.
+- **Size:** tiles 1.14x the PBF, relation store 0.13x: about 108 GB beside the planet's 85 GB PBF. The index is small
+  (1.4 MB a generation here; tens of millions of tiles for the planet, about 1 GB a generation). The way-tiles index is
+  not: 362 MB here (16 bytes a pair, 22.6M pairs, 18% of the pack), about 19 GB for the planet as plain pairs. It only
+  serves a changed way's old tiles; a key per way (its first tile; the rest from that tile's complete copy) is 12 bytes
+  a way, or none at all if a changed way is always found through its nodes' old home tiles (a deleted way whose nodes
+  all stay is the case that needs it).
+- **The day's write is the surprise: 41% of the bytes for 9.6% of the tiles.** The tiles a day reaches are the dense
+  ones (central London, Dublin, Lisbon: up to 1.9 MB a z14 tile), and every edit rewrites its whole tile. So a
+  generation's pack is about 0.8 GB a day on a 2 GB store, and keeping D-1 costs that much; packs whose tiles are all
+  superseded by D-1 can be deleted, the few live tiles of the rest copied forward. This europe-west clip is three
+  city centres with 20 km rings, denser than the planet on average; the world's fraction will be lower but is not
+  measured. **Smaller tiles where data is dense** (a z15/z16 split of any tile over a few hundred KB, the index then
+  keyed by quadtree cell) would cut the rewrite in proportion; to measure before building.
+- **Speed is the prototype's limit, not the design's.** In Python the cut is about 30 min with the passes, the update
+  about 10 min a day on this clip (the planet diff's reading alone 2-3 min), the read about 34 s, 31 s of it pyosmium
+  writing the PBF. A world store needs the cut, the update and the read in compiled code (the engine's parallel blob
+  reader did this clip's 128M nodes in 6.7 s), and the engine reading the joined tiles directly instead of a PBF.
