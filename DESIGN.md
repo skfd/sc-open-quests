@@ -3311,3 +3311,13 @@ any day. Each day drops 0.57-0.71M tier-1 rows of touched elements and adds 0.84
 0.3M rows a day (0.015%), which the 12-07 count must confirm (new mapping opening quests, or rows a dropped key
 should have taken). On europe-west's elements, 11-10..11-13 show only tier 1's known limits, and 11-13 is the same
 row for row as europe-west's tier-1 stream and the four-file test.
+
+**Measurement (a): the cover without the way index (11-14, 14:06-14:50; `tools/stream/europe-t2n.sh`,
+`OPENQUESTS_NO_WAY_INDEX=1`, state `.scratch/stream/europe-west/t2n/`).** europe-west's five days as t2a, but a
+changed way's old geometry taken as today's refs at yesterday's places, and no lookup of the ways holding a changed
+node. **Tier 2 identical to t2a on every day** (0/0, 0/0, 0/0, 1/0, 1/0: the same `w1577774915 AddHousenumber`),
+the rectangles a little smaller (14.5-297.8 km2 against 15.1-298.0). The cost is in tier 1's positions only: rows of
+untouched ways whose node moved and whose quest point now lies outside every rectangle keep the old position,
+by 11-13 12 matches and 33 waiting rows, all within 1.2 m (t2a: 0). No open set changes. **So the world's tier 2
+needs no way index** (the 280 GB of the estimate): only the node store it has, a small store of the member ways of
+the relations the cover follows (multipolygons, streets, ferry routes; not yet sized), and the map data store (c).

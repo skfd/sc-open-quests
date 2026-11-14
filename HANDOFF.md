@@ -1348,3 +1348,8 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   later days: rerun `tools/stream/world-days.sh` (hidden, its Start-Process line), which links new diffs and applies
   what is not applied; not scheduled (a daily task would be standing config: ask the owner). Disk: the stream's own
   rows about 48 GB beside the seed's.
+- **Tier 2 without the way index: the same result (11-14, 14:50).** DESIGN.md, "Measurement (a)". On europe-west's
+  five days the area quests are identical to t2a's; a few tier-1 rows of untouched ways keep a position up to 1.2 m
+  old. The world's tier 2 then needs no 280 GB way index, only the relations' member ways and the map data store.
+  **Next: measurement (c)**, a z14 tile store of the europe-west clip (size against the clip, cut time, a day's
+  update and read, the recount on its data equal to the clip's).
