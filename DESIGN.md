@@ -3302,3 +3302,7 @@ The design, smallest first:
 - **Disk:** (c) about 100 GB and (a) none, against about 130 GB free while `planet.loc` (115 GB) and the stream's
   rows (48 GB) are kept, and the 12-07 planet job's 170 GB. So nothing big is built before 12-07; after it, with
   `planet.loc` rebuilt from the new file, (c) fits only if the 11-08 seed's own rows (48 GB) are given up.
+- **Disk, revised (11-14, 14:05; owner: "we cleared some disc space and plan to clear 100 gb more in a month"):**
+  343 GB free with `planet.loc` (115 GB) and the stream's rows on disk. A 100 GB tile store would leave about
+  240 GB, above the 12-07 job's 170 GB even with `planet.loc` kept; with the further 100 GB in December, both stores
+  fit beside the 12-07 reseed. The disk no longer forbids (c); the measurements on europe-west come first.

@@ -1337,3 +1337,8 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   europe-west's whole counts on the files they reach. Rerun to catch up on later diffs (run `keep-diffs.ps1` first;
   the script does). **Disk:** about 290 GB free before; `planet.loc` 107 GiB plus the stream's rows 48 GB leave
   about 130 GB, so **`planet.loc` must be deleted before the 12-07 planet job (07:30)**, which needs about 170 GB.
+- **Disk (11-14, 14:05):** the owner cleared space (343 GB free now, with `planet.loc` and the world stream's rows)
+  and plans 100 GB more in about a month. `planet.loc` no longer has to go before 12-07 for room (343 - 170 still
+  leaves it), though it must be rebuilt from the 12-07 history file anyway. The tier-2 world store (DESIGN.md, "Tier
+  2 for the world") fits now; next are its two measurements on europe-west: (a) the cover without a way index, (c) a
+  z14 tile store's size and a day's read and update.
