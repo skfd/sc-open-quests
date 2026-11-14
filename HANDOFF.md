@@ -1328,3 +1328,12 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   from the 11-08 seed through the coming weeks, delete it before 12-07 07:30, then build again from the 12-07 file);
   tier 2's world store: **design it, build later** (measure a store's size on Europe; the world runs tier 1 only
   until the disk allows); push: **yes**.
+- **The world's stream, started (11-14, 12:22).** `.scratch/store/planet.sh` is building `planet.loc` (log
+  `logs/planet-loc.log`, about 40 min, 107 GiB), and `tools/stream/world-days.sh` (hidden, log
+  `logs/world-days.log`) waits for it, then makes `.scratch/planet/world-stream/` of hard links to the seed's files
+  (replaced whole on change, so `world-places/files/` keeps the 11-08 seed; the stream's own rows cost about 48 GB
+  once every file has changed), and applies every kept diff from 5171 on, tier 1, with the node store kept current
+  in place (`stream.DenseLocations`; `planet.loc.state` holds its instant). Days 11-09..11-13 are checked against
+  europe-west's whole counts on the files they reach. Rerun to catch up on later diffs (run `keep-diffs.ps1` first;
+  the script does). **Disk:** about 290 GB free before; `planet.loc` 107 GiB plus the stream's rows 48 GB leave
+  about 130 GB, so **`planet.loc` must be deleted before the 12-07 planet job (07:30)**, which needs about 170 GB.
