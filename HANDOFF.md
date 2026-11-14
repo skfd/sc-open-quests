@@ -1320,3 +1320,7 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   sort (31 s to 1 s a file); a rerun with the merge is running (log `logs/world-europe-2.log`, the first run kept in
   `.scratch/planet/world-test-sort/`). **What a world day lacks now:** the world's node locations (`planet.loc`,
   owner's question 1) and tier 2 (question 2).
+- **Merge rerun done (11-14, 06:30):** the same rows as the first run on all four files; a world file's update is now
+  4.0 s (DESIGN.md, "Rerun with the merge"), so a world day's file step is at most about 8.5 min. The first run's
+  copy (`world-test-sort/`) is deleted; `.scratch/planet/world-test/` holds the merge run at 11-13 (2 GB copies plus
+  the 2 GB node index). **Nothing runs now.** The next machine steps wait on the owner's three questions above.
