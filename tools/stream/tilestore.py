@@ -800,7 +800,7 @@ def update(sd: Path, diff: Path, before: Path, day: str):
         why["relation"] |= s
     for rid in np.intersect1d(ar, dr.fix["id"]).tolist():
         j = np.searchsorted(g.rid, rid)
-        if j < nr and g.rid[j] == rid:
+        if j < nr and g.rid[j] == rid and m.r_kept[j]:  # a relation the app ignores is in no tile
             ms = slice(g.roffs[j], g.roffs[j + 1])
             mw = g.mref[ms][g.mtype[ms] == 1]
             for w_ in mw.tolist():
@@ -896,7 +896,8 @@ def update(sd: Path, diff: Path, before: Path, day: str):
     stats["tilesUnchanged"] = len(unchanged)
     stats.update({"gen": NG, "day": day, "diff": str(diff), "tilesReached": len(reach), "tilesWritten": len(new_entries),
                   "tilesNew": int((~np.isin(ne["key"], st.idx["key"])).sum()),
-                  "tilesDropped": int((np.isin(reach, st.idx["key"]) & ~np.isin(reach, ne["key"])).sum()),
+                  "tilesDropped": int((np.isin(reach, st.idx["key"]) & ~np.isin(reach, ne["key"])
+                                       & ~np.isin(reach, np.array(unchanged, np.int64))).sum()),
                   "bytes": off, "relBytes": roff, "relBlobs": len(rentries), "tilesDecoded": len(decoded),
                   "secondsDiff": round(t_diff, 1), "secondsFind": round(t_find, 1), "secondsReach": round(t_reach, 1),
                   "secondsRule": round(t_rule, 1), "secondsWrite": round(t_write, 1),
