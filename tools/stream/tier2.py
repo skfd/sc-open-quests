@@ -28,6 +28,10 @@ import numpy as np
 M_LAT = 111_320.0
 CELL, PAD, RING = 50.0, 1, 300.0
 WANTED_REL = ("multipolygon", "associatedStreet", "street")
+# a measurement (DESIGN.md, "Tier 2 for the world"): the cover without the way index, for changed ways (their old
+# geometry taken as today's refs at yesterday's places) and for ways holding a changed node (left out). Relations
+# still read their member ways from the store.
+NO_WAY_INDEX = os.environ.get("OPENQUESTS_NO_WAY_INDEX") == "1"
 
 
 # --- the way store -------------------------------------------------------------------------------
@@ -269,7 +273,7 @@ def cover(infos, rows, last_node, last_way, last_rel, old_pos, locs, ways: WaySt
         return p is not None and any(s - 0.3 <= p[0] <= n + 0.3 and w - 0.45 <= p[1] <= e + 0.45 for s, w, n, e in boxes)
 
     for wid, (_, _, visible, tags, refs) in last_way.items():
-        old_refs = ways.refs_of(wid)
+        old_refs = refs if NO_WAY_INDEX else ways.refs_of(wid)
         if not ((refs and roughly_near(locs.get(refs[0]))) or (old_refs and roughly_near(old_loc(old_refs[0])))):
             continue
         geoms = []
@@ -292,7 +296,7 @@ def cover(infos, rows, last_node, last_way, last_rel, old_pos, locs, ways: WaySt
     stats["changed ways near a city"] = len(marked_ways)
 
     # ways that hold a changed node (not in the diff): the segments next to it, old and new, and quest points
-    parents = ways.parents(near_nodes) - set(last_way)
+    parents = set() if NO_WAY_INDEX else ways.parents(near_nodes) - set(last_way)
     for wid in parents:
         refs = ways.refs_of(wid)
         if not refs:
