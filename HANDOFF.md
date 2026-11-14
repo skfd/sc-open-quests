@@ -1252,6 +1252,6 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
 
 - **World seed done (11-14, 03:01): 128 files, 2,011,107,291 state rows, 48.3 GB; the seed check passed with 0
   problems, and the 11-08 cut was deleted (271 GB free).** 19,807 s on the clock, one engine at a time almost
-  throughout (5 GiB free beside one). The seed lives in `.scratch/planet/world-places/out-state/fNN/state.bin`
-  (with `.json` sidecars and `state-done.json`); the cut folder keeps only its `extract-*.json` configs. No area
+  throughout (5 GiB free beside one). The seed lives in `.scratch/planet/world-places/files/fNN/state.bin`
+  (with `state.bin.json` sidecars, `state-done.json` and the `out-state/` snapshots); the cut folder keeps only its `extract-*.json` configs. No area
   dates in it (as decided). `europe-area.sh` has started on its steps (engine installed 03:04).
