@@ -3252,3 +3252,8 @@ the four files 140-165 s**, which at 128 files would be about half an hour: re-s
 (24.7M rows) with a day's touched keys, 1.0 s against 31 s, the same rows in the same order. A file's update is then
 about 3 s (finding the rows 1.2 s, merging 1 s, writing 0.6 s), so a world day's files about 6-7 min if every file
 changes.
+**Rerun with the merge (11-14, 06:05-06:30, `logs/world-europe-2.log`):** the four files at 11-13 hold the same rows
+as the sorting run's, the 11-13 check unchanged; the files' step 47-51 s a day against 140-165 s. Then `in_keys`
+marks with `bincount` instead of `np.add.at`, and the key list is taken from the sorted keys without `np.unique`'s
+sort: one update of f90 with a day's keys is 4.0 s in all (read, find, merge, write, key list), so the files of a
+world day at most about 8.5 min.

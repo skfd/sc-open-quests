@@ -112,9 +112,8 @@ def in_keys(row_keys: np.ndarray, keys: np.ndarray) -> np.ndarray:
     lo = np.searchsorted(row_keys, keys, "left")
     hi = np.searchsorted(row_keys, keys, "right")
     hit = hi > lo
-    mark = np.zeros(len(row_keys) + 1, np.int64)
-    np.add.at(mark, lo[hit], 1)
-    np.add.at(mark, hi[hit], -1)
+    n = len(row_keys) + 1
+    mark = np.bincount(lo[hit], minlength=n) - np.bincount(hi[hit], minlength=n)
     return np.cumsum(mark[:-1]) > 0
 
 
@@ -158,7 +157,8 @@ def replace_in_file(p: Path, drop: np.ndarray, quest_mask: np.ndarray, add: np.n
     tmp = p.with_suffix(".bin.writing")
     r.tofile(tmp)
     os.replace(tmp, p)
-    np.save(p.with_name("state-keys.npy"), np.unique(r["key"]))
+    k = r["key"]
+    np.save(p.with_name("state-keys.npy"), k[np.concatenate([[True], k[1:] != k[:-1]])] if len(k) else k)  # sorted: no np.unique sort
     return int(gone.sum()), int(len(add))
 
 
