@@ -1290,8 +1290,7 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   sort .scratch/planet/world-places` (test `tests/test_world_state.py`) sorts every seed file in place by (key,
   quest, kind), saves each file's sorted key list (`files/fNN/state-keys.npy`, about 8.5 GB in all), and writes
   `world-state.json` (each file's rect, rows, key range) and `world-state-shared.npy` (the keys in two files).
-  Running (log `logs/world-state-sort.log`, about half an hour on 4 processes); safe to rerun (a sorted file is
-  skipped).
+  Ran 04:17-04:31 (log `logs/world-state-sort.log`); safe to rerun (a sorted file is skipped).
 - **For the owner (evening of 11-14), to ask as a wizard:**
   1. **The node store for a world day (`planet.loc`, 107 GiB).** Tier 1 for the world needs it. It is built from
      `history-261102.osh.pbf`, which the 12-07 planet job retires, and it would leave about 165 GB free where that
@@ -1306,6 +1305,9 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   waits on the node store (owner's question 1).
 - **The last tier-2 row traced (11-14, 05:00):** `w1577774915 AddHousenumber` is one of about 45 houses mapped on
   11-12 over addressed buildings in London; AddHousenumber hands shared address nodes out in map-data order, which
-  differs between a rectangle and the whole city (and in the app, by what it downloaded). Not a stream bug; not
-  fixable short of whole-city map data. DESIGN.md, "The one tier-2 row left, traced". **Nothing runs now; the next
-  machine steps wait on the owner's questions above.**
+  may differ between a rectangle and the whole city (and in the app, by what it downloaded). A hypothesis, not
+  shown: being tested by recounting 11-12's rectangles at a 300 m and a 1,500 m ring (`.scratch/stream/ring.py`). DESIGN.md, "The one tier-2 row left, traced". 
+- **The sorted seed read back (11-14, 05:10):** `seedcheck.py` again, 0 problems. Every row lies in its file's
+  `rect` but 9 (6 keys, on the edge by rounding; `.scratch/planet/seedroute.py`, log beside it); the 95 keys in two
+  files are all relations, each file placing its own part's centre. So: route nodes and ways by position, look
+  relations up by key in every file.

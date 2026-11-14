@@ -3205,11 +3205,11 @@ unindexed; a file's key range (in the manifest) could skip most files for most k
 `w1577774915` (`building=house`, no address) is one of about 45 houses (ways 1577774915-1577774989) mapped on 11-12
 over Fortune Green Road, London, where buildings with addresses already stand (`w12391097xx`, 110-118, with
 `entrance` address nodes on their outlines: 110A and 110B lie a few metres west of the new house). No address node
-lies inside the new house itself. AddHousenumber decides such a building by order: step 1 lets each address-less
+lies inside the new house itself. A hypothesis, not shown: AddHousenumber decides such a building by order: step 1 lets each address-less
 building take ("consume") a shared set of address nodes in map-data order, and step 5 lets areas take address nodes
 on their outlines smallest first, then drops every building whose centre lies in such an area (and
 `associateBy { center }` keeps one building per centre). Map-data order follows a `HashMap`'s iteration, which
 changes with how much map data is loaded (the Bremen check of `ArrayMapData`, above), so the recount's rectangle and
 the whole city can hand these nodes out differently. The app's own answer depends on what it downloaded in the same
-way. Not fixable by the stream short of recounting with the whole city's map data. The 36 AddHousenumber the 11-12 recount lacked (w191632543,
+way. If so, not fixable by the stream short of recounting with the whole city's map data. The 36 AddHousenumber the 11-12 recount lacked (w191632543,
 w525502455, w526944931...) are likely the same family; not traced.
