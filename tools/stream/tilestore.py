@@ -780,24 +780,27 @@ def update(sd: Path, diff: Path, before: Path, day: str):
         cs = offsets(hit_m.astype(np.int64))
         ar |= set(dr.fix["id"][(cs[dmo[1:]] - cs[dmo[:-1]]) > 0].tolist())
     ar = np.array(sorted(ar), np.int64)
-    old_r = pairs_of(rt, ar)
     stats["relations"] = len(ar)
-    # the tiles reached
-    reach = set(okey[okey >= 0].tolist()) | set(nkey[nkey >= 0].tolist())
-    for s in list(old_w.values()) + list(new_w.values()) + list(old_r.values()):
-        reach |= s
-    # a changed relation's record is in all its tiles, old and new: its new ones are its members' tiles. (An unchanged
-    # relation's tiles change only where a moved member way came or went, which are reached already.)
+    # the tiles reached, and why: a changed node's home, old and new; a moved way's tiles, old and new; a changed
+    # relation's tiles, old and new (its record is in all of them). An unchanged relation's tiles change only where a
+    # moved member way came or went, which are reached already.
+    changed_r = np.intersect1d(ar, cr_all)
+    old_r = pairs_of(rt, changed_r)
+    why = {"node": set(okey[okey >= 0].tolist()) | set(nkey[nkey >= 0].tolist()), "way": set(), "relation": set()}
+    for s in list(old_w.values()) + list(new_w.values()):
+        why["way"] |= s
+    for s in old_r.values():
+        why["relation"] |= s
     for rid in np.intersect1d(ar, dr.fix["id"]).tolist():
         j = np.searchsorted(g.rid, rid)
         if j < nr and g.rid[j] == rid:
             ms = slice(g.roffs[j], g.roffs[j + 1])
             mw = g.mref[ms][g.mtype[ms] == 1]
             for w_ in mw.tolist():
-                reach |= new_w.get(w_, set())
+                why["relation"] |= new_w.get(w_, set())
             for s in pairs_of(wt, mw[~np.isin(mw, moved)]).values():
-                reach |= s
-    reach = np.array(sorted(reach), np.int64)
+                why["relation"] |= s
+    reach = np.array(sorted(why["node"] | why["way"] | why["relation"]), np.int64)
     reach = reach[np.isin(reach, region)]
     dec(reach)
     # the relation store's old blobs of the relations reached: their far member ways
@@ -823,17 +826,24 @@ def update(sd: Path, diff: Path, before: Path, day: str):
     wb = [np.searchsorted(wk, reach, "left"), np.searchsorted(wk, reach, "right")]
     rb = [np.searchsorted(rk, reach, "left"), np.searchsorted(rk, reach, "right")]
     new_entries = []
+    unchanged, changed = [], set()
     off = 0
     with open(sd / f"pack-{NG:04d}.bin", "wb") as f:
         for i, k in enumerate(reach.tolist()):
             if nb[0][i] == nb[1][i] and wb[0][i] == wb[1][i] and rb[0][i] == rb[1][i]:
+                changed.add(k)
                 continue  # the tile is empty now
             buf = pack_cols(m.node_cols(nrw[nb[0][i]:nb[1][i]]) + m.way_cols(wr[wb[0][i]:wb[1][i]])
                             + m.rel_cols(rr[rb[0][i]:rb[1][i]]))
+            old = st.tile(k)
+            if old is not None and zstd.decompress(old) == zstd.decompress(buf):
+                unchanged.append(k)  # reached, but the same: the old entry stays
+                continue
+            changed.add(k)
             f.write(buf)
             new_entries.append((k, NG, off, len(buf)))
             off += len(buf)
-    keep_idx = st.idx[~np.isin(st.idx["key"], reach)]
+    keep_idx = st.idx[~np.isin(st.idx["key"], np.setdiff1d(reach, np.array(unchanged, np.int64)))]
     ne = np.array(new_entries, IDX) if new_entries else np.zeros(0, IDX)
     idx = np.sort(np.concatenate([keep_idx, ne]), order="key")
     np.save(sd / f"idx-{NG:04d}.npy", idx)
@@ -872,6 +882,11 @@ def update(sd: Path, diff: Path, before: Path, day: str):
     re_ = np.array(rentries, IDX) if rentries else np.zeros(0, IDX)
     np.save(sd / f"relidx-{NG:04d}.npy", np.sort(np.concatenate([rkeep, re_]), order="key"))
     t_write = time.time() - t4
+    in_store = set(st.idx["key"].tolist())
+    stats["reachedBy"] = {c: {"tiles": len(s & set(reach.tolist())), "changed": len(s & changed),
+                              "changedBytes": int(sum(int(st.idx["len"][np.searchsorted(st.idx["key"], k)]) for k in s & changed
+                                                      if k in in_store))} for c, s in why.items()}
+    stats["tilesUnchanged"] = len(unchanged)
     stats.update({"gen": NG, "day": day, "diff": str(diff), "tilesReached": len(reach), "tilesWritten": len(new_entries),
                   "tilesNew": int((~np.isin(ne["key"], st.idx["key"])).sum()),
                   "tilesDropped": int((np.isin(reach, st.idx["key"]) & ~np.isin(reach, ne["key"])).sum()),
