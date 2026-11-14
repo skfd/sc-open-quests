@@ -1312,3 +1312,11 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   `rect` but 9 (6 keys, on the edge by rounding; `.scratch/planet/seedroute.py`, log beside it); the 95 keys in two
   files are all relations, each file placing its own part's centre. So: route nodes and ways by position, look
   relations up by key in every file.
+- **The world's tier 1, built and checked on Europe (11-14, 05:12-06:00).** DESIGN.md, "The world's tier 1 on five
+  days". `world_state.py subset/apply/check` and `tools/stream/world-europe.sh`: copies of the world files for
+  Lisboa, Dublin and London streamed five days through the world's cells. **Row for row the same as europe-west's
+  own tier-1 stream** (only tier 1's known limits left: ways whose nodes moved, untouched relations). The world seed
+  itself equals europe-west's 11-08 count on all 5,405,119 shared tier-1 rows. Files now take a day by merge, not a
+  sort (31 s to 1 s a file); a rerun with the merge is running (log `logs/world-europe-2.log`, the first run kept in
+  `.scratch/planet/world-test-sort/`). **What a world day lacks now:** the world's node locations (`planet.loc`,
+  owner's question 1) and tier 2 (question 2).
