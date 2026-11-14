@@ -1255,3 +1255,12 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   throughout (5 GiB free beside one). The seed lives in `.scratch/planet/world-places/files/fNN/state.bin`
   (with `state.bin.json` sidecars, `state-done.json` and the `out-state/` snapshots); the cut folder keeps only its `extract-*.json` configs. No area
   dates in it (as decided). `europe-area.sh` has started on its steps (engine installed 03:04).
+- **Area quests' dates validated on europe-west (11-14, 03:51); tier 2 has 1 difference in 1.39M after five
+  days.** DESIGN.md, "Area quests' dates", the result. Engine installed on main, every engine test passes. The
+  11-08 recount dated all 1,462 candidates (0 undated), its dump otherwise identical to the old one; of 108 area
+  quests opening on untouched ground over 11-09..11-13, 100 dated on the day, 0 wrong, 8 opened by neighbours
+  (undatable), no spurious dates. Streamed from it in the delta form (`.scratch/stream/europe-west/t2a/`): tier 1
+  exact, tier 2 0/0 on three days and 1/0 on 11-12 and 11-13 (t2d without dates: 1/98), the one being a recount
+  disagreement (w1577774915 AddHousenumber). **The stream's known gaps are now: recount-versus-whole
+  disagreements (AddHousenumber on 11-12, the Dublin boundary ways), and the world store** ("map data of these
+  boxes at D and D-1", plus a state store for 2.01 billion rows that do not fit in memory).

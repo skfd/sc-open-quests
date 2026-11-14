@@ -3150,3 +3150,23 @@ AddTactilePavingKerb), which ageing cannot date; and **no date up to 11-13 witho
 untouched ground reach only seed + 64 days; inside the recount rectangles the delta form rolls the horizon on (the
 recount at today's clock dates up to today + 64, the one at yesterday's clock up to yesterday + 64, and the delta
 applies the difference).
+
+**The five days streamed from the dated seed (`t2a/`, the delta form, 11-14 03:11-03:51).** Tier 1 exact in every
+field on all five days, as before. Tier 2 differences after each day, against the delta form without area dates
+(`t2d/`):
+
+| day | t2d (no area dates) | t2a (area dates) |
+|---|---|---|
+| 11-09 | 0 / 8 | 0 / 0 |
+| 11-10 | 0 / 30 | 0 / 0 |
+| 11-11 | 0 / 55 | 0 / 0 |
+| 11-12 | 1 / 72 | 1 / 0 |
+| 11-13 | 1 / 98 | 1 / 0 |
+
+(only in the state / only in the count, of about 1.39M open tier-2 quests). The one row left is
+`w1577774915 AddHousenumber`, which a diff touched on 11-12: that day's recount counts it and the whole count does
+not (the control line: recount against whole inside its rectangles, the same family as the 36 AddHousenumber the
+whole count has and the recount lacks on 11-12), and the delta applied the recount's word. So every ageing gap is
+closed and what is left is a recount's own disagreement with the whole count; the Dublin boundary ways the 11-13
+recount still counts stay out, as in t2d. A day costs 6.5-10 min here (reading the planet diff about 2 min, the
+two tier-2 recounts 1.5-4 min, the engine's area runs 2-10 s of that).
