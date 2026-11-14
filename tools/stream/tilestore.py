@@ -207,6 +207,15 @@ def tile_pairs(c: Clip):
     return (node >> 28, node & m), way, (rel >> 28, rel & m)
 
 
+PAIR = np.dtype([("id", "<i8"), ("key", "<i8")])
+
+
+def save_pairs(path: Path, ids, keys):
+    p = np.zeros(len(ids), PAIR)
+    p["id"], p["key"] = ids, keys
+    np.save(path, np.sort(p, order=["id", "key"]))
+
+
 def cut(gdir: Path, out: Path, day: str):
     t0 = time.time()
     c = Clip(gdir)
@@ -230,6 +239,9 @@ def cut(gdir: Path, out: Path, day: str):
             idx["off"][i], idx["len"][i] = off, len(buf)
             off += len(buf)
     np.save(out / "idx-0000.npy", idx)
+    # the tiles of every way and relation, by id: a day's update finds a changed object's old tiles here
+    save_pairs(out / "wtiles-0000.npy", g.wid[wr], wk)
+    save_pairs(out / "rtiles-0000.npy", g.rid[rr], rk)
     tt = time.time() - t
     # the relation store
     t = time.time()
@@ -400,9 +412,513 @@ def join(store: Store, keys: np.ndarray, out: Path, stamp: str | None) -> dict:
     return st
 
 
+# --- the day's update ----------------------------------------------------------------------------
+#
+# The tiles a day changes are rebuilt from a working set: the old payloads of every tile the day reaches (they hold
+# every object that stays), the relation store's old blobs of the relations it reaches, and the diff over them; the
+# tile rule (tile_pairs) is run again on that set and only the reached tiles are written, into a new generation.
+# A tile is reached through the old and new tiles of: each changed node (its own place), each changed way and each
+# way holding a changed node (found in that node's old home tile, which holds every way with a node there: no way
+# index), and each relation that changed or has such a way or node as member.
+
+class Objs:
+    """objects of one type as columns: `fix` (name -> one value per object, "id" among them) and `var` (name ->
+    (lengths, data): a variable-length piece per object)"""
+
+    def __init__(self, fix: dict, var: dict):
+        self.fix, self.var = fix, var
+
+    def __len__(self):
+        return len(self.fix["id"])
+
+    def select(self, rows):
+        rows = np.asarray(rows, np.int64)
+        var = {}
+        for k, (lens, data) in self.var.items():
+            o = offsets(lens)
+            ln, d = gather(o, rows, data)
+            var[k] = (ln.astype(np.int64), d)
+        return Objs({k: v[rows] for k, v in self.fix.items()}, var)
+
+    @staticmethod
+    def concat(parts: list["Objs"]) -> "Objs":
+        parts = [p for p in parts if p is not None]
+        fix = {k: np.concatenate([p.fix[k] for p in parts]) for k in parts[0].fix}
+        var = {k: (np.concatenate([p.var[k][0] for p in parts]), np.concatenate([p.var[k][1] for p in parts]))
+               for k in parts[0].var}
+        return Objs(fix, var)
+
+    def first_of_each(self, prefer=None) -> "Objs":
+        """one object per id, sorted by id; with `prefer` (bool per object) a preferred copy wins"""
+        ids = self.fix["id"]
+        order = np.lexsort((~prefer, ids)) if prefer is not None else np.argsort(ids, kind="stable")
+        _, first = np.unique(ids[order], return_index=True)
+        return self.select(order[first])
+
+    def without(self, ids) -> "Objs":
+        return self.select(np.flatnonzero(~np.isin(self.fix["id"], np.asarray(ids, np.int64))))
+
+
+def tile_objs(p) -> tuple[Objs, Objs, Objs]:
+    """a decoded tile's nodes, ways and relations as Objs"""
+    nid, lat, lon, tpos, tver, tts, ntl, ntb = p["n"]
+    n = len(nid)
+    tagged = np.zeros(n, bool)
+    tagged[tpos] = True
+    ver, ts, tl = np.ones(n, np.int32), np.zeros(n, np.int64), np.zeros(n, np.int64)
+    ver[tpos], ts[tpos], tl[tpos] = tver, tts, ntl
+    nodes = Objs({"id": nid, "lat7": lat.astype(np.int32), "lon7": lon.astype(np.int32), "tagged": tagged, "ver": ver,
+                  "ts": ts}, {"tags": (tl, ntb)})
+    wid, wver, wts, wnref, wrefs, wtl, wtb = p["w"]
+    ways = Objs({"id": wid, "ver": wver, "ts": wts}, {"refs": (wnref.astype(np.int64), wrefs),
+                                                      "tags": (wtl.astype(np.int64), wtb)})
+    rid, rver, rts, rnmem, rmt, rmref, rrl, rroles, rtl, rtb = p["r"]
+    cs, mo = offsets(rrl), offsets(rnmem)
+    rbytes = cs[mo[1:]] - cs[mo[:-1]]
+    rels = Objs({"id": rid, "ver": rver, "ts": rts}, {"mtype": (rnmem.astype(np.int64), rmt),
+                                                      "mref": (rnmem.astype(np.int64), rmref),
+                                                      "rlen": (rnmem.astype(np.int64), rrl),
+                                                      "roles": (rbytes, rroles), "tags": (rtl.astype(np.int64), rtb)})
+    return nodes, ways, rels
+
+
+def empty_nodes():
+    z = np.zeros(0, np.int64)
+    return Objs({"id": z, "lat7": z.astype(np.int32), "lon7": z.astype(np.int32), "tagged": z.astype(bool),
+                 "ver": z.astype(np.int32), "ts": z}, {"tags": (z, z.astype(np.uint8))})
+
+
+def plain_nodes(ids, lat7, lon7):
+    n = len(ids)
+    return Objs({"id": np.asarray(ids, np.int64), "lat7": np.asarray(lat7, np.int32), "lon7": np.asarray(lon7, np.int32),
+                 "tagged": np.zeros(n, bool), "ver": np.ones(n, np.int32), "ts": np.zeros(n, np.int64)},
+                {"tags": (np.zeros(n, np.int64), np.zeros(0, np.uint8))})
+
+
+class MiniGeom(T.Geom):
+    """Geom over a working set, not a clip"""
+
+    def __init__(self, nodes: Objs, ways: Objs, rels: Objs):
+        self.nid, self.lat7, self.lon7 = nodes.fix["id"], nodes.fix["lat7"], nodes.fix["lon7"]
+        self.nfx, self.nfy = T.frac_xy(self.lat7 / 1e7, self.lon7 / 1e7)
+        self.nkey = T.key_of(np.floor(self.nfx), np.floor(self.nfy))
+        self.wid = ways.fix["id"]
+        self.woffs = offsets(ways.var["refs"][0])
+        refs = ways.var["refs"][1]
+        if len(self.nid):
+            ri = np.minimum(np.searchsorted(self.nid, refs), len(self.nid) - 1)
+            self.wrefs = np.where(self.nid[ri] == refs, ri, -1).astype(np.int64)
+        else:
+            self.wrefs = np.full(len(refs), -1, np.int64)
+        self.wref_ids = refs
+        self.rid = rels.fix["id"]
+        self.roffs = offsets(rels.var["mtype"][0])
+        self.mtype, self.mref = rels.var["mtype"][1], rels.var["mref"][1]
+        self._way_tiles()
+
+
+class MiniClip(Clip):
+    def __init__(self, nodes: Objs, ways: Objs, rels: Objs):
+        g = self.g = MiniGeom(nodes, ways, rels)
+        self.tn_row = np.flatnonzero(nodes.fix["tagged"])
+        self.tagged_of = np.full(len(g.nid), -1, np.int32)
+        self.tagged_of[self.tn_row] = np.arange(len(self.tn_row), dtype=np.int32)
+        self.tn_ver, self.tn_ts = nodes.fix["ver"][self.tn_row], nodes.fix["ts"][self.tn_row]
+        tl, tb = nodes.var["tags"]
+        self.tn_toff, self.tn_tags = offsets(tl[self.tn_row]), tb  # untagged nodes have no tag bytes
+        self.w_ver, self.w_ts = ways.fix["ver"], ways.fix["ts"]
+        self.w_toff, self.w_tags = offsets(ways.var["tags"][0]), ways.var["tags"][1]
+        self.r_ver, self.r_ts = rels.fix["ver"], rels.fix["ts"]
+        self.r_toff, self.r_tags = offsets(rels.var["tags"][0]), rels.var["tags"][1]
+        self.r_roff, self.r_roles = offsets(rels.var["rlen"][1]), rels.var["roles"][1]
+        self.r_kept = np.zeros(len(g.rid), bool)
+        for i in range(len(g.rid)):
+            b = self.r_tags[self.r_toff[i]:self.r_toff[i + 1]].tobytes()
+            self.r_kept[i] = bool(b) and not ignore_relation(parse_tags(b))
+
+
+def read_osc(path: Path):
+    """the last version of every object in a day diff: Objs of the visible ones, and the ids of all (deleted too)"""
+    import osmium
+    from array import array
+    t = time.time()
+    nodes, ways, rels = {}, {}, {}
+    tm = {"n": 0, "w": 1, "r": 2}
+    for o in osmium.FileProcessor(str(path)):
+        tags = "".join(f"{x.k}\0{x.v}\0" for x in o.tags).encode()
+        ts = int(o.timestamp.timestamp())
+        if o.is_node():
+            ok = o.visible and o.location.valid()
+            nodes[o.id] = (o.version, ts, tags, int(round(o.location.lat * 1e7)), int(round(o.location.lon * 1e7))) if ok else None
+        elif o.is_way():
+            ways[o.id] = (o.version, ts, tags, [n.ref for n in o.nodes]) if o.visible else None
+        else:
+            rels[o.id] = (o.version, ts, tags, [(tm[m.type], m.ref, m.role.encode()) for m in o.members]) if o.visible else None
+    log(f"diff {path.name}: {len(nodes):,} nodes, {len(ways):,} ways, {len(rels):,} relations in {time.time() - t:.0f} s")
+
+    def node_objs(d):
+        ids = np.array(sorted(d), np.int64)
+        tl = np.array([len(d[i][2]) for i in ids.tolist()], np.int64)
+        return Objs({"id": ids, "lat7": np.array([d[i][3] for i in ids.tolist()], np.int32),
+                     "lon7": np.array([d[i][4] for i in ids.tolist()], np.int32), "tagged": tl > 0,
+                     "ver": np.array([d[i][0] for i in ids.tolist()], np.int32),
+                     "ts": np.array([d[i][1] for i in ids.tolist()], np.int64)},
+                    {"tags": (tl, np.frombuffer(b"".join(d[i][2] for i in ids.tolist()), np.uint8))})
+
+    def way_objs(d):
+        ids = np.array(sorted(d), np.int64)
+        lst = [d[i] for i in ids.tolist()]
+        refs = array("q")
+        for x in lst:
+            refs.extend(x[3])
+        return Objs({"id": ids, "ver": np.array([x[0] for x in lst], np.int32), "ts": np.array([x[1] for x in lst], np.int64)},
+                    {"refs": (np.array([len(x[3]) for x in lst], np.int64), np.frombuffer(refs, np.int64)),
+                     "tags": (np.array([len(x[2]) for x in lst], np.int64), np.frombuffer(b"".join(x[2] for x in lst), np.uint8))})
+
+    def rel_objs(d):
+        ids = np.array(sorted(d), np.int64)
+        lst = [d[i] for i in ids.tolist()]
+        ms = [m for x in lst for m in x[3]]
+        nmem = np.array([len(x[3]) for x in lst], np.int64)
+        return Objs({"id": ids, "ver": np.array([x[0] for x in lst], np.int32), "ts": np.array([x[1] for x in lst], np.int64)},
+                    {"mtype": (nmem, np.array([m[0] for m in ms], np.int8)), "mref": (nmem, np.array([m[1] for m in ms], np.int64)),
+                     "rlen": (nmem, np.array([len(m[2]) for m in ms], np.int32)),
+                     "roles": (np.array([sum(len(m[2]) for m in x[3]) for x in lst], np.int64),
+                               np.frombuffer(b"".join(m[2] for m in ms), np.uint8)),
+                     "tags": (np.array([len(x[2]) for x in lst], np.int64), np.frombuffer(b"".join(x[2] for x in lst), np.uint8))})
+
+    vis = lambda d: {k: v for k, v in d.items() if v is not None}  # noqa: E731
+    return ((np.array(sorted(nodes), np.int64), node_objs(vis(nodes))), (np.array(sorted(ways), np.int64), way_objs(vis(ways))),
+            (np.array(sorted(rels), np.int64), rel_objs(vis(rels))))
+
+
+class NodeTable:
+    """the node store before the day (here a clip's nodes.idx; the world's is planet.loc, read before save())"""
+
+    def __init__(self, d: Path):
+        a = np.memmap(d / "nodes.idx", dtype=[("id", "<u8"), ("x", "<i4"), ("y", "<i4")], mode="r")
+        ids = a["id"]
+        lo, hi = 0, len(a)
+        while lo < hi:
+            mid = (lo + hi) // 2
+            if ids[mid] == 0:
+                hi = mid
+            else:
+                lo = mid + 1
+        self.a, self.n = a, lo
+
+    def get(self, ids):
+        ids = np.asarray(ids, np.int64)
+        if not len(ids) or not self.n:
+            return np.zeros(len(ids), np.int32), np.zeros(len(ids), np.int32), np.zeros(len(ids), bool)
+        keys = self.a["id"][:self.n]
+        i = np.minimum(np.searchsorted(keys, ids.astype(np.uint64)), self.n - 1)
+        found = keys[i].astype(np.int64) == ids
+        return np.where(found, self.a["y"][i], 0), np.where(found, self.a["x"][i], 0), found
+
+
+def pairs_of(p: np.ndarray, ids) -> dict:
+    """id -> set of tile keys, from a sorted PAIR array"""
+    ids = np.unique(np.asarray(ids, np.int64))
+    lo, hi = np.searchsorted(p["id"], ids, "left"), np.searchsorted(p["id"], ids, "right")
+    return {int(i): set(p["key"][a:b].tolist()) for i, a, b in zip(ids, lo, hi)}
+
+
+def dilate(keys: np.ndarray) -> np.ndarray:
+    x, y = keys >> T.Z, keys & (T.NT - 1)
+    out = [T.key_of(x + dx, y + dy) for dx in (-1, 0, 1) for dy in (-1, 0, 1)]
+    return np.unique(np.concatenate(out))
+
+
+def update(sd: Path, diff: Path, before: Path, day: str):
+    t0 = time.time()
+    st = Store(sd)
+    G = st.gen
+    NG = G + 1
+    wt, rt = np.load(sd / f"wtiles-{G:04d}.npy"), np.load(sd / f"rtiles-{G:04d}.npy")
+    region = dilate(st.idx["key"])
+    (cn_all, dn), (cw_all, dw), (cr_all, dr) = read_osc(diff)
+    t_diff = time.time() - t0
+    bt = NodeTable(before)
+    stats = {}
+    t1 = time.time()
+
+    def key_of7(lat7, lon7):
+        fx, fy = T.frac_xy(np.asarray(lat7) / 1e7, np.asarray(lon7) / 1e7)
+        return T.key_of(np.floor(fx), np.floor(fy))
+
+    dn_ids = dn.fix["id"]
+
+    def after_pos(ids):
+        """node places after the day: the diff's (none for a deleted node), else the store before"""
+        ids = np.asarray(ids, np.int64)
+        lat, lon, found = bt.get(ids)
+        in_cn = np.isin(ids, cn_all)
+        if in_cn.any():
+            sub = ids[in_cn]
+            if len(dn_ids):
+                j = np.minimum(np.searchsorted(dn_ids, sub), len(dn_ids) - 1)
+                vis = dn_ids[j] == sub
+                lat[in_cn] = np.where(vis, dn.fix["lat7"][j], 0)
+                lon[in_cn] = np.where(vis, dn.fix["lon7"][j], 0)
+                found[in_cn] = vis
+            else:
+                found[in_cn] = False
+        return lat, lon, found
+
+    decoded: dict[int, tuple] = {}
+
+    def dec(keys):
+        for k in keys:
+            k = int(k)
+            if k in decoded:
+                continue
+            buf = st.tile(k)
+            decoded[k] = tile_objs(decode_tile(buf)) if buf is not None else None
+
+    # changed nodes: old and new home tiles, inside the store's region
+    olat, olon, ofound = bt.get(cn_all)
+    okey = np.where(ofound, key_of7(olat, olon), -1)
+    nlat, nlon, nfound = after_pos(cn_all)
+    nkey = np.where(nfound, key_of7(nlat, nlon), -1)
+    keep = np.isin(okey, region) | np.isin(nkey, region)
+    cn, okey, nkey = cn_all[keep], okey[keep], nkey[keep]
+    stats["changedNodes"] = len(cn)
+    # ways holding a changed node: in the node's old home tile
+    homes = np.unique(okey[okey >= 0])
+    dec(homes)
+    parents = set()
+    for k in homes.tolist():
+        if decoded[k] is None:
+            continue
+        w = decoded[k][1]
+        lens, refs = w.var["refs"]
+        hit = np.isin(refs, cn)
+        if hit.any():
+            way_of = np.repeat(np.arange(len(w)), lens)
+            parents |= set(w.fix["id"][np.unique(way_of[hit])].tolist())
+    # changed ways reaching the region: old tiles from the index, new ones from their refs' places after the day
+    had_tiles = cw_all[np.isin(cw_all, wt["id"])]
+    dw_ids = dw.fix["id"]
+    ro = offsets(dw.var["refs"][0])
+    lat, lon, f = after_pos(dw.var["refs"][1])
+    inreg = np.zeros(len(f), bool)
+    inreg[f] = np.isin(key_of7(lat[f], lon[f]), region)
+    cs = offsets(inreg.astype(np.int64))
+    reaches = (cs[ro[1:]] - cs[ro[:-1]]) > 0
+    cw = np.union1d(had_tiles, dw_ids[reaches])
+    parents = np.array(sorted(parents - set(cw.tolist())), np.int64)
+    stats["changedWays"], stats["parentWays"] = len(cw), len(parents)
+    moved = np.concatenate([cw, parents])
+    old_w = pairs_of(wt, moved)
+    # one old tile of each (it holds the old version, its nodes, and every relation it is a member of), and the old
+    # home tiles of the nodes of the new versions (their tagged attributes)
+    dec([min(s) for s in old_w.values() if s])
+    jv = np.flatnonzero(np.isin(dw_ids, cw))
+    new_refs = np.unique(np.concatenate([dw.var["refs"][1][ro[j]:ro[j + 1]] for j in jv])) if len(jv) else np.zeros(0, np.int64)
+    blat, blon, bfound = bt.get(new_refs)
+    dec(np.unique(key_of7(blat[bfound], blon[bfound])))
+    t_find = time.time() - t1
+
+    # the working set so far, to find the new tiles of the moved ways and the relations they reach
+    def working(extra_rel_blobs=()):
+        parts = [d for d in decoded.values() if d is not None]
+        nodes = Objs.concat([p[0] for p in parts] + [b[0] for b in extra_rel_blobs] + [empty_nodes()])
+        ways = Objs.concat([p[1] for p in parts] + [b[1] for b in extra_rel_blobs] + [dw.select(np.zeros(0, np.int64))])
+        rels = Objs.concat([p[2] for p in parts] + [dr.select(np.zeros(0, np.int64))])
+        nodes = nodes.first_of_each(prefer=nodes.fix["tagged"])
+        # the new versions' nodes not in any tile (an untagged node no way held): a place from the store
+        have = np.isin(new_refs, nodes.fix["id"])
+        orphan = new_refs[~have]
+        lat, lon, f = bt.get(orphan)
+        nodes = Objs.concat([nodes, plain_nodes(orphan[f], lat[f], lon[f])])
+        # the diff over them: its objects that reach the store's region
+        dn_sub = dn.select(np.flatnonzero(np.isin(dn_ids, np.union1d(cn, new_refs))))
+        dw_sub = dw.select(np.flatnonzero(np.isin(dw_ids, cw)))
+        nodes = Objs.concat([nodes.without(cn_all), dn_sub]).first_of_each()
+        ways = Objs.concat([ways.first_of_each().without(cw_all), dw_sub]).first_of_each()
+        rels = Objs.concat([rels.first_of_each().without(cr_all), dr]).first_of_each()
+        return MiniClip(nodes, ways, rels)
+
+    t2 = time.time()
+    m = working()
+    g = m.g
+    new_w = {}
+    rows = np.searchsorted(g.wid, moved)
+    rows = np.minimum(rows, max(len(g.wid) - 1, 0))
+    for wid, r in zip(moved.tolist(), rows.tolist()):
+        new_w[wid] = set()
+    order = np.argsort(g.wt_way, kind="stable")
+    wtw, wtk = g.wt_way[order], g.wt_key[order]
+    present = (len(g.wid) > 0) & (g.wid[rows] == moved) if len(g.wid) else np.zeros(len(moved), bool)
+    lo, hi = np.searchsorted(wtw, rows, "left"), np.searchsorted(wtw, rows, "right")
+    for wid, ok, a, b in zip(moved.tolist(), present.tolist(), lo.tolist(), hi.tolist()):
+        if ok:
+            new_w[wid] = set(wtk[a:b].tolist())
+    # relations reached: changed ones, and those with a moved way or a changed node as member
+    nr = len(g.rid)
+    rel_of = np.repeat(np.arange(nr), np.diff(g.roffs))
+    hit = ((g.mtype == 1) & np.isin(g.mref, moved)) | ((g.mtype == 0) & np.isin(g.mref, cn))
+    ar = set(g.rid[np.unique(rel_of[hit])].tolist()) if nr else set()
+    old_r_all = pairs_of(rt, cr_all)
+    for rid in cr_all.tolist():
+        if old_r_all.get(rid):
+            ar.add(rid)
+    if len(dr):  # a changed relation reaching the region: a member way with tiles, or a member node placed there
+        dmo = offsets(dr.var["mtype"][0])
+        mt_all, mr_all = dr.var["mtype"][1], dr.var["mref"][1]
+        hit_m = (mt_all == 1) & (np.isin(mr_all, moved) | np.isin(mr_all, wt["id"]))
+        isn = mt_all == 0
+        la, lo_, fd = after_pos(mr_all[isn])
+        nreg = np.zeros(int(isn.sum()), bool)
+        nreg[fd] = np.isin(key_of7(la[fd], lo_[fd]), region)
+        hit_m[isn] = nreg
+        cs = offsets(hit_m.astype(np.int64))
+        ar |= set(dr.fix["id"][(cs[dmo[1:]] - cs[dmo[:-1]]) > 0].tolist())
+    ar = np.array(sorted(ar), np.int64)
+    old_r = pairs_of(rt, ar)
+    stats["relations"] = len(ar)
+    # the tiles reached
+    reach = set(okey[okey >= 0].tolist()) | set(nkey[nkey >= 0].tolist())
+    for s in list(old_w.values()) + list(new_w.values()) + list(old_r.values()):
+        reach |= s
+    # a changed relation's record is in all its tiles, old and new: its new ones are its members' tiles. (An unchanged
+    # relation's tiles change only where a moved member way came or went, which are reached already.)
+    for rid in np.intersect1d(ar, dr.fix["id"]).tolist():
+        j = np.searchsorted(g.rid, rid)
+        if j < nr and g.rid[j] == rid:
+            ms = slice(g.roffs[j], g.roffs[j + 1])
+            mw = g.mref[ms][g.mtype[ms] == 1]
+            for w_ in mw.tolist():
+                reach |= new_w.get(w_, set())
+            for s in pairs_of(wt, mw[~np.isin(mw, moved)]).values():
+                reach |= s
+    reach = np.array(sorted(reach), np.int64)
+    reach = reach[np.isin(reach, region)]
+    dec(reach)
+    # the relation store's old blobs of the relations reached: their far member ways
+    blobs = []
+    for rid in ar.tolist():
+        buf = st.relation(rid)
+        if buf is None:
+            continue
+        c = unpack_cols(buf)
+        wid, wver, wts, wnref, wrefs, wtl, wtb = undelta(c[0]), c[1], c[2], c[3], undelta(c[4]), c[5], c[6]
+        ways_b = Objs({"id": wid, "ver": wver, "ts": wts}, {"refs": (wnref.astype(np.int64), wrefs),
+                                                            "tags": (wtl.astype(np.int64), wtb)})
+        blobs.append((plain_nodes(undelta(c[7]), undelta(c[8]), undelta(c[9])), ways_b))
+    t_reach = time.time() - t2
+    t3 = time.time()
+    m = working(blobs)
+    g = m.g
+    (nk, nrw), (wk, wr), (rk, rr) = tile_pairs(m)
+    t_rule = time.time() - t3
+    # write the reached tiles into the new generation
+    t4 = time.time()
+    nb = [np.searchsorted(nk, reach, "left"), np.searchsorted(nk, reach, "right")]
+    wb = [np.searchsorted(wk, reach, "left"), np.searchsorted(wk, reach, "right")]
+    rb = [np.searchsorted(rk, reach, "left"), np.searchsorted(rk, reach, "right")]
+    new_entries = []
+    off = 0
+    with open(sd / f"pack-{NG:04d}.bin", "wb") as f:
+        for i, k in enumerate(reach.tolist()):
+            if nb[0][i] == nb[1][i] and wb[0][i] == wb[1][i] and rb[0][i] == rb[1][i]:
+                continue  # the tile is empty now
+            buf = pack_cols(m.node_cols(nrw[nb[0][i]:nb[1][i]]) + m.way_cols(wr[wb[0][i]:wb[1][i]])
+                            + m.rel_cols(rr[rb[0][i]:rb[1][i]]))
+            f.write(buf)
+            new_entries.append((k, NG, off, len(buf)))
+            off += len(buf)
+    keep_idx = st.idx[~np.isin(st.idx["key"], reach)]
+    ne = np.array(new_entries, IDX) if new_entries else np.zeros(0, IDX)
+    idx = np.sort(np.concatenate([keep_idx, ne]), order="key")
+    np.save(sd / f"idx-{NG:04d}.npy", idx)
+    # the way and relation tile indexes
+    moved_rows = np.searchsorted(g.wid, moved)
+    moved_rows = np.minimum(moved_rows, max(len(g.wid) - 1, 0))
+    mrows = moved_rows[(g.wid[moved_rows] == moved)] if len(g.wid) else moved_rows[:0]
+    sel = np.isin(wr, mrows)
+    wt2 = wt[~np.isin(wt["id"], np.concatenate([moved, cw_all]))]
+    add = np.zeros(int(sel.sum()), PAIR)
+    add["id"], add["key"] = g.wid[wr[sel]], wk[sel]
+    np.save(sd / f"wtiles-{NG:04d}.npy", np.sort(np.concatenate([wt2, add]), order=["id", "key"]))
+    ar_rows = np.flatnonzero(np.isin(g.rid, ar))
+    sel = np.isin(rr, ar_rows)
+    rt2 = rt[~np.isin(rt["id"], np.concatenate([ar, cr_all]))]
+    add = np.zeros(int(sel.sum()), PAIR)
+    add["id"], add["key"] = g.rid[rr[sel]], rk[sel]
+    np.save(sd / f"rtiles-{NG:04d}.npy", np.sort(np.concatenate([rt2, add]), order=["id", "key"]))
+    # the relation store: the reached relations' blobs again, from the working set
+    rentries = []
+    roff = 0
+    with open(sd / f"rel-{NG:04d}.bin", "wb") as f:
+        for j in ar_rows.tolist():
+            if not m.r_kept[j]:
+                continue
+            ms = slice(g.roffs[j], g.roffs[j + 1])
+            mw = g.mref[ms][g.mtype[ms] == 1]
+            wi = np.minimum(np.searchsorted(g.wid, mw), max(len(g.wid) - 1, 0))
+            wi = np.unique(wi[g.wid[wi] == mw])
+            u = np.unique(g.way_node_rows(wi))
+            buf = pack_cols(m.way_cols(wi) + [delta(g.nid[u]), delta(g.lat7[u]).astype(np.int32), delta(g.lon7[u]).astype(np.int32)])
+            f.write(buf)
+            rentries.append((int(g.rid[j]), NG, roff, len(buf)))
+            roff += len(buf)
+    rkeep = st.ridx[~np.isin(st.ridx["key"], np.concatenate([ar, cr_all]))]
+    re_ = np.array(rentries, IDX) if rentries else np.zeros(0, IDX)
+    np.save(sd / f"relidx-{NG:04d}.npy", np.sort(np.concatenate([rkeep, re_]), order="key"))
+    t_write = time.time() - t4
+    stats.update({"gen": NG, "day": day, "diff": str(diff), "tilesReached": len(reach), "tilesWritten": len(new_entries),
+                  "tilesNew": int((~np.isin(ne["key"], st.idx["key"])).sum()),
+                  "tilesDropped": int((np.isin(reach, st.idx["key"]) & ~np.isin(reach, ne["key"])).sum()),
+                  "bytes": off, "relBytes": roff, "relBlobs": len(rentries), "tilesDecoded": len(decoded),
+                  "secondsDiff": round(t_diff, 1), "secondsFind": round(t_find, 1), "secondsReach": round(t_reach, 1),
+                  "secondsRule": round(t_rule, 1), "secondsWrite": round(t_write, 1),
+                  "seconds": round(time.time() - t0, 1)})
+    st.meta["generations"].append(stats)
+    (sd / "store.json").write_text(json.dumps(st.meta, indent=1))
+    log(f"update to {day}: {stats}")
+
+
+def compare_stores(a: Path, b: Path, keys=None, ga: int = -1, gb: int = -1) -> dict:
+    """two stores tile by tile (the decompressed payloads, byte for byte); keys: only these tiles"""
+    sa, sb = Store(a, ga), Store(b, gb)
+    ka, kb = sa.idx["key"], sb.idx["key"]
+    allk = np.union1d(ka, kb) if keys is None else np.unique(keys)
+    same = differ = only_a = only_b = 0
+    examples = []
+    for k in allk.tolist():
+        x, y = sa.tile(k), sb.tile(k)
+        if x is None and y is None:
+            continue
+        if x is None:
+            only_b += 1
+            continue
+        if y is None:
+            only_a += 1
+            continue
+        if zstd.decompress(x) == zstd.decompress(y):
+            same += 1
+        else:
+            differ += 1
+            if len(examples) < 5:
+                pa, pb = decode_tile(x), decode_tile(y)
+                d = {}
+                for t, i in (("n", 0), ("w", 0), ("r", 0)):
+                    ia, ib = set(pa[t][i].tolist()), set(pb[t][i].tolist())
+                    d[t] = {"onlyA": sorted(ia - ib)[:5], "onlyB": sorted(ib - ia)[:5], "both": len(ia & ib)}
+                examples.append({"key": k, "xy": [k >> T.Z, k & (T.NT - 1)], **d})
+    return {"tiles": len(allk), "same": same, "differ": differ, "onlyA": only_a, "onlyB": only_b, "examples": examples}
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("cmd", choices=["cut", "read"])
+    ap.add_argument("cmd", choices=["cut", "read", "update", "compare"])
+    ap.add_argument("--diff", type=Path)
+    ap.add_argument("--before", type=Path)
+    ap.add_argument("--a", type=Path)
+    ap.add_argument("--b", type=Path)
+    ap.add_argument("--under", action="store_true", help="compare: only the tiles under the cities' boxes and ring")
     ap.add_argument("--geom", type=Path)
     ap.add_argument("--out", type=Path)
     ap.add_argument("--day")
@@ -415,6 +931,11 @@ def main():
     o = ap.parse_args()
     if o.cmd == "cut":
         cut(o.geom, o.out, o.day)
+    elif o.cmd == "update":
+        update(o.store, o.diff, o.before, o.day)
+    elif o.cmd == "compare":
+        keys = T.tiles_of(T.city_boxes(o.cities, o.base), o.ring) if o.under else None
+        print(json.dumps(compare_stores(o.a, o.b, keys), indent=1))
     else:
         s = Store(o.store, o.gen)
         keys = T.tiles_of(T.city_boxes(o.cities, o.base), o.ring)
