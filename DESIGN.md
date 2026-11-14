@@ -3138,3 +3138,15 @@ against the whole counts with `.scratch/stream/areacheck.py`, and streams the fi
 (`.scratch/stream/europe-west/t2a/`). The baseline from the old seed: 108 area quests open on untouched ground over
 11-09..11-13 (CheckExistence 72, AddCycleway 20, the signal quests 8, and 8 that neighbours opened: AddEntrance,
 AddBarrierOnRoad, AddBarrierOpening, AddChargingStationSocket); none dated.
+
+**The result on europe-west (11-14, 03:07-03:11).** Every engine test passes with the dates in. The 11-08 recount
+with `--dump-state` dated **1,462 candidates, 1,462 dated, 0 undated** (the small map data agreed with the whole
+city every time), the dating adding about 5 s in all to a 71 s engine pass (London: 1,305 candidates in 581 tiles,
+5,190 runs, 3.2 s). Its dump is the old 11-08 dump plus exactly those 1,462 DUE rows, nothing else changed
+(`.scratch/stream/seedsame.py`). Against the whole counts of 11-09..11-13 (`areacheck.py`): of the 108 area quests
+opening on untouched ground, **100 dated on the day, 0 on another day**, 8 without a date, all quests a neighbour
+opens (AddEntrance 3, AddBarrierOnRoad, AddBarrierOpening, AddChargingStationSocket, AddKerbHeight,
+AddTactilePavingKerb), which ageing cannot date; and **no date up to 11-13 without such an opening**. The dates on
+untouched ground reach only seed + 64 days; inside the recount rectangles the delta form rolls the horizon on (the
+recount at today's clock dates up to today + 64, the one at yesterday's clock up to yesterday + 64, and the delta
+applies the difference).
