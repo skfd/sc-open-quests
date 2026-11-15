@@ -785,7 +785,9 @@ def main(argv=None) -> None:
     a.add_argument("--keep-regions", action="store_true")
     a = sub.add_parser("notes"); a.add_argument("--out", type=Path, required=True)
     a = sub.add_parser("count"); a.add_argument("--out", type=Path, required=True)
-    a.add_argument("--engines", type=int, default=2); a.add_argument("--heap-gb", type=int, default=30)
+    # one engine with two cells under way fills the CPU: two engines side by side took 223 s for two files against
+    # 243 s, at 44 GB against 30 (DESIGN.md, "Batch engine speed-up")
+    a.add_argument("--engines", type=int, default=1); a.add_argument("--heap-gb", type=int, default=30)
     a.add_argument("--delete-cut", action="store_true", help="delete a file's .osm.pbf once it is counted")
     a.add_argument("--dump-ids", type=Path, help="lines type<TAB>id: each file writes these elements' matches to matches.tsv")
     a.add_argument("--only", help="comma-separated file ids: count only these (a canary first)")
