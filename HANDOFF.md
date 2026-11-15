@@ -1429,3 +1429,7 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   has attic but no promises. Own instance: ~0.5 TB growing, cloned from dev.overpass-api.de in about a day; a rented
   64 GB / 2x1 TB NVMe box is roughly EUR 40-80/mo (Hetzner auction, not priced live), or one 2 TB NVMe here (one-off).
   Not decided; the tier 2 question above still waits.
+- **The owner leans to buying a drive (11-14): SSD or a spinning disk?** Overpass needs an SSD: its queries and
+  minutely updates are random reads, which a spinning disk does at ~100-200 a second against an SSD's tens of
+  thousands. A spinning disk fits only files read end to end (planet history, region files, archives). Advice: a
+  2 TB NVMe in a USB4 enclosure (enclosure ~$110-120, not priced live), or a second M.2 slot if the laptop has one.
