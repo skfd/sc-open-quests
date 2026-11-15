@@ -4015,3 +4015,71 @@ relation rows are per bucket.
    planet (hours, 85 GB more) avoids it.
 5. **At planet size, exactness:** the planet store's tiles inside the europe clip of the same day equal that clip's
    store, away from the clip's edge.
+
+### The streaming cut, built and proven below planet size (11-15, 15:00-16:10; owner: "Yes, build it now")
+
+The owner's answers first: the cut's source is **the history file, read at a date by Rust** (to be proven on
+`berlin-history` against `osmium time-filter`); the 108 GB timing runs **on C: after this proof**, the file deleted
+after.
+
+`tilestore scut --pbf X.osm.pbf --out S --day D [--z 14] [--bucket-z 8] [--keep-spill]` (`tilestore/src/stream.rs`;
+the tile rule moved to `pairs.rs`, shared with the in-memory `cut`). It is the design above, with these differences,
+each one named:
+- **The node places are in memory**, sorted by id as the file gives them, found by binary search (16 bytes a node).
+  The planet's file by id is not built: on a clip or a country a file by id would be nearly as large as the
+  planet's (NTFS allocates a sparse file in 64 KB units, and a region's nodes are spread over the whole id range).
+  So the one part of the design this proof does not exercise is the node file; the 108 GB timing does.
+- **It reads a snapshot**, not the history file.
+- The tagged-node file's index holds every tagged node (id, offset, length), not a sparse one; the relations of
+  pass 0 are all held, kept or not. Both are memory to trim for the planet, not rules.
+- A spill file is read whole and its buckets cut side by side; spill files go one after another.
+
+**Exact, with the border rules worked hard** (`storecmp.py`, generation 0 against generation 0):
+| input | bucket zoom | buckets | needs | against | tiles | relation blobs | pair indexes |
+|---|---|---|---|---|---|---|---|
+| europe clip 11-12 | z8 | 253 | 39,742 | the **Python** store | 59,026, 0 different | 438,232, 0 different | both equal |
+| europe clip 11-12 | z12 | 8,561 | 735,132 | the **Python** store | 59,026, 0 different | 438,232, 0 different | both equal |
+| Germany 11-07 | z8 | 167 | 112,219 | the Rust in-memory `cut` (itself equal to Python on the clip only) | 190,006, 0 different | 628,034, 0 different | both equal |
+
+The pack and relation files are the same size to the byte as the Python store's. **The comparison can fail on a
+border rule:** with the needs dropped on purpose (`TILESTORE_TEST_NO_NEEDS=1`) at z12, 38,141 of 59,026 tiles differ,
+in exactly the tagged nodes' columns. The in-memory `cut`, refactored onto `pairs.rs`, was run again: equal to the
+Python store.
+
+**Cost, clip (one run each, 24 threads, other work on the machine):**
+| | in-memory `cut` | `scut` z8 | `scut` z12 |
+|---|---|---|---|
+| wall | 35.7 s, 57.5 s (two runs) | 240.0 s | 239.0 s |
+| peak working set | 12.2-12.3 GiB | **5.2 GiB** | 5.5 GiB |
+| blob index | | 2.7 s | 1.3 s |
+| pass 0, relations | | 0.9 s | 1.3 s |
+| pass 1, nodes | | 34.9 s | 24.1 s |
+| pass 2, ways | | 65.6 s | 59.9 s |
+| needs and relations | | 2.7 s | 13.4 s |
+| relation store | | 25.6 s | 22.1 s |
+| buckets | | 107.1 s | 116.7 s |
+
+**Cost, Germany (4.88 GB), one run:** 629.5 s and **33.4 GiB peak** against the in-memory cut's 128.7 s and
+41.3 GiB: blob index 12.5 s, pass 0 1.5 s, pass 1 55.9 s, pass 2 132.3 s, needs and relations 3.5 s, relation store
+34.5 s, **buckets 388.9 s**. The memory is not what the design promised, and the reason is one of the differences
+named above: Germany's largest spill file (one z6 cell) is 9.7 GB uncompressed and is read whole, then its z8
+buckets are cut side by side. The peak no longer grows with the file (the node places, 7 GB here, were already
+freed), but it is set by the densest z6 cell, and Germany's is 33 GiB. For the planet: spill files per z7 or z8
+cell, or fewer buckets at once. Not done.
+
+Four to seven times slower than the in-memory cut on the clip and under half its memory; five times slower on
+Germany and four fifths of its memory. The time is not tuned: each
+pass decodes on all threads but spills, writes its indexes and reads the member-way file on one; the bucket phase
+reads and unpacks each spill file on one thread. Of the clip's 5.2 GiB, about 2 GiB is the node places, which the
+planet keeps on disk.
+
+**The spill is larger than guessed: 12.8 bytes a ref written** (clip: 2.00 GiB for 168.2M refs, 6.04 GiB before
+compression; Germany: 6.89 GiB for 602.3M refs, 12.3 bytes a ref). The planet's refs were estimated at 14.5 billion (above, from the europe clip's 1.32 refs a node), so about
+**185 GB as it is coded now**, not the 110-135 GB in the table above: the peak on disk is then about 310-330 GB, and
+the conclusion stands, more firmly: it does not fit on C: today. The coding is plain (whole ids and places, zstd
+level 1 over rows); refs and places as steps from the one before, as the tiles code them, should bring it near the
+tiles' own size. Not done: disk on the 2 TB drive is not the constraint.
+
+**Next:** (1) the history file read at a date, with its oracle on `berlin-history`; (2) the node file by id and the
+108 GB timing of passes 1 and 2 on the planet's history file; (3) the passes' single threads, if that timing says
+they matter. The update in Rust waits behind these or runs beside them: it does not depend on the planet cut.

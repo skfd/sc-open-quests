@@ -1688,7 +1688,25 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
 - **The owner's answers (11-15, 14:55):** the cut's source: **the history file, read at a date by Rust** (to be
   proven on `berlin-history` against `osmium time-filter` first). The 108 GB timing: **on C:, after the clip-scale
   proof**, the file deleted after. Next: **"Yes, build it now"**, the streaming cut, proven against the in-memory
-  cut on the clip and Germany. In progress below. **Next, proposed:** the update in Rust (first act: the Python `update` on
+  cut on the clip and Germany. Done, below.
+- **The streaming cut, built and exact below planet size (11-15, 15:00-16:15).** DESIGN.md, "The streaming cut,
+  built and proven below planet size". `tilestore/target/release/tilestore.exe scut --pbf X.osm.pbf --out S --day D
+  [--bucket-z 8] [--keep-spill]` (`tilestore/src/stream.rs`; the tile rule now in `pairs.rs`, shared with `cut`).
+  **Equal to the Python store on the europe clip at bucket zoom 8 and at 12** (59,026 tiles, 438,232 relation
+  blobs, both pair indexes; 735,132 border "needs" at z12), **and to the in-memory cut on Germany** (190,006 tiles,
+  628,034 blobs). The comparison fails as it should with the needs dropped (`TILESTORE_TEST_NO_NEEDS=1`: 38,141
+  tiles differ). Clip: 240 s, 5.2 GiB peak (in-memory: 36-58 s, 12.3 GiB). Germany: 630 s, **33.4 GiB peak**
+  (in-memory 129 s, 41.3 GiB): a spill file (one z6 cell, 9.7 GB raw for Germany's largest) is read whole and its
+  buckets cut side by side, so the peak is set by the densest z6 cell; to fix for the planet (spill files per z7/z8
+  cell, or fewer buckets at once). **Not exercised: the node file by id** (the places are in memory here; a file
+  by id for a region would be nearly planet-sized). **Spill: 12.3-12.8 bytes a ref, so about 185 GB for the planet
+  as coded**, more than the design's guess; the cut still waits on the drive. Not tuned: every pass spills on one
+  thread. `tools/stream/tilecheck/peak.ps1` runs a program and reports wall time and peak working set. Left in
+  `.scratch/tiles/`: `store-s8`, `store-s12` (2.4 GB each), `store-s8-germany`, `store-rs-germany` (9.5 GB each),
+  `store-rs`; all can go. **Next, in this order:** (1) the history file read at a date in Rust, proven on
+  `berlin-history` against `osmium time-filter`; (2) the node file by id and the 108 GB timing of passes 1 and 2
+  on the planet's history file (the owner allowed it on C: after this proof; delete the file after); (3) the
+  spill-file memory fix. The update in Rust is independent of these. **Next, proposed:** the update in Rust (first act: the Python `update` on
   `store-rs`, then `storecmp.py --ga 1 --gb 1`), then the planet cut's design.
 - **Batch engine speed-up, third round, under way in another session (11-15, from 14:15; owner: "continue engine
   optimisation").** On branch `batch-speed` (worktree `../sc-open-quests-batch`), **not merged**; main's engine and
