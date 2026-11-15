@@ -1406,7 +1406,7 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
 - **A second day: exact (11-14, 21:50).** DESIGN.md, "A second day". The z14 store through 5175 and 5176 equals fresh
   cuts of 11-13 and 11-14 everywhere inside the clip polygon (tiles, relation store, both tile indexes); D of day one
   0 different. Two gaps in the relation index found on the way, fixed, in the small test. Day two wrote 477 MB (24%).
-  `.scratch/tiles/` is now about 40 GB (geom-12/13/14, stores at z14/15/16 and the fresh cuts): deletable whenever the
+  `.scratch/tiles/` is now 47 GB (geom-12/13/14, stores at z14/15/16 and the fresh cuts): deletable whenever the
   owner likes; nothing else reads it.
 - **For the owner, to ask as a wizard:** the store is proved and the layout measured. Next: (a) build it in Kotlin
   beside the engine with the adaptive split (z16 children of z14 tiles over 256 KB), cut from the 12-07 planet;
