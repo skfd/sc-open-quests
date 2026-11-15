@@ -1560,3 +1560,16 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   `drop_caches`; clip edge and midnight (`[date:]` by element timestamp against a cut by sequence) are expected sources
   of differences that are not Overpass's fault (none appeared). Its suggested real-attic test on overpass.private.coffee
   failed: 504s after 109-262 s and no answer to a tiny query in 90 s; stopped after 5 requests.
+- **Batch engine speed-up: 2.0 times on the test file, built on branch `batch-speed`, not merged (11-15, 02:15).**
+  DESIGN.md, "Batch engine speed-up". Germany f0: 245 s to 123 s wall, 2,467 s to 1,912 s CPU; with `--dump-state`
+  272 s to 172 s; Ontario's daily-style run 78 s to 54 s. Same snapshot at every step, same state rows, same grid
+  files; 87 engine tests pass; Bremen's fast twins equal their ports (Hamburg's check was still running). What was
+  built: the area pass's nodes and ways as columns and tags as dictionary numbers (the collector, not the quests,
+  was the largest CPU consumer), one node table for both passes, a sparse twin of SC's `LatLonRaster`, indexes built
+  on all threads, two cells at once (`-Dopenquests.areaCities=2`, set by `world_cells.py`;
+  `WORLD_CELLS_AREA_CITIES`), `-XX:MaxGCPauseMillis=5000` in the launcher. **To merge:** `git rebase main` in the
+  worktree, then `git merge --ff-only batch-speed` on main; the next `run.py` rebuilds the engine by itself.
+  **The cut:** osmium through Docker's bind mount reads 4.5 times slower than from the container's disk and a
+  region pass is 1.85 times slower; the world's 262 min cut should be about 140 min natively. **For the owner:**
+  install a native Windows osmium (conda-forge) for the cut and the slice? A cutter in the engine's build (estimated
+  30-40 min a planet) and a once-only history cut for the monthly backfill are described in DESIGN, not built.
