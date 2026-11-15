@@ -3528,3 +3528,60 @@ Kotlin cut before the planet.
 Sources: Overpass attic size (wiki.openstreetmap.org, User:Mmd/Overpass API/Performance Project 2016/Full Attic DB
 Setup; osm.hpi.de/overpass/full_installation.html), OSMExpress (github.com/protomaps/OSMExpress, README and
 docs/MANUAL.md), GeoDesk (community.openstreetmap.org, "Just released: GeoDesk 2.0"; wiki.openstreetmap.org/wiki/GeoDesk).
+
+## Overpass with attic, benchmarked on this machine (2026-11-14 night; owner: "benchmark overpass on this pc before committing")
+
+*Decided before it (owner, 11-14, 22:30-23:00):* tier 2's world store is to be an own Overpass instance with attic, on an
+external SSD; what reads it is **Python** (the queries, beside `stream.py`) **plus osmium** (Overpass answers XML or JSON,
+the engine reads only PBF with versions, timestamps and `osmosis_replication_timestamp`). The comparison above (Overpass
+"ruled out by disk") is superseded by that decision: the disk is to be bought. Kotlin's reasons there were the tile
+store's cut, update and direct read, none of which exists with Overpass; a StAX XML reader in the engine stays the option
+if conversion ever costs time.
+
+*Method* (`tools/stream/overpass/bench.sh`, `opbench.py`; logs `logs/opbench-rehearse.log`, `logs/opbench-full.log`;
+results `.scratch/overpass/{rehearse,full}/summary.json`). Docker `wiktorn/overpass-api:v0.7.62.11`, the db in a named
+volume (ext4 in Docker's VHDX on the internal NVMe). A history file cannot seed attic (the Overpass wiki: unsupported, an
+`.osh` fed to `update_database` leaves the db unusable), so: the europe clip of 11-12 (1.64 GB, stamp 11-12T00:00Z) piped
+as XML into `update_database --keep-attic` (lz4), then planet day diff 5175 by `update_from_dir --keep-attic`, as
+production applies diffs. One query per date for t2n's 103 rectangles of 11-13 (412 km2; Dublin's one is 249 km2), each
+box padded 300 m as the engine pads, mirroring `tiles.py select()`: nodes in the boxes; ways by those nodes and ways
+crossing; relations with a member node or crossing way, and all their member ways; every node of those ways; `out meta`.
+XML to PBF by `osmium sort` with the stamp; recount as `tiles.py recount`; compared with `.scratch/tiles/ref/`.
+
+*Exactness: all three stages 0 rows different, every row, not only inside the boxes.*
+| stage | query | against | rows | different |
+|---|---|---|---|---|
+| 1 | after the load, current | ref/old (11-12) | 1,114,046 | 0 |
+| 2 | after 5175, current | ref (11-13) | 1,116,244 | 0 |
+| 3 | after 5175, `[date:"2026-11-12T00:00:00Z"]` | ref/old (11-12) | 1,114,046 | 0 |
+
+Stage 3's answer against stage 1's: 4,966,517 objects the same, 463 differ, 366 only in tag order and 97 only in the
+user name (attic gives a renamed user's current name); the engine reads neither. So **one attic db answers D and D-1
+exactly**. Also exact: stage 2 with relation member ways only by role outer/inner (output 997 MB against 1,125 MB: the
+bulk is ways and nodes over the big boxes, not relations).
+
+*Cost here* (internal NVMe; timings vary up to 2x between identical runs while other work runs):
+- Load of the 1.64 GB clip: 1,842 s, single-threaded; db 13.7 GB (8.4x the PBF). Day diff 5175 (the whole planet's day,
+  so worldwide objects too): 409 s; db 18.7 GB after. A planet db takes a daily diff in minutes (dev.overpass-api.de keeps
+  up minutely); not measured on a planet-size db.
+- One union query per date: 84-206 s warm, 86-113 s cold, of which most is writing 1.1 GB of XML (16k read requests,
+  0.8 GB read from cold). XML to PBF (61 MB): 10-16 s. The engine on it: 21-23 s (48 s under load).
+- Each rectangle alone, 103 queries: current 87 s warm / 169 s cold; dated 130 s warm / 221 s cold (median 1.07 s warm,
+  1.9 s cold; 0.3-0.5 s of each is `docker exec`). **Dated costs 30-50% more than current** on a db with one day of attic.
+  The 65 rectangles under 1 km2 still take about 1.7 s each cold: a per-query floor, so a world day must batch rectangles
+  into union queries (per file or region), not query thousands one by one.
+- Reads from cold: 306k-361k requests, 18-20 GB, for the 103 alone; the union 16k requests. At a USB4 NVMe's latency
+  (some tens of microseconds more than internal) that adds seconds, not minutes: the external drive is not the limit.
+- Against the tile store (Python prototype): its read of these rectangles was 34-45 s (31-41 s of it pyosmium writing a
+  PBF); Overpass gives both dates in about 3.5-4 min with conversion. Fine for europe-west; for the world, the time goes
+  with the output's size (about 10-25 MB of XML a second), which goes with the rectangles' area, not their count.
+
+*What this cannot show:* a planet db's speed with fourteen years of attic (here one day). Tried on the public
+overpass-api.de with a 0.2 km2 London box, current and dated (11-12 and 2019): 35-46 s each with two gateway errors, so
+the server's load drowned any difference; stopped there. The **size to buy**: the current clone
+(dev.overpass-api.de/clone/2026-11-10/, listing read 11-14) is **about 708 GB with attic** (attic files about 253 GB;
+nodes.bin 95 GB, nodes_meta.bin 84 GB, ways.bin 80 GB), against "about 400 GB" for 2023 above. **A 2 TB drive**: 1 TB
+would hold it with under 300 GB to grow and no room for a second copy during a re-clone.
+
+Sources: wiki.openstreetmap.org, User:Mmd/Overpass_API/install/attic and Overpass_API/Installation (attic from history
+files unsupported; `--keep-attic`); dev.overpass-api.de/clone/ (sizes); hub.docker.com wiktorn/overpass-api (tags).
