@@ -1547,7 +1547,7 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   Follow-up (00:40): the union's 84-206 s was mostly the Windows bind mount; **piped into osmium inside the container a
   date is about 40 s** (selection 30 s); four queries at a time 2.9x faster. A world day **estimated** (not measured) at
   0.5-2.5 h of Overpass at four streams plus 10-50 min of engine per date, reading perhaps a fifth of the planet per date. **Drive to buy: 2 TB** (the attic clone is about 708 GB now, not 400). Not shown: speed with 14 years of attic
-  (the public server was too loaded to tell). **Still up:** container and volume `opbench-full` (18.7 GB in Docker's
+  (the public server was too loaded to tell). **Still up:** the volume `opbench-full` (the container removed at 00:45; `bench.sh full` recreates it over the volume) (18.7 GB in Docker's
   VHDX, which does not shrink by itself); remove with `docker rm -f opbench-full; docker volume rm opbench-full`.
   **Next, the owner's:** buy the drive (2 TB NVMe in a USB4 enclosure), then: the clone (`download_clone.sh --meta=attic`,
   about 708 GB) onto ext4 on it, its daily updates, and the reader for a world day (union queries per world file).
