@@ -176,9 +176,10 @@ class NodeIdsTest {
     }
 
     @Test fun `under verifyFast a wrong answer of the marks stops the run`() {
-        // what CheckedNodeIds does, shown on its message: the marks and SC's set are asked the same ids
-        if (!VERIFY_FAST) return
+        for (seed in 1..20) mapData(seed).let { md -> nodeIds(md, verify = true) { md.ways.iterator() } }
         KEEP_OTHER_NODE_IDS = false
-        assertFailsWith<IllegalStateException> { for (seed in 1..20) mapData(seed).let { it.ways.nodeIdsIn(it) } }
+        assertFailsWith<IllegalStateException> {
+            for (seed in 1..20) mapData(seed).let { md -> nodeIds(md, verify = true) { md.ways.iterator() } }
+        }
     }
 }

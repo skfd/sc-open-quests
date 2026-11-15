@@ -67,11 +67,12 @@ private fun hashed(ways: Iterator<Way>): HashedNodeIds {
     return HashedNodeIds(ids)
 }
 
-private fun nodeIds(mapData: MapData, ways: () -> Iterator<Way>): NodeIds {
+/** [verify]: SC's set is built beside the marks and every answer held against it. */
+internal fun nodeIds(mapData: MapData, verify: Boolean = VERIFY_FAST, ways: () -> Iterator<Way>): NodeIds {
     if (mapData !is ArrayMapData || !NODE_MARKS) return hashed(ways())
     val marked = MarkedNodeIds(mapData)
     for (way in ways()) way.eachNodeId { marked.add(it) }
-    return if (VERIFY_FAST) CheckedNodeIds(marked, hashed(ways()), mapData) else marked
+    return if (verify) CheckedNodeIds(marked, hashed(ways()), mapData) else marked
 }
 
 /**
