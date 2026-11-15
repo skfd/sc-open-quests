@@ -287,6 +287,8 @@ download:
 - `-Dopenquests.taskTrace=<file>` appends a line per area task (city, quest and run, thread, start and end in
   seconds from the city's first task, thread CPU seconds) and changes no count; `tools/task_trace.py`
   reads it. It shows whether a city's area pass waits on one run or on the CPU.
+- `-Dopenquests.assembleTrace=true` logs a line per city's map data with the seconds each step of building it
+  took (`AreaPass.assemble`), to see which steps run on one thread. It changes no count.
 - `-Dopenquests.matchCache=false` asks every quest of every element in the main pass, as before 2026-11-15;
   `=verify` does both and stops at the first element on which they differ (`MatchCache.kt`; DESIGN.md, "Batch
   engine speed-up, second round"). A custom port's `necessary()` must name only filters its `isApplicable` requires.

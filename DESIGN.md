@@ -4065,6 +4065,88 @@ makes two objects a call; a patch like `pairs` or a cache of the two ends. (3) `
 iterating a `TagMap`'s entries: give `TagMap` a walk without entry objects. (4) `groupByNodeIds` (4% of Java
 samples). Each of 2 to 4 is 2 to 3% of the bytes.
 
+## Batch engine speed-up, sixth round: small things from the profile, and no timing that can be trusted yet (2026-11-15, 17:20 to 18:30; owner: "fifth round of speedup", which was already merged, so this is the next)
+
+**Built and merged: eight small changes, every snapshot equal. What they gain is not measured:** the planet
+timing of the tile store ("The history file read at a date", next step) started at 17:26 and took the machine's
+memory and some of its threads, so the pairs below show nothing. `.scratch/batch-speed/quiet6.sh` waits for that
+run to end and then runs three interleaved pairs; its result belongs here.
+
+**Read first, from what was on disk** (the fifth round's profile `r5.jfr`, the runs `g-*`, a new reader
+`jfrtree.py`: of the samples under a function, the share of each callee):
+
+- **The only quiet figures of the day, the fifth round's engine on f0: 83.1 and 79.9 s, 1,261 and 1,283 s of
+  CPU** (`h-pairs-1`, `h-pairs-2`, 17:23 to 17:27; the second overlaps the planet timing's start). Nodes 7.9
+  and 7.1 s, ways 14.3 and 11.8 s, the cells 46.9 and 45.3 s.
+- **About 9 s of f0's wall time here is not the engine's in a world run.** The rehearsal's f0 has no notes clip
+  of its own, so the run reads the whole clip (954 MB, 2,091,648 notes) in 10.6 s on one thread before the
+  passes. A world file has its own (`world_cells.py notes`): at most 166,178 notes, read in 1 to 2 s
+  (`.scratch/planet/world/files/*/log.txt`). Not changed.
+- **The collector is still the largest single consumer:** in `g-pairs-4`, 87 pauses, 13.4 s of 98 s, and 227 s
+  of 1,437 s of CPU. What a pause copies is what survives (a cell's map data, promoted at age 1 or 2), not what
+  is allocated, which is why the fifth round's 11% fewer bytes moved no pause. The flags were tried in the
+  first round. Not addressed.
+- **One lock:** `ScFeatures.getFeature` serializes every call into osmfeatures. The profile holds 609 waits
+  for it over the recording's threshold, 24 s of threads waiting (CheckExistence's twin 10.7 s, AddPlaceName
+  in the main pass 9.0 s), for 0.6% of the samples spent inside. Not built: its `getByTags` reads plain
+  `HashMap`s of lazily made indexes, which is safe to read unlocked only after every index a call can want
+  exists, and that needs osmfeatures' source read, not its bytecode skimmed. Worth about a second.
+- A quest task's clock time was twice its thread's CPU time in `g-pairs-4`. That was the busy machine, not a
+  finding.
+
+**What was built** (shares are of the profile's Java samples; none is an SC patch, no result changes):
+
+| | where the profile had it | |
+|---|---|---|
+| a way's node found at the place after the one before (`NodeStore.indexOfAfter`), else the search | the main pass's loop over a way's nodes and `indexOf`, 4.1%; the same loop in a cell's map data | a way's nodes were mostly made together, so the next id is the next of the file |
+| a way's place among the relations' member ways by walking both lists | `neededWays.binarySearch` per way, 1.0% | a search only at a block's first way, or when ids do not ascend |
+| a bit per node, "tagged", asked before the search among the tagged | `NodeStore.tagsOf` for each of a cell's 15M nodes, 1.3% | |
+| a raw coordinate taken as it is in a block of 1e-7 degrees and no offset | the multiply and divide per node, in a line of 1.6% | `(0 + 100 * raw) / 100` |
+| "does a note hide this position" asked once per element | `OpenNotes.hides` per matching quest, 0.9% | |
+| tags kept by their places in the block's string table (`TagChunk.addPlaces`) | a `HashMap` look-up per tag string of every way and tagged node kept for the cells, about 2.5% | only when no tag was left out and no key comes twice; else as before |
+| a cell's nodes in the order they first come, from a bit set over the file's nodes (`firstSeen`) | two parallel sorts per cell (every node of every way, then the distinct ones: 15M in a large cell), most of 3.0% | a tile's few nodes still sort: clearing a bit per node of the file would cost more |
+| a cell's ways and geometries put into arrays by the threads that make them; node ids taken as the nodes are made | not CPU: one thread reading 2.5M pairs twice and 15M ids at random | below |
+
+**One-threaded steps of a cell's map data** (`-Dopenquests.assembleTrace=true`, new: a log line per cell with
+each step's seconds). On the large cells, before the last row above: the two lists off the pairs 0.25 to 0.68 s,
+the id table 0.18 to 0.30 s, of 2 to 5 s for the whole map data. After: 0.00 s and mostly 0.05 to 0.18 s. Both
+runs under load, so the steps' sizes are rough; that they are gone is not. Still on one thread: the bit set walk
+(0.1 to 0.4 s) and parts of the hash order (0.2 to 0.6 s with its sort).
+
+**The pairs, all with the planet timing running, the last with no memory free:**
+
+| pair, f0 | CPU, before | CPU, after | wall, before | wall, after | nodes' CPU |
+|---|---:|---:|---:|---:|---|
+| `i-*-1` (the first six rows) | 1,468 s | 1,318 s | 112.0 s | 104.5 s | 162 to 128 s |
+| `i-*-2` | 1,392 s | 1,418 s | 107.6 s | 105.1 s | 143 to 118 s |
+| `k-*-1` (the final build) | 1,462 s | 1,419 s | 143.5 s | 108.2 s | 150 to 164 s |
+
+10% less, 2% more, 3% less: **nothing to conclude**, and the node pass's 20% of the first two pairs turned
+round in the third. The third pair's runs were stopped after it: free memory was at 0.4 GB of 88 (the planet
+timing held 45 GB, an engine run 25), which also means **the engine runs of 17:26 to 18:15 are inside the
+planet timing's seconds** (HANDOFF.md says so under that run).
+
+**Checks, on the final build** (`eng-six3`, the merged commit's sources): `same.py` on f0 against the fifth
+round's engine (five runs across the three builds) and f1; f0's state dump the same 31,695,753 rows; Ontario's
+11-14 and europe-west's 11-15 recounts equal to the published snapshots, grids byte for byte; `verifyFast` on
+Dublin and Lisboa (25 map data runs, snapshot equal to the fifth round's); `matchCache=verify` on f0; 112
+engine tests on main, none failing, SnapshotReproductionTest among them (TorontoRegressionTest skips, its
+extract pruned). New tests: `FirstSeenTest` (the bit set and the sort against a plain set), `TagPlacesTest`
+(places against the map of their strings), two more in `NodeStoreTest` (every node after right and wrong
+places; a tagged node's tags and every other node's none). With each of the four pieces broken on purpose, five
+of those six tests fail.
+
+**What it does not show.** Any gain. The oracle and London under `verifyFast`, as in the rounds before. A file
+whose blocks are not in units of 1e-7 degrees (none here: the old arithmetic stays for them and is not run).
+
+**Next for the engine, none built.** (1) The quiet pairs, before anything else is believed. (2) The dense-node
+decoder of the fifth round's list, now smaller: with the coordinate fast path the node loop's own share falls,
+and what is left is protobuf's parse (4.4% of samples for all blocks) and its arrays (a tenth of the bytes).
+(3) The lock above. (4) The collector: fewer objects that outlive a pause, which means a cell's untagged
+nodes not as 15M `Node` objects (made when asked for), perhaps a quarter of what a cell promotes (a guess
+from object sizes, not measured); SC's code iterating `mapData.nodes` decides whether that is possible. (5) `Way.isClosed`, `Element.checkValidity`,
+`groupByNodeIds`: bytes, and bytes have not bought time.
+
 ## The tile store in Rust: the cut, a spike (2026-11-15, early afternoon; owner: "I want to consider a rust version. Third tool chain is not a problem for us, since agent handles technical side")
 
 *Why Rust is on the table.* "Why Kotlin for the tile store" above gave three reasons against C++ or Rust: a third

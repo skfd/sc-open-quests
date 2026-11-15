@@ -1773,8 +1773,35 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   was restored at the same commit. Main's installed engine is still the second round's build until the next
   `run.py`. **Next for the engine, none built:** a dense-node decoder without protobuf's builders (the largest
   piece left, a larger change with its own oracle), then `Way.isClosed`'s boxed ids, `Element.checkValidity`
-  over a `TagMap`, `groupByNodeIds`: 2 to 3% of the allocated bytes each. `.scratch/batch-speed/` also holds
-  `e-*`, `g-*`, `r5-*`, `eng-types`, `eng-pairs`: all can go.
+  over a `TagMap`, `groupByNodeIds`: 2 to 3% of the allocated bytes each (the sixth round below reorders this).
+  `.scratch/batch-speed/` also holds `e-*`, `g-*`, `r5-*`, `eng-types`: all can go. **Keep `eng-pairs`** (this
+  round's build) until the sixth round's quiet pairs have run.
+- **Batch engine speed-up, sixth round: merged into main (e95f9b6c; 11-15, 17:20 to 18:30; owner: "fifth round
+  of speedup", already merged, so the next). Exact; its gain is NOT measured yet.** DESIGN.md, "Batch engine
+  speed-up, sixth round". Eight small changes read off the fifth round's profile, none an SC patch: a way's
+  node found at the place after the one before (`NodeStore.indexOfAfter`), the member ways walked instead of
+  searched per way, a bit per node for "tagged", a raw coordinate taken as it is in a plain block, the note
+  check once per element, tags kept by their places in a block's string table (`TagChunk.addPlaces`), a cell's
+  node order from a bit set instead of two sorts (`firstSeen`), a cell's ways and node ids put in place by
+  the threads that make them. New switch `-Dopenquests.assembleTrace=true` (a cell's map data, seconds per
+  step). **Checked on the final build:** f0 and f1 snapshots, the 31,695,753 state rows, Ontario and
+  europe-west recounts and grids, `verifyFast` on Dublin and Lisboa (25 runs), `matchCache=verify`, 112 engine
+  tests on main (four new; five of the six new or changed tests fail on purposely broken code). **Not
+  checked:** the oracle; London under `verifyFast`; a file not in units of 1e-7 degrees.
+  **The timing: three pairs under the planet timing's load say 10% less CPU, 2% more, 3% less, so nothing.**
+  **Waiting, started 18:35 in this session: `bash .scratch/batch-speed/quiet6.sh`** waits until no `tilestore`
+  or engine runs, 50 GB is available and the load is under 10%, then runs three interleaved pairs
+  (`eng-pairs` against `eng-six3`, runs `q6-*`) and writes `.scratch/batch-speed/q6.out`. **If that session is
+  gone, run it again by hand when the machine is free, and put the table into the design section** (it says
+  where). Quiet figures for the fifth round's engine, to hold it against: 83.1 and 79.9 s, 1,261 and 1,283 s
+  CPU. About 9 s of f0's wall here is the rehearsal's whole notes clip read on one thread, which a world file
+  does not have. Main's installed engine is still the second round's build until the next `run.py`.
+  **Next for the engine, none built:** the quiet pairs first; then the dense-node decoder (smaller now), the
+  `ScFeatures.getFeature` lock (24 s of threads waiting in a run; needs osmfeatures' source read), the
+  collector (a cell's untagged nodes made when asked for), and last the items that only save bytes.
+  `.scratch/batch-speed/` also holds `h-*`, `i-*`, `j-*`, `k-*`, `r6-*`, `eng-six`, `eng-six2`: all can go;
+  keep `eng-six3` and `eng-pairs` for the pairs. The worktree `../sc-open-quests-batch` (branch `batch-speed`,
+  equal to main's engine commit) can go.
 - **The history file read at a date in Rust: exact against osmium (11-15, 16:00-17:00; owner: "The next step
   toward the planet timing is the history-file reader").** DESIGN.md, "The history file read at a date".
   `tilestore/target/release/tilestore.exe at --pbf X.osh.pbf --at 2026-10-01T00:00:00Z [--out Y.osm.pbf]` and
@@ -1807,5 +1834,8 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   about 114 GB, not 108:** node ids reach 14.24 billion. It deletes the file at the end; **if the run died,
   delete `.scratch/planet-time/planet.loc` by hand** (C: had 260 GB free before). Proven on Berlin first (sparse
   file, `--sparse --keep`): 7,949,064 nodes, 1,337,301 ways, 10,438,110 refs, 1,398,340 pairs, the same as
-  `scut --at`. Threshold agreed earlier: both passes within 4 h pass, over 12 h fail. Then: write the result into
+  `scut --at`. **Not alone on the machine from 17:26 to 18:15:** the engine session ran f0 counts and checks
+  (up to 24 threads and 30 GB each, one after another) until it saw this run and stopped; around 18:10 no
+  memory was free. Whatever phases fall in that window are slower than they would be alone. Threshold agreed
+  earlier: both passes within 4 h pass, over 12 h fail. Then: write the result into
   DESIGN.md ("The history file read at a date", after it), then the spill-file memory fix.
