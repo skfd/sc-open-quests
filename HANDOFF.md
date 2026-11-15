@@ -1606,3 +1606,16 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   primitives (now a cell's longest run, 7.9 s), the kerb search (5%); nothing single is large any more, and the cut
   (262 min through Docker's bind mount) is the larger part of a world chain. `.scratch/batch-speed/m*` are this
   round's runs; the worktree `../sc-open-quests-batch` (branch `batch-speed`, now equal to main) can go.
+- **The owner asks (11-15, evening): is Overpass on an external SSD still right, or optimize the current engine and
+  measure more first?** Answered, nothing built. (1) The batch engine sits after either store, so its speed is not
+  an alternative to Overpass; the alternative is the tile store. (2) On t2n's 103 rectangles the tile store itself
+  reads in 2.2-2.3 s (+1.3 s merge; the rest of its 34-45 s is pyosmium writing a PBF), Overpass selects in 30 s and
+  hands over a PBF in about 40 s: **a tile store read by the engine would be roughly ten times faster per date and
+  124 GB against 708 GB, as a projection: its Kotlin cut, update, way-tiles index and compaction are unbuilt and the
+  planet cut unmeasured.** (3) Speed does not decide it: the world day is set by the cover's area, and Overpass's
+  estimate (0.5-2.5 h for both dates) fits a day. Overpass's unknowns (dated queries on 14 years of attic, a planet's
+  daily diff, USB4) can only be measured on the real clone, 708 GB, which does not fit in the 340 GB free: **buying
+  the drive is the measurement.** Recommended: buy the 2 TB drive as decided; before it, the world-day reader on
+  `opbench-full`; on the clone, the go/no-go DESIGN names (one world file's rectangles as one union query, current
+  and dated); do not build the Kotlin store before that. If Overpass fails there, the drive still holds the tile
+  store or two planets for osmium. The threshold for the go/no-go is not set: the owner's.
