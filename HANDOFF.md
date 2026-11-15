@@ -1560,6 +1560,19 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   `drop_caches`; clip edge and midnight (`[date:]` by element timestamp against a cut by sequence) are expected sources
   of differences that are not Overpass's fault (none appeared). Its suggested real-attic test on overpass.private.coffee
   failed: 504s after 109-262 s and no answer to a tiny query in 90 s; stopped after 5 requests.
+- **Batch engine speed-up: merged into main (11-15, 02:55; the entry below was written before).** `batch-speed`
+  rebased and fast-forwarded; main's engine rebuilt; 93 engine tests pass on main, SnapshotReproductionTest among
+  them. **The 13:15 daily run now counts with this engine and pushes its data as usual** (its snapshots equal the old
+  engine's on Ontario; the pause target and two cells at once are `world_cells.py`'s settings only, the daily runs
+  keep their launcher). Not pushed by this session. Since the entry below: `world_cells.py count` runs one engine
+  by default (one engine with two cells 243 s for two files, two engines side by side 223 s at 44 GB: the CPU is the
+  limit); the cut's 1.85 times holds with cold caches; **cut with `-s complete_ways`, the Germany rehearsal's four
+  files count exactly as cut with `smart`** (every field of 46 cells), which makes "cut the history file once, then
+  time-filter each file per month" worth its own rehearsal for the 118 world months (estimate: 12 days of machine
+  time against 52); quests by key in the main pass was exact and gained nothing, taken out. Dublin and Lisboa's twins
+  equal their ports with two cities at once. **Not checked: a world file with a polar or antimeridian cell (the cut
+  is gone): run the canary file first on 12-07.** The worktree `../sc-open-quests-batch` and `.scratch/batch-speed/`
+  (about 6 GB of runs and the complete_ways cut) can go.
 - **Batch engine speed-up: 2.0 times on the test file, built on branch `batch-speed`, not merged (11-15, 02:15).**
   DESIGN.md, "Batch engine speed-up". Germany f0: 245 s to 123 s wall, 2,467 s to 1,912 s CPU; with `--dump-state`
   272 s to 172 s; Ontario's daily-style run 78 s to 54 s. Same snapshot at every step, same state rows, same grid
