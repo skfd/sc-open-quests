@@ -1636,7 +1636,8 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   read to PBF), the engine unchanged, proved by a spike first: the cut of the europe clip of 11-12 held against the
   Python store's decoded payloads, and timed.** Rust is not installed here (no cargo/rustup; Visual Studio 2022 is,
   so a linker should be): installing rustup needs the owner's yes. Nothing built.
-- **The tile store's cut in Rust, a spike: exact and 54 times faster on the clip (11-15, 13:35-14:00; owner: "Yes,
+- **The tile store's cut in Rust, a spike: exact and about 50 times faster on the clip, 24 threads against Python's
+  one (11-15, 13:35-14:10; owner: "Yes,
   install and start").** DESIGN.md, "The tile store in Rust". Rust 1.100 (stable-msvc) installed by
   `winget install Rustlang.Rustup`; cargo is `~/.cargo/bin/cargo` (a shell opened before the install needs
   `export PATH="$HOME/.cargo/bin:$PATH"`). Crate `tilestore/` (`cargo build --release` there, 30 s the first time):
@@ -1649,6 +1650,12 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   reason Rust was preferred:** the planet cut. This cut holds everything in memory, 12.2 GiB peak for the 1.64 GB
   clip (over 600 GB at planet size, and its node rows are 32 bits); a planet cut is another program (places on
   disk, tags streamed, pairs sorted in runs), not designed. Also not built in Rust: the update, the read to PBF.
-  `.scratch/tiles/store-rs` (2.4 GB) can go; `bash`-free rerun is the command above. **Next, proposed:** the read in
+  **Germany (4.88 GB, timing only, no oracle): 128.7 s, 41.3 GiB peak; its tiles are 1.60 times the PBF, not the
+  clip's 1.14** (long ways outside cities copy their nodes into every tile they cross), so the planet's "about
+  124 GB" may be nearer 160-170 GB. The multiple measures Python's loops, not Rust against Kotlin: no Kotlin cut
+  exists. The Python `update` was not run on a Rust-cut store (first act of the update step: run it, then
+  `storecmp.py --ga 1 --gb 1`). Left on disk: `.scratch/tiles/store-rs` (2.4 GB), `store-rs-germany` (9.5 GB),
+  `s12-rs`; `tilestore/target/` (ignored); the Rust toolchain in `~/.cargo` and `~/.rustup`. All can go; the rerun
+  is the command above. Main is 12 commits ahead of origin: the next daily run pushes them. **Next, proposed:** the read in
   Rust (331 tiles to a PBF, the engine on it, timed against Overpass's 40 s), then the update, then the planet
   cut's design and one world file. The Overpass plan and the drive stand as they were.

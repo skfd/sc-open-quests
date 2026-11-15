@@ -3808,7 +3808,8 @@ now `tilestore/`), with `ignore_relation` to keep in step at a repin.
 Studio 2022's linker; crates `osmpbf` 0.3.8 to read, `rayon`, `zstd`). `tilestore cut --pbf X.osm.pbf --out S --day D
 [--z 14]` reads the clip itself (no `tiles.py geom`/`attrs` step) and writes the prototype's store layout, generation
 0: `pack-0000.bin`, `idx-0000.npy`, `wtiles`/`rtiles`, `rel-0000.bin`, `relidx-0000.npy`, `store.json`. So the Python
-`read`, `update` and checks work on a Rust-cut store unchanged. The tile maths follows `tiles.py` operation for
+`read` and checks work on a Rust-cut store unchanged (run); the Python `update` should too, since the files are the
+same, but it was not run on one. The tile maths follows `tiles.py` operation for
 operation (no fused multiply-add, no reciprocal). Everything is held in memory.
 
 *Exactness: the same store, byte for byte in its payloads* (`tools/stream/tilecheck/storecmp.py --a
@@ -3839,7 +3840,10 @@ to end:** the Python `read` of the 331 tiles under t2n's rectangles from the Rus
 | relation store | 68 s | 5.1 s |
 | **the whole cut** | **about 1,920 s** (1,309 + 613) | **35.7 s** |
 
-About 54 times. No Kotlin figure exists to hold beside it. The Python update of a day (532-623 s) and its read
+About 50 times (49 to 54: the Python cut was 451 s in one run, 613 s in another), **24 threads against one**: it
+measures the prototype's per-object Python loops, not Rust against Kotlin. The only Kotlin figure on record is the
+engine decoding this clip's 128M nodes in 6.7 s; Rust's 15.0 s read is more work (ways, relations, tags, versions
+too), so the two do not compare. No Kotlin cut exists to hold beside this one. The Python update of a day (532-623 s) and its read
 (34-55 s, of which the PBF write 30-50 s: 50.2 s in this run) are untouched.
 
 *Memory: 12.2 GiB peak working set for a 1.64 GB clip, and that is what does not carry to the planet.* The planet's
@@ -3848,6 +3852,18 @@ bits here (11 billion nodes do not fit). The time scales to about half an hour i
 in this form. **A planet cut is a different program:** node places from a file on disk (as `planet.loc`, 107 GiB),
 tags streamed in a second pass rather than held, the pairs sorted in runs on disk, the planet cut by region. Not
 designed, not built, not measured: the reason Rust was preferred is still unproven.
+
+*A country, not city boxes: Germany (the 11-07 extract, 4.88 GB), the same binary, timing and memory only (no Python
+store of it to hold it against):* **128.7 s, 41.3 GiB peak.** 442.6M nodes, 71.5M ways, 915,665 relations (628,034
+kept); 190,006 tiles; read 47.6 s, places 7.9 s, way tiles 2.0 s, tile pairs 15.6 s, payloads 44.7 s, pair indexes
+1.6 s, relation store 9.2 s. Per GB of PBF: 26 s and 8.5 GiB (the clip: 22 s and 7.4 GiB), so time and memory go
+with the file's size; the planet (85 GB) on that line is about 37 min and about 720 GiB. **The store is larger than
+the city clip said: tiles 7.28 GiB, 1.60 times the PBF** (the clip: 1.14), because nodes are copied 1.60 times
+(707.9M copies of 442.6M nodes; the clip 1.37) while ways are copied 1.08 times: outside city boxes ways are long
+and cross tiles, and each tile keeps all of a crossing way's nodes. With the relation store (425 MiB) and the
+way-tiles index (1.24 GB as plain pairs) the directory is 9.5 GB, 1.96 times the PBF. If the planet is like Germany
+rather than like the clip, its tiles are about 136 GB, not the 97 GB behind "about 124 GB" above. One country, not
+checked for exactness.
 
 *Not shown:* the planet cut (above); a day's update in Rust; a read to PBF in Rust (the "few seconds" handoff; the
 `osmpbf` crate only reads, so the writer is ours to choose or write); adaptive tiles (z14 only here, `--z` up to 16).
