@@ -1413,3 +1413,6 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   way-tiles index (about 19 GB as plain pairs, rewritten whole each day in the prototype) and compaction; (b) leave
   tier 2 for now. And: push the commits since 19:10. If (a), keep `store/`, `store-z16/` and the fresh cuts as the
   build's oracle, and `ref/` always; the geom folders (20 GB) can go.
+- **The owner's answers (11-14, 22:05):** push: yes. Tier 2 in Kotlin: "we can consider building it in kotlin, but i
+  need to see reasons why this specific stack and not other". Next: the comparison (DESIGN.md, "Tier 2's store: this
+  stack against the others").
