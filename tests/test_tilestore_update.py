@@ -18,13 +18,17 @@ T1 = datetime(2026, 11, 13, 10, 0, tzinfo=timezone.utc)
 BASE_NODES = {1: (51.500, -0.120, {}), 2: (51.500, -0.090, {}), 3: (51.510, -0.120, {}),
               4: (51.505, -0.105, {"amenity": "bench"}), 5: (51.520, -0.100, {}), 6: (51.520, -0.095, {}),
               7: (51.525, -0.095, {}), 8: (51.525, -0.100, {}), 9: (51.505, -0.075, {}),
-              11: (51.506, -0.121, {})}
+              11: (51.506, -0.121, {}), 12: (51.560, -0.150, {}), 13: (51.580, -0.180, {}), 14: (51.561, -0.149, {}),
+              15: (51.470, -0.170, {})}
 BASE_WAYS = {1: ([1, 2], {"highway": "residential"}), 2: ([1, 3], {"highway": "footway"}),
-             3: ([5, 6, 7, 8, 5], {"building": "yes"}), 4: ([3, 5], {})}
+             3: ([5, 6, 7, 8, 5], {"building": "yes"}), 4: ([3, 5], {}), 6: ([12, 14], {"barrier": "fence"})}
 BASE_RELS = {1: ([("w", 4, "outer"), ("w", 3, "inner")], {"type": "multipolygon", "landuse": "grass"}),
              2: ([("w", 1, "")], {"type": "route", "route": "bus"}),
              # in the tile of nodes 1 and 3 only through an untagged node no way holds (a rebuilt tile must keep it)
-             3: ([("n", 11, "label"), ("w", 3, "")], {"type": "site", "name": "Yard"})}
+             3: ([("n", 11, "label"), ("w", 3, "")], {"type": "site", "name": "Yard"}),
+             # a member way moves (1, by its node 2), other members lie where the day reaches nothing (way 6, node 13):
+             # the relation's tile index must keep their tiles
+             4: ([("w", 1, ""), ("w", 6, ""), ("n", 13, "entrance")], {"type": "site", "name": "Depot"})}
 
 
 def write_pbf(path, nodes, ways, rels, versions):
@@ -52,7 +56,7 @@ OSC = """<?xml version='1.0' encoding='UTF-8'?>
  <way id="2" version="2" timestamp="2026-11-13T10:00:00Z"><nd ref="1"/><nd ref="3"/>
   <tag k="highway" v="footway"/><tag k="surface" v="paved"/></way>
  <relation id="1" version="2" timestamp="2026-11-13T10:00:00Z">
-  <member type="way" ref="4" role="outer"/><member type="way" ref="3" role="inner"/>
+  <member type="way" ref="4" role="outer"/><member type="way" ref="3" role="inner"/><member type="node" ref="15" role=""/>
   <tag k="type" v="multipolygon"/><tag k="landuse" v="grass"/><tag k="name" v="Park"/></relation>
 </modify>
 <delete>
@@ -79,7 +83,8 @@ class UpdateTest(unittest.TestCase):
             ways[2] = ([1, 3], {"highway": "footway", "surface": "paved"})
             ways[5] = ([9, 10], {"highway": "service"})
             rels = dict(BASE_RELS)
-            rels[1] = (BASE_RELS[1][0], {"type": "multipolygon", "landuse": "grass", "name": "Park"})
+            # the relation gains a member node where nothing else reaches (its tile must take the relation)
+            rels[1] = (BASE_RELS[1][0] + [("n", 15, "")], {"type": "multipolygon", "landuse": "grass", "name": "Park"})
             versions = {("n", 2): (2, T1), ("n", 10): (1, T1), ("w", 2): (2, T1), ("w", 5): (1, T1), ("r", 1): (2, T1)}
             write_pbf(d / "after.osm.pbf", nodes, ways, rels, versions)
             (d / "day.osc").write_text(OSC, encoding="utf-8")

@@ -745,6 +745,11 @@ def update(sd: Path, diff: Path, before: Path, day: str, polygon: Path | None = 
     jv = np.flatnonzero(np.isin(dw_ids, cw))
     new_refs = np.unique(np.concatenate([dw.var["refs"][1][ro[j]:ro[j + 1]] for j in jv])) if len(jv) else np.zeros(0, np.int64)
     blat, blon, bfound = bt.get(new_refs)
+    # the changed relations' member nodes too: an untagged one no tile held must still place its relation
+    rel_nodes = np.unique(dr.var["mref"][1][dr.var["mtype"][1] == 0]) if len(dr) else np.zeros(0, np.int64)
+    rlat, rlon, rfound = after_pos(rel_nodes)
+    rel_nodes = rel_nodes[rfound][np.isin(key_of7(rlat[rfound], rlon[rfound]), region)]
+    needed = np.union1d(new_refs, rel_nodes)
     dec(np.unique(key_of7(blat[bfound], blon[bfound])))
     t_find = time.time() - t1
 
@@ -756,12 +761,12 @@ def update(sd: Path, diff: Path, before: Path, day: str, polygon: Path | None = 
         rels = Objs.concat([p[2] for p in parts] + [dr.select(np.zeros(0, np.int64))])
         nodes = nodes.first_of_each(prefer=nodes.fix["tagged"])
         # the new versions' nodes not in any tile (an untagged node no way held): a place from the store
-        have = np.isin(new_refs, nodes.fix["id"])
-        orphan = new_refs[~have]
+        have = np.isin(needed, nodes.fix["id"])
+        orphan = needed[~have]
         lat, lon, f = bt.get(orphan)
         nodes = Objs.concat([nodes, plain_nodes(orphan[f], lat[f], lon[f])])
         # the diff over them: its objects that reach the store's region
-        dn_sub = dn.select(np.flatnonzero(np.isin(dn_ids, np.union1d(cn, new_refs))))
+        dn_sub = dn.select(np.flatnonzero(np.isin(dn_ids, np.union1d(cn, needed))))
         dw_sub = dw.select(np.flatnonzero(np.isin(dw_ids, cw)))
         nodes = Objs.concat([nodes.without(cn_all), dn_sub]).first_of_each()
         ways = Objs.concat([ways.first_of_each().without(cw_all), dw_sub]).first_of_each()
@@ -824,6 +829,9 @@ def update(sd: Path, diff: Path, before: Path, day: str, polygon: Path | None = 
                 why["relation"] |= new_w.get(w_, set())
             for s in pairs_of(wt, mw[~np.isin(mw, moved)]).values():
                 why["relation"] |= s
+            mn = g.mref[ms][g.mtype[ms] == 0]
+            la, lo_, fd = after_pos(mn)
+            why["relation"] |= set(key_of7(la[fd], lo_[fd]).tolist())
     reach = np.array(sorted(why["node"] | why["way"] | why["relation"]), np.int64)
     reach = reach[np.isin(reach, region)]
     dec(reach)
@@ -880,12 +888,15 @@ def update(sd: Path, diff: Path, before: Path, day: str, polygon: Path | None = 
     add = np.zeros(int(sel.sum()), PAIR)
     add["id"], add["key"] = g.wid[wr[sel]], wk[sel]
     np.save(sd / f"wtiles-{NG:04d}.npy", np.sort(np.concatenate([wt2, add]), order=["id", "key"]))
+    # a reached relation's tiles: the working set's inside the day's reach, the old ones outside it (a far member node
+    # or way is not in the working set, and a tile not reached did not change)
     ar_rows = np.flatnonzero(np.isin(g.rid, ar))
-    sel = np.isin(rr, ar_rows)
-    rt2 = rt[~np.isin(rt["id"], np.concatenate([ar, cr_all]))]
+    sel = np.isin(rr, ar_rows) & np.isin(rk, reach)
+    gone = np.isin(rt["id"], np.concatenate([ar, cr_all]))
+    keep_far = gone & np.isin(rt["id"], g.rid[ar_rows[m.r_kept[ar_rows]]]) & ~np.isin(rt["key"], reach)
     add = np.zeros(int(sel.sum()), PAIR)
     add["id"], add["key"] = g.rid[rr[sel]], rk[sel]
-    np.save(sd / f"rtiles-{NG:04d}.npy", np.sort(np.concatenate([rt2, add]), order=["id", "key"]))
+    np.save(sd / f"rtiles-{NG:04d}.npy", np.sort(np.concatenate([rt[~gone | keep_far], add]), order=["id", "key"]))
     # the relation store: the reached relations' blobs again, from the working set
     rentries = []
     roff = 0
