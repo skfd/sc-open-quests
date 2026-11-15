@@ -1797,3 +1797,15 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   holds the logs and `cmp-*.json`; its PBFs and stores are deleted. **Next: the node file by id and the 108 GB
   timing of passes 1 and 2 on `history-261102.osh.pbf` with `--at`** (allowed on C:, the file deleted after; log
   the working set per phase with it), then the spill-file memory fix. The update in Rust is independent.
+- **The planet timing of passes 1 and 2: RUNNING since 11-15 17:26 (owner: "go ahead").**
+  `tilestore/target/release/tilestore.exe ptime --pbf ~/Code/.osm-data/planet/history-261102.osh.pbf --at
+  2026-11-02T00:00:00Z --nodes .scratch/planet-time/planet.loc`, log `logs/planet-ptime.log`, result
+  `.scratch/planet-time/planet.loc.json` (`tilestore/src/ptime.rs`). It writes every node's place at 8 bytes an id
+  (lat + 2^31 and lon, zeros: no node), then maps the file and finds every way's nodes in it and computes its
+  tiles; nothing spilled, no store. It logs seconds, working set and private bytes per phase, and counts ways with
+  nodes over 180 degrees apart (the antimeridian unknown) and ids not increasing at the date. **The node file is
+  about 114 GB, not 108:** node ids reach 14.24 billion. It deletes the file at the end; **if the run died,
+  delete `.scratch/planet-time/planet.loc` by hand** (C: had 260 GB free before). Proven on Berlin first (sparse
+  file, `--sparse --keep`): 7,949,064 nodes, 1,337,301 ways, 10,438,110 refs, 1,398,340 pairs, the same as
+  `scut --at`. Threshold agreed earlier: both passes within 4 h pass, over 12 h fail. Then: write the result into
+  DESIGN.md ("The history file read at a date", after it), then the spill-file memory fix.
