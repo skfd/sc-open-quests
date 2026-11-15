@@ -1619,3 +1619,9 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   `opbench-full`; on the clone, the go/no-go DESIGN names (one world file's rectangles as one union query, current
   and dated); do not build the Kotlin store before that. If Overpass fails there, the drive still holds the tile
   store or two planets for osmium. The threshold for the go/no-go is not set: the owner's.
+- **The owner (11-15, evening): "let's focus in this session on Tile store work. Which language should we choose to
+  implement it in".** So the tile store is being worked on after all, beside the Overpass plan (not cancelled; the
+  drive is not bought yet). Recommended: **Kotlin, in the engine's build** (DESIGN, "Why Kotlin for the tile store"):
+  the engine reads the store directly, so the 30 s PBF write of each read goes; Python stays the oracle and the
+  orchestration. First step proposed, not started: the Kotlin cut of the europe clip of 11-12, held payload for
+  payload against the Python store, then one world file's cut timed before the planet. Waiting on the owner's yes.
