@@ -6,6 +6,7 @@ package openquests.fast
 // 57 s), the buildings of all areas are gathered and removed once. An area's buildingsInArea depends
 // only on buildingPositions and buildingsByCenterPosition, which step 5 never changes, and they are
 // the very objects in `buildings`, so a set by identity removes the same ones.
+// A second change, also in step 5: see `unconsumed`.
 import openquests.candidates
 import openquests.rasterBox
 import de.westnordost.streetcomplete.data.elementfilter.toElementFilterExpression
@@ -94,9 +95,15 @@ object FastAddHousenumber : FastTwin {
         /** 5. exclude buildings that are contained in an area that has an address tagged on itself
          *     or on a vertex on its outline */
 
+        // the second change: only an area that holds an address node can pass the filter below, whatever was
+        // consumed before its turn, so the others are left out before their sizes are measured and sorted
+        // (a city has millions of areas and a few thousand with an address node on the outline). The sort is
+        // stable, so the ones kept come in the order they had among all.
+        val unconsumed = HashSet(addressNodeIds)
         val areasWithAddressesOnOutline = mapData.ways
             .asSequence()
             .filter { it.isArea() }
+            .filter { area -> area.nodeIds.any { it in unconsumed } }
             // we check small areas first, because smaller areas should "consume" address nodes,
             // or in other words, address nodes on outlines are associated to the smallest area
             // they are part of
