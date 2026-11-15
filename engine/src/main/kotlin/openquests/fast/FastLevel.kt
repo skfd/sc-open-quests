@@ -1,5 +1,6 @@
 package openquests.fast
 
+import openquests.ArrayMapData
 import openquests.candidates
 import de.westnordost.streetcomplete.data.elementfilter.ElementFilterExpression
 import de.westnordost.streetcomplete.data.elementfilter.toElementFilterExpression
@@ -8,6 +9,7 @@ import de.westnordost.streetcomplete.data.osm.mapdata.BoundingBox
 import de.westnordost.streetcomplete.data.osm.mapdata.Element
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import de.westnordost.streetcomplete.data.osm.mapdata.MapDataWithGeometry
+import de.westnordost.streetcomplete.data.osm.mapdata.Node
 import de.westnordost.streetcomplete.data.osm.mapdata.filter
 import de.westnordost.streetcomplete.osm.places.isPlace
 import de.westnordost.streetcomplete.osm.things.isThing
@@ -37,6 +39,56 @@ class PointGrid(private val points: List<LatLon>, private val cellDegrees: Doubl
         val out = ArrayList<Int>()
         for (x in x0..x1) for (y in y0..y1) cells[key(x, y)]?.let { for (i in it) if (points[i] in b) out.add(i) }
         return out.toIntArray().also { it.sort() }
+    }
+}
+
+/** The grid cells any of [bounds] touches: [mayHold] is true for every position one of the bounds contains,
+ *  and for some others. Across the 180th meridian, or with too many cells, it is true everywhere. */
+class NearBounds(bounds: List<BoundingBox>, private val cellDegrees: Double = 0.01) {
+    private val everywhere: Boolean
+    /** open-addressed cell keys; [EMPTY] for a free slot */
+    private val slots: LongArray
+
+    private fun cell(d: Double) = floor(d / cellDegrees).toInt()
+    private fun key(x: Int, y: Int) = (x.toLong() shl 32) or (y.toLong() and 0xffffffffL)
+    private fun slotOf(key: Long) = ((key * -0x61c8864680b583ebL) ushr 40).toInt() and (slots.size - 1)
+
+    init {
+        var cells = 0L
+        var wide = false
+        for (b in bounds) {
+            if (b.crosses180thMeridian) wide = true
+            cells += (cell(b.max.longitude) - cell(b.min.longitude) + 1L) * (cell(b.max.latitude) - cell(b.min.latitude) + 1L)
+        }
+        everywhere = wide || cells > MAX_CELLS
+        var size = 16
+        if (!everywhere) while (size < cells * 2) size *= 2
+        slots = LongArray(size) { EMPTY }
+        if (!everywhere) for (b in bounds) {
+            for (x in cell(b.min.longitude)..cell(b.max.longitude)) for (y in cell(b.min.latitude)..cell(b.max.latitude)) {
+                val k = key(x, y)
+                var s = slotOf(k)
+                while (slots[s] != EMPTY && slots[s] != k) s = (s + 1) and (slots.size - 1)
+                slots[s] = k
+            }
+        }
+    }
+
+    fun mayHold(p: LatLon): Boolean {
+        if (everywhere) return true
+        val k = key(cell(p.longitude), cell(p.latitude))
+        var s = slotOf(k)
+        while (true) {
+            val v = slots[s]
+            if (v == k) return true
+            if (v == EMPTY) return false
+            s = (s + 1) and (slots.size - 1)
+        }
+    }
+
+    private companion object {
+        const val EMPTY = Long.MIN_VALUE
+        const val MAX_CELLS = 2_000_000L
     }
 }
 
@@ -91,9 +143,12 @@ private fun getMultiLevelMallGeometries(
 /**
  * The second half of SC's AddLevel and AddLevelThing: every element matching [filter] and [isCandidate]
  * whose center is inside one of [malls], each once, in the order SC adds them (by mall, then in map order).
- * Two changes that give the same result: a mall looks only at the candidates its bounds contain, from a
- * [PointGrid], and [isCandidate] (SC's isPlace or isThing, the costly part) is asked only of an element
- * inside a mall, not of all of them up front.
+ * Three changes that give the same result: a mall looks only at the candidates its bounds contain, from a
+ * [PointGrid]; [isCandidate] (SC's isPlace or isThing, the costly part) is asked only of an element
+ * inside a mall, not of all of them up front; and an element near no mall at all ([NearBounds]) is left out
+ * before anything is asked of it or kept. AddLevelThing's filter holds for almost every node, untagged ones
+ * too, so without the last a city's every node went into the lists and the grid for a handful of malls (the
+ * longest run of a cell of 14M nodes, and what its run phase waited for).
  */
 private fun inMalls(
     mapData: MapDataWithGeometry,
@@ -102,9 +157,16 @@ private fun inMalls(
     isCandidate: (Element) -> Boolean,
 ): List<Element> {
     val elements = ArrayList<Element>(); val positions = ArrayList<LatLon>()
-    for (element in mapData.candidates(filter)) {
+    val near = NearBounds(malls.map { it.bounds })
+    // without a key to go by (a filter of `!level` and the like), the map data itself: no copy of it
+    val candidates: Iterable<Element> =
+        if (mapData is ArrayMapData && filter.keyReject.clauses.isEmpty()) mapData else mapData.candidates(filter)
+    for (element in candidates) {
+        // a node of this map data is its own geometry (ArrayMapData.getNodeGeometry): no lookup by id
+        val pos = if (element is Node && mapData is ArrayMapData) element.position
+            else mapData.getGeometry(element.type, element.id)?.center ?: continue
+        if (!near.mayHold(pos)) continue
         if (!filter.matches(element)) continue
-        val pos = mapData.getGeometry(element.type, element.id)?.center ?: continue
         elements.add(element); positions.add(pos)
     }
     if (elements.isEmpty()) return emptyList()

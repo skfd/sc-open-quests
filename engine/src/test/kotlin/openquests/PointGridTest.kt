@@ -3,10 +3,12 @@ package openquests
 import de.westnordost.streetcomplete.data.osm.mapdata.BoundingBox
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import de.westnordost.streetcomplete.util.math.contains
+import openquests.fast.NearBounds
 import openquests.fast.PointGrid
 import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
+import kotlin.test.assertTrue
 
 /** The level twins' grid must give exactly the points SC's BoundingBox.contains holds, in index order. */
 class PointGridTest {
@@ -32,5 +34,26 @@ class PointGridTest {
     @Test fun `a box across the 180th meridian, and one larger than the grid`() {
         check(BoundingBox(-5.0, 179.9, 5.0, -179.9))
         check(BoundingBox(-80.0, -170.0, 80.0, 170.0))
+    }
+
+    /** NearBounds may say yes too often, never no for a point one of the boxes contains */
+    private fun checkNear(boxes: List<BoundingBox>, mustReject: Boolean) {
+        val near = NearBounds(boxes)
+        var rejected = 0
+        for (p in points) {
+            if (boxes.any { p in it }) assertTrue(near.mayHold(p), "$p") else if (!near.mayHold(p)) rejected++
+        }
+        if (mustReject) assertTrue(rejected > points.size / 2, "rejected $rejected of ${points.size}")
+    }
+
+    @Test fun `near bounds holds every point a box contains and drops most others`() {
+        checkNear(List(40) {
+            val lat = 55.7 + random.nextDouble(0.1); val lon = 37.5 + random.nextDouble(0.2)
+            BoundingBox(lat, lon, lat + random.nextDouble(0.004), lon + random.nextDouble(0.004))
+        } + BoundingBox(55.71, 37.52, 55.72, 37.53) + BoundingBox(55.75, 37.6, 55.75, 37.6), mustReject = true)
+        checkNear(emptyList(), mustReject = true)
+        // across the 180th meridian, or too large for a cell set: everywhere
+        checkNear(listOf(BoundingBox(-5.0, 179.9, 5.0, -179.9)), mustReject = false)
+        checkNear(listOf(BoundingBox(-80.0, -170.0, 80.0, 170.0)), mustReject = false)
     }
 }
