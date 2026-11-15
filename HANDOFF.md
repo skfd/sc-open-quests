@@ -1555,3 +1555,8 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   (for a world-day reader prototype before the drive arrives). Push: **not yet** (19 commits local).
   **Next, when picked up:** the world-day reader against `opbench-full`: union queries piped to PBF inside the container,
   a `<remark>` check, four streams; then, with the drive, the clone onto ext4 and its daily updates.
+- **A peer session's review of the bench (11-15, 00:55), folded into DESIGN.md:** the 409 s for diff 5175 is on a clip db,
+  not a planet's daily cost; carry reads (not seconds) to the external drive, since Windows may cache the VHDX under
+  `drop_caches`; clip edge and midnight (`[date:]` by element timestamp against a cut by sequence) are expected sources
+  of differences that are not Overpass's fault (none appeared). Its suggested real-attic test on overpass.private.coffee
+  failed: 504s after 109-262 s and no answer to a tiny query in 90 s; stopped after 5 requests.

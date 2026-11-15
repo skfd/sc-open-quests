@@ -3555,6 +3555,12 @@ XML to PBF by `osmium sort` with the stamp; recount as `tiles.py recount`; compa
 | 2 | after 5175, current | ref (11-13) | 1,116,244 | 0 |
 | 3 | after 5175, `[date:"2026-11-12T00:00:00Z"]` | ref/old (11-12) | 1,114,046 | 0 |
 
+Two effects could have shown as differences without being Overpass's fault, and did not here: the clip's edge (the
+planet diff brings edited ways whose nodes lie outside the clip, so boxes near its edge could lose geometry) and
+midnight (`[date:]` selects by element timestamp, ref/old was cut by replication sequence, so an element stamped just
+before 11-12T00:00Z but in diff 5175 would show at that date in Overpass only). On the planet db the first goes away;
+the second remains possible at every day's boundary and is to be named before any such row is called a bug.
+
 Stage 3's answer against stage 1's: 4,966,517 objects the same, 463 differ, 366 only in tag order and 97 only in the
 user name (attic gives a renamed user's current name); the engine reads neither. So **one attic db answers D and D-1
 exactly**. Also exact: stage 2 with relation member ways only by role outer/inner (output 997 MB against 1,125 MB: the
@@ -3562,7 +3568,9 @@ bulk is ways and nodes over the big boxes, not relations).
 
 *Cost here* (internal NVMe; timings vary up to 2x between identical runs while other work runs):
 - Load of the 1.64 GB clip: 1,842 s, single-threaded; db 13.7 GB (8.4x the PBF). Day diff 5175 (the whole planet's day,
-  so worldwide objects too): 409 s; db 18.7 GB after. A planet db takes a daily diff in minutes (dev.overpass-api.de keeps
+  so worldwide objects too): 409 s **on a clip db**; db 18.7 GB after. Not a planet's daily cost: here most of the day's
+  objects went in new, with no earlier versions; on a planet db with fourteen years of attic each change rewrites
+  existing blocks and their attic. A planet db takes a daily diff in minutes (dev.overpass-api.de keeps
   up minutely); not measured on a planet-size db, nor on the external drive.
 - One union query per date: 84-206 s warm, 86-113 s cold, of which most is writing 1.1 GB of XML (16k read requests,
   0.8 GB read from cold). XML to PBF (61 MB): 10-16 s. The engine on it: 21-23 s (48 s under load).
@@ -3574,7 +3582,9 @@ bulk is ways and nodes over the big boxes, not relations).
   rectangles into union queries (per world file or region), not one query each.
 - Reads from cold: 306k-361k requests, 18-20 GB, for the 103 alone; the union 16k requests. At a USB4 NVMe's latency
   (some tens of microseconds more than internal) that adds seconds, not minutes, on this 19 GB db with one day of attic;
-  a 708 GB db reads more per query, which only the real clone on the real drive will show.
+  a 708 GB db reads more per query, which only the real clone on the real drive will show. **Carry the reads over, not
+  the seconds:** the db fits in RAM, and `drop_caches` empties only the Docker VM's cache, while Windows may still cache
+  the VHDX underneath, so "cold" seconds may be optimistic. Lisboa's 16 alone, cold: 14,736 requests, 870 MiB.
 - **Where the union's time goes** (dated, warm; `tools/stream/overpass/split.py`, `.scratch/overpass/full/split-dated.json`):
   selection alone (`out count;`) 30 s for 4,966,980 objects; with the XML written inside the container 50 s; **piped
   straight into osmium inside the container, a stamped, sorted PBF in 36 s + 1.6 s**. The 84-206 s above (and their 2x
@@ -3599,7 +3609,10 @@ bulk is ways and nodes over the big boxes, not relations).
 
 *What this cannot show:* a planet db's speed with fourteen years of attic (here one day). Tried on the public
 overpass-api.de with a 0.2 km2 London box, current and dated (11-12 and 2019): 35-46 s each with two gateway errors, so
-the server's load drowned any difference; stopped there. The **size to buy**: the current clone
+the server's load drowned any difference; stopped there. Tried again on overpass.private.coffee (full planet with attic;
+a peer session's suggestion, 11-15 00:55): four Lisboa rectangles, sequential: the union and lisboa-1 dated and current
+all answered 504 after 109-262 s, and a single small node query got no answer in 90 s either way; stopped after 5
+requests. So no real-attic timing from public servers tonight; it waits for the clone on the drive. The **size to buy**: the current clone
 (dev.overpass-api.de/clone/2026-11-10/, listing read 11-14) is **about 708 GB with attic** (attic files about 253 GB;
 nodes.bin 95 GB, nodes_meta.bin 84 GB, ways.bin 80 GB), against "about 400 GB" for 2023 above. **A 2 TB drive**: 1 TB
 would hold it with under 300 GB to grow and no room for a second copy during a re-clone.
