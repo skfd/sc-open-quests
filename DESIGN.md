@@ -4061,11 +4061,19 @@ Python store.
 
 **Cost, Germany (4.88 GB), one run:** 629.5 s and **33.4 GiB peak** against the in-memory cut's 128.7 s and
 41.3 GiB: blob index 12.5 s, pass 0 1.5 s, pass 1 55.9 s, pass 2 132.3 s, needs and relations 3.5 s, relation store
-34.5 s, **buckets 388.9 s**. The memory is not what the design promised, and the reason is one of the differences
-named above: Germany's largest spill file (one z6 cell) is 9.7 GB uncompressed and is read whole, then its z8
-buckets are cut side by side. The peak no longer grows with the file (the node places, 7 GB here, were already
-freed), but it is set by the densest z6 cell, and Germany's is 33 GiB. For the planet: spill files per z7 or z8
-cell, or fewer buckets at once. Not done.
+34.5 s, **buckets 388.9 s**. The memory is not what the design promised. **The likely reason**, not
+measured (the wrapper reports the peak, not when it came): Germany's largest spill file (one z6 cell) is 9.7 GB
+uncompressed and is read whole, then its z8 buckets are cut side by side, after the node places (7 GB here) are
+freed. If so the peak no longer grows with the file but is set by the densest z6 cell. For the planet: spill files
+per z7 or z8 cell, or fewer buckets at once; the first act of that fix is the working set logged at each phase.
+**Bounded memory is designed, not yet shown.** Not done.
+
+**A planet-only unknown, added: the antimeridian.** Neither input holds a way with nodes on both sides of 180
+degrees. `segment_tiles` (here and in `tiles.py`, the same rule) walks every column between the two ends' x, so such
+a way would be copied into a whole row of tiles, 16,384 at z14, and spilled to every bucket of that row. It stays a
+superset of what the engine asks (a way by a node in the padded box), so not wrong, but large; how many such ways the
+planet has is not counted. To settle before the planet cut: count them, and split such a segment at 180 degrees.
+The engine carries its own caveat for cells at the antimeridian (HANDOFF: run the canary file first on 12-07).
 
 Four to seven times slower than the in-memory cut on the clip and under half its memory; five times slower on
 Germany and four fifths of its memory. The time is not tuned: each

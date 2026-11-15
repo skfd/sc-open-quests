@@ -1701,9 +1701,13 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   cell, or fewer buckets at once). **Not exercised: the node file by id** (the places are in memory here; a file
   by id for a region would be nearly planet-sized). **Spill: 12.3-12.8 bytes a ref, so about 185 GB for the planet
   as coded**, more than the design's guess; the cut still waits on the drive. Not tuned: every pass spills on one
-  thread. `tools/stream/tilecheck/peak.ps1` runs a program and reports wall time and peak working set. Left in
-  `.scratch/tiles/`: `store-s8`, `store-s12` (2.4 GB each), `store-s8-germany`, `store-rs-germany` (9.5 GB each),
-  `store-rs`; all can go. **Next, in this order:** (1) the history file read at a date in Rust, proven on
+  thread. `tools/stream/tilecheck/peak.ps1` runs a program and reports wall time and peak working set. The
+  streaming test stores (`store-s8`, `store-s12`, `store-s8-germany`) are deleted; their record is
+  `.scratch/tiles/storecmp-s8.json`, `storecmp-s12.json`, `storecmp-s8-germany.json` and the `store-s*.log` files.
+  Left in `.scratch/tiles/`: `store-rs` (2.4 GB), `store-rs-germany` (9.5 GB, the Germany oracle); both can go
+  (C: has 262 GB free). The 33.4 GiB's cause is likely, not measured (log the working set per phase first).
+  **Antimeridian, unknown:** a way across 180 degrees would be copied into a whole row of tiles by the segment
+  rule (Python's too); count such ways and split the segment before the planet cut. **Next, in this order:** (1) the history file read at a date in Rust, proven on
   `berlin-history` against `osmium time-filter`; (2) the node file by id and the 108 GB timing of passes 1 and 2
   on the planet's history file (the owner allowed it on C: after this proof; delete the file after); (3) the
   spill-file memory fix. The update in Rust is independent of these. **Next, proposed:** the update in Rust (first act: the Python `update` on
