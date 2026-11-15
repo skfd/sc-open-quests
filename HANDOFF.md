@@ -1712,16 +1712,34 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   on the planet's history file (the owner allowed it on C: after this proof; delete the file after); (3) the
   spill-file memory fix. The update in Rust is independent of these. **Next, proposed:** the update in Rust (first act: the Python `update` on
   `store-rs`, then `storecmp.py --ga 1 --gb 1`), then the planet cut's design.
-- **Batch engine speed-up, third round, under way in another session (11-15, from 14:15; owner: "continue engine
-  optimisation").** On branch `batch-speed` (worktree `../sc-open-quests-batch`), **not merged**; main's engine and
-  its build are untouched. This replaces the second round's "Next for the engine" and "the worktree can go" above.
-  Four commits there: (1) one read of the ways for both passes (the area pass takes its ways off the main pass's
-  read); (2) a node found through a table of id stretches (not yet shown to be a gain: to be measured alone, and
-  taken out if it is none); (3) node sets as marks by a node's place: twins for the kerb search, AddEntrance,
-  AddCrossingKerbHeight and AddCycleway, AddHousenumber's address nodes as a `LongSet`; (4) the table's stretches
-  grow for wide id ranges. **Verified so far:** f0's snapshot equal after (1) and (2); every twin equal to its port
-  on Dublin and Lisboa (`verifyFast`, 25 map data runs) and that snapshot equal to the second round's; new tests
-  `NodeStoreTest`, `LongSetTest`, `NodeSetTwinsTest` (the twins against SC's code on random map data; shown to fail
-  on a broken twin). **Not yet:** f0/f1 and the state rows on the final build, Ontario's snapshot and grid, the whole
-  engine suite, DESIGN.md. Timings are noisy: the tile store session runs Rust cuts on all threads, so engines are
-  compared in interleaved pairs (`.scratch/batch-speed/batch.sh`, `checks.sh`, engine snapshots `eng-*`).
+- **Batch engine speed-up, third round: merged into main (11-15, 14:15 to 15:50; owner: "continue engine
+  optimisation").** DESIGN.md, "Batch engine speed-up, third round". It replaces the second round's "Next for the
+  engine" above. **About 15% less wall time and 17% less CPU on Germany f0**: 89.5 and 87.4 s against main's 102.2
+  and 104.0 s in the same minutes (CPU 1,518 and 1,485 s against 1,796 and 1,828 s). The tile store session ran
+  Rust cuts on all threads all afternoon, so engines were compared only in interleaved pairs
+  (`.scratch/batch-speed/batch.sh`), and no quiet-machine figure exists: main itself was 91.5 s at midday. Built,
+  the same snapshot after each: (1) one read of the ways for both passes (the area pass takes its ways off the main
+  pass's read); (2) a node found through a table of id stretches (small: about 0.75 s, seen only when the main pass
+  is measured alone); (3) node sets as marks by a node's place instead of `HashSet<Long>`: twins for the kerb
+  search, AddEntrance and AddCrossingKerbHeight, AddHousenumber's address nodes as a `LongSet`, and a twin for
+  AddCycleway that does its clock-free work once per map data. Quest CPU in f0's cells about 500 s to about 400 s.
+  **Checked:** f0 and f1 snapshots, f0's 31,695,753 state rows, `matchCache=verify` on f0, Ontario's 11-14 and
+  europe-west's 11-15 recounts equal to what main published with grids byte for byte, `verifyFast` on Dublin and
+  Lisboa (25 map data runs), three new tests (`NodeSetTwinsTest` holds the twins against SC's code on random map
+  data and fails on a broken twin); 101 engine tests on main, none failing, SnapshotReproductionTest among them
+  (TorontoRegressionTest skips, its extract pruned). **Not checked:** London under `verifyFast` (its ports take
+  tens of minutes; the europe-west recount holds London's totals instead); a world file with a polar or
+  antimeridian cell (as before: the canary first on 12-07).
+  **Main's installed engine was not rebuilt** (the tile store session may be counting through it): the next
+  `run.py` rebuilds it by itself (`engine_is_stale`), so **the next 12:15 daily run is the first with these
+  changes and pushes them**; anything that calls the installed engine directly before that runs the second
+  round's build, which counts the same. If a count looks wrong, `-Dopenquests.fastKerbs=false` takes the kerb twin out;
+  the other twins come out of `FAST_TWINS` (FastTwins.kt). At a repin: `helper:KerbUtil` pins SC's `KerbUtil.kt`
+  for the kerb twin (REPIN.md, step 3); the pin is the vendored copy's hash with LF endings, no SC checkout was on
+  disk to hash, so a "moved" report there with no change in the file is that.
+  **Next for the engine, none built:** the line `.flatMapTo(HashSet()) { it.nodeIds }` is in fourteen more ports;
+  one rewrite rule in `port_area_quests.py` (as `CANDIDATES` was) would reach them all instead of a twin each.
+  Then `WaysCrossingUtils.groupByNodeIds` (AddBarrierOnRoad, AddBarrierOnPath, AddCrossing), then allocation
+  (block decoding, `getLastCheckDateKeys`). `.scratch/batch-speed/` holds this round's runs (`r3*`, `b-*`, `c-*`,
+  `q-*`) and four engine snapshots (`eng-*`, 11 MB each): all can go. The worktree
+  `../sc-open-quests-batch` (branch `batch-speed`, equal to main) can go too.
