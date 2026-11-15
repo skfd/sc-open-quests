@@ -109,6 +109,9 @@ class ArrayMapData(
         return if (i < 0) null else nodes[i]
     }
 
+    /** where node [id] is in [nodes], or -1 */
+    fun nodePosition(id: Long): Int = nodeIndex[id]
+
     override fun getWay(id: Long): Way? {
         val i = wayIndex[id]
         return if (i < 0) null else ways[i]

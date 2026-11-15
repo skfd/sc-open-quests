@@ -7,6 +7,11 @@ package openquests.fast
 // only on buildingPositions and buildingsByCenterPosition, which step 5 never changes, and they are
 // the very objects in `buildings`, so a set by identity removes the same ones.
 // A second change, also in step 5: see `unconsumed`.
+// A third: the address nodes' ids are a [LongSet], not a `HashSet<Long>` that is the key view of a map from
+// id to node. SC's code asks that set about every node of every candidate building and of every area of the
+// city, an object made of each id on the way. What the view did is kept: an id consumed leaves the map too,
+// so step 4 sees the nodes whose ids are still in the set (in another order, which `any` does not see).
+import openquests.LongArrayAsList
 import openquests.candidates
 import openquests.rasterBox
 import de.westnordost.streetcomplete.data.elementfilter.toElementFilterExpression
@@ -33,10 +38,10 @@ object FastAddHousenumber : FastTwin {
     override fun getApplicableElements(mapData: MapDataWithGeometry): Iterable<Element> {
         val bbox = mapData.boundingBox ?: return listOf()
 
-        val addressNodesById = mapData.candidates(mapData.nodes, nodesWithAddressFilter)
+        val addressNodes = mapData.candidates(mapData.nodes, nodesWithAddressFilter)
             .filter { nodesWithAddressFilter.matches(it) }
-            .associateByTo(HashMap()) { it.id }
-        val addressNodeIds = addressNodesById.keys
+        val addressNodeIds = LongSet(addressNodes.size)
+        for (node in addressNodes) addressNodeIds.add(node.id)
 
         /** 1. filter: only buildings with no address that usually should have an address
                and that do not have an address node on their outline */
@@ -76,8 +81,8 @@ object FastAddHousenumber : FastTwin {
         /** 4. exclude buildings that contain an address node somewhere within their area */
 
         val addressPositions = SparseLatLonRaster(rasterBox(bbox), 0.0005)
-        for (node in addressNodesById.values) {
-            addressPositions.insert(node.position)
+        for (node in addressNodes) {
+            if (node.id in addressNodeIds) addressPositions.insert(node.position)
         }
 
         buildings.removeAll { building ->
@@ -99,11 +104,11 @@ object FastAddHousenumber : FastTwin {
         // consumed before its turn, so the others are left out before their sizes are measured and sorted
         // (a city has millions of areas and a few thousand with an address node on the outline). The sort is
         // stable, so the ones kept come in the order they had among all.
-        val unconsumed = HashSet(addressNodeIds)
+        val unconsumed = addressNodeIds.copy()
         val areasWithAddressesOnOutline = mapData.ways
             .asSequence()
             .filter { it.isArea() }
-            .filter { area -> area.nodeIds.any { it in unconsumed } }
+            .filter { area -> area.hasNodeIn(unconsumed) }
             // we check small areas first, because smaller areas should "consume" address nodes,
             // or in other words, address nodes on outlines are associated to the smallest area
             // they are part of
@@ -181,27 +186,31 @@ private val buildingTypesThatShouldHaveAddresses = listOf(
     "kindergarten", "train_station", "hotel", "retail", "shop", "commercial", "office"
 )
 
+private fun Way.hasNodeIn(ids: LongSet): Boolean {
+    val own = nodeIds
+    for (i in 0 until own.size) if (own.at(i) in ids) return true
+    return false
+}
+
 /** return whether any of the given [nodeIds] is contained in this element and remove these from
  *  the given set */
-private fun Element.consumeAnyContainedNode(nodeIds: MutableSet<Long>, mapData: MapDataWithGeometry): Boolean =
+private fun Element.consumeAnyContainedNode(nodeIds: LongSet, mapData: MapDataWithGeometry): Boolean =
     when (this) {
         is Way -> consumeAnyContainedNode(nodeIds)
         is Relation -> consumeAnyContainedNode(nodeIds, mapData)
         else -> false
     }
 
-private fun Way.consumeAnyContainedNode(nodeIds: MutableSet<Long>): Boolean {
+private fun Way.consumeAnyContainedNode(nodeIds: LongSet): Boolean {
     var result = false
-    for (nodeId in this.nodeIds) {
-        if (nodeId in nodeIds) {
-            nodeIds.remove(nodeId)
-            result = true
-        }
+    val own = this.nodeIds
+    for (i in 0 until own.size) {
+        if (nodeIds.remove(own.at(i))) result = true
     }
     return result
 }
 
-private fun Relation.consumeAnyContainedNode(nodeIds: MutableSet<Long>, mapData: MapDataWithGeometry): Boolean {
+private fun Relation.consumeAnyContainedNode(nodeIds: LongSet, mapData: MapDataWithGeometry): Boolean {
     val wayMembers = members.filter { it.type == ElementType.WAY }
     var result = false
     for (wayMember in wayMembers) {

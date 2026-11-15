@@ -57,6 +57,7 @@ helper:FerryUtils               quests/ferry/FerryUtils.kt                      
 helper:LevelUtils               quests/level/LevelUtils.kt                                               1b18ef4268be0e52598b75ec23d8f657611f5dab2d70cd6602ddf6945dd36a08
 helper:SummitMarkingsUtil       quests/summit/SummitMarkingsUtil.kt                                      41d377bff5b8e46f2eca2befacfa7d072c9b238fc516333940a413bb71b99712
 helper:MaxHeightUtils           quests/max_height/MaxHeightUtils.kt                                      23204371a4f5bdebaf8fa366b33abae29455b79aea595f4f575346645a3997b7
+helper:KerbUtil                 osm/kerb/KerbUtil.kt                                                     15d05045d6a3813211ddc5ae1e0afe2f66d731f6f588027d32a300248cb6d020
 helper:ignoreRelation           ApplicationConstants.kt                                                  359dde912f138292f371ad5a9de0809249313f6a59b23cfe7436527087ff306a
 AddHousenumber                  quests/address/AddHousenumber.kt                                         3db131aceee0ad57273c11ac767d052555cb4e1c13281c5d7cba8df8feb3a7a6
 AddCycleway                     quests/cycleway/AddCycleway.kt                                           d051385015791839920aca800c1c701518a79b8e47429dfa3043c6ce2abe5284

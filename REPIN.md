@@ -55,6 +55,9 @@ count): `git diff v<old>:<old path> v<tag>:<new path>`. The list is `engine/PORT
   verbatim. New custom quests whose `getApplicableElements` looks at one element at a time go here.
 - **Fast twins** (`src/main/kotlin/openquests/fast/`): redo each as "the new port plus its one speed
   change", with `sourceSha256` from the new pin. `CustomQuestsTest` fails until the hashes agree.
+  `helper:KerbUtil` pins SC's `osm/kerb/KerbUtil.kt`, which `fastKerbNodes` (`FastKerbs.kt`) copies: if it
+  moved, redo that function from the new file. `NodeSetTwinsTest` then holds it and the other node-set twins
+  against SC's own code on random map data.
 - `helper:OsmNoteQuest` (`openquests/NoteQuest.kt`) and `helper:ignoreRelation`
   (`openquests/IgnoreRelation.kt`): diff the SC function, update the port.
 - Then `python engine/pin_ports.py --sc <checkout>`: every pin it reports as changed must be a file

@@ -261,7 +261,16 @@ download:
   (Moscow 43-86 s each in the daily runs, about 2 s for the shared walk). CheckExistence and
   AddChargingStationSocket (`FastScans.kt`) are twins for a smaller reason: age quests, four runs each, whose
   scans walked every element of the map data (`mapData.filter { isApplicableTo(it) }` and SC's own
-  `mapData.filter(expr)`, which the `CANDIDATES` rewrite cannot reach); the twins ask for candidates by key. A test ties each twin to the pinned sha256 of the SC
+  `mapData.filter(expr)`, which the `CANDIDATES` rewrite cannot reach); the twins ask for candidates by key.
+  A third kind (2026-11-15, DESIGN.md "Batch engine speed-up, third round") replaces SC's sets of node ids: SC's
+  code gathers the nodes of some ways into a `HashSet<Long>`, an object per id, and asks it about the map data's
+  nodes. On a city's map data a node is known by its place in the map data's nodes (`ArrayMapData.nodePosition`),
+  so the sets are marks at that place: the kerb search itself (`fastKerbNodes` in `FastKerbs.kt`, a copy of SC's
+  `KerbUtil.kt`, pinned as `helper:KerbUtil`; `-Dopenquests.fastKerbs=false` runs SC's), AddEntrance and
+  AddCrossingKerbHeight (`FastNodeSets.kt`), and AddHousenumber's address nodes (a `LongSet`). AddCycleway's twin
+  does what reads no clock once per map data and looks up a road's country only where its answer turns on it.
+  These fall back to the port on any other map data. `NodeSetTwinsTest` holds them against SC's code on random
+  small map data, in order and at two clocks. A test ties each twin to the pinned sha256 of the SC
   file it copies, and of the helper files it copies (`helperSha256`), so a version bump that changes one fails
   until the twin is redone. `-Dopenquests.verifyFast=true` runs the port
   next to its twin on every map data and fails on any difference, and fails if a quest with

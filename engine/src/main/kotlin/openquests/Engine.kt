@@ -733,6 +733,12 @@ class LongArrayAsList(private val a: LongArray, private val from: Int = 0, overr
         if (index < 0 || index >= size) throw IndexOutOfBoundsException("$index of $size")
         return a[from + index]
     }
+
+    /** the id at [index] as a primitive: [get] through `List<Long>` makes an object of each */
+    fun long(index: Int): Long {
+        if (index < 0 || index >= size) throw IndexOutOfBoundsException("$index of $size")
+        return a[from + index]
+    }
 }
 
 /** Sorted id -> value lookup over per-block arrays in file order (ids ascending across blocks). */
