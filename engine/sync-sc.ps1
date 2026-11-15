@@ -47,6 +47,11 @@
            systemTimeZone(), which takes a thread's override (`systemTimeZoneOverride`) before the JVM's
            zone. One run can then count cities in different zones, each under its own (a world run's
            cells). With no override set nothing changes.
+    pairs  util/ktx/Collections.kt: asSequenceOfPairs() gives openquests.pairsOf (openquests/Pairs.kt), the
+           same pairs in the same order from a plain iterator. SC's is a `sequence { }` coroutine, and its
+           geometry code walks every way's positions through it: a tenth of a run's allocated bytes. SC's
+           body stays in the file as asSequenceOfPairsAsInStreetComplete(), which PairsTest holds the
+           replacement against. No result changes.
   (codepoints, the backport of SC 8fe4c925 to Element.kt, was dropped at the v64.1 repin: v64.1 ships it.)
 
 .EXAMPLE
@@ -338,6 +343,19 @@ $patches = @(
             '    if (size < 2 || polyline.size < 2) return false'
         )
         Description = 'util/math/SphericalEarthMath.kt: intersectsWith() is false for a polyline of one point instead of failing'
+    }
+    @{
+        Name = 'pairs'
+        File = "$pkg/util/ktx/Collections.kt"
+        Find = 'fun <T> Iterable<T>.asSequenceOfPairs(): Sequence<Pair<T, T>> = sequence {'
+        Replace = @(
+            '// sc-open-quests patch: the same pairs from a plain iterator (openquests/Pairs.kt); the coroutine below'
+            '// is SC''s own body under another name, kept for PairsTest to hold the replacement against'
+            'fun <T> Iterable<T>.asSequenceOfPairs(): Sequence<Pair<T, T>> = openquests.pairsOf(this)'
+            ''
+            'internal fun <T> Iterable<T>.asSequenceOfPairsAsInStreetComplete(): Sequence<Pair<T, T>> = sequence {'
+        )
+        Description = 'util/ktx/Collections.kt: asSequenceOfPairs() is openquests.pairsOf, a plain iterator; SC''s body stays as asSequenceOfPairsAsInStreetComplete()'
     }
 )
 

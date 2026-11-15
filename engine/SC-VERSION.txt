@@ -2,7 +2,7 @@
 # rerun the script instead. StreetComplete is GPL-3.0 (see src/main/kotlin/sc/LICENSE).
 tag=v64.1
 commit=f8a754b1674a316d2fd01b7870d69ff371cf74e2
-patches=clock,multiplier,nolazy,fastreject,zone,onepoint
+patches=clock,multiplier,nolazy,fastreject,zone,onepoint,pairs
   clock: util/ktx/Instant.kt: systemTimeNow() reads a settable `var systemClock: Clock` (default Clock.System)
   multiplier: data/elementfilter/filters/RelativeDate.kt: MULTIPLIER reads a thread-local override first (`multiplierOverride`)
   nolazy: data/elementfilter/filters/RelativeDate.kt: `date` is a getter again, not `by lazy`
@@ -15,6 +15,7 @@ patches=clock,multiplier,nolazy,fastreject,zone,onepoint
   zone: util/ktx/LocalDateTime.kt: now() in systemTimeZone()
   zone: util/ktx/LocalDateTime.kt: minusInSystemTimeZone() and plusInSystemTimeZone() in systemTimeZone()
   onepoint: util/math/SphericalEarthMath.kt: intersectsWith() is false for a polyline of one point instead of failing
+  pairs: util/ktx/Collections.kt: asSequenceOfPairs() is openquests.pairsOf, a plain iterator; SC's body stays as asSequenceOfPairsAsInStreetComplete()
 files (sha256 of the copied file; patched files also give the upstream sha256):
   b5dc8154ec673f1522c129131ace62d6ea6913e8f8afb8e8242fac1549b0d1ed  de/westnordost/streetcomplete/data/elementfilter/BooleanExpression.kt
   af9ee66cfc6e286bbf6c4bf76ff43f7fde01bd04454fe529528db13d8fceecac  de/westnordost/streetcomplete/data/elementfilter/BooleanExpressionBuilder.kt
@@ -51,7 +52,7 @@ files (sha256 of the copied file; patched files also give the upstream sha256):
   1faf17ca19bcf032fe528ad2772d996d69f88fc9ef64b7766997b6fe2414e8ac  de/westnordost/streetcomplete/util/math/SphericalEarthMathVector3d.kt
   6269b305df088170db654ff2d17c9948182f9e6f2011b47be0a5f9c39013400e  de/westnordost/streetcomplete/util/math/Vector3d.kt
   1426d63608e4bc6b67e924db9e52abc11a7d9dabdc1ca72ca0ad3d9781392544  de/westnordost/streetcomplete/util/math/AngleMath.kt
-  76ecb9fbb329d15c0d64b5920efb8b752f64e542d6b27f3f43d90ee02413fc5e  de/westnordost/streetcomplete/util/ktx/Collections.kt
+  de66d1f9b8a71606e0ea9b893343143f201f1add8a31546a7386bd4045e36345  de/westnordost/streetcomplete/util/ktx/Collections.kt  (patch pairs; upstream 76ecb9fbb329d15c0d64b5920efb8b752f64e542d6b27f3f43d90ee02413fc5e)
   7078db5f48fe2b2a2c6a866c4e05b630b9b3188668eb464f4d70099560cb57ea  de/westnordost/streetcomplete/util/ktx/Double.kt
   e885a6e3bea97ac9ea0b4107f11750045aab6a1471b3ef1085ec52faf910cba2  de/westnordost/streetcomplete/util/ktx/Element.kt
   4322f4a8fa73b484350fb581d274f5af975862f1c17bbb7f28baa4ea08423cb3  de/westnordost/streetcomplete/util/ktx/CharSequence.kt
@@ -683,6 +684,7 @@ ported custom quests (sha256 of the commonMain file with LF line endings; logic 
   1b18ef4268be0e52598b75ec23d8f657611f5dab2d70cd6602ddf6945dd36a08  quests/level/LevelUtils.kt  (helper:LevelUtils)
   41d377bff5b8e46f2eca2befacfa7d072c9b238fc516333940a413bb71b99712  quests/summit/SummitMarkingsUtil.kt  (helper:SummitMarkingsUtil)
   23204371a4f5bdebaf8fa366b33abae29455b79aea595f4f575346645a3997b7  quests/max_height/MaxHeightUtils.kt  (helper:MaxHeightUtils)
+  15d05045d6a3813211ddc5ae1e0afe2f66d731f6f588027d32a300248cb6d020  osm/kerb/KerbUtil.kt  (helper:KerbUtil)
   359dde912f138292f371ad5a9de0809249313f6a59b23cfe7436527087ff306a  ApplicationConstants.kt  (helper:ignoreRelation)
   3db131aceee0ad57273c11ac767d052555cb4e1c13281c5d7cba8df8feb3a7a6  quests/address/AddHousenumber.kt  (AddHousenumber)
   d051385015791839920aca800c1c701518a79b8e47429dfa3043c6ce2abe5284  quests/cycleway/AddCycleway.kt  (AddCycleway)

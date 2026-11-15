@@ -43,7 +43,11 @@ inline fun <T> List<T>.findNext(index: Int, predicate: (T) -> Boolean): T? {
 }
 
 /** Return a sequence that iterates through the given list of points in pairs */
-fun <T> Iterable<T>.asSequenceOfPairs(): Sequence<Pair<T, T>> = sequence {
+// sc-open-quests patch: the same pairs from a plain iterator (openquests/Pairs.kt); the coroutine below
+// is SC's own body under another name, kept for PairsTest to hold the replacement against
+fun <T> Iterable<T>.asSequenceOfPairs(): Sequence<Pair<T, T>> = openquests.pairsOf(this)
+
+internal fun <T> Iterable<T>.asSequenceOfPairsAsInStreetComplete(): Sequence<Pair<T, T>> = sequence {
     val it = iterator()
     if (!it.hasNext()) return@sequence
     var item1 = it.next()
