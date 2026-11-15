@@ -1690,3 +1690,16 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   proof**, the file deleted after. Next: **"Yes, build it now"**, the streaming cut, proven against the in-memory
   cut on the clip and Germany. In progress below. **Next, proposed:** the update in Rust (first act: the Python `update` on
   `store-rs`, then `storecmp.py --ga 1 --gb 1`), then the planet cut's design.
+- **Batch engine speed-up, third round, under way in another session (11-15, from 14:15; owner: "continue engine
+  optimisation").** On branch `batch-speed` (worktree `../sc-open-quests-batch`), **not merged**; main's engine and
+  its build are untouched. This replaces the second round's "Next for the engine" and "the worktree can go" above.
+  Four commits there: (1) one read of the ways for both passes (the area pass takes its ways off the main pass's
+  read); (2) a node found through a table of id stretches (not yet shown to be a gain: to be measured alone, and
+  taken out if it is none); (3) node sets as marks by a node's place: twins for the kerb search, AddEntrance,
+  AddCrossingKerbHeight and AddCycleway, AddHousenumber's address nodes as a `LongSet`; (4) the table's stretches
+  grow for wide id ranges. **Verified so far:** f0's snapshot equal after (1) and (2); every twin equal to its port
+  on Dublin and Lisboa (`verifyFast`, 25 map data runs) and that snapshot equal to the second round's; new tests
+  `NodeStoreTest`, `LongSetTest`, `NodeSetTwinsTest` (the twins against SC's code on random map data; shown to fail
+  on a broken twin). **Not yet:** f0/f1 and the state rows on the final build, Ontario's snapshot and grid, the whole
+  engine suite, DESIGN.md. Timings are noisy: the tile store session runs Rust cuts on all threads, so engines are
+  compared in interleaved pairs (`.scratch/batch-speed/batch.sh`, `checks.sh`, engine snapshots `eng-*`).
