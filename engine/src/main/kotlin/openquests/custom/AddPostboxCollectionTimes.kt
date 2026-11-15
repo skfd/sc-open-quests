@@ -21,6 +21,8 @@ object AddPostboxCollectionTimes : CustomQuest {
           and (!collection_times or collection_times older today -2 years)
     """.toElementFilterExpression() }
 
+    override fun necessary(type: ElementType) = listOf(filter)
+
     override fun isApplicable(element: Element): Boolean {
         if (!filter.matches(element)) return false
         val tags = element.tags

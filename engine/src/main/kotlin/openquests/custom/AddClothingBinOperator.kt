@@ -25,6 +25,8 @@ object AddClothingBinOperator : CustomQuest {
           and access !~ private|no
     """.toElementFilterExpression() }
 
+    override fun necessary(type: ElementType) = listOf(filter)
+
     override fun isApplicable(element: Element): Boolean =
         element is Node && filter.matches(element) && element.tags.hasNoOtherRecyclingTags()
 

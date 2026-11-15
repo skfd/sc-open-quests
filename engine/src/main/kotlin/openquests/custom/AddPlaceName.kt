@@ -138,6 +138,8 @@ object AddPlaceName : CustomQuest {
           and name:signed != no
     """).toElementFilterExpression() }
 
+    override fun necessary(type: ElementType) = listOf(filter)
+
     override fun isApplicable(element: Element): Boolean =
         filter.matches(element) && getFeature(element) != null
 }

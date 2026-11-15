@@ -1,5 +1,6 @@
 package openquests.custom
 
+import de.westnordost.streetcomplete.data.elementfilter.ElementFilterExpression
 import de.westnordost.streetcomplete.data.osm.mapdata.Element
 import de.westnordost.streetcomplete.data.osm.mapdata.ElementType
 
@@ -26,6 +27,10 @@ interface CustomQuest {
     /** whether the logic reads the clock (`older`, `today`, `TagOlderThan`); see agedOnly */
     val usesAge: Boolean
     fun isApplicable(element: Element): Boolean
+    /** filters that all match every element of [type] that [isApplicable] (a port's `filter.matches(element) && ...`),
+     *  so that an element one of them can never match is not asked (MatchCache); empty: none known. A filter that
+     *  does not select [type] at all says the quest is never on that type. */
+    fun necessary(type: ElementType): List<ElementFilterExpression> = emptyList()
 }
 
 /** Every ported custom quest, by name. Must list the same quests as PORTED-QUESTS.txt. */

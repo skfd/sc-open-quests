@@ -35,6 +35,8 @@ object CheckShopType : CustomQuest {
           )
     """.toElementFilterExpression() }
 
+    override fun necessary(type: ElementType) = listOf(filter)
+
     override fun isApplicable(element: Element): Boolean =
         element.isDisusedPlace() &&
         filter.matches(element) &&

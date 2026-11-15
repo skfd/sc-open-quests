@@ -24,6 +24,7 @@ import de.westnordost.streetcomplete.data.elementfilter.filters.NotHasTagLike
 import de.westnordost.streetcomplete.data.elementfilter.filters.NotHasTagValueLike
 import de.westnordost.streetcomplete.data.elementfilter.filters.RegexOrSet
 import de.westnordost.streetcomplete.data.osm.mapdata.Element
+import de.westnordost.streetcomplete.data.osm.mapdata.ElementType
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import de.westnordost.streetcomplete.data.osm.mapdata.Node
 import java.util.BitSet
@@ -54,7 +55,8 @@ val MATCH_CACHE: String = System.getProperty("openquests.matchCache") ?: "true"
  *   element at hand, an open leaf as unknown): *false* whatever the clock, the setting and the timestamp
  *   (the quest is not asked again), *true* whatever they are (it counts, with the bits [matchVariants] gives
  *   when every variant holds), or *unknown* (the quest is asked of every such element, as before).
- * - Ported custom quests are always asked: what they read is not known here.
+ * - A ported custom quest is never settled as open: what it reads is not known here. It is asked unless one of
+ *   the filters its port starts from ([openquests.custom.CustomQuest.necessary]) is false for the signature.
  *
  * So a count cannot differ from asking every quest: SC's matcher still gives every answer, once per signature
  * where the answer cannot depend on anything else. `verify` checks that on every element.
@@ -75,8 +77,17 @@ class MatchCache(private val quests: List<QuestDef>, private val questsByType: A
         override fun equals(other: Any?) = other is Signature && tags.contentEquals(other.tags)
     }
 
-    /** three-valued filter trees, by quest index; null for a quest without a filter */
-    private val trees: Array<Tri?> = Array(quests.size) { qi -> quests[qi].filter?.let { compile(it.elementExprRoot) } }
+    /** three-valued filter trees, by element type and quest index: a filter quest's own filter; for a custom quest
+     *  what must hold for it to be open, null when its port names nothing */
+    private val trees: Array<Array<Tri?>> = Array(3) { t ->
+        val type = ElementType.entries[t]
+        Array(quests.size) { qi ->
+            val q = quests[qi]
+            q.filter?.let { compile(it.elementExprRoot) } ?: q.custom?.necessary(type)?.takeIf { it.isNotEmpty() }?.let { all ->
+                Tri.All(all.map { if (it.includesElementType(type)) compile(it.elementExprRoot) else Tri.Const(FALSE) }.toTypedArray())
+            }
+        }
+    }
 
     private val exactLeaves = HashMap<String, MutableList<ElementFilter>>()
     private val regexLeaves = ArrayList<Pair<RegexOrSet, ElementFilter>>()
@@ -90,7 +101,10 @@ class MatchCache(private val quests: List<QuestDef>, private val questsByType: A
     private val asked = Array(3) { LongAdder() }
 
     init {
-        for (q in quests) q.filter?.elementExprRoot?.let { collect(it) }
+        for (q in quests) {
+            q.filter?.elementExprRoot?.let { collect(it) }
+            for (type in ElementType.entries) q.custom?.necessary(type)?.forEach { f -> f.elementExprRoot?.let { collect(it) } }
+        }
     }
 
     private fun collect(e: BooleanExpression<ElementFilter, Element>) {
@@ -190,10 +204,11 @@ class MatchCache(private val quests: List<QuestDef>, private val questsByType: A
         var ns = 0
         var na = 0
         for (qi in questsByType[type]) {
-            val tree = trees[qi]
-            when (tree?.eval(e) ?: UNKNOWN) {
-                TRUE -> { sure[ns] = qi; mask[ns++] = if (quests[qi].usesAge) M_NOW or M_05 or M_2 else M_NOW }
-                UNKNOWN -> ask[na++] = qi
+            val q = quests[qi]
+            when (trees[type][qi]?.eval(e) ?: UNKNOWN) {
+                FALSE -> {}
+                TRUE -> if (q.isFilter) { sure[ns] = qi; mask[ns++] = if (q.usesAge) M_NOW or M_05 or M_2 else M_NOW } else ask[na++] = qi
+                else -> ask[na++] = qi
             }
         }
         return Outcome(sure.copyOf(ns), mask.copyOf(ns), ask.copyOf(na))

@@ -15,6 +15,8 @@ object AddSidewalk : CustomQuest {
     override val elementTypes = setOf(ElementType.WAY)
     override val usesAge = false
 
+    override fun necessary(type: ElementType) = listOf(roadsFilter)
+
     override fun isApplicable(element: Element): Boolean =
         roadsFilter.matches(element)
         && (untaggedRoadsFilter.matches(element) || element.hasInvalidOrIncompleteSidewalkTags())

@@ -49,6 +49,12 @@ object AddMaxPhysicalHeight : CustomQuest {
           and expressway != yes
     """.toElementFilterExpression() }
 
+    override fun necessary(type: ElementType) = when (type) {
+        ElementType.NODE -> listOf(nodeFilter)
+        ElementType.WAY -> listOf(wayFilter)
+        else -> emptyList()
+    }
+
     override fun isApplicable(element: Element): Boolean =
         element is Node && nodeFilter.matches(element) || element is Way && wayFilter.matches(element)
 }

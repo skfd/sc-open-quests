@@ -21,6 +21,8 @@ object AddRecyclingContainerMaterials : CustomQuest {
           and access !~ private|no
     """.toElementFilterExpression() }
 
+    override fun necessary(type: ElementType) = listOf(filter)
+
     override fun isApplicable(element: Element): Boolean =
         /* Only recycling containers that do either not have any recycling:* tag yet or
          * haven't been touched for 2 years and are exclusively recycling types selectable in

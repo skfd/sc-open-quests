@@ -172,6 +172,8 @@ mapOf(
 
     private val olderThan1Year = TagOlderThan("opening_hours", RelativeDate(-365f))
 
+    override fun necessary(type: ElementType) = listOf(filter)
+
     override fun isApplicable(element: Element): Boolean {
         if (!filter.matches(element)) return false
         // no opening_hours yet -> new survey

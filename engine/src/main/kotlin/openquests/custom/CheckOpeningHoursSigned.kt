@@ -34,6 +34,8 @@ object CheckOpeningHoursSigned : CustomQuest {
             "$it < today -2 years"
         }
 
+    override fun necessary(type: ElementType) = listOf(filter)
+
     override fun isApplicable(element: Element): Boolean =
         filter.matches(element) && hasName(element)
 

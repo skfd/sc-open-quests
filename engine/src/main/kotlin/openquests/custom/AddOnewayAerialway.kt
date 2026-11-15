@@ -18,5 +18,7 @@ object AddOnewayAerialway : CustomQuest {
           and !oneway
     """.toElementFilterExpression() }
 
+    override fun necessary(type: ElementType) = listOf(elementFilter)
+
     override fun isApplicable(element: Element): Boolean = element is Way && elementFilter.matches(element)
 }

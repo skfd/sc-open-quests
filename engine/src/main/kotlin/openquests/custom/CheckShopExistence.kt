@@ -35,6 +35,8 @@ object CheckShopExistence : CustomQuest {
     """).toElementFilterExpression() }
 
     // Apply 'filter' last since it will check the age of almost every element (very slow)
+    override fun necessary(type: ElementType) = listOf(filter)
+
     override fun isApplicable(element: Element): Boolean =
         element.isPlace() &&
         hasName(element) &&
