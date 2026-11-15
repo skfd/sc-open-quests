@@ -7,6 +7,7 @@ and follows `override val icon = Res.drawable.quest_<x>` (R.drawable up to v63) 
 `override val title = Res.string.<id>` to the English strings.xml. Writes docs/icons/<x>.svg,
 docs/icons/index.json ({"scVersion", "quests": {name: {"icon", "title"}}}) and a copy of SC's
 graphics authors.txt. The icons are CC-BY-SA 4.0 (see that file); rerun on every SC version bump.
+Then run tools/icons_png.py, which draws them as PNGs for the iPhone widget (Scriptable shows no SVG).
 """
 import json
 import re
