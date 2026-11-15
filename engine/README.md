@@ -138,6 +138,11 @@ node positions), relations. Each stage decodes blocks in parallel.
   8fe4c925 (#7341), which v64.1 ships: `util/ktx/CharSequence.kt` (`isCodePointCountSmallerOrEqualThan`)
   is vendored for it. A value over 255 code points still fails SC's `require`; the engine leaves such a
   tag out and logs it (`fitTags`, TagLengthTest).
+- **`pairs`** (`util/ktx/Collections.kt`): `asSequenceOfPairs()` gives `openquests.pairsOf` (`Pairs.kt`), the
+  same pairs in the same order from a plain iterator. SC's is a `sequence { }` coroutine that its geometry
+  code walks every way's positions through: a tenth of a run's allocated bytes. SC's body stays in the file
+  as `asSequenceOfPairsAsInStreetComplete()`, and `PairsTest` holds the replacement against it. No result
+  changes (DESIGN.md, "Batch engine speed-up, fifth round").
 - **`onepoint`** (`util/math/SphericalEarthMath.kt`): `ElementGeometryCreator.create(way, ...)` drops
   repeated positions but checks the size of the list before it, so a way whose nodes all share one
   position gets a polyline of one point, and `List<LatLon>.intersectsWith` rejects that with "Polylines

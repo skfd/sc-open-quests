@@ -1760,6 +1760,21 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   node id sets of five age ports kept once per map data (a few seconds).
   `.scratch/batch-speed/` also holds `d-*`, `r4-*` and `eng-marks`: all can go. The worktree
   `../sc-open-quests-batch` (branch `batch-speed`, equal to main's engine commit) can go too.
+- **Batch engine speed-up, fifth round: merged into main (11-15, 16:40 to 17:20).** DESIGN.md, "Batch engine
+  speed-up, fifth round". A JFR profile of f0 (`.scratch/batch-speed/r5.jfr`, read with `jfrtop.py` there), and
+  from it one new patch to the vendored SC code, `pairs` (`sync-sc.ps1`, `openquests/Pairs.kt`, `PairsTest`):
+  `asSequenceOfPairs()` from a plain iterator instead of a coroutine. **About 11% less allocated in a run (215
+  to 191 GB), CPU 1 to 5% less in four interleaved pairs, no wall-clock gain shown** (the machine was busy).
+  **Checked:** f0 and f1 snapshots, the 31,695,753 state rows, Ontario and europe-west recounts and grids,
+  `verifyFast` on Dublin and Lisboa, the engine tests (see the design section for where they ran). **Not
+  checked:** the oracle; London under `verifyFast`. Tried and dropped: flags in place of the filter's set of
+  element types (no gain beyond noise). `sync-sc.ps1` ran whole against `%TEMP%\sc-v64.1`, so
+  `helper:KerbUtil`'s pin is now checked against a real checkout; that checkout had lost most of its files and
+  was restored at the same commit. Main's installed engine is still the second round's build until the next
+  `run.py`. **Next for the engine, none built:** a dense-node decoder without protobuf's builders (the largest
+  piece left, a larger change with its own oracle), then `Way.isClosed`'s boxed ids, `Element.checkValidity`
+  over a `TagMap`, `groupByNodeIds`: 2 to 3% of the allocated bytes each. `.scratch/batch-speed/` also holds
+  `e-*`, `g-*`, `r5-*`, `eng-types`, `eng-pairs`: all can go.
 - **The history file read at a date in Rust: exact against osmium (11-15, 16:00-17:00; owner: "The next step
   toward the planet timing is the history-file reader").** DESIGN.md, "The history file read at a date".
   `tilestore/target/release/tilestore.exe at --pbf X.osh.pbf --at 2026-10-01T00:00:00Z [--out Y.osm.pbf]` and
