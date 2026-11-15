@@ -1606,7 +1606,7 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   primitives (now a cell's longest run, 7.9 s), the kerb search (5%); nothing single is large any more, and the cut
   (262 min through Docker's bind mount) is the larger part of a world chain. `.scratch/batch-speed/m*` are this
   round's runs; the worktree `../sc-open-quests-batch` (branch `batch-speed`, now equal to main) can go.
-- **The owner asks (11-15, evening): is Overpass on an external SSD still right, or optimize the current engine and
+- **The owner asks (11-15, early afternoon): is Overpass on an external SSD still right, or optimize the current engine and
   measure more first?** Answered, nothing built. (1) The batch engine sits after either store, so its speed is not
   an alternative to Overpass; the alternative is the tile store. (2) On t2n's 103 rectangles the tile store itself
   reads in 2.2-2.3 s (+1.3 s merge; the rest of its 34-45 s is pyosmium writing a PBF), Overpass selects in 30 s and
@@ -1619,13 +1619,13 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   `opbench-full`; on the clone, the go/no-go DESIGN names (one world file's rectangles as one union query, current
   and dated); do not build the Kotlin store before that. If Overpass fails there, the drive still holds the tile
   store or two planets for osmium. The threshold for the go/no-go is not set: the owner's.
-- **The owner (11-15, evening): "let's focus in this session on Tile store work. Which language should we choose to
+- **The owner (11-15, early afternoon): "let's focus in this session on Tile store work. Which language should we choose to
   implement it in".** So the tile store is being worked on after all, beside the Overpass plan (not cancelled; the
   drive is not bought yet). Recommended: **Kotlin, in the engine's build** (DESIGN, "Why Kotlin for the tile store"):
   the engine reads the store directly, so the 30 s PBF write of each read goes; Python stays the oracle and the
   orchestration. First step proposed, not started: the Kotlin cut of the europe clip of 11-12, held payload for
   payload against the Python store, then one world file's cut timed before the planet. Waiting on the owner's yes.
-- **The owner (11-15, evening): "I want to consider a rust version. Third tool chain is not a problem for us, since
+- **The owner (11-15, early afternoon): "I want to consider a rust version. Third tool chain is not a problem for us, since
   agent handles technical side."** Reconsidered with that objection gone. What was left of the case for Kotlin: the
   engine reading the store directly, and one build with shared tests. The first is small: the 30 s PBF write was
   pyosmium's, native code writes that 60-100 MB PBF in a few seconds (projection; osmium's stamp-and-sort of the same
@@ -1636,3 +1636,19 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   read to PBF), the engine unchanged, proved by a spike first: the cut of the europe clip of 11-12 held against the
   Python store's decoded payloads, and timed.** Rust is not installed here (no cargo/rustup; Visual Studio 2022 is,
   so a linker should be): installing rustup needs the owner's yes. Nothing built.
+- **The tile store's cut in Rust, a spike: exact and 54 times faster on the clip (11-15, 13:35-14:00; owner: "Yes,
+  install and start").** DESIGN.md, "The tile store in Rust". Rust 1.100 (stable-msvc) installed by
+  `winget install Rustlang.Rustup`; cargo is `~/.cargo/bin/cargo` (a shell opened before the install needs
+  `export PATH="$HOME/.cargo/bin:$PATH"`). Crate `tilestore/` (`cargo build --release` there, 30 s the first time):
+  `target/release/tilestore.exe cut --pbf C:/Users/kk/Code/.osm-data/europe/europe-2026-11-12.osm.pbf --out
+  .scratch/tiles/store-rs --day 2026-11-12` reads the clip itself and writes the Python store's layout, generation 0.
+  **35.7 s against about 1,920 s** for `tiles.py geom` + `attrs` + `tilestore.py cut`. **Held against
+  `.scratch/tiles/store` generation 0 by `tools/stream/tilecheck/storecmp.py`: 59,026 tiles, 438,232 relation blobs
+  and both pair indexes, 0 different** (the checker fails as it should on store against store13); the Python `read`
+  of the Rust store recounted at 11-12: 1,114,046 rows, 0 different (`.scratch/tiles/s12-rs/`). **Not shown, and the
+  reason Rust was preferred:** the planet cut. This cut holds everything in memory, 12.2 GiB peak for the 1.64 GB
+  clip (over 600 GB at planet size, and its node rows are 32 bits); a planet cut is another program (places on
+  disk, tags streamed, pairs sorted in runs), not designed. Also not built in Rust: the update, the read to PBF.
+  `.scratch/tiles/store-rs` (2.4 GB) can go; `bash`-free rerun is the command above. **Next, proposed:** the read in
+  Rust (331 tiles to a PBF, the engine on it, timed against Overpass's 40 s), then the update, then the planet
+  cut's design and one world file. The Overpass plan and the drive stand as they were.

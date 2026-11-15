@@ -3794,3 +3794,62 @@ AddHousenumber 3% (a third of it a `HashSet<Long>` asked for every node of every
 AddEntrance, AddCycleway and AddMaxHeight about 2.5% each. The collector's pauses are 15.6 s of a run.
 **Next, none built:** one read of the ways; AddHousenumber's set as primitives (it is a cell's longest run); the
 kerb search; then the cut, which is now the larger part of a world chain.
+
+## The tile store in Rust: the cut, a spike (2026-11-15, early afternoon; owner: "I want to consider a rust version. Third tool chain is not a problem for us, since agent handles technical side")
+
+*Why Rust is on the table.* "Why Kotlin for the tile store" above gave three reasons against C++ or Rust: a third
+toolchain, and the engine needing its own reader of the store or a PBF handed over. The owner set the first aside. The
+second is smaller than it read: the 30 s of each read was pyosmium writing the PBF, not the handing over; native code
+should write that file in seconds (not measured: no Rust reader exists yet). What Rust offers is the planet cut and
+its memory, where the Kotlin plan's risk was. What it costs: the tile rule lives a third time (AreaPass.kt, `tiles.py`,
+now `tilestore/`), with `ignore_relation` to keep in step at a repin.
+
+*What was built* (`tilestore/`, a cargo crate; Rust 1.100 stable-msvc installed with rustup through winget, Visual
+Studio 2022's linker; crates `osmpbf` 0.3.8 to read, `rayon`, `zstd`). `tilestore cut --pbf X.osm.pbf --out S --day D
+[--z 14]` reads the clip itself (no `tiles.py geom`/`attrs` step) and writes the prototype's store layout, generation
+0: `pack-0000.bin`, `idx-0000.npy`, `wtiles`/`rtiles`, `rel-0000.bin`, `relidx-0000.npy`, `store.json`. So the Python
+`read`, `update` and checks work on a Rust-cut store unchanged. The tile maths follows `tiles.py` operation for
+operation (no fused multiply-add, no reciprocal). Everything is held in memory.
+
+*Exactness: the same store, byte for byte in its payloads* (`tools/stream/tilecheck/storecmp.py --a
+.scratch/tiles/store --b .scratch/tiles/store-rs`, generation 0 of each; europe clip of 11-12):
+| part | Python | Rust | different |
+|---|---|---|---|
+| tiles (decompressed payloads) | 59,026 | 59,026 | 0 |
+| relation store blobs | 438,232 | 438,232 | 0 |
+| way-tiles pairs | 22,600,881 | 22,600,881 | 0 |
+| relation-tiles pairs | 570,738 | 570,738 | 0 |
+| copies: nodes / ways / relations | 175,614,649 / 22,600,881 / 570,738 | the same | 0 |
+
+The pack files are also the same size to the byte (1,995,590,460 and 229,049,083), compressed. The checker was first
+shown able to fail: the Python store against itself is equal, against the 11-13 store 2,227 tiles differ. No
+last-digit difference between numpy's and Rust's tan, cos and log moved any of 127.9M nodes across a tile edge. **End
+to end:** the Python `read` of the 331 tiles under t2n's rectangles from the Rust store, recounted by the engine at
+11-12: **1,114,046 rows, 0 different** from `ref/old`.
+
+*Speed: 35.7 s against about 32 min, one run, 24 threads.*
+| step | Python prototype | Rust |
+|---|---|---|
+| read the clip (places, refs, members, tags, versions) | 1,309 s (`geom` 379 s, `attrs` 930 s) | 15.0 s |
+| every node's tile, the refs as node rows | (in the cut) | 1.8 s |
+| way tiles | (in the cut) | 0.4 s |
+| tile pairs | (in the cut) | 3.4 s |
+| payloads, packed and written | 122 s | 9.8 s |
+| pair indexes | (in the cut) | 0.3 s |
+| relation store | 68 s | 5.1 s |
+| **the whole cut** | **about 1,920 s** (1,309 + 613) | **35.7 s** |
+
+About 54 times. No Kotlin figure exists to hold beside it. The Python update of a day (532-623 s) and its read
+(34-55 s, of which the PBF write 30-50 s: 50.2 s in this run) are untouched.
+
+*Memory: 12.2 GiB peak working set for a 1.64 GB clip, and that is what does not carry to the planet.* The planet's
+PBF is about 52 times this clip: the same in-memory cut would want over 600 GB, and node rows and tile keys are 32
+bits here (11 billion nodes do not fit). The time scales to about half an hour if it stayed linear, which it cannot
+in this form. **A planet cut is a different program:** node places from a file on disk (as `planet.loc`, 107 GiB),
+tags streamed in a second pass rather than held, the pairs sorted in runs on disk, the planet cut by region. Not
+designed, not built, not measured: the reason Rust was preferred is still unproven.
+
+*Not shown:* the planet cut (above); a day's update in Rust; a read to PBF in Rust (the "few seconds" handoff; the
+`osmpbf` crate only reads, so the writer is ours to choose or write); adaptive tiles (z14 only here, `--z` up to 16).
+**Next, in this order:** the read (331 tiles to a PBF the engine takes, timed against Overpass's 40 s and Python's
+34-55 s), then the update, then the planet cut's design with one world file measured.
