@@ -1437,3 +1437,19 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   already holding the 2 TB SK hynix; two USB4/Thunderbolt 4 ports (40 Gbps). So the drive goes external, on USB4.
   CPU and 88 GB are plenty for Overpass. In WSL its database must sit on ext4 (a VHDX on the new drive, or the drive
   mounted with `wsl --mount`), never on `/mnt/<letter>`, which crosses into Windows and is far slower.
+- **The owner's decision (11-14, 22:30): "I will buy external ssd to have Overpass locally. The language selection --
+  not sure yet, let's discuss in next session."** So tier 2's store for the world is to be an own Overpass instance
+  with attic data (D and D-1 by `[date:]`) on an external SSD (attic planet about 400 GB in 2023 terms, growing: buy
+  with headroom). The tile store stays as the measured alternative and as the oracle of what a rectangle's map data
+  must hold. **For the next session:**
+  1. Discuss the language for what reads Overpass and feeds the engine (Kotlin beside the engine, Python beside the
+     stream, or other), with the comparison in DESIGN.md, "Tier 2's store: this stack against the others".
+  2. Overpass on this Windows machine: Docker or WSL, a clone with `--meta=attic` (check the current version's clone
+     support), its updates from the planet's minute or day diffs, the database on the SSD.
+  3. The query per rectangle and ring at D and D-1 must give what the tile rule gives: every way with a node in the
+     padded box, complete with all its nodes; tagged nodes; kept relations with every member way (DESIGN.md,
+     "Measurement (c)", the tile rule). First check: Overpass's answer for t2n's 103 rectangles of 11-13 recounted
+     against `.scratch/tiles/ref/state.bin` (0 rows different is the bar, as the tile store met).
+  4. Its speed for a world day's rectangles (thousands of queries), and what format reaches the engine.
+  Keep `.scratch/tiles/ref/` (the frozen recount) and, until Overpass passes that check, `store/`, `store13/`,
+  `store14/`; `geom-12/13/14` (20 GB) and the z15/z16 stores can go.
