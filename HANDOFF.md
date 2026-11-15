@@ -1737,9 +1737,10 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   the other twins come out of `FAST_TWINS` (FastTwins.kt). At a repin: `helper:KerbUtil` pins SC's `KerbUtil.kt`
   for the kerb twin (REPIN.md, step 3); the pin is the vendored copy's hash with LF endings, no SC checkout was on
   disk to hash, so a "moved" report there with no change in the file is that.
-  **Next for the engine, none built:** the line `.flatMapTo(HashSet()) { it.nodeIds }` is in fourteen more ports;
-  one rewrite rule in `port_area_quests.py` (as `CANDIDATES` was) would reach them all instead of a twin each.
-  Then `WaysCrossingUtils.groupByNodeIds` (AddBarrierOnRoad, AddBarrierOnPath, AddCrossing), then allocation
+  **Next for the engine, none built:** the line `.flatMapTo(HashSet()) { it.nodeIds }` is in twelve more ports
+  that run as they are (about 67 s of the 390 s of quest CPU left in f0's cells); one rewrite rule in
+  `port_area_quests.py` (as `CANDIDATES` was) would reach them all instead of a twin each.
+  Then `WaysCrossingUtils.groupByNodeIds` (AddBarrierOnRoad, AddBarrierOnPath, AddCrossing: about 46 s), then allocation
   (block decoding, `getLastCheckDateKeys`). `.scratch/batch-speed/` holds this round's runs (`r3*`, `b-*`, `c-*`,
   `q-*`) and four engine snapshots (`eng-*`, 11 MB each): all can go. The worktree
   `../sc-open-quests-batch` (branch `batch-speed`, equal to main) can go too.

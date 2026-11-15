@@ -3885,7 +3885,8 @@ equal to main's; f0's state dump the same 31,695,753 rows; `matchCache=verify` o
 one tag map for both passes). Ontario's 11-14 recount equal to the snapshot main published, its tile grid byte
 for byte; europe-west's 11-15 recount with the daily run's settings (London, Dublin, Lisboa) equal to the
 snapshot published that morning, its grid byte for byte. `verifyFast` on Dublin and Lisboa: every twin equal
-to its port on 25 map data runs, and that snapshot equal to the second round's. New tests: `NodeStoreTest`;
+to its port on 25 map data runs, and that snapshot equal to the second round's (run before the last commit to
+the node table and again on the final build). New tests: `NodeStoreTest`;
 `LongSetTest` (against a `HashSet` through 60,000 adds, removals and questions a seed); `NodeSetTwinsTest`: the
 kerb search and the twins of AddEntrance, AddCrossingKerbHeight, AddCycleway, AddKerbHeight and
 AddTactilePavingKerb against SC's own code on 400 random small map data (shared ends, closed ways, ways of one
@@ -3903,14 +3904,16 @@ polar or antimeridian cell (run the canary first on 12-07). The `helper:KerbUtil
 vendored copy with LF endings, not of a StreetComplete checkout (none is on this disk): if the next repin
 reports it moved without a change in `KerbUtil.kt`, that is why.
 
-**Next for the engine, none built.** The same line, `.flatMapTo(HashSet()) { it.nodeIds }`, is in fourteen more
-ports (AddBollardType, AddCrossingIsland, AddTactilePavingCrosswalk, AddBarrierOpening, AddCrossingMarkings,
-AddCrossingSignals, the traffic signal quests, AddRailwayCrossingBarrier, AddStileType, AddStepCountStile,
-AddEntranceReference, AddAddressStreet, AddMaxHeight). **One rule in `port_area_quests.py` would reach them all
-instead of a twin each:** rewrite that line to a call that gives marks by place on a city's map data and SC's
+**Next for the engine, none built.** The same line, `.flatMapTo(HashSet()) { it.nodeIds }`, is in twelve more
+ports that run as they are (AddBollardType, AddCrossingIsland, AddTactilePavingCrosswalk, AddBarrierOpening,
+AddCrossingMarkings, AddCrossingSignals, the two traffic signal quests, AddRailwayCrossingBarrier, AddStileType,
+AddStepCountStile, AddEntranceReference): about 67 s of the 390 s of quest CPU left in f0's cells (bollards 13 s,
+tactile paving at crosswalks 11 s, crossing islands 10 s, railway crossings 8 s). It is also in AddMaxHeight and
+AddAddressStreet, whose hand-written twins run instead of the ports and would take the marks by hand.
+**One rule in `port_area_quests.py` would reach the twelve instead of a twin each:** rewrite that line to a call that gives marks by place on a city's map data and SC's
 `HashSet` on any other, as `CANDIDATES` rewrote the scans; the oracle and `verifyFast` then hold every port at
 once. After it, `WaysCrossingUtils.groupByNodeIds` behind AddBarrierOnRoad, AddBarrierOnPath and AddCrossing
-(maps of boxed ids to lists of ways; a twin there has geometry to keep, so more to check). Then what the collector is fed:
+(about 46 s together; maps of boxed ids to lists of ways; a twin there has geometry to keep, so more to check). Then what the collector is fed:
 decoding a block is a sixth of a run's allocated bytes, and SC's `getLastCheckDateKeys` builds its strings for
 every age test. The longest runs of a cell are now AddHousenumber, AddMaxHeight and AddIsAmenityIndoor (about
 30 s of CPU each over the file). The cut is still the larger part of a world chain.
