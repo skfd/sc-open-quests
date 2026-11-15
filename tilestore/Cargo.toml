@@ -1,0 +1,13 @@
+[package]
+name = "tilestore"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+osmpbf = "0.3"
+rayon = "1"
+zstd = "0.13"
+
+[profile.release]
+opt-level = 3
+debug = 1
