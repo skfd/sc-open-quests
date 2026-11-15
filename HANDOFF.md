@@ -1397,3 +1397,12 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   z15 and z16; then `chain-z.sh 14 update-only` reruns z14's update with the polygon, and `.scratch/tiles/adaptive.py
   .scratch/tiles .scratch/tiles/ref/cities.json` sets uniform z14/15/16 against an adaptive split (z16 children of
   any z14 tile over 64-512 KB): tiles, bytes, the day's write, the read for the day's rectangles.
+- **Smaller tiles measured (11-14, 20:20).** DESIGN.md, "Smaller tiles for the tile store". Exact at z14, z15 and z16
+  (D 0 different through each updated store). A day writes 461 MB at z14 (23% of 2.00 GB), 285 MB at z15 (2.66 GB),
+  198 MB at z16 (4.06 GB). **An adaptive split (z16 children for z14 tiles over 256 KB) costs +17% size for half the
+  write (250 MB); over 128 KB, z15's size with z16's write.** The update's region is now the store's tiles plus the
+  polygon's (two region bugs found by the higher zooms, both prototype-only). Stores in `.scratch/tiles/store-z15/`,
+  `store-z16/`, `store13-z15/`, `store13-z16/` (about 15 GB together with the rest of `.scratch/tiles/`).
+- **A second day, running (20:19):** `.scratch/tiles/day2.sh` (log `logs/tiles-day2.log`): the z14 store's generation
+  1 updated by diff 5176 to 11-14, reading its own generation-1 indexes, against a fresh cut of the 11-14 clip
+  (`geom-14/`, `store14/`).
