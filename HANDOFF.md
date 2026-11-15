@@ -1551,3 +1551,7 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   VHDX, which does not shrink by itself); remove with `docker rm -f opbench-full; docker volume rm opbench-full`.
   **Next, the owner's:** buy the drive (2 TB NVMe in a USB4 enclosure), then: the clone (`download_clone.sh --meta=attic`,
   about 708 GB) onto ext4 on it, its daily updates, and the reader for a world day (union queries per world file).
+- **The owner's answers (11-15, 00:50):** drive: **a 2 TB NVMe on USB4**, to be bought. Test db `opbench-full`: **keep it**
+  (for a world-day reader prototype before the drive arrives). Push: **not yet** (19 commits local).
+  **Next, when picked up:** the world-day reader against `opbench-full`: union queries piped to PBF inside the container,
+  a `<remark>` check, four streams; then, with the drive, the clone onto ext4 and its daily updates.
