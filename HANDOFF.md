@@ -1837,7 +1837,9 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   would be faster by an amount nobody measured, and pass 2, which leans on the OS cache for the node file, the
   most. Whether pass 2 waited on disk or CPU was not measured. **From 18:25 the engine session runs ten more f0
   counts (`.scratch/batch-speed/quiet6.sh`, about 15 minutes; it waits while a `tilestore` or `osmium` process
-  exists): do not time anything until `.scratch/batch-speed/q6.out` ends with "ended".** **Not the cut's time:**
+  exists): do not time anything until `.scratch/batch-speed/q6.out` ends with "ended"** (it did, 18:55), **nor until
+  `q7.out` does** (nine more runs from about 19:00, some 15 minutes; then the checks of the build they choose,
+  some 25 minutes more, not timing-critical). **Not the cut's time:**
   no pass 0, no spill, no tagged-node or member-way files, no buckets. **Settled for 2026-11-02:** no node or way
   is given twice at this date (relations not read); every ref has a node; no way has two nodes in a row over 180
   degrees apart (one way has a whole row of 16,384 tiles, not looked up); refs are 13.08 billion, so the spill as
