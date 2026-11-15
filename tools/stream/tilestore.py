@@ -644,7 +644,8 @@ def dilate(keys: np.ndarray, r: int = 1) -> np.ndarray:
 
 def region_of(st, polygon: Path | None) -> np.ndarray:
     """The tiles a clip's store answers for, so the planet diff's changes elsewhere stay out (a world store has no
-    such edge): the tiles under each part of the clip's polygon, or else those near its tiles (about 2.4 km)."""
+    such edge): the tiles it holds (a way reaching out of the polygon is held whole, and its far nodes move too) and
+    the tiles under each part of the clip's polygon (new ground inside); without the polygon, those near its tiles."""
     if polygon is None:
         return dilate(st.idx["key"], 1 << max(0, T.Z - 14))
     out = []
@@ -654,7 +655,7 @@ def region_of(st, polygon: Path | None) -> np.ndarray:
         for part in parts:
             ring = np.array(part[0])
             out.append(T.box_tiles(ring[:, 1].min(), ring[:, 0].min(), ring[:, 1].max(), ring[:, 0].max()))
-    return np.unique(np.concatenate(out))
+    return np.unique(np.concatenate(out + [st.idx["key"]]))
 
 
 def update(sd: Path, diff: Path, before: Path, day: str, polygon: Path | None = None):
