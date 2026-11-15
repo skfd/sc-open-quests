@@ -1444,6 +1444,11 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   with AMD USB4 (Framework threads) but behave on Windows; here Windows owns the drive and WSL only sees a disk, so
   the Windows case applies. Soak-test a week before trusting it. Against renting (EUR 40-80/mo) the 2 TB kit pays
   back in roughly 8-12 months.
+- **The owner asks (11-14): a NAS instead of the enclosure?** Not as storage for an Overpass run on the laptop: every
+  random read would pay a network round trip, gigabit caps it near 110 MB/s, and its files over SMB/NFS (from WSL,
+  too) risk locking trouble. A NAS that runs Overpass itself (Docker, x86, 16 GB+, an NVMe pool rather than M.2 as
+  cache only) works and keeps it off the laptop; a mini PC with two M.2 slots does the same job, usually for less and
+  with more CPU. A spinning-disk NAS suits the archives. Not decided.
 - **The owner's decision (11-14, 22:30): "I will buy external ssd to have Overpass locally. The language selection --
   not sure yet, let's discuss in next session."** So tier 2's store for the world is to be an own Overpass instance
   with attic data (D and D-1 by `[date:]`) on an external SSD (attic planet about 400 GB in 2023 terms, growing: buy
