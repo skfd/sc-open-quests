@@ -97,8 +97,10 @@ class ArrayMapData(
     /** build the [KeyIndex]es now, on all threads, instead of on the first quest's thread while the others
      *  that want one wait (a whole city; a tile's are small and often not asked for) */
     eagerKeys: Boolean = false,
+    /** where each of [nodes] is by id, if the caller has made it already */
+    nodeIndex: LongIndex? = null,
 ) : MapDataWithGeometry {
-    private val nodeIndex = LongIndex(LongArray(nodes.size) { nodes[it].id })
+    private val nodeIndex = nodeIndex ?: LongIndex(LongArray(nodes.size) { nodes[it].id })
     private val wayIndex = LongIndex(LongArray(ways.size) { ways[it].id })
     private val relationIndex = LongIndex(LongArray(relations.size) { relations[it].id })
 

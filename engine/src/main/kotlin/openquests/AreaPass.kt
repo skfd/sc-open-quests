@@ -783,6 +783,10 @@ class AreaPass(
             Node(nodes.ids[n], LatLon(unpackLat7(c) / 1e7, unpackLon7(c) / 1e7), nodes.tagsOf(n), nodes.versions[n], nodes.timestampOf(n))
         }
 
+        // where each node is in mapNodes: a way's geometry takes its nodes' own positions instead of a second
+        // object per node of every way (a city's 25M)
+        val nodeLookup = LongIndex(LongArray(distinct) { nodes.ids[nodeOrder[inHashOrder[it]]] })
+
         val wayOrder = hashMapOrder(LongArray(areaWays.size) { ways.ids[areaWays[it]] })
         val relationOrder = hashMapOrder(LongArray(areaRelations.size) { areaRelations[it].id })
 
@@ -793,9 +797,9 @@ class AreaPass(
             val positions = ArrayList<LatLon>(count)
             var complete = true
             for (j in from until from + count) {
-                val c = nodeIndex[ways.refs[j]]
-                if (c == NO_COORD) { complete = false; break }
-                positions += LatLon(unpackLat7(c) / 1e7, unpackLon7(c) / 1e7)
+                val at = nodeLookup[ways.refs[j]]
+                if (at < 0) { complete = false; break }
+                positions += mapNodes[at].position
             }
             // SC (MapData.getNodePositions): a way with a node missing has no geometry
             way to if (complete) safeGeometry { geometryCreator.create(way, positions) } else null
@@ -813,7 +817,7 @@ class AreaPass(
             relation to if (geometries.isEmpty()) null else safeGeometry { geometryCreator.create(relation, geometries) }
         }
         return ArrayMapData(box, mapNodes, wayGeometries.map { it.first }, wayGeometries.map { it.second },
-            relationGeometries.map { it.first }, relationGeometries.map { it.second }, eagerKeys = parallel)
+            relationGeometries.map { it.first }, relationGeometries.map { it.second }, eagerKeys = parallel, nodeIndex = nodeLookup)
     }
 
     private inline fun safeGeometry(create: () -> ElementGeometry?): ElementGeometry? =
