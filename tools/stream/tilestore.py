@@ -302,6 +302,7 @@ class Store:
     def __init__(self, d: Path, gen: int = -1):
         self.d = d
         self.meta = json.loads((d / "store.json").read_text())
+        assert self.meta["z"] == T.Z, f"{d} holds z{self.meta['z']} tiles; set OPENQUESTS_TILE_Z={self.meta['z']}"
         g = self.meta["generations"][gen]["gen"]
         self.gen = g
         self.idx = np.load(d / f"idx-{g:04d}.npy")
@@ -635,19 +636,34 @@ def pairs_of(p: np.ndarray, ids) -> dict:
     return {int(i): set(p["key"][a:b].tolist()) for i, a, b in zip(ids, lo, hi)}
 
 
-def dilate(keys: np.ndarray) -> np.ndarray:
+def dilate(keys: np.ndarray, r: int = 1) -> np.ndarray:
     x, y = keys >> T.Z, keys & (T.NT - 1)
-    out = [T.key_of(x + dx, y + dy) for dx in (-1, 0, 1) for dy in (-1, 0, 1)]
+    out = [T.key_of(x + dx, y + dy) for dx in range(-r, r + 1) for dy in range(-r, r + 1)]
     return np.unique(np.concatenate(out))
 
 
-def update(sd: Path, diff: Path, before: Path, day: str):
+def region_of(st, polygon: Path | None) -> np.ndarray:
+    """The tiles a clip's store answers for, so the planet diff's changes elsewhere stay out (a world store has no
+    such edge): the tiles under each part of the clip's polygon, or else those near its tiles (about 2.4 km)."""
+    if polygon is None:
+        return dilate(st.idx["key"], 1 << max(0, T.Z - 14))
+    out = []
+    for f in json.loads(polygon.read_text(encoding="utf-8"))["features"]:
+        geo = f["geometry"]
+        parts = geo["coordinates"] if geo["type"] == "MultiPolygon" else [geo["coordinates"]]
+        for part in parts:
+            ring = np.array(part[0])
+            out.append(T.box_tiles(ring[:, 1].min(), ring[:, 0].min(), ring[:, 1].max(), ring[:, 0].max()))
+    return np.unique(np.concatenate(out))
+
+
+def update(sd: Path, diff: Path, before: Path, day: str, polygon: Path | None = None):
     t0 = time.time()
     st = Store(sd)
     G = st.gen
     NG = G + 1
     wt, rt = np.load(sd / f"wtiles-{G:04d}.npy"), np.load(sd / f"rtiles-{G:04d}.npy")
-    region = dilate(st.idx["key"])
+    region = region_of(st, polygon)
     (cn_all, dn), (cw_all, dw), (cr_all, dr) = read_osc(diff)
     t_diff = time.time() - t0
     bt = NodeTable(before)
@@ -945,6 +961,7 @@ def main():
     ap.add_argument("--before", type=Path)
     ap.add_argument("--a", type=Path)
     ap.add_argument("--b", type=Path)
+    ap.add_argument("--polygon", type=Path, help="update: the clip's polygon, the store's region")
     ap.add_argument("--under", action="store_true", help="compare: only the tiles under the cities' boxes and ring")
     ap.add_argument("--geom", type=Path)
     ap.add_argument("--out", type=Path)
@@ -959,7 +976,7 @@ def main():
     if o.cmd == "cut":
         cut(o.geom, o.out, o.day)
     elif o.cmd == "update":
-        update(o.store, o.diff, o.before, o.day)
+        update(o.store, o.diff, o.before, o.day, o.polygon)
     elif o.cmd == "compare":
         keys = T.tiles_of(T.city_boxes(o.cities, o.base), o.ring) if o.under else None
         print(json.dumps(compare_stores(o.a, o.b, keys), indent=1))

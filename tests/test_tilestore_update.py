@@ -87,7 +87,11 @@ class UpdateTest(unittest.TestCase):
                 T.geom(d / f"{name}.osm.pbf", d / f"g-{name}")
                 T.attrs(d / f"{name}.osm.pbf", d / f"g-{name}")
                 S.cut(d / f"g-{name}", d / f"s-{name}", name)
-            S.update(d / "s-before", d / "day.osc", d / "g-before", "after")
+            # the clip's polygon is the store's region (the planet diff's changes elsewhere stay out)
+            poly = d / "polygon.geojson"
+            poly.write_text('{"features": [{"geometry": {"type": "Polygon", "coordinates": '
+                            '[[[-0.2, 51.45], [0.0, 51.45], [0.0, 51.6], [-0.2, 51.6], [-0.2, 51.45]]]}}]}')
+            S.update(d / "s-before", d / "day.osc", d / "g-before", "after", poly)
             r = S.compare_stores(d / "s-before", d / "s-after")
             self.assertEqual((r["differ"], r["onlyA"], r["onlyB"]), (0, 0, 0), r)
             self.assertGreater(r["same"], 0)

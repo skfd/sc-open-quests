@@ -21,6 +21,7 @@ tiles under a box and its ring, joined with duplicates dropped, must give the sa
 import argparse
 import json
 import math
+import os
 import sys
 import time
 from pathlib import Path
@@ -29,8 +30,10 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-Z = 14
+# the tiles' zoom; OPENQUESTS_TILE_Z sets another for a measurement (DESIGN.md, "Smaller tiles"); a store records its own
+Z = int(os.environ.get("OPENQUESTS_TILE_Z", "14"))
 NT = 1 << Z
+KB = 2 * Z  # bits of a tile key
 M_LAT = 111_320.0
 
 
@@ -230,7 +233,7 @@ class Geom:
         way_of_ref = np.repeat(np.arange(nw, dtype=np.int64), lens)
         ok = self.wrefs >= 0
         keys = np.where(ok, self.nkey[np.maximum(self.wrefs, 0)], -1)
-        pairs = [way_of_ref[ok] << 28 | keys[ok]]
+        pairs = [way_of_ref[ok] << KB | keys[ok]]
         # segments: consecutive refs of one way, both placed, in different tiles
         a, b = np.arange(len(self.wrefs) - 1), np.arange(1, len(self.wrefs))
         same_way = way_of_ref[a] == way_of_ref[b]
@@ -239,9 +242,9 @@ class Geom:
         a, b = a[cross], b[cross]
         ra, rb = self.wrefs[a], self.wrefs[b]
         s, k = segment_tiles(self.nfx[ra], self.nfy[ra], self.nfx[rb], self.nfy[rb])
-        pairs.append(way_of_ref[a][s] << 28 | k)
+        pairs.append(way_of_ref[a][s] << KB | k)
         wt = np.unique(np.concatenate(pairs))
-        self.wt_way, self.wt_key = wt >> 28, wt & ((1 << 28) - 1)
+        self.wt_way, self.wt_key = wt >> KB, wt & ((1 << KB) - 1)
         log(f"way tiles: {len(wt):,} (way, tile) pairs from {len(self.wrefs):,} refs, {cross.sum():,} segments "
             f"crossing tiles, in {time.time() - t:.0f} s")
 
