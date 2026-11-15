@@ -3391,9 +3391,9 @@ was kept and before relations were narrowed, wrote 5,664 tiles and 814 MB, half 
   `.scratch/tiles/chain2.sh` (the update again from generation 0, with the checks).
 
 *What it says for the world.*
-- **Correctness: exact on one day.** The tile rule, the store and the update reproduce the clip's recount exactly, D
-  and D-1, and the updated store equals a fresh cut away from the clip's edge. A second day (the update reading its own
-  generation-1 way and relation indexes) is not run yet; those indexes equal the fresh cut's away from the edge.
+- **Correctness: exact on two days.** The tile rule, the store and the update reproduce the clip's recount exactly, D
+  and D-1, and the updated store equals a fresh cut away from the clip's edge on 11-13 and on 11-14 (the second day
+  reading the first's indexes: "Smaller tiles", "A second day").
 - **Size:** tiles 1.14x the PBF, relation store 0.13x: about 108 GB beside the planet's 85 GB PBF. The index is small
   (1.4 MB a generation here; tens of millions of tiles for the planet, about 1 GB a generation). The way-tiles index is
   not: 362 MB here (16 bytes a pair, 22.6M pairs, 18% of the pack), about 19 GB for the planet as plain pairs, and the
@@ -3463,3 +3463,15 @@ dominated by dublin-0's 12 x 7 km. Updates took 6-9 min each in Python at every 
 - **The key for an adaptive store**: a quadtree cell (zoom, x, y); a box asks for the cells under it at z14, and a z14
   cell that is split answers with its z16 children. The cut decides the split from the z14 payload size; a day may
   leave a tile across the threshold, which only costs a later re-split (the content is the same either way).
+
+*A second day (11-14, 21:00-21:50; `.scratch/tiles/day12.sh`, log `logs/tiles-day12.log`).* The z14 store from
+generation 0 through diff 5175 and then 5176 (the second update reading the first's way and relation tile indexes,
+the node store before it being 11-13's), each held against a fresh cut of that day's clip (`store13/`, `store14/`):
+**no tile, relation blob, way-tiles or relation-tiles entry wholly inside the polygon differs on either day**, and D of
+day one recounts 0 different. Day two reached 2,438 tiles and wrote 2,426 (477 MB, 24% again; 572 s). The edge's
+differences grow with the days (799 tiles against 408), as they must where the planet diff keeps adding what the clip
+leaves out. The first try at day two found two gaps, both fixed and in the small test: (1) a reached relation's tile
+index was rebuilt from the working set alone, which lacks a far member node or way, so relations placed by far member
+nodes lost entries (5 interior; their tiles were right); now a reached relation keeps its entries outside the day's
+reach. (2) A changed relation's new member nodes were neither reached nor in the working set (an untagged node no tile
+held); now they are, placed from the node store.

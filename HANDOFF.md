@@ -1403,6 +1403,11 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   write (250 MB); over 128 KB, z15's size with z16's write.** The update's region is now the store's tiles plus the
   polygon's (two region bugs found by the higher zooms, both prototype-only). Stores in `.scratch/tiles/store-z15/`,
   `store-z16/`, `store13-z15/`, `store13-z16/` (about 15 GB together with the rest of `.scratch/tiles/`).
-- **A second day, running (20:19):** `.scratch/tiles/day2.sh` (log `logs/tiles-day2.log`): the z14 store's generation
-  1 updated by diff 5176 to 11-14, reading its own generation-1 indexes, against a fresh cut of the 11-14 clip
-  (`geom-14/`, `store14/`).
+- **A second day: exact (11-14, 21:50).** DESIGN.md, "A second day". The z14 store through 5175 and 5176 equals fresh
+  cuts of 11-13 and 11-14 everywhere inside the clip polygon (tiles, relation store, both tile indexes); D of day one
+  0 different. Two gaps in the relation index found on the way, fixed, in the small test. Day two wrote 477 MB (24%).
+  `.scratch/tiles/` is now about 40 GB (geom-12/13/14, stores at z14/15/16 and the fresh cuts): deletable whenever the
+  owner likes; nothing else reads it.
+- **For the owner, to ask as a wizard:** the store is proved and the layout measured. Next: (a) build it in Kotlin
+  beside the engine with the adaptive split (z16 children of z14 tiles over 256 KB), cut from the 12-07 planet;
+  (b) the same at 128 KB; (c) leave tier 2 for now. And: push the commits since 19:10; delete `.scratch/tiles/`.
