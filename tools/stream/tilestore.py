@@ -820,6 +820,7 @@ def update(sd: Path, diff: Path, before: Path, day: str, polygon: Path | None = 
         why["way"] |= s
     for s in old_r.values():
         why["relation"] |= s
+    member_nodes = []
     for rid in np.intersect1d(ar, dr.fix["id"]).tolist():
         j = np.searchsorted(g.rid, rid)
         if j < nr and g.rid[j] == rid and m.r_kept[j]:  # a relation the app ignores is in no tile
@@ -829,9 +830,10 @@ def update(sd: Path, diff: Path, before: Path, day: str, polygon: Path | None = 
                 why["relation"] |= new_w.get(w_, set())
             for s in pairs_of(wt, mw[~np.isin(mw, moved)]).values():
                 why["relation"] |= s
-            mn = g.mref[ms][g.mtype[ms] == 0]
-            la, lo_, fd = after_pos(mn)
-            why["relation"] |= set(key_of7(la[fd], lo_[fd]).tolist())
+            member_nodes.append(g.mref[ms][g.mtype[ms] == 0])
+    if member_nodes:
+        la, lo_, fd = after_pos(np.unique(np.concatenate(member_nodes)))
+        why["relation"] |= set(key_of7(la[fd], lo_[fd]).tolist())
     reach = np.array(sorted(why["node"] | why["way"] | why["relation"]), np.int64)
     reach = reach[np.isin(reach, region)]
     dec(reach)
