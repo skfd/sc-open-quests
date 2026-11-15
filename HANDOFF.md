@@ -1523,3 +1523,19 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   shortcut is a month's diffs merged and applied in one step. Tier 2's history waits on Overpass's measured speed
   (attic answers any past date). The only world reference is 11-08, so a stream from 2017 is checked where it
   arrives.
+- **Batch engine speed-up, started (11-14, 23:20; owner: "spend some time doing optimizations for current
+  implementation of batch engine. think outside of the box too"; a systems-language rewrite is the owner's other
+  track, not this one).** Worktree `../sc-open-quests-batch`, branch `batch-speed` (the Overpass session runs main's
+  engine build). Test file: Germany f0 of `.scratch/world-de2` (113M nodes, 18 cells), runner and comparer in
+  `.scratch/batch-speed/` (`run1.py --engine ../sc-open-quests-batch --tag X [--opts=-D...]`, `same.py A B`: snapshot
+  equal in every field but runSeconds and engineCommit, state.bin as sets). **Read off the world count's logs:** 82%
+  of the count's wall time is cells one after another (12,465 s of 15,217 s; map data 3,520 s of it). **Measured on
+  f0 at 30 GB:** baseline 245 s wall, 2,467 s CPU, of which only 651 s is quest runs: the collector is the limit
+  (the file's records keep the heap 70% full). Built, same snapshot: the area pass's nodes as columns instead of
+  114M objects, a city's elements picked from int arrays: **202 s, 2,074 s CPU**. Cities' area runs at once
+  (`-Dopenquests.areaCities=N`, default 1) give the same snapshot but no gain at 30 GB (6-8 full collections); to
+  measure with a larger heap. Built, not yet measured: key indexes and the node index built on all threads before the
+  runs (20 runs waited 1.8 s on one thread building them). **Timing runs used all 24 threads at 23:31-23:55, during
+  the Overpass full run's load, diff and stages 1-2: its load and diff seconds may be inflated**; none ran during its
+  per-rectangle timings. Next: heap and JDK 25 (compact headers), then the cut (osmium through Docker's bind mount
+  read the 0.9 GB rehearsal regions at about 27 MB/s a pass: to test against a copy inside the container).
