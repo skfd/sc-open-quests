@@ -94,28 +94,113 @@ fun unpackLat7(p: Long): Int = (p shr 32).toInt()
 fun unpackLon7(p: Long): Int = p.toInt()
 const val NO_COORD = Long.MIN_VALUE
 
-/** Sorted id -> packed coordinate lookup, made of per-block sorted arrays in file order. */
-class SortedLongMap(blocks: List<Pair<LongArray, LongArray>>) {
-    private val nonEmptyBlocks = blocks.filter { it.first.isNotEmpty() }
-    private val firstIds = LongArray(nonEmptyBlocks.size) { nonEmptyBlocks[it].first[0] }
-    val size: Long = nonEmptyBlocks.sumOf { it.first.size.toLong() }
+/** The nodes of one block, as the main pass reads them. With [NodeBlock.keep] also each node's version and
+ *  time and the tagged ones' tags, for the area pass ([NodeStore]). */
+class NodeBlock(val keep: Boolean, dict: TagDict?) {
+    var n = 0
+        private set
+    var ids = LongArray(8000); var coords = LongArray(8000)
+    var versions = IntArray(if (keep) 8000 else 0); var seconds = IntArray(if (keep) 8000 else 0)
+    /** the tagged nodes' positions in this block, ascending; node tagged[k]'s tags end at tagEnd[k] in [tags] */
+    var tagged = IntArray(if (keep) 256 else 0); var tagEnd = IntArray(if (keep) 256 else 0)
+    var taggedCount = 0
+        private set
+    val tags: TagChunk? = if (keep) TagChunk(dict!!) else null
+
+    /** [millis]: the node's timestamp. Kept as seconds: OSM's are whole seconds. */
+    fun add(id: Long, coord: Long, version: Int, millis: Long) {
+        if (n == ids.size) {
+            ids = ids.copyOf(n * 2); coords = coords.copyOf(n * 2)
+            if (keep) { versions = versions.copyOf(n * 2); seconds = seconds.copyOf(n * 2) }
+        }
+        ids[n] = id; coords[n] = coord
+        if (keep) {
+            require(millis % 1000 == 0L && millis / 1000 <= Int.MAX_VALUE) { "node $id: timestamp $millis ms is not whole seconds before 2038" }
+            versions[n] = version; seconds[n] = (millis / 1000).toInt()
+        }
+        n++
+    }
+
+    /** the tags of the node added last (not empty) */
+    fun tagLast(t: Map<String, String>) {
+        if (taggedCount == tagged.size) { tagged = tagged.copyOf(taggedCount * 2); tagEnd = tagEnd.copyOf(taggedCount * 2) }
+        tags!!.add(t)
+        tagged[taggedCount] = n - 1; tagEnd[taggedCount] = tags.n
+        taggedCount++
+    }
+}
+
+/**
+ * Every node of the file, sorted by id, as columns: id -> packed coordinate for both passes ([get]) and,
+ * when the area pass runs, each node's version and time and the tagged ones' tags, so that the area pass
+ * neither reads the nodes again nor keeps its own copy of them (DESIGN.md, "Batch engine speed-up").
+ * A node is found by its block first (the blocks' first ids), then inside the block's stretch.
+ */
+class NodeStore(blocks: List<NodeBlock>, dict: TagDict?) {
+    private val nonEmpty = blocks.filter { it.n > 0 }
+    private val firstIds = LongArray(nonEmpty.size) { nonEmpty[it].ids[0] }
+    private val blockStart = IntArray(nonEmpty.size + 1)
+    val count: Int
+    val size: Long get() = count.toLong()
+    val ids: LongArray
+    val coords: LongArray
+    val versions: IntArray
+    private val seconds: IntArray
+    /** the positions of the tagged nodes, ascending */
+    val tagged: IntArray
+    private val tags: TagStore?
+    val keep = blocks.any { it.keep }
 
     init {
+        val total = nonEmpty.sumOf { it.n.toLong() }
+        require(total <= Int.MAX_VALUE) { "$total nodes: over what one file may hold" }
+        count = total.toInt()
+        for (i in nonEmpty.indices) blockStart[i + 1] = blockStart[i] + nonEmpty[i].n
+        ids = LongArray(count); coords = LongArray(count)
+        versions = IntArray(if (keep) count else 0); seconds = IntArray(if (keep) count else 0)
+        val taggedTotal = nonEmpty.sumOf { it.taggedCount }
+        val kvTotal = nonEmpty.sumOf { (it.tags?.n ?: 0).toLong() }
+        require(kvTotal <= Int.MAX_VALUE) { "$kvTotal tag strings on nodes: over what one file may hold" }
+        tagged = IntArray(taggedTotal)
+        val tagStart = IntArray(taggedTotal + 1); val kv = IntArray(kvTotal.toInt())
+        var t = 0; var kvAt = 0
+        for (i in nonEmpty.indices) {
+            val b = nonEmpty[i]; val at = blockStart[i]
+            b.ids.copyInto(ids, at, 0, b.n); b.coords.copyInto(coords, at, 0, b.n)
+            if (keep) { b.versions.copyInto(versions, at, 0, b.n); b.seconds.copyInto(seconds, at, 0, b.n) }
+            for (k in 0 until b.taggedCount) { tagged[t + k] = at + b.tagged[k]; tagStart[t + k + 1] = kvAt + b.tagEnd[k] }
+            b.tags?.let { it.kv.copyInto(kv, kvAt, 0, it.n); kvAt += it.n }
+            t += b.taggedCount
+        }
+        tags = if (keep) TagStore(tagStart, kv, dict!!.strings()) else null
         var prev = Long.MIN_VALUE
-        for ((ids, _) in nonEmptyBlocks) for (id in ids) {
+        for (id in ids) {
             require(id > prev) { "ids not sorted ($prev then $id); the file must be sorted Type_then_ID" }
             prev = id
         }
     }
 
-    operator fun get(id: Long): Long {
+    /** the position of node [id], or -1 */
+    fun indexOf(id: Long): Int {
         var bi = firstIds.binarySearch(id)
         if (bi < 0) bi = -bi - 2
-        if (bi < 0) return NO_COORD
-        val (ids, values) = nonEmptyBlocks[bi]
-        val i = ids.binarySearch(id)
-        return if (i >= 0) values[i] else NO_COORD
+        if (bi < 0) return -1
+        val i = java.util.Arrays.binarySearch(ids, blockStart[bi], blockStart[bi + 1], id)
+        return if (i >= 0) i else -1
     }
+
+    /** the packed coordinate of node [id], or [NO_COORD] */
+    operator fun get(id: Long): Long {
+        val i = indexOf(id)
+        return if (i >= 0) coords[i] else NO_COORD
+    }
+
+    /** which of [tagged] the node at [position] is, or -1 */
+    fun taggedIndexOf(position: Int): Int = tagged.binarySearch(position).let { if (it >= 0) it else -1 }
+
+    fun tagsOf(position: Int): Map<String, String> = taggedIndexOf(position).let { if (it < 0) emptyMap() else tags!!.tagsOf(it) }
+
+    fun timestampOf(position: Int): Long = seconds[position] * 1000L
 }
 
 /** Every data blob of [path] handed to [f] as it is read, [threads] at once, with at most [ahead] read

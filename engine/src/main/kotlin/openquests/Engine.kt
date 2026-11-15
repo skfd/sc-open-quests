@@ -392,9 +392,12 @@ class Engine(val registry: Registry, val cities: List<City>, val parts: List<Par
         timing("relation member scan", t0, "${neededWays.size} member ways of tagged relations")
 
         t0 = System.nanoTime()
-        val nodes = SortedLongMap(parallelMap(0, wayStart) { i ->
-            processNodes(decodeBlock(blobs[i]).also { require(it.kind() == BlockKind.NODES) })
-        })
+        // the area pass reads every node's version, time and tags off the same table (NodeStore)
+        val keepNodes = AREA_PASS && quests.any { it.area != null }
+        val tagDict = if (keepNodes) TagDict() else null
+        val nodes = NodeStore(parallelMap(0, wayStart) { i ->
+            processNodes(decodeBlock(blobs[i]).also { require(it.kind() == BlockKind.NODES) }, keepNodes, tagDict)
+        }, tagDict)
         timing("nodes", t0, "${nodes.size} nodes")
 
         t0 = System.nanoTime()
@@ -409,7 +412,7 @@ class Engine(val registry: Registry, val cities: List<City>, val parts: List<Par
         }
         timing("relations", t0, "")
 
-        AreaPass(this, blobs, wayStart, relStart, nodes, memberWays, areaUnit).run()
+        AreaPass(this, blobs, wayStart, relStart, nodes, memberWays, areaUnit, tagDict ?: TagDict()).run()
         notes?.let { countNotes(it) }
     }
 
@@ -466,10 +469,9 @@ class Engine(val registry: Registry, val cities: List<City>, val parts: List<Par
         return out.toArray()
     }
 
-    private fun processNodes(b: Osmformat.PrimitiveBlock): Pair<LongArray, LongArray> {
+    private fun processNodes(b: Osmformat.PrimitiveBlock, keep: Boolean, dict: TagDict?): NodeBlock {
         val ctx = BlockContext(b)
-        val ids = LongList()
-        val coords = LongList()
+        val out = NodeBlock(keep, dict)
         for (g in b.primitivegroupList) {
             if (g.hasDense()) {
                 val d = g.dense
@@ -481,7 +483,8 @@ class Engine(val registry: Registry, val cities: List<City>, val parts: List<Par
                     id += d.getId(i); lat += d.getLat(i); lon += d.getLon(i)
                     if (hasInfo) ts += info.getTimestamp(i)
                     val lat7 = ctx.lat7(lat); val lon7 = ctx.lon7(lon)
-                    ids.add(id); coords.add(pack(lat7, lon7))
+                    val version = if (hasInfo) info.getVersion(i) else 1
+                    out.add(id, pack(lat7, lon7), version, ts * ctx.dateGranularity)
                     if (!hasKv) continue
                     val start = kv
                     while (d.getKeysVals(kv) != 0) kv += 2
@@ -490,35 +493,40 @@ class Engine(val registry: Registry, val cities: List<City>, val parts: List<Par
                     if (end == start) continue
                     val position = LatLon(lat7 / 1e7, lon7 / 1e7)
                     val cityIdx = locate(NODE, position)
-                    if (cityIdx.isEmpty()) continue
-                    val tags = TagMap((end - start) / 2)
+                    if (cityIdx.isEmpty() && !keep) continue
+                    val raw = TagMap((end - start) / 2)
                     var j = start
-                    while (j < end) { tags.add(ctx.strings[d.getKeysVals(j)], ctx.strings[d.getKeysVals(j + 1)]); j += 2 }
-                    val version = if (hasInfo) info.getVersion(i) else 1
-                    val node = Node(id, position, fitTags("main", "node", id, tags), version, ts * ctx.dateGranularity)
+                    while (j < end) { raw.add(ctx.strings[d.getKeysVals(j)], ctx.strings[d.getKeysVals(j + 1)]); j += 2 }
+                    val tags = fitTags("main", "node", id, raw)
+                    if (keep && tags.isNotEmpty()) out.tagLast(tags)
+                    if (cityIdx.isEmpty()) continue
+                    val node = Node(id, position, tags, version, ts * ctx.dateGranularity)
                     for (c in cityIdx) counts.taggedNodes.incrementAndGet(c)
                     offer(node, NODE, cityIdx, position)
                 }
             }
             for (n in g.nodesList) {
                 val lat7 = ctx.lat7(n.lat); val lon7 = ctx.lon7(n.lon)
-                ids.add(n.id); coords.add(pack(lat7, lon7))
+                val version = if (n.hasInfo()) n.info.version else 1
+                out.add(n.id, pack(lat7, lon7), version, n.info.timestamp * ctx.dateGranularity)
                 if (n.keysCount == 0) continue
                 val position = LatLon(lat7 / 1e7, lon7 / 1e7)
                 val cityIdx = locate(NODE, position)
+                if (cityIdx.isEmpty() && !keep) continue
+                val tags = fitTags("main", "node", n.id, tagsOf(n.keysList, n.valsList, ctx.strings))
+                if (keep && tags.isNotEmpty()) out.tagLast(tags)
                 if (cityIdx.isEmpty()) continue
-                val node = Node(n.id, position, fitTags("main", "node", n.id, tagsOf(n.keysList, n.valsList, ctx.strings)),
-                    if (n.hasInfo()) n.info.version else 1, n.info.timestamp * ctx.dateGranularity)
+                val node = Node(n.id, position, tags, version, n.info.timestamp * ctx.dateGranularity)
                 for (c in cityIdx) counts.taggedNodes.incrementAndGet(c)
                 offer(node, NODE, cityIdx, position)
             }
         }
-        return ids.toArray() to coords.toArray()
+        return out
     }
 
     private fun processWays(
         b: Osmformat.PrimitiveBlock,
-        nodes: SortedLongMap,
+        nodes: NodeStore,
         neededWays: LongArray,
     ): Pair<LongArray, Array<LongArray?>> {
         val ctx = BlockContext(b)
