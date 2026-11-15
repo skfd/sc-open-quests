@@ -52,32 +52,32 @@ pub struct Clip {
 
 /// one block's share, appended in file order
 #[derive(Default)]
-struct Part {
-    nid: Vec<i64>,
-    lat7: Vec<i32>,
-    lon7: Vec<i32>,
-    tn_local: Vec<u32>,
-    tn_ver: Vec<i32>,
-    tn_ts: Vec<i64>,
-    tn_tlen: Vec<u32>,
-    tn_tags: Vec<u8>,
-    wid: Vec<i64>,
-    w_ver: Vec<i32>,
-    w_ts: Vec<i64>,
-    w_nref: Vec<u32>,
-    w_refs: Vec<i64>,
-    w_tlen: Vec<u32>,
-    w_tags: Vec<u8>,
-    rid: Vec<i64>,
-    r_ver: Vec<i32>,
-    r_ts: Vec<i64>,
-    r_nmem: Vec<u32>,
-    mtype: Vec<i8>,
-    mref: Vec<i64>,
-    m_rlen: Vec<u32>,
-    roles: Vec<u8>,
-    r_tlen: Vec<u32>,
-    r_tags: Vec<u8>,
+pub struct Part {
+    pub nid: Vec<i64>,
+    pub lat7: Vec<i32>,
+    pub lon7: Vec<i32>,
+    pub tn_local: Vec<u32>,
+    pub tn_ver: Vec<i32>,
+    pub tn_ts: Vec<i64>,
+    pub tn_tlen: Vec<u32>,
+    pub tn_tags: Vec<u8>,
+    pub wid: Vec<i64>,
+    pub w_ver: Vec<i32>,
+    pub w_ts: Vec<i64>,
+    pub w_nref: Vec<u32>,
+    pub w_refs: Vec<i64>,
+    pub w_tlen: Vec<u32>,
+    pub w_tags: Vec<u8>,
+    pub rid: Vec<i64>,
+    pub r_ver: Vec<i32>,
+    pub r_ts: Vec<i64>,
+    pub r_nmem: Vec<u32>,
+    pub mtype: Vec<i8>,
+    pub mref: Vec<i64>,
+    pub m_rlen: Vec<u32>,
+    pub roles: Vec<u8>,
+    pub r_tlen: Vec<u32>,
+    pub r_tags: Vec<u8>,
 }
 
 fn push_tag(out: &mut Vec<u8>, st: &[Vec<u8>], k: usize, v: usize) {
@@ -87,7 +87,7 @@ fn push_tag(out: &mut Vec<u8>, st: &[Vec<u8>], k: usize, v: usize) {
     out.push(0);
 }
 
-fn parse(block: &PrimitiveBlock) -> Part {
+pub fn parse(block: &PrimitiveBlock) -> Part {
     let mut p = Part::default();
     let st = block.raw_stringtable();
     for g in block.groups() {
@@ -201,11 +201,58 @@ fn ignore_relation(tags: &[u8]) -> bool {
 }
 
 impl Clip {
-    pub fn read(pbf: &Path) -> Clip {
+    /// an empty clip, its offset columns started
+    pub fn new() -> Clip {
         let mut c = Clip::default();
         for o in [&mut c.tn_toff, &mut c.woffs, &mut c.w_toff, &mut c.roffs, &mut c.r_roff, &mut c.r_toff] {
             o.push(0);
         }
+        c
+    }
+
+    /// one block's share, after what is there
+    pub fn append(&mut self, p: &Part) {
+        let c = self;
+        let base = c.nid.len() as u32;
+        c.nid.extend_from_slice(&p.nid);
+        c.lat7.extend_from_slice(&p.lat7);
+        c.lon7.extend_from_slice(&p.lon7);
+        c.tn_row.extend(p.tn_local.iter().map(|&i| base + i));
+        c.tn_ver.extend_from_slice(&p.tn_ver);
+        c.tn_ts.extend_from_slice(&p.tn_ts);
+        offsets(&mut c.tn_toff, &p.tn_tlen);
+        c.tn_tags.extend_from_slice(&p.tn_tags);
+        c.wid.extend_from_slice(&p.wid);
+        c.w_ver.extend_from_slice(&p.w_ver);
+        c.w_ts.extend_from_slice(&p.w_ts);
+        offsets(&mut c.woffs, &p.w_nref);
+        c.wref_ids.extend_from_slice(&p.w_refs);
+        offsets(&mut c.w_toff, &p.w_tlen);
+        c.w_tags.extend_from_slice(&p.w_tags);
+        c.rid.extend_from_slice(&p.rid);
+        c.r_ver.extend_from_slice(&p.r_ver);
+        c.r_ts.extend_from_slice(&p.r_ts);
+        offsets(&mut c.roffs, &p.r_nmem);
+        c.mtype.extend_from_slice(&p.mtype);
+        c.mref.extend_from_slice(&p.mref);
+        offsets(&mut c.r_roff, &p.m_rlen);
+        c.roles.extend_from_slice(&p.roles);
+        offsets(&mut c.r_toff, &p.r_tlen);
+        c.r_tags.extend_from_slice(&p.r_tags);
+    }
+
+    /// which relations are kept: tagged and not ones the app ignores
+    pub fn keep_relations(&mut self) {
+        self.r_kept = (0..self.rid.len())
+            .map(|r| {
+                let t = &self.r_tags[self.r_toff[r] as usize..self.r_toff[r + 1] as usize];
+                !t.is_empty() && !ignore_relation(t)
+            })
+            .collect();
+    }
+
+    pub fn read(pbf: &Path) -> Clip {
+        let mut c = Clip::new();
         let mut reader = BlobReader::from_path(pbf).expect("open the pbf");
         loop {
             let batch: Vec<_> = reader.by_ref().take(256).map(|b| b.expect("read a blob")).collect();
@@ -221,44 +268,14 @@ impl Clip {
                 })
                 .collect();
             for p in parts.into_iter().flatten() {
-                let base = c.nid.len() as u32;
-                c.nid.extend_from_slice(&p.nid);
-                c.lat7.extend_from_slice(&p.lat7);
-                c.lon7.extend_from_slice(&p.lon7);
-                c.tn_row.extend(p.tn_local.iter().map(|&i| base + i));
-                c.tn_ver.extend_from_slice(&p.tn_ver);
-                c.tn_ts.extend_from_slice(&p.tn_ts);
-                offsets(&mut c.tn_toff, &p.tn_tlen);
-                c.tn_tags.extend_from_slice(&p.tn_tags);
-                c.wid.extend_from_slice(&p.wid);
-                c.w_ver.extend_from_slice(&p.w_ver);
-                c.w_ts.extend_from_slice(&p.w_ts);
-                offsets(&mut c.woffs, &p.w_nref);
-                c.wref_ids.extend_from_slice(&p.w_refs);
-                offsets(&mut c.w_toff, &p.w_tlen);
-                c.w_tags.extend_from_slice(&p.w_tags);
-                c.rid.extend_from_slice(&p.rid);
-                c.r_ver.extend_from_slice(&p.r_ver);
-                c.r_ts.extend_from_slice(&p.r_ts);
-                offsets(&mut c.roffs, &p.r_nmem);
-                c.mtype.extend_from_slice(&p.mtype);
-                c.mref.extend_from_slice(&p.mref);
-                offsets(&mut c.r_roff, &p.m_rlen);
-                c.roles.extend_from_slice(&p.roles);
-                offsets(&mut c.r_toff, &p.r_tlen);
-                c.r_tags.extend_from_slice(&p.r_tags);
+                c.append(&p);
             }
         }
         assert!(c.nid.len() < NONE as usize, "node rows are 32 bits here");
         increasing(&c.nid, "node");
         increasing(&c.wid, "way");
         increasing(&c.rid, "relation");
-        c.r_kept = (0..c.rid.len())
-            .map(|r| {
-                let t = &c.r_tags[c.r_toff[r] as usize..c.r_toff[r + 1] as usize];
-                !t.is_empty() && !ignore_relation(t)
-            })
-            .collect();
+        c.keep_relations();
         c
     }
 

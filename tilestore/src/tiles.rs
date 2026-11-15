@@ -98,3 +98,28 @@ pub fn way_tiles(c: &Clip, z: u32) -> (Vec<u64>, Vec<u32>) {
     }
     (off, keys)
 }
+
+/// one way's sorted tiles from its nodes' places (None: a ref with no node in the file); the same rule as
+/// way_tiles, for the streaming cut
+pub fn keys_of_way(places: &[Option<(i32, i32)>], z: u32, k: &mut Vec<u32>) {
+    let nt = (1u64 << z) as f64;
+    k.clear();
+    let mut prev: Option<(f64, f64, u32)> = None;
+    for pl in places {
+        let cur = pl.map(|(lat7, lon7)| {
+            let (fx, fy) = frac_xy(lat7, lon7, nt);
+            (fx, fy, key_of(fx.floor() as i64, fy.floor() as i64, z))
+        });
+        if let Some((bx, by, key)) = cur {
+            k.push(key);
+            if let Some((ax, ay, pkey)) = prev {
+                if pkey != key {
+                    segment_tiles(ax, ay, bx, by, z, k);
+                }
+            }
+        }
+        prev = cur;
+    }
+    k.sort_unstable();
+    k.dedup();
+}

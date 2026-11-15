@@ -1684,5 +1684,9 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   11-02's store. **First to build, no planet resources: the streaming cut held against the in-memory cut by
   `storecmp.py` on the clip and Germany, bucket zoom z8 and z11-z12.** Then one timing of the node file and way
   pass (108 GB, deleted after; proposed pass under 4 h, fail over 12 h). Asked of the owner: the cut's source (the
-  history file read at a date by Rust, or a snapshot), and when that 108 GB timing may run. **Next, proposed:** the update in Rust (first act: the Python `update` on
+  history file read at a date by Rust, or a snapshot), and when that 108 GB timing may run.
+- **The owner's answers (11-15, 14:55):** the cut's source: **the history file, read at a date by Rust** (to be
+  proven on `berlin-history` against `osmium time-filter` first). The 108 GB timing: **on C:, after the clip-scale
+  proof**, the file deleted after. Next: **"Yes, build it now"**, the streaming cut, proven against the in-memory
+  cut on the clip and Germany. In progress below. **Next, proposed:** the update in Rust (first act: the Python `update` on
   `store-rs`, then `storecmp.py --ga 1 --gb 1`), then the planet cut's design.

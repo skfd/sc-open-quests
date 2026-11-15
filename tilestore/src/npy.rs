@@ -1,7 +1,7 @@
 //! The two .npy files the Python store reads: the index (key, pack, off, len) and the (id, key) pairs.
 
 use std::fs::File;
-use std::io::{BufWriter, Write};
+use std::io::{BufWriter, Seek, SeekFrom, Write};
 use std::path::Path;
 
 fn header(f: &mut impl Write, descr: &str, n: usize) {
@@ -56,4 +56,47 @@ pub fn load_idx(path: &Path) -> Vec<(i64, i32, i64, i32)> {
             )
         })
         .collect()
+}
+
+/// (id, key) pairs written as they come; the count goes into the header at the end
+pub struct PairWriter {
+    f: BufWriter<File>,
+    n: u64,
+}
+
+const PAIR_HEADER: usize = 128;
+
+fn pair_header(n: u64) -> Vec<u8> {
+    let mut h = format!("{{'descr': [('id', '<i8'), ('key', '<i8')], 'fortran_order': False, 'shape': ({n},), }}");
+    while 10 + h.len() + 1 < PAIR_HEADER {
+        h.push(' ');
+    }
+    h.push('\n');
+    let mut b = b"\x93NUMPY\x01\x00".to_vec();
+    b.extend_from_slice(&(h.len() as u16).to_le_bytes());
+    b.extend_from_slice(h.as_bytes());
+    assert!(b.len() == PAIR_HEADER);
+    b
+}
+
+impl PairWriter {
+    pub fn new(path: &Path) -> PairWriter {
+        let mut f = BufWriter::with_capacity(1 << 22, File::create(path).unwrap());
+        f.write_all(&pair_header(0)).unwrap();
+        PairWriter { f, n: 0 }
+    }
+
+    pub fn push(&mut self, id: i64, key: i64) {
+        self.f.write_all(&id.to_le_bytes()).unwrap();
+        self.f.write_all(&key.to_le_bytes()).unwrap();
+        self.n += 1;
+    }
+
+    pub fn finish(mut self) -> u64 {
+        self.f.flush().unwrap();
+        let mut f = self.f.into_inner().unwrap();
+        f.seek(SeekFrom::Start(0)).unwrap();
+        f.write_all(&pair_header(self.n)).unwrap();
+        self.n
+    }
 }
