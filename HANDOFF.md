@@ -1433,3 +1433,7 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   minutely updates are random reads, which a spinning disk does at ~100-200 a second against an SSD's tens of
   thousands. A spinning disk fits only files read end to end (planet history, region files, archives). Advice: a
   2 TB NVMe in a USB4 enclosure (enclosure ~$110-120, not priced live), or a second M.2 slot if the laptop has one.
+- **The laptop, looked up (11-14):** ThinkPad P14s Gen 6 AMD, type 21RV000PUS. One M.2 2280 slot (PCIe 4.0 x4),
+  already holding the 2 TB SK hynix; two USB4/Thunderbolt 4 ports (40 Gbps). So the drive goes external, on USB4.
+  CPU and 88 GB are plenty for Overpass. In WSL its database must sit on ext4 (a VHDX on the new drive, or the drive
+  mounted with `wsl --mount`), never on `/mnt/<letter>`, which crosses into Windows and is far slower.
