@@ -134,11 +134,12 @@ class NodeBlock(val keep: Boolean, dict: TagDict?) {
  * Every node of the file, sorted by id, as columns: id -> packed coordinate for both passes ([get]) and,
  * when the area pass runs, each node's version and time and the tagged ones' tags, so that the area pass
  * neither reads the nodes again nor keeps its own copy of them (DESIGN.md, "Batch engine speed-up").
- * A node is found by its block first (the blocks' first ids), then inside the block's stretch.
+ * A node is found through a table of where each stretch of 256 ids starts ([bucketStart]): one read
+ * of the table, then a search among the few nodes of that stretch (a search by block and then inside the
+ * block was two thirds of the area pass's read of the ways).
  */
 class NodeStore(blocks: List<NodeBlock>, dict: TagDict?) {
     private val nonEmpty = blocks.filter { it.n > 0 }
-    private val firstIds = LongArray(nonEmpty.size) { nonEmpty[it].ids[0] }
     private val blockStart = IntArray(nonEmpty.size + 1)
     val count: Int
     val size: Long get() = count.toLong()
@@ -180,13 +181,33 @@ class NodeStore(blocks: List<NodeBlock>, dict: TagDict?) {
         }
     }
 
+    private val minId = if (count > 0) ids[0] else 0L
+    private val maxId = if (count > 0) ids[count - 1] else -1L
+    /** bucketStart[b]: the first position whose id is at least minId + b * BUCKET (count past the last) */
+    private val bucketStart: IntArray = run {
+        val buckets = if (count > 0) (maxId - minId) ushr BUCKET_SHIFT else 0L
+        require(buckets < Int.MAX_VALUE - 2) { "node ids span $minId..$maxId: over what the index holds" }
+        val start = IntArray(buckets.toInt() + 2)
+        var b = 0
+        for (i in 0 until count) {
+            val nb = ((ids[i] - minId) ushr BUCKET_SHIFT).toInt()
+            while (b < nb) start[++b] = i
+        }
+        while (b < start.size - 1) start[++b] = count
+        start
+    }
+
     /** the position of node [id], or -1 */
     fun indexOf(id: Long): Int {
-        var bi = firstIds.binarySearch(id)
-        if (bi < 0) bi = -bi - 2
-        if (bi < 0) return -1
-        val i = java.util.Arrays.binarySearch(ids, blockStart[bi], blockStart[bi + 1], id)
-        return if (i >= 0) i else -1
+        if (id < minId || id > maxId) return -1
+        val b = ((id - minId) ushr BUCKET_SHIFT).toInt()
+        var lo = bucketStart[b]; var hi = bucketStart[b + 1] - 1
+        while (lo <= hi) {
+            val mid = (lo + hi) ushr 1
+            val v = ids[mid]
+            if (v < id) lo = mid + 1 else if (v > id) hi = mid - 1 else return mid
+        }
+        return -1
     }
 
     /** the packed coordinate of node [id], or [NO_COORD] */
@@ -202,6 +223,9 @@ class NodeStore(blocks: List<NodeBlock>, dict: TagDict?) {
 
     fun timestampOf(position: Int): Long = seconds[position] * 1000L
 }
+
+/** a stretch of 256 ids per entry of [NodeStore]'s table: 4 bytes for each 256 ids between the file's first and last */
+private const val BUCKET_SHIFT = 8
 
 /** Every data blob of [path] handed to [f] as it is read, [threads] at once, with at most [ahead] read
  *  but not yet handled: memory stays bounded whatever the file's size (a planet). No hash. */
