@@ -548,9 +548,14 @@ MEMORY_REFUSED = ("paging file is too small", "insufficient memory for the Java 
                   "Could not reserve enough space")
 
 
+# How many cells an engine has under way at once (-Dopenquests.areaCities). Two fill the threads a single cell
+# leaves idle and still fit a 30 GB heap; three gain nothing more at 30 or 40 GB (DESIGN.md, "Batch engine speed-up").
+AREA_CITIES = int(os.environ.get("WORLD_CELLS_AREA_CITIES", "2"))
+
+
 def engine(args: list[str], tz: str, heap_gb: int, log: Path, commit_all: bool = False) -> tuple[int, float]:
     env = run.engine_env(tz)  # no heap=True: the -Xmx below is what two engines at once can each have
-    opts = f" -Xmx{heap_gb}g -XX:ErrorFile={log.parent / 'hs_err_%p.log'}"
+    opts = f" -Xmx{heap_gb}g -XX:ErrorFile={log.parent / 'hs_err_%p.log'} -Dopenquests.areaCities={AREA_CITIES}"
     if commit_all:  # the heap committed up front, so the next engine's memory check sees all of it
         opts += f" -Xms{heap_gb}g"
     env["JAVA_OPTS"] = (env.get("JAVA_OPTS", "") + opts).strip()
