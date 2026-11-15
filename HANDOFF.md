@@ -1708,7 +1708,7 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   (C: has 262 GB free). The 33.4 GiB's cause is likely, not measured (log the working set per phase first).
   **Antimeridian, unknown:** a way across 180 degrees would be copied into a whole row of tiles by the segment
   rule (Python's too); count such ways and split the segment before the planet cut. **Next, in this order:** (1) the history file read at a date in Rust, proven on
-  `berlin-history` against `osmium time-filter`; (2) the node file by id and the 108 GB timing of passes 1 and 2
+  `berlin-history` against `osmium time-filter` (done, the last entry of this list); (2) the node file by id and the 108 GB timing of passes 1 and 2
   on the planet's history file (the owner allowed it on C: after this proof; delete the file after); (3) the
   spill-file memory fix. The update in Rust is independent of these. **Next, proposed:** the update in Rust (first act: the Python `update` on
   `store-rs`, then `storecmp.py --ga 1 --gb 1`), then the planet cut's design.
@@ -1771,8 +1771,11 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   The checker finds the one node that differs a second apart; the border tests (`cargo test` in `tilestore/`) fail
   on a broken rule. **`scut --at` on the history file equals `scut` and `cut` of osmium's snapshot** (1,719 tiles).
   **Backwards timestamps are real** (28 in Berlin, all 2008): inside such a one-second window osmium and `at` both
-  give two versions of an object, and `scut --at` would stop on its increasing-ids assert (not run at such a
-  date); the planet's are not counted, the run reports them. **The allocator is now `mimalloc`** (on the Windows
+  give two versions of an object, and `scut --at` stops (run at both 2008 dates; the reader counts ids that do
+  not increase, `notIncreasing`, and the cut refuses any: before that check a way given twice passed silently).
+  The planet's are not counted: `tilestore at --pbf history-261102.osh.pbf --at T` with no `--out` gives
+  `notIncreasing` for a date in one read, worth doing before the hours of a cut; `backwards` is the whole file's
+  and will not be zero. **The allocator is now `mimalloc`** (on the Windows
   heap the relation blocks of a history file took 10-13 s each on 24 threads): Berlin's 23.7M versions read in
   1.44 s; the clip's `cut` 24.7 s and `scut` 133.9 s (35.7-57.5 s and 240 s before; one run each, machine not
   quiet), both still equal to `store-rs`. Nothing about the planet's 170 GB is projected. `.scratch/history/`

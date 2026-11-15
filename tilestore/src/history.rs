@@ -9,7 +9,8 @@
 //!       with no --out it is only read and counted
 //!
 //! Where a version is older than the one before it (timestamps running backwards) the rule can give two
-//! versions of one object; `backwards` counts such pairs, and nothing here repairs them.
+//! versions of one object; `backwards` counts such pairs in the whole file, `not_increasing` the objects given
+//! twice at the date. Nothing here repairs them: `at` writes both as osmium does, the cut refuses.
 
 use crate::clip::Part;
 use crate::pbf;
@@ -105,6 +106,50 @@ pub struct Stats {
     pub versions: u64,
     pub kept: u64,
     pub backwards: u64,
+    /// objects whose id is not above the one before it, per kind: the rule gave an object twice
+    pub not_increasing: u64,
+}
+
+/// a part's first and last id of each kind, and the ids inside it that do not increase
+pub struct Ends {
+    ends: [Option<(i64, i64)>; 3],
+    inner: u64,
+}
+
+impl Ends {
+    pub fn of(p: &Part) -> Ends {
+        let ids = [&p.nid, &p.wid, &p.rid];
+        Ends {
+            ends: ids.map(|v| v.first().map(|&a| (a, *v.last().unwrap()))),
+            inner: ids.iter().map(|v| v.windows(2).filter(|w| w[0] >= w[1]).count() as u64).sum(),
+        }
+    }
+}
+
+/// the parts in the file's order: are the ids of each kind increasing
+pub struct Order {
+    last: [i64; 3],
+    pub not_increasing: u64,
+}
+
+impl Default for Order {
+    fn default() -> Self {
+        Order { last: [i64::MIN; 3], not_increasing: 0 }
+    }
+}
+
+impl Order {
+    pub fn add(&mut self, e: &Ends) {
+        self.not_increasing += e.inner;
+        for k in 0..3 {
+            if let Some((a, b)) = e.ends[k] {
+                if a <= self.last[k] {
+                    self.not_increasing += 1;
+                }
+                self.last[k] = b;
+            }
+        }
+    }
 }
 
 /// a part's objects as PBF blobs, a kind at a time; and how many of each kind
@@ -183,32 +228,24 @@ pub fn at(pbf_path: &Path, at: &str, out: Option<&Path>, stamp: Option<&str>) {
     let write = f.is_some();
     let mut n = [0u64; 3];
     let mut bytes = 0u64;
-    let (mut last, mut doubled) = ([i64::MIN; 3], 0u64);
     let st = blobs.each_at(
         0,
         blobs.offs.len(),
         Some(t),
         |p| {
-            let ends = [(p.nid.first().copied(), p.nid.last().copied()), (p.wid.first().copied(), p.wid.last().copied()), (p.rid.first().copied(), p.rid.last().copied())];
-            let inner = [&p.nid, &p.wid, &p.rid].map(|v| v.windows(2).filter(|w| w[0] >= w[1]).count() as u64);
-            let made = if write { blobs_of(&p) } else { (Vec::new(), [p.nid.len() as u64, p.wid.len() as u64, p.rid.len() as u64]) };
-            (made, ends, inner.iter().sum::<u64>())
+            if write {
+                blobs_of(&p)
+            } else {
+                (Vec::new(), [p.nid.len() as u64, p.wid.len() as u64, p.rid.len() as u64])
+            }
         },
-        |((bl, c), ends, inner)| {
+        |(bl, c)| {
             for b in &bl {
                 f.as_mut().unwrap().write_all(b).unwrap();
                 bytes += b.len() as u64;
             }
-            // an object given twice (timestamps running backwards), or a file not in id order
-            doubled += inner;
             for k in 0..3 {
                 n[k] += c[k];
-                if let (Some(a), Some(b)) = ends[k] {
-                    if a <= last[k] {
-                        doubled += 1;
-                    }
-                    last[k] = b;
-                }
             }
         },
     );
@@ -217,13 +254,14 @@ pub fn at(pbf_path: &Path, at: &str, out: Option<&Path>, stamp: Option<&str>) {
     }
     let secs = t0.elapsed().as_secs_f64();
     let s = format!(
-        "{{\"by\": \"tilestore at (Rust)\", \"at\": \"{at}\", \"versions\": {}, \"kept\": {}, \"nodes\": {}, \"ways\": {}, \"relations\": {}, \"backwards\": {}, \"notIncreasing\": {doubled}, \"pbfBytes\": {bytes}, \"secondsIndex\": {t_index:.2}, \"seconds\": {secs:.2}, \"versionsPerSecond\": {:.0}}}",
+        "{{\"by\": \"tilestore at (Rust)\", \"at\": \"{at}\", \"versions\": {}, \"kept\": {}, \"nodes\": {}, \"ways\": {}, \"relations\": {}, \"backwards\": {}, \"notIncreasing\": {}, \"pbfBytes\": {bytes}, \"secondsIndex\": {t_index:.2}, \"seconds\": {secs:.2}, \"versionsPerSecond\": {:.0}}}",
         st.versions,
         st.kept,
         n[0],
         n[1],
         n[2],
         st.backwards,
+        st.not_increasing,
         st.versions as f64 / (secs - t_index).max(1e-9)
     );
     if let Some(out) = out {

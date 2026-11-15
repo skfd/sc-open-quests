@@ -269,6 +269,7 @@ impl Blobs {
         };
         let t_ms = at * 1000;
         let mut stitch: history::Stitch<Part> = history::Stitch::new(t_ms);
+        let mut order = history::Order::default();
         self.each(
             from,
             to,
@@ -276,17 +277,20 @@ impl Blobs {
                 let sel = history::select(&clip::metas(block), t_ms);
                 let (mut a, mut b) = (Part::default(), Part::default());
                 clip::parse_into(block, |i| sel.dest[i], &mut a, &mut b);
-                (map(a), sel, b)
+                let ends = history::Ends::of(&a);
+                (map(a), sel, b, ends)
             },
-            |(t, sel, b)| {
+            |(t, sel, b, ends)| {
                 stats.versions += sel.dest.len() as u64;
                 stats.kept += sel.dest.iter().filter(|&&d| d == 1).count() as u64;
                 stats.backwards += sel.backwards;
                 let held = (sel.dest.last() == Some(&2)).then_some(b);
                 if let Some(h) = stitch.block(sel.first, sel.last, held) {
                     stats.kept += 1;
+                    order.add(&history::Ends::of(&h));
                     consume(map(h));
                 }
+                order.add(&ends);
                 consume(t);
             },
         );
@@ -303,9 +307,11 @@ impl Blobs {
         }
         if let Some(h) = tail.unwrap_or_else(|| stitch.end()) {
             stats.kept += 1;
+            order.add(&history::Ends::of(&h));
             consume(map(h));
         }
         stats.backwards += stitch.backwards;
+        stats.not_increasing = order.not_increasing;
         stats
     }
 }
@@ -522,6 +528,8 @@ pub fn cut(pbf: &Path, out: &Path, day: &str, z: u32, bz: u32, keep_spill: bool,
         hist.versions += s.versions;
         hist.kept += s.kept;
         hist.backwards += s.backwards;
+        // the rule gave an object twice (its timestamps run backwards around the date): no store of that
+        assert!(s.not_increasing == 0, "{} objects are given twice or out of order at this date: the history file's timestamps run backwards around it", s.not_increasing);
     };
     seen(blobs.each_at(blobs.first_rel, nb, at, |p| p, |p| {
         // only the block's relations: a block shared with ways gives its ways to pass 2

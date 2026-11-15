@@ -4289,7 +4289,7 @@ the conclusion stands, more firmly: it does not fit on C: today. The coding is p
 level 1 over rows); refs and places as steps from the one before, as the tiles code them, should bring it near the
 tiles' own size. Not done: disk on the 2 TB drive is not the constraint.
 
-**Next:** (1) the history file read at a date, with its oracle on `berlin-history`; (2) the node file by id and the
+**Next:** (1) the history file read at a date, with its oracle on `berlin-history` (done, below); (2) the node file by id and the
 108 GB timing of passes 1 and 2 on the planet's history file; (3) the passes' single threads, if that timing says
 they matter. The update in Rust waits behind these or runs beside them: it does not depend on the planet cut.
 
@@ -4334,11 +4334,14 @@ checks those.
 **Timestamps that run backwards: in the data, and the rule then gives an object twice.** Berlin's file has 28
 versions older than the version before them (2008 edits), and for each a window of one or two seconds in which
 osmium's rule counts two versions of the object (`tools/stream/tilecheck/oshdates.py` lists them). osmium writes
-both; so does `at` (it reports `notIncreasing: 1` at those two dates, 0 at the others). The cut asserts increasing
-ids, so `scut --at` inside such a window should stop instead of writing a wrong store (the assert is there; it was
-not run at such a date). All of Berlin's windows are in 2008. **The planet's are not counted;** a planet cut at
-2026-11-02 meets one only if some object's last version at that date has a later one older than it, which the run
-itself reports (`backwards`, and the assert).
+both; so does `at` (it reports `notIncreasing: 1` at those two dates, 0 at the others). **`scut --at` refuses such
+a date:** the reader counts, per kind and across blocks, the objects whose id is not above the one before, and the
+cut stops when a pass reports any (run at both dates: it stops, on the doubled way and on the doubled relation; at
+2026-10-01 it cuts as before). The cut's own asserts would not have caught the way: a way given twice passed
+silently before this check (run, and found by review). The stop comes at the end of the pass that meets the
+object, which on the planet is hours in. All 28 of Berlin's windows lie between 2008-05-03 and 2008-11-06. **The
+planet's are not counted.** `backwards` counts the whole file whatever the date and will not be zero on the planet;
+`notIncreasing` is the figure for the date, and `tilestore at` with no `--out` gives it for the cost of one read.
 
 **Speed, and a finding about the allocator.** The first build read Berlin's file in 25-35 s, on one thread in
 10.6 s: nine relation blocks (hundreds of versions of relations with thousands of members) took 10-13 s each to
