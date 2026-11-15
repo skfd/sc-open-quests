@@ -1460,3 +1460,15 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   4. Its speed for a world day's rectangles (thousands of queries), and what format reaches the engine.
   Keep `.scratch/tiles/ref/` (the frozen recount) and, until Overpass passes that check, `store/`, `store13/`,
   `store14/`; `geom-12/13/14` (20 GB) and the z15/z16 stores can go.
+- **The language for the Overpass reader, put to the owner (11-14, evening).** The seam is one function,
+  `tier2.map_data(day, rects) -> Path`: the engine reads only PBF (no XML reader), and needs each element's
+  version and timestamp (`out meta`) plus `osmosis_replication_timestamp` in the header (or `--today`).
+  Overpass answers XML or JSON, never PBF. DESIGN's "why Kotlin" reasons were about the tile store's cut,
+  update and direct read; with Overpass there is no cut or update of ours, so the choice is small and cheap
+  to reverse. **Recommended:** Python issues the queries (the rectangles live there; the time is spent waiting
+  on Overpass), and the XML becomes PBF with osmium-tool in WSL (C++, fast; sets the header), so the engine
+  is unchanged for the first check (t2n's 103 rectangles of 11-13 against `.scratch/tiles/ref/state.bin`, 0
+  different). Only if a world day's measurement shows the conversion costing time: a StAX OSM-XML reader in
+  the engine (Kotlin, JDK only, no new dependency). A query can union many boxes, so a world day may be one
+  query per file and clock (128 x 2), not thousands. Here now: WSL Ubuntu (stopped), Docker Desktop, pyosmium;
+  no osmium-tool yet.
