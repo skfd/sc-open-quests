@@ -4292,3 +4292,68 @@ tiles' own size. Not done: disk on the 2 TB drive is not the constraint.
 **Next:** (1) the history file read at a date, with its oracle on `berlin-history`; (2) the node file by id and the
 108 GB timing of passes 1 and 2 on the planet's history file; (3) the passes' single threads, if that timing says
 they matter. The update in Rust waits behind these or runs beside them: it does not depend on the planet cut.
+
+### The history file read at a date (11-15, 16:00-17:00; owner: "The next step toward the planet timing is the history-file reader")
+
+`tilestore at --pbf X.osh.pbf --at T [--out Y.osm.pbf] [--stamp S]` writes a history file as it was at T as a
+snapshot PBF (with no `--out` it only reads and counts); `tilestore scut ... --at T` cuts a history file as it was at
+T (`tilestore/src/history.rs`; `Blobs::each_at` in `stream.rs`; `clip::metas` and `parse_into` in `clip.rs`).
+
+**The rule is osmium's**, version by version (`osmium time-filter FILE T`): a version counts if it is visible, its
+timestamp is at or before T, and the next version of the same object in the file, if there is one, is after T. A
+deletion at or before T therefore removes the object. The rule needs only a version and the one after it, so each
+block is decided alone on all threads, but for its last version: that one is held until the next block's first
+version is seen (`Stitch`, in the file's order; at a pass's end the blob after the range is looked at). Only the
+versions that count are copied out of a block (tags, refs, members); the others cost their id and timestamp.
+
+**Exact against `osmium time-filter`** (osmium 1.18 in the Docker image `name-ru-repair-osmium`;
+`berlin-history-261005.osh.pbf`, 413 MB, 23,735,962 versions; `tools/stream/tilecheck/atcheck.sh`, which compares
+with `pbfcmp.py`: type, id, version, timestamp, place, tags, refs, members and roles):
+| date | why this date | objects | different |
+|---|---|---|---|
+| 2019-01-01T00:00:00Z | an old round date | 5,969,070 | 0 |
+| 2026-10-01T00:00:00Z | near the file's end | 9,305,598 | 0 |
+| 2025-08-05T10:30:16Z | the second of a node's version 2 | 8,793,653 | 0 |
+| 2010-08-18T11:50:20Z | the second of node 21508760's version 8 | 945,689 | 0 |
+| 2010-08-18T11:50:19Z | the second before it | 945,689 | 0 |
+| 2008-11-06T01:22:11Z | way 12618300 is given twice (below) | 393,648 | 0 |
+| 2008-05-31T11:36:29Z | relation 15190 is given twice | 227,937 | 0 |
+
+**The checks can fail.** The Rust file of 11:50:20 against osmium's of 11:50:19: 1 object different, node 21508760
+(version 8 against 7). The border rule has unit tests (`cargo test`: every way of cutting one object's versions
+into blocks, empty blocks among them, a deletion at a block's start, 3,000 random files cut at random, each held
+against the rule applied to the whole file); with `<=` made `<` at the border, two of the three fail. Berlin's
+file has 2,988 blocks, so the borders are also worked by the real file.
+
+**Through the cut:** `scut --at 2026-10-01T00:00:00Z --bucket-z 12` on the history file against `scut` and the
+in-memory `cut` of osmium's snapshot of that date (`storecmp.py`): 1,719 tiles, 15,739 relation blobs, both pair
+indexes, **0 different** both times. The passes start in the middle of the file (ways at blob 2,215, relations at
+2,916). What this does not hold: a tile keeps no version for an untagged node, so only the PBF comparison above
+checks those.
+
+**Timestamps that run backwards: in the data, and the rule then gives an object twice.** Berlin's file has 28
+versions older than the version before them (2008 edits), and for each a window of one or two seconds in which
+osmium's rule counts two versions of the object (`tools/stream/tilecheck/oshdates.py` lists them). osmium writes
+both; so does `at` (it reports `notIncreasing: 1` at those two dates, 0 at the others). The cut asserts increasing
+ids, so `scut --at` inside such a window should stop instead of writing a wrong store (the assert is there; it was
+not run at such a date). All of Berlin's windows are in 2008. **The planet's are not counted;** a planet cut at
+2026-11-02 meets one only if some object's last version at that date has a later one older than it, which the run
+itself reports (`backwards`, and the assert).
+
+**Speed, and a finding about the allocator.** The first build read Berlin's file in 25-35 s, on one thread in
+10.6 s: nine relation blocks (hundreds of versions of relations with thousands of members) took 10-13 s each to
+decode on 24 threads at once and 5.5 s together on one. The cause was taken to be large allocations queueing on the
+Windows heap, and the fix bears it out: with `mimalloc` as the crate's allocator, **1.44 s to read and decide the
+file (three runs, 1.43-1.45), about 19 million versions a second; 1.8-4.5 s with the PBF written** (the 4.5 s
+while other work ran). osmium's time-filter took about 20 s through Docker. One file, one size, in the OS cache:
+**nothing about the planet's 170 GB is projected from it.** The allocator changed every command, so the clip was
+cut again, one run each, other work on the machine: in-memory `cut` 24.7 s (35.7 and 57.5 s before), `scut` z8
+133.9 s (240 s before), both still equal to `store-rs` (`storecmp.py`, 59,026 tiles, 438,232 blobs).
+
+**What a history file costs the cut:** every version is decoded (Berlin: 23.7M versions for 9.3M objects at
+2026-10-01, 2.6 a kept object), and each pass reads its part of the file: 170.7 GB for the planet against a
+snapshot's 85 GB. Not measured at that size.
+
+**Next:** the node file by id and the 108 GB timing of passes 1 and 2 on `history-261102.osh.pbf` at a date (the
+owner allowed it on C: after this proof; the file deleted after). Before or with it: the working set logged at each
+phase. Then the spill-file memory fix.

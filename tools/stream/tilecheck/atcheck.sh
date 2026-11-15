@@ -8,15 +8,17 @@ osh=$1; out=$2; shift 2
 here=$(cd "$(dirname "$0")" && pwd)
 ts="$here/../../../tilestore/target/release/tilestore.exe"
 mkdir -p "$out"
-dir=$(cd "$(dirname "$osh")" && pwd -W 2>/dev/null || cd "$(dirname "$osh")" && pwd)
-outw=$(cd "$out" && pwd -W 2>/dev/null || cd "$out" && pwd)
+# a path Docker takes: C:/... under Git Bash, the plain path elsewhere
+full() { (cd "$1" && { pwd -W 2>/dev/null || pwd; }); }
+dir=$(full "$(dirname "$osh")")
+outw=$(full "$out")
 bad=0
 for d in "$@"; do
   n=${d//:/}
   "$ts" at --pbf "$osh" --at "$d" --out "$out/rs-$n.osm.pbf" 2>&1 | tail -1
   MSYS_NO_PATHCONV=1 docker run --rm -v "$dir:/in:ro" -v "$outw:/out" --entrypoint osmium name-ru-repair-osmium \
     time-filter "/in/$(basename "$osh")" "$d" -o "/out/os-$n.osm.pbf" --overwrite || bad=1
-  python "$here/pbfcmp.py" "$out/rs-$n.osm.pbf" "$out/os-$n.osm.pbf" > "$out/cmp-$n.json" || bad=1
+  python "$here/pbfcmp.py" "$out/rs-$n.osm.pbf" "$out/os-$n.osm.pbf" > "$out/cmp-$n.json" || { bad=1; echo "$d NOT EQUAL or not compared"; continue; }
   python -c "import json,sys; c=json.load(open(sys.argv[1])); print(sys.argv[2], c['objects'], 'objects,', c['different'], 'different, equal' if c['equal'] else 'different, NOT EQUAL')" "$out/cmp-$n.json" "$d"
 done
 exit $bad

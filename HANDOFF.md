@@ -1760,3 +1760,22 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   node id sets of five age ports kept once per map data (a few seconds).
   `.scratch/batch-speed/` also holds `d-*`, `r4-*` and `eng-marks`: all can go. The worktree
   `../sc-open-quests-batch` (branch `batch-speed`, equal to main's engine commit) can go too.
+- **The history file read at a date in Rust: exact against osmium (11-15, 16:00-17:00; owner: "The next step
+  toward the planet timing is the history-file reader").** DESIGN.md, "The history file read at a date".
+  `tilestore/target/release/tilestore.exe at --pbf X.osh.pbf --at 2026-10-01T00:00:00Z [--out Y.osm.pbf]` and
+  `scut ... --at T` (`tilestore/src/history.rs`, `Blobs::each_at` in `stream.rs`). osmium's rule (visible, at or
+  before T, the next version after T), blocks decided on all threads and stitched at their borders.
+  **`berlin-history` at seven dates against `osmium time-filter`, object for object: 0 different** (two round
+  dates, a version's own second and the second before, two moments in 2008 where the rule gives an object twice);
+  `tools/stream/tilecheck/atcheck.sh X.osh.pbf OUTDIR DATE...` reruns it (Docker image `name-ru-repair-osmium`).
+  The checker finds the one node that differs a second apart; the border tests (`cargo test` in `tilestore/`) fail
+  on a broken rule. **`scut --at` on the history file equals `scut` and `cut` of osmium's snapshot** (1,719 tiles).
+  **Backwards timestamps are real** (28 in Berlin, all 2008): inside such a one-second window osmium and `at` both
+  give two versions of an object, and `scut --at` would stop on its increasing-ids assert (not run at such a
+  date); the planet's are not counted, the run reports them. **The allocator is now `mimalloc`** (on the Windows
+  heap the relation blocks of a history file took 10-13 s each on 24 threads): Berlin's 23.7M versions read in
+  1.44 s; the clip's `cut` 24.7 s and `scut` 133.9 s (35.7-57.5 s and 240 s before; one run each, machine not
+  quiet), both still equal to `store-rs`. Nothing about the planet's 170 GB is projected. `.scratch/history/`
+  holds the logs and `cmp-*.json`; its PBFs and stores are deleted. **Next: the node file by id and the 108 GB
+  timing of passes 1 and 2 on `history-261102.osh.pbf` with `--at`** (allowed on C:, the file deleted after; log
+  the working set per phase with it), then the spill-file memory fix. The update in Rust is independent.
