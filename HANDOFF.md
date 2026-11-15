@@ -1834,8 +1834,12 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   about 114 GB, not 108:** node ids reach 14.24 billion. It deletes the file at the end; **if the run died,
   delete `.scratch/planet-time/planet.loc` by hand** (C: had 260 GB free before). Proven on Berlin first (sparse
   file, `--sparse --keep`): 7,949,064 nodes, 1,337,301 ways, 10,438,110 refs, 1,398,340 pairs, the same as
-  `scut --at`. **Not alone on the machine from 17:26 to 18:15:** the engine session ran f0 counts and checks
-  (up to 24 threads and 30 GB each, one after another) until it saw this run and stopped; around 18:10 no
-  memory was free. Whatever phases fall in that window are slower than they would be alone. Threshold agreed
+  `scut --at`. **It was not alone on the machine for almost any of its 58 minutes (it ended 18:23, 3,480 s):**
+  the engine session, not knowing of it, ran f0 counts and checks from 17:23 to about 18:15 (up to 24 threads
+  and 30 GB each, one after another) and then two engine test suites; around 18:10 no memory was free. So its
+  seconds are an upper bound: alone it would be faster by an amount nobody measured. **And from 18:25 the
+  engine session runs ten more f0 counts (`.scratch/batch-speed/quiet6.sh`, about 15 minutes; it waits while
+  a `tilestore` or `osmium` process exists, and only then): do not time anything until `.scratch/batch-speed/q6.out`
+  ends with "ended".** Threshold agreed
   earlier: both passes within 4 h pass, over 12 h fail. Then: write the result into
   DESIGN.md ("The history file read at a date", after it), then the spill-file memory fix.
