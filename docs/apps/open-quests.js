@@ -386,7 +386,47 @@ async function load(param) {
   const summary = summarize(h, defaultOn, quest);
   if (!summary && quest) return { error: `${questLabel(quest)} is not counted in ${city.name} now.`, hint: "Long-press › Edit Widget to pick another" };
   if (!summary) return { error: `No data for ${city.name} yet.` };
-  return { summary, week: quest ? null : movers(h, defaultOn) };
+  const week = quest ? null : movers(h, defaultOn);
+  const wanted = quest ? [quest]
+    : [...week.groups.slice(0, 6).map((g) => g[0].quest), ...week.top.map((t) => t[0])];
+  return { summary, week, icons: await loadIcons(fm, dir, wanted) };
+}
+
+/**
+ * StreetComplete's quest symbols, as the PNGs the site draws from its SVGs (Scriptable shows no
+ * SVG): fetched once each and kept. An icon that can't be had is left out, and names stand in.
+ */
+async function loadIcons(fm, dir, quests) {
+  const out = {};
+  let index;
+  try {
+    index = await cached(fm, dir, "icon-index", `${BASE}/icons/index.json`, 7 * 24 * HOUR, (t) => {
+      const q = JSON.parse(t).quests;
+      const stems = {};
+      for (const k of Object.keys(q)) if (q[k].icon) stems[k] = q[k].icon.replace(/\.svg$/, "");
+      return stems;
+    });
+  } catch (e) {
+    return out;
+  }
+  const idir = fm.joinPath(dir, "icons");
+  if (!fm.fileExists(idir)) fm.createDirectory(idir, true);
+  await Promise.all([...new Set(quests)].map(async (quest) => {
+    const stem = index[quest];
+    if (!stem) return;
+    const file = fm.joinPath(idir, stem + ".png");
+    try {
+      if (!fm.fileExists(file)) {
+        const req = new Request(`${BASE}/icons/png/${encodeURIComponent(stem)}.png`);
+        req.timeoutInterval = 15;
+        const img = await req.loadImage();
+        if (req.response.statusCode !== 200) return;
+        fm.writeImage(file, img);
+      }
+      out[quest] = fm.readImage(file);
+    } catch (e) { /* no icon: the name stands in */ }
+  }));
+  return out;
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -416,8 +456,30 @@ function text(stack, s, font, color, lines = 1) {
   return t;
 }
 
+/** The icons load() fetched, by quest name; set by makeWidget. */
+let ICONS = {};
+
 function title(s) {
   return s.quest ? `${questLabel(s.quest)} · ${s.name}` : s.name;
+}
+
+/** A quest's symbol at [size] pt, if there is one; true when it was added. */
+function icon(stack, quest, size, gap) {
+  const img = ICONS[quest];
+  if (!img) return false;
+  const i = stack.addImage(img);
+  i.imageSize = new Size(size, size);
+  if (gap) stack.addSpacer(gap);
+  return true;
+}
+
+/** "Bus stop shelter · Berlin", with the quest's symbol first when it is one quest. */
+function titleRow(stack, s, size) {
+  const row = stack.addStack();
+  row.centerAlignContent();
+  if (s.quest) icon(row, s.quest, size + 2, 5);
+  text(row, title(s), Font.mediumSystemFont(size), C.muted).minimumScaleFactor = 0.8;
+  return row;
 }
 
 function chip(stack, s, locale, size) {
@@ -490,6 +552,26 @@ function moverLine(stack, week, locale, size) {
     (more > 0 ? ` · ${more} more` : ""), Font.systemFont(size), C.muted).minimumScaleFactor = 0.8;
 }
 
+/**
+ * This week's movers as symbols, chevrons beside each, as many as [max], then "+N": the Android 4x2's
+ * cells. False, drawing nothing, when a shown group's symbol is missing.
+ */
+function moverIcons(stack, week, max) {
+  const shown = week.groups.slice(0, max);
+  if (shown.some((g) => !ICONS[g[0].quest])) return false;
+  const row = stack.addStack();
+  row.centerAlignContent();
+  shown.forEach((g, i) => {
+    if (i > 0) row.addSpacer(7);
+    text(row, arrows(g), Font.boldSystemFont(9), arrowColor(g));
+    row.addSpacer(2);
+    icon(row, g[0].quest, 20);
+  });
+  const more = week.groups.length - shown.length;
+  if (more > 0) { row.addSpacer(5); text(row, `+${more}`, Font.mediumSystemFont(12), C.muted); }
+  return true;
+}
+
 /** "as of 11-10", in the error colour once it is stale. */
 function asOf(stack, s, size) {
   text(stack, `as of ${shortDate(s.asOf)}`, Font.systemFont(size), isStale(s.asOf) ? C.stale : C.muted);
@@ -498,7 +580,7 @@ function asOf(stack, s, size) {
 function header(w, s, locale, chipSize) {
   const row = w.addStack();
   row.centerAlignContent();
-  text(row, title(s), Font.mediumSystemFont(15), C.muted).minimumScaleFactor = 0.8;
+  titleRow(row, s, 15);
   row.addSpacer();
   chip(row, s, locale, chipSize);
 }
@@ -513,12 +595,12 @@ function footer(w, s, week, locale) {
   row.centerAlignContent();
   asOf(row, s, 12);
   row.addSpacer();
-  if (week && week.groups.length > 0) moverLine(row, week, locale, 12);
+  if (week && week.groups.length > 0) { if (!moverIcons(row, week, 4)) moverLine(row, week, locale, 12); }
   else text(row, splitText(s, locale), Font.systemFont(12), C.muted).minimumScaleFactor = 0.8;
 }
 
 function buildSmall(w, s, week, locale) {
-  text(w, title(s), Font.mediumSystemFont(14), C.muted).minimumScaleFactor = 0.8;
+  titleRow(w, s, 14);
   bigNumber(w, s, locale, 34);
   w.addSpacer(4);
   const row = w.addStack();
@@ -561,6 +643,7 @@ function buildLarge(w, s, week, locale) {
       w.addSpacer(4);
       const row = w.addStack();
       row.centerAlignContent();
+      icon(row, g[0].quest, 20, 7);
       text(row, groupLabel(g) + (g.length > 1 ? ` · ${g.length}` : ""), Font.systemFont(14), C.text)
         .minimumScaleFactor = 0.8;
       row.addSpacer();
@@ -573,6 +656,8 @@ function buildLarge(w, s, week, locale) {
     for (const [quest, open] of week.top) {
       w.addSpacer(4);
       const row = w.addStack();
+      row.centerAlignContent();
+      icon(row, quest, 20, 7);
       text(row, questLabel(quest), Font.systemFont(14), C.text).minimumScaleFactor = 0.8;
       row.addSpacer();
       text(row, formatCount(open, locale), Font.semiboldSystemFont(14), C.muted);
@@ -625,6 +710,7 @@ async function makeWidget(param, family) {
     return w;
   }
   const s = result.summary;
+  ICONS = result.icons || {};
   w.url = placeUrl(s.cityId, s.quest);
   if (accessory) buildAccessory(w, s, locale, family);
   else if (family === "small") buildSmall(w, s, result.week, locale);
