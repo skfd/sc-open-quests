@@ -1672,5 +1672,17 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   sink it. Not measured: a cold read (the files were cached), and anything larger than these rectangles. The PBF
   writer cuts blocks by count, not size (a blob must stay under 32 MiB; not guarded). The handoff argument for
   Kotlin is settled by this (0.6 s); planet memory is the open one. **For the owner to revisit, not decided here:**
-  whether this changes the Overpass and drive plan. Runs in `.scratch/tiles/s12-rs/`, `s13-rs/` (can go). **Next, proposed:** the update in Rust (first act: the Python `update` on
+  whether this changes the Overpass and drive plan. Runs in `.scratch/tiles/s12-rs/`, `s13-rs/` (can go).
+- **The planet cut, designed, not built (11-15, 14:30-14:50; owner: "Yes, planet cut").** DESIGN.md, "The planet
+  cut, designed". Three streaming passes (relations, nodes into a 108 GB node-place file by id, ways resolved
+  against it and spilled with their places into coarse buckets), then each bucket cut in memory by today's code.
+  Border rules written down: far tagged nodes reach a bucket through "needs", member nodes of kept relations are
+  spilled, relations get their tiles after the way pass, the relation store is built from a member-way file.
+  Measured today for it: Germany's largest z8 bucket is 383 MiB of store, a way lies in 1.001 z8 buckets.
+  **The whole cut does not fit on C: now** (about 290-310 GB peak against 263 GB free, the spill's size a guess):
+  it waits on the 2 TB drive. **Only the history file of 11-02 is on disk** (no planet snapshot): a cut from it is
+  11-02's store. **First to build, no planet resources: the streaming cut held against the in-memory cut by
+  `storecmp.py` on the clip and Germany, bucket zoom z8 and z11-z12.** Then one timing of the node file and way
+  pass (108 GB, deleted after; proposed pass under 4 h, fail over 12 h). Asked of the owner: the cut's source (the
+  history file read at a date by Rust, or a snapshot), and when that 108 GB timing may run. **Next, proposed:** the update in Rust (first act: the Python `update` on
   `store-rs`, then `storecmp.py --ga 1 --gb 1`), then the planet cut's design.

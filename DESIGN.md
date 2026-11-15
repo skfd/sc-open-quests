@@ -3915,3 +3915,103 @@ wants a blob under 32 MiB uncompressed, which 8,000 very large relations could p
 
 **Next:** the update in Rust (first the Python `update` on a Rust-cut store, then `storecmp.py --ga 1 --gb 1`),
 then the planet cut's design.
+
+## The planet cut, designed (2026-11-15, afternoon; owner: "Yes, planet cut"). Not built.
+
+The cut above holds a file in memory (12 GiB for the clip, 41 GiB for Germany, about 720 GiB on that line for the
+planet). This is the design of a cut that does not. It is rare work (once, and again when the tile rule or the kept
+relations change at a repin), so hours are acceptable; exactness and fitting this machine are what it must have.
+
+**Disk decides the order of work, so it comes first.** Free on C: today 263 GB, with the history file (170.7 GB) on
+it and the 12-07 job wanting about 170 GB.
+| piece | size | basis |
+|---|---|---|
+| node places by id (the stream's `planet.loc` in another build) | 108 GB | 8 bytes an id, ids to about 13.5 billion; `planet.loc` was 107 GiB |
+| spill: every way with its nodes' places, by bucket | 110-135 GB | **a guess**: about the tiles' size at one copy a ref; to be measured as bytes a ref on Germany |
+| member ways of kept relations, whole | about 15 GB | a guess from the relation store's 0.13 times the PBF |
+| the store: tiles at z14 | 97-136 GB | 1.14 times the PBF as the city clip, 1.60 as Germany |
+| relation store, way-tiles index | 11 GB, 19 GB | "Measurement (c)" |
+
+The spill goes as its buckets are cut, so the peak is about the node file, the member ways and the larger of spill
+and store with its indexes: **about 290-310 GB. The whole cut does not fit on C: today**, and less so beside the
+12-07 job. It waits on the 2 TB drive (or on room made here). What fits now: the design's proof at clip and country
+size (no planet resources), and one timing of the node file and the way pass (108 GB, deleted after).
+
+**Which day.** The file on disk is the history of 2026-11-02, so a cut from it is the store of 11-02. A current store
+is that plus every day's update since (the update is not built in Rust), or a cut of the 12-07 file. A planet
+snapshot instead of the history file is a download of about 85 GB, the owner's call (only `osm-extracts` downloads
+into the shared store).
+
+**Tile zoom: fixed z14, as built.** "Smaller tiles" (adaptive, a split of dense tiles) is designed above and not in
+Rust; the 124 GB estimate assumed it. The cut below does not depend on the zoom: its buckets are coarser cells.
+
+**Why not the world files of the monthly count, cut one by one with today's binary.** An extract keeps a way that has
+a node in its region; the tile rule keeps a way whose *segment* crosses the tile. A long segment (a ferry, a power
+line) can cross a tile of a file it has no node in, so tiles would be wrong anywhere such a segment passes, not only
+at the files' edges. The streaming cut is exact by construction.
+
+**The cut: three streaming passes over a file sorted by type then id, then the buckets one by one.**
+A *bucket* is a coarse cell (z8 proposed: 64 by 64 tiles); spill files are per z6 cell (at most 4,096, opened as
+needed), each holding its z8 buckets' records.
+- **Pass 0, relations** (the end of the file; the blobs are found by seeking). The kept relations (tagged, not
+  ignored by the app) stay in memory whole: ids, versions, members, roles, tags. Two sorted id sets come out: every
+  member way and every member node of a kept relation.
+- **Pass 1, nodes.** Each node's place goes into the node file at its id. Each **tagged node** goes to its home
+  bucket's spill (id, place, version, timestamp, tags) and, the same record, into one **tagged-node file** in id
+  order with a sparse index in memory; a bit per id in memory says "tagged" (1.7 GB). Each **member node of a kept
+  relation** (pass 0's set) goes to its home bucket's spill too, tagged or not (a tile stores its kept relations'
+  member nodes even when no way holds them: the bug the Python update's check found), and its tile is kept in memory
+  for pass 2's end.
+- **Pass 2, ways**, in id order, decoded on all threads. For each way: its nodes' places from the node file (ids in
+  a way lie close in the file: the access osmium's dense index relies on); its tiles by segment (`tiles.rs`, as
+  now); its line of the way-tiles index, written as it goes. The way with its nodes' places, version, timestamp and
+  tags goes to the spill of every bucket it crosses (1.001 buckets a way at z8, measured below). For each of its
+  nodes that is tagged and at home in another bucket, a **need** (bucket, node id) is written: a tile gives version,
+  timestamp and tags to every tagged node among its ways' nodes, far ones too. A **member way** of a kept relation
+  is also written whole into the member-way file (id order, offsets in memory) and its tiles kept in memory.
+- **After pass 2.** The needs, sorted by node id, are merged with the tagged-node file and those records appended
+  to the needing buckets' spills. Each kept relation gets its tiles (its member nodes' tiles from pass 1, its member
+  ways' tiles from pass 2) and is appended to those buckets' spills; its line of the relation-tiles index is
+  written; its **relation store blob** is built from the member-way file (member ways whole with their nodes'
+  places, wherever on the planet they lie) and written in relation id order.
+- **The buckets.** Each z6 spill file is read and its z8 buckets cut in memory by today's code (the tile pairs, the
+  payloads), several at once, their tiles appended to the pack; the spill file is then deleted. The index is sorted
+  by key at the end (the pack's order does not matter to a reader). A bucket's ways crossing into other buckets
+  bring their far nodes along in the spill record, so a bucket needs nothing from its neighbours.
+
+Untagged nodes on no way and in no kept relation reach no spill and no tile, as now.
+
+**Measured for it today** (the stores already cut, `idx-0000.npy` and `wtiles-0000.npy`):
+| | europe clip (32 city boxes) | Germany |
+|---|---|---|
+| largest tile | 1.87 MB | 1.49 MB |
+| largest z8 bucket, store bytes | 120 MiB | 383 MiB |
+| largest z6 cell, store bytes | 170 MiB | 3,404 MiB |
+| way copies a way at z14 / z10 / z8 / z6 | 1.057 / 1.004 / 1.001 / 1.000 | 1.085 / 1.005 / 1.001 / 1.000 |
+
+The in-memory cut took about 4.3 times its store in memory (41 GiB for Germany's 9.5 GB), so a z8 bucket of 400 MiB
+is about 2 GiB while it is cut, and a z6 file is never held whole. Germany is densely mapped; the planet's densest
+z8 bucket is not known.
+
+**Memory, by design:** the kept relations (pass 0), the tagged bit (1.7 GB), the member ways' tiles and offsets, the
+spill writers' buffers, and the buckets being cut. The node file is read through the OS cache: 108 GB against 87.6 GB
+of RAM, so not all of it stays cached. Node rows, 32 bits in the spike, go away (places are found by id); way and
+relation rows are per bucket.
+
+**What is not known, and how each is settled.**
+1. **Is it exact at bucket borders?** *The streaming cut against the in-memory cut* by `storecmp.py`, on the clip
+   and on Germany, with the bucket zoom a parameter: at z8, and at z11 or z12, where ways crossing buckets are
+   common and every border rule above (far tagged nodes, member nodes, relations over several buckets) is worked
+   hard. No planet resources. **This is the first thing to build.**
+2. **The way pass against a node file larger than RAM.** One timing: pass 1 and pass 2 over the history file's
+   current objects, the node file written, ways resolved and their tiles computed, nothing spilled. 108 GB, deleted
+   after. Proposed threshold, the owner's to change: the two passes within 4 hours pass; over 12 hours fail and the
+   node store is redesigned (places in id-sorted runs in memory, or the planet cut in two halves). No time is
+   projected before that run.
+3. **The spill's size.** Bytes a ref, from Germany's spill in step 1.
+4. **Reading the history file at a date.** New code with its own oracle: `berlin-history` (on disk) filtered to a day
+   by the Rust reader against `osmium time-filter` of the same file in the Docker image, object for object
+   (`pbfcmp.py`). Only needed if the cut reads the history file itself; a snapshot or an `osmium time-filter` of the
+   planet (hours, 85 GB more) avoids it.
+5. **At planet size, exactness:** the planet store's tiles inside the europe clip of the same day equal that clip's
+   store, away from the clip's edge.
