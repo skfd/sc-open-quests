@@ -49,6 +49,14 @@ class TagMap(capacity: Int) : AbstractMap<String, String>() {
         keyBits = keyBits or bit
     }
 
+    /** every tag in the order given, without an entry object each */
+    inline fun forEachTag(f: (String, String) -> Unit) {
+        var i = 0
+        while (i < tagCount * 2) { f(tagAt(i), tagAt(i + 1)); i += 2 }
+    }
+    @PublishedApi internal val tagCount get() = used / 2
+    @PublishedApi internal fun tagAt(i: Int): String = kv[i]!!
+
     override val size: Int get() = used / 2
 
     override fun isEmpty() = used == 0

@@ -184,24 +184,78 @@ class AreaPass(
         }
     }
 
-    private class WayRec(val id: Long, val refs: LongArray, val tags: Map<String, String>, val version: Int, val timestamp: Long, val cities: Int)
+    /** The area pass's ways as columns, sorted by id: way i's nodes are `refs[refStart[i] until refStart[i + 1]]`. */
+    private class WayCols(
+        val ids: LongArray, val versions: IntArray, val timestamps: LongArray, val cities: IntArray,
+        val refStart: IntArray, val refs: LongArray, val tags: TagStore,
+    ) {
+        val size get() = ids.size
+        fun refCount(i: Int) = refStart[i + 1] - refStart[i]
+    }
+
+    /** the ways of one block, as [collectWays] finds them */
+    private class WayChunk(dict: TagDict) {
+        var n = 0
+        var ids = LongArray(256); var versions = IntArray(256); var timestamps = LongArray(256); var cities = IntArray(256)
+        var refEnd = IntArray(256); var tagEnd = IntArray(256)
+        var refs = LongArray(2048); var refCount = 0
+        val tags = TagChunk(dict)
+        fun add(id: Long, version: Int, timestamp: Long, set: Int, t: Map<String, String>) {
+            if (n == ids.size) {
+                val m = n * 2
+                ids = ids.copyOf(m); versions = versions.copyOf(m); timestamps = timestamps.copyOf(m); cities = cities.copyOf(m)
+                refEnd = refEnd.copyOf(m); tagEnd = tagEnd.copyOf(m)
+            }
+            tags.add(t)
+            ids[n] = id; versions[n] = version; timestamps[n] = timestamp; cities[n] = set
+            refEnd[n] = refCount; tagEnd[n] = tags.n
+            n++
+        }
+        fun ref(id: Long) {
+            if (refCount == refs.size) refs = refs.copyOf(refCount * 2)
+            refs[refCount++] = id
+        }
+    }
+
+    private val tagDict = TagDict()
+
+    private fun wayColumnsOf(chunks: List<WayChunk>): WayCols {
+        val n = chunks.sumOf { it.n }
+        val refTotal = chunks.sumOf { it.refCount.toLong() }
+        val tagTotal = chunks.sumOf { it.tags.n.toLong() }
+        require(refTotal <= Int.MAX_VALUE && tagTotal <= Int.MAX_VALUE) { "area: $refTotal way nodes, $tagTotal tag strings: over what one file may hold" }
+        val ids = LongArray(n); val versions = IntArray(n); val timestamps = LongArray(n); val cities = IntArray(n)
+        val refStart = IntArray(n + 1); val refs = LongArray(refTotal.toInt())
+        val tagStart = IntArray(n + 1); val kv = IntArray(tagTotal.toInt())
+        var at = 0; var refAt = 0; var tagAt = 0
+        for (c in chunks) {
+            c.ids.copyInto(ids, at, 0, c.n); c.versions.copyInto(versions, at, 0, c.n)
+            c.timestamps.copyInto(timestamps, at, 0, c.n); c.cities.copyInto(cities, at, 0, c.n)
+            for (i in 0 until c.n) { refStart[at + i + 1] = refAt + c.refEnd[i]; tagStart[at + i + 1] = tagAt + c.tagEnd[i] }
+            c.refs.copyInto(refs, refAt, 0, c.refCount); c.tags.kv.copyInto(kv, tagAt, 0, c.tags.n)
+            at += c.n; refAt += c.refCount; tagAt += c.tags.n
+        }
+        return WayCols(ids, versions, timestamps, cities, refStart, refs, TagStore(tagStart, kv, tagDict.strings()))
+    }
     /** The area pass's nodes as columns, sorted by id: a file has 100M of them, and as an object each they
      *  were a third of the live heap and most of what every marking cycle had to walk (DESIGN.md, "Where a
      *  cell run's time goes"). Tags only for the tagged ones: [tagAt] is an index into [tags], or -1. */
     private class NodeCols(
         val ids: LongArray, val coords: LongArray, val versions: IntArray, val timestamps: LongArray,
-        val cities: IntArray, val tagAt: IntArray, val tags: List<Map<String, String>>,
+        val cities: IntArray, val tagAt: IntArray, val tags: TagStore,
     ) {
         val size get() = ids.size
-        fun tagsOf(i: Int): Map<String, String> = tagAt[i].let { if (it < 0) emptyMap() else tags[it] }
+        fun tagsOf(i: Int): Map<String, String> = tagAt[i].let { if (it < 0) emptyMap() else tags.tagsOf(it) }
     }
 
     /** the nodes of one block, as [collectNodes] finds them */
-    private class NodeChunk {
+    private class NodeChunk(dict: TagDict) {
         var n = 0
         var ids = LongArray(1024); var coords = LongArray(1024); var versions = IntArray(1024)
         var timestamps = LongArray(1024); var cities = IntArray(1024); var tagAt = IntArray(1024)
-        val tags = ArrayList<Map<String, String>>()
+        val tags = TagChunk(dict)
+        var tagged = 0
+        var tagEnd = IntArray(64)
         fun add(id: Long, coord: Long, t: Map<String, String>, version: Int, timestamp: Long, set: Int) {
             if (n == ids.size) {
                 val m = n * 2
@@ -209,7 +263,11 @@ class AreaPass(
                 timestamps = timestamps.copyOf(m); cities = cities.copyOf(m); tagAt = tagAt.copyOf(m)
             }
             ids[n] = id; coords[n] = coord; versions[n] = version; timestamps[n] = timestamp; cities[n] = set
-            if (t.isEmpty()) tagAt[n] = -1 else { tagAt[n] = tags.size; tags += t }
+            if (t.isEmpty()) tagAt[n] = -1 else {
+                if (tagged == tagEnd.size) tagEnd = tagEnd.copyOf(tagged * 2)
+                tags.add(t)
+                tagAt[n] = tagged; tagEnd[tagged++] = tags.n
+            }
             n++
         }
     }
@@ -218,26 +276,27 @@ class AreaPass(
         val n = chunks.sumOf { it.n }
         val ids = LongArray(n); val coords = LongArray(n); val versions = IntArray(n)
         val timestamps = LongArray(n); val cities = IntArray(n); val tagAt = IntArray(n)
-        val tags = ArrayList<Map<String, String>>(chunks.sumOf { it.tags.size })
-        var at = 0
+        val tagged = chunks.sumOf { it.tagged }
+        val tagTotal = chunks.sumOf { it.tags.n.toLong() }
+        require(tagTotal <= Int.MAX_VALUE) { "area: $tagTotal tag strings on nodes: over what one file may hold" }
+        val tagStart = IntArray(tagged + 1); val kv = IntArray(tagTotal.toInt())
+        var at = 0; var base = 0; var kvAt = 0
         for (c in chunks) {
             c.ids.copyInto(ids, at, 0, c.n); c.coords.copyInto(coords, at, 0, c.n); c.versions.copyInto(versions, at, 0, c.n)
             c.timestamps.copyInto(timestamps, at, 0, c.n); c.cities.copyInto(cities, at, 0, c.n)
-            val base = tags.size
             for (i in 0 until c.n) tagAt[at + i] = c.tagAt[i].let { if (it < 0) -1 else it + base }
-            tags.addAll(c.tags)
-            at += c.n
+            for (i in 0 until c.tagged) tagStart[base + i + 1] = kvAt + c.tagEnd[i]
+            c.tags.kv.copyInto(kv, kvAt, 0, c.tags.n)
+            at += c.n; base += c.tagged; kvAt += c.tags.n
         }
-        return NodeCols(ids, coords, versions, timestamps, cities, tagAt, tags)
+        return NodeCols(ids, coords, versions, timestamps, cities, tagAt, TagStore(tagStart, kv, tagDict.strings()))
     }
     private class RelRec(val id: Long, val members: List<RelationMember>, val tags: Map<String, String>, val version: Int, val timestamp: Long, val cities: Int)
 
-    private lateinit var ways: List<WayRec>          // sorted by id
+    private lateinit var ways: WayCols               // sorted by id
     private lateinit var wayIds: LongArray
     private lateinit var nodes: NodeCols             // sorted by id
     private lateinit var nodeIds: LongArray
-    /** per way, its [CitySets] id */
-    private lateinit var wayCities: IntArray
     private lateinit var relations: List<RelRec>
     private val geometryCreator = ElementGeometryCreator()
 
@@ -245,14 +304,9 @@ class AreaPass(
         if (areaQuests.isEmpty()) return
         if (!AREA_PASS) { log("area pass skipped (-Dopenquests.areaPass=false): the ${areaQuests.size} area quests are not counted"); return }
         var t0 = System.nanoTime()
-        ways = parallelMap(wayStart, relStart) { collectWays(decodeBlock(blobs[it])) }.flatten()
-        wayIds = LongArray(ways.size) { ways[it].id }
-        wayCities = IntArray(ways.size) { ways[it].cities }
-        val needed = LongArray(ways.sumOf { it.refs.size }).also { a ->
-            var k = 0
-            for (w in ways) { w.refs.copyInto(a, k); k += w.refs.size }
-            a.sort()
-        }.distinctSorted()
+        ways = wayColumnsOf(parallelMap(wayStart, relStart) { collectWays(decodeBlock(blobs[it])) })
+        wayIds = ways.ids
+        val needed = ways.refs.copyOf().also { java.util.Arrays.parallelSort(it) }.distinctSorted()
         timing("area: ways", t0, "${ways.size} ways touch a city area, ${needed.size} way nodes")
 
         t0 = System.nanoTime()
@@ -327,18 +381,17 @@ class AreaPass(
         var t0 = System.nanoTime()
         // the tiles each way has a node in (the API's map call returns a way for each of them)
         val wayTiles: List<LongArray> = parallelMap(0, ways.size) { i ->
-            val w = ways[i]
-            val keys = LongArray(w.refs.size)
+            val keys = LongArray(ways.refCount(i))
             var n = 0
-            for (r in w.refs) {
-                val c = nodeIndex[r]
+            for (j in ways.refStart[i] until ways.refStart[i + 1]) {
+                val c = nodeIndex[ways.refs[j]]
                 if (c != NO_COORD) keys[n++] = tileKey(unpackLat7(c), unpackLon7(c))
             }
             keys.copyOf(n).also { it.sort() }.distinctSorted()
         }
         val buckets = HashMap<Long, Bucket>()
         fun bucket(k: Long) = buckets.getOrPut(k) { Bucket() }
-        for (i in ways.indices) for (k in wayTiles[i]) if (isCityTile(k)) bucket(k).ways.add(i)
+        for (i in 0 until ways.size) for (k in wayTiles[i]) if (isCityTile(k)) bucket(k).ways.add(i)
         for (i in 0 until nodes.size) {
             if (nodes.tagAt[i] < 0 || nodes.cities[i] == 0) continue
             val k = tileKey(unpackLat7(nodes.coords[i]), unpackLon7(nodes.coords[i]))
@@ -364,7 +417,7 @@ class AreaPass(
             val key = tiles[ti]
             val b = buckets.getValue(key)
             val box = TilePos((key shr 32).toInt(), key.toInt()).asBoundingBox(AREA_TILE_ZOOM)
-            val mapData = assemble(box, b.ways.toArray().distinct().map { ways[it] }, b.nodes.toArray().distinct().toIntArray(),
+            val mapData = assemble(box, b.ways.toArray().distinct().toIntArray(), b.nodes.toArray().distinct().toIntArray(),
                 b.relations.toArray().distinct().map { relations[it] })
             for (qi in questIndices) countIn(mapData, box, qi, cityIndexes = null)
         }
@@ -506,23 +559,24 @@ class AreaPass(
     // collection
 
 
-    private fun collectWays(b: Osmformat.PrimitiveBlock): List<WayRec> {
+    private fun collectWays(b: Osmformat.PrimitiveBlock): WayChunk {
         require(b.kind() == BlockKind.WAYS)
         val ctx = BlockContext(b)
-        val out = ArrayList<WayRec>()
+        val out = WayChunk(tagDict)
         for (g in b.primitivegroupList) for (w in g.waysList) {
             val rc = w.refsCount
-            val refs = LongArray(rc)
             var ref = 0L
             var set = 0
             for (i in 0 until rc) {
-                ref += w.getRefs(i); refs[i] = ref
+                ref += w.getRefs(i)
                 val c = nodeIndex[ref]
                 if (c != NO_COORD) set = citySets.union(set, setAt(unpackLat7(c), unpackLon7(c)))
             }
             if (set == 0) continue
-            out += WayRec(w.id, refs, fitTags("area", "way", w.id, tagsOf(w.keysList, w.valsList, ctx.strings)),
-                if (w.hasInfo()) w.info.version else 1, w.info.timestamp * ctx.dateGranularity, set)
+            ref = 0L
+            for (i in 0 until rc) { ref += w.getRefs(i); out.ref(ref) }
+            out.add(w.id, if (w.hasInfo()) w.info.version else 1, w.info.timestamp * ctx.dateGranularity, set,
+                fitTags("area", "way", w.id, tagsOf(w.keysList, w.valsList, ctx.strings)))
         }
         return out
     }
@@ -530,7 +584,7 @@ class AreaPass(
     private fun collectNodes(b: Osmformat.PrimitiveBlock, needed: LongArray): NodeChunk {
         require(b.kind() == BlockKind.NODES)
         val ctx = BlockContext(b)
-        val out = NodeChunk()
+        val out = NodeChunk(tagDict)
         for (g in b.primitivegroupList) {
             if (g.hasDense()) {
                 val d = g.dense
@@ -594,7 +648,7 @@ class AreaPass(
                 }
                 members += RelationMember(type, memId, ctx.strings[r.getRolesSid(i)])
                 set = citySets.union(set, when (type) {
-                    ElementType.WAY -> wayIds.binarySearch(memId).let { if (it >= 0) ways[it].cities else 0 }
+                    ElementType.WAY -> wayIds.binarySearch(memId).let { if (it >= 0) ways.cities[it] else 0 }
                     ElementType.NODE -> nodeIds.binarySearch(memId).let { if (it >= 0) nodes.cities[it] else 0 }
                     ElementType.RELATION -> 0
                 })
@@ -633,12 +687,11 @@ class AreaPass(
         // the city's records in the needed tiles, as runTiles buckets them
         val inCity = citySets.membersOf(city.index)
         val wayTiles: List<LongArray> = parallelMap(0, ways.size) { i ->
-            val w = ways[i]
-            if (!inCity[w.cities]) return@parallelMap LongArray(0)
-            val keys = LongArray(w.refs.size)
+            if (!inCity[ways.cities[i]]) return@parallelMap LongArray(0)
+            val keys = LongArray(ways.refCount(i))
             var n = 0
-            for (r in w.refs) {
-                val c = nodeIndex[r]
+            for (j in ways.refStart[i] until ways.refStart[i + 1]) {
+                val c = nodeIndex[ways.refs[j]]
                 if (c == NO_COORD) continue
                 val k = key(unpackLat7(c), unpackLon7(c))
                 if (k in needed) keys[n++] = k
@@ -647,7 +700,7 @@ class AreaPass(
         }
         val buckets = HashMap<Long, Bucket>()
         fun bucket(k: Long) = buckets.getOrPut(k) { Bucket() }
-        for (i in ways.indices) for (k in wayTiles[i]) bucket(k).ways.add(i)
+        for (i in 0 until ways.size) for (k in wayTiles[i]) bucket(k).ways.add(i)
         for (i in 0 until nodes.size) {
             if (nodes.tagAt[i] < 0 || !inCity[nodes.cities[i]]) continue
             val k = key(unpackLat7(nodes.coords[i]), unpackLon7(nodes.coords[i]))
@@ -675,7 +728,7 @@ class AreaPass(
                 for (t in tilesOf.getValue(k)) buckets[t]?.let { b ->
                     b.ways.toArray().forEach { w += it }; b.nodes.toArray().forEach { n += it }; b.relations.toArray().forEach { r += it }
                 }
-                val small = assemble(ringOf(k), w.map { ways[it] }, n.toIntArray(), r.map { relations[it] })
+                val small = assemble(ringOf(k), w.toIntArray(), n.toIntArray(), r.map { relations[it] })
                 dateIn(small, cs, dated, undated, runs)
             }
         }
@@ -729,10 +782,14 @@ class AreaPass(
         }
         val inCity = citySets.membersOf(city)
         // the city's ways and tagged nodes, read off int columns
-        val areaWays = ArrayList<WayRec>()
-        for (i in wayCities.indices) if (inCity[wayCities[i]]) areaWays += ways[i]
-        val tagAt = nodes.tagAt; val nodeCities = nodes.cities
+        val wayCities = ways.cities
         var n = 0
+        for (set in wayCities) if (inCity[set]) n++
+        val areaWays = IntArray(n)
+        n = 0
+        for (i in wayCities.indices) if (inCity[wayCities[i]]) areaWays[n++] = i
+        val tagAt = nodes.tagAt; val nodeCities = nodes.cities
+        n = 0
         for (i in tagAt.indices) if (tagAt[i] >= 0 && inCity[nodeCities[i]]) n++
         val tagged = IntArray(n)
         n = 0
@@ -740,10 +797,11 @@ class AreaPass(
         return assemble(box, areaWays, tagged, relations.filter { inCity[it.cities] }, parallel = true)
     }
 
-    /** Map data of [areaWays] with all their nodes, the nodes at [taggedNodes] (indices into [nodes], ascending)
-     *  and [areaRelations] (member way geometry from the main pass), with SC's own geometry for each. */
+    /** Map data of the ways at [areaWays] (indices into [ways]) with all their nodes, the nodes at [taggedNodes]
+     *  (indices into [nodes]; both ascending) and [areaRelations] (member way geometry from the main pass), with
+     *  SC's own geometry for each. */
     private fun assemble(
-        box: BoundingBox, areaWays: List<WayRec>, taggedNodes: IntArray, areaRelations: List<RelRec>,
+        box: BoundingBox, areaWays: IntArray, taggedNodes: IntArray, areaRelations: List<RelRec>,
         parallel: Boolean = false,
     ): MapDataWithGeometry {
         fun <T> each(n: Int, f: (Int) -> T): List<T> = if (parallel) parallelMap(0, n, f) else (0 until n).map(f)
@@ -751,14 +809,14 @@ class AreaPass(
         // the tagged nodes, then every node of a way, each where it first comes; a way's node that is not
         // in the file stays out, and the way has no geometry
         val refs = each(areaWays.size) { i ->
-            val r = areaWays[i].refs
-            val found = IntArray(r.size)
+            val w = areaWays[i]
+            val found = IntArray(ways.refCount(w))
             var n = 0
-            for (id in r) {
-                val at = nodeIds.binarySearch(id)
+            for (j in ways.refStart[w] until ways.refStart[w + 1]) {
+                val at = nodeIds.binarySearch(ways.refs[j])
                 if (at >= 0) found[n++] = at
             }
-            if (n == r.size) found else found.copyOf(n)
+            if (n == found.size) found else found.copyOf(n)
         }
         val wanted = IntArray(taggedNodes.size + refs.sumOf { it.size })
         var filled = 0
@@ -782,16 +840,17 @@ class AreaPass(
             Node(nodes.ids[n], LatLon(unpackLat7(c) / 1e7, unpackLon7(c) / 1e7), nodes.tagsOf(n), nodes.versions[n], nodes.timestamps[n])
         }
 
-        val wayOrder = hashMapOrder(LongArray(areaWays.size) { areaWays[it].id })
+        val wayOrder = hashMapOrder(LongArray(areaWays.size) { ways.ids[areaWays[it]] })
         val relationOrder = hashMapOrder(LongArray(areaRelations.size) { areaRelations[it].id })
 
         val wayGeometries = each(areaWays.size) { i ->
             val w = areaWays[wayOrder[i]]
-            val way = Way(w.id, LongArrayAsList(w.refs), w.tags, w.version, w.timestamp)
-            val positions = ArrayList<LatLon>(w.refs.size)
+            val from = ways.refStart[w]; val count = ways.refCount(w)
+            val way = Way(ways.ids[w], LongArrayAsList(ways.refs, from, count), ways.tags.tagsOf(w), ways.versions[w], ways.timestamps[w])
+            val positions = ArrayList<LatLon>(count)
             var complete = true
-            for (r in w.refs) {
-                val c = nodeIndex[r]
+            for (j in from until from + count) {
+                val c = nodeIndex[ways.refs[j]]
                 if (c == NO_COORD) { complete = false; break }
                 positions += LatLon(unpackLat7(c) / 1e7, unpackLon7(c) / 1e7)
             }

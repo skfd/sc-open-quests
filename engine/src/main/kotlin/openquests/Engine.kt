@@ -670,9 +670,11 @@ class LongList {
 }
 
 /** Read-only List<Long> over a LongArray, so a Way's nodeIds need not box every id up front. */
-class LongArrayAsList(private val a: LongArray) : AbstractList<Long>(), RandomAccess {
-    override val size get() = a.size
-    override fun get(index: Int): Long = a[index]
+class LongArrayAsList(private val a: LongArray, private val from: Int = 0, override val size: Int = a.size) : AbstractList<Long>(), RandomAccess {
+    override fun get(index: Int): Long {
+        if (index < 0 || index >= size) throw IndexOutOfBoundsException("$index of $size")
+        return a[from + index]
+    }
 }
 
 /** Sorted id -> value lookup over per-block arrays in file order (ids ascending across blocks). */
