@@ -92,6 +92,10 @@ private inline fun <T> traced(out: ConcurrentLinkedQueue<Traced>?, label: () -> 
     return r
 }
 
+/** `-Dopenquests.areaCities=<n>`: how many cities' map data are built and counted at once in city mode
+ *  (default 1: one after the other). Each holds its own map data, so the heap must have room for n. */
+val AREA_CITIES: Int = System.getProperty("openquests.areaCities")?.toInt() ?: 1
+
 /** The app's download unit (ApplicationConstants.DOWNLOAD_TILE_ZOOM). */
 const val AREA_TILE_ZOOM = 16
 
@@ -181,13 +185,59 @@ class AreaPass(
     }
 
     private class WayRec(val id: Long, val refs: LongArray, val tags: Map<String, String>, val version: Int, val timestamp: Long, val cities: Int)
-    private class NodeRec(val id: Long, val coord: Long, val tags: Map<String, String>, val version: Int, val timestamp: Long, val cities: Int)
+    /** The area pass's nodes as columns, sorted by id: a file has 100M of them, and as an object each they
+     *  were a third of the live heap and most of what every marking cycle had to walk (DESIGN.md, "Where a
+     *  cell run's time goes"). Tags only for the tagged ones: [tagAt] is an index into [tags], or -1. */
+    private class NodeCols(
+        val ids: LongArray, val coords: LongArray, val versions: IntArray, val timestamps: LongArray,
+        val cities: IntArray, val tagAt: IntArray, val tags: List<Map<String, String>>,
+    ) {
+        val size get() = ids.size
+        fun tagsOf(i: Int): Map<String, String> = tagAt[i].let { if (it < 0) emptyMap() else tags[it] }
+    }
+
+    /** the nodes of one block, as [collectNodes] finds them */
+    private class NodeChunk {
+        var n = 0
+        var ids = LongArray(1024); var coords = LongArray(1024); var versions = IntArray(1024)
+        var timestamps = LongArray(1024); var cities = IntArray(1024); var tagAt = IntArray(1024)
+        val tags = ArrayList<Map<String, String>>()
+        fun add(id: Long, coord: Long, t: Map<String, String>, version: Int, timestamp: Long, set: Int) {
+            if (n == ids.size) {
+                val m = n * 2
+                ids = ids.copyOf(m); coords = coords.copyOf(m); versions = versions.copyOf(m)
+                timestamps = timestamps.copyOf(m); cities = cities.copyOf(m); tagAt = tagAt.copyOf(m)
+            }
+            ids[n] = id; coords[n] = coord; versions[n] = version; timestamps[n] = timestamp; cities[n] = set
+            if (t.isEmpty()) tagAt[n] = -1 else { tagAt[n] = tags.size; tags += t }
+            n++
+        }
+    }
+
+    private fun columnsOf(chunks: List<NodeChunk>): NodeCols {
+        val n = chunks.sumOf { it.n }
+        val ids = LongArray(n); val coords = LongArray(n); val versions = IntArray(n)
+        val timestamps = LongArray(n); val cities = IntArray(n); val tagAt = IntArray(n)
+        val tags = ArrayList<Map<String, String>>(chunks.sumOf { it.tags.size })
+        var at = 0
+        for (c in chunks) {
+            c.ids.copyInto(ids, at, 0, c.n); c.coords.copyInto(coords, at, 0, c.n); c.versions.copyInto(versions, at, 0, c.n)
+            c.timestamps.copyInto(timestamps, at, 0, c.n); c.cities.copyInto(cities, at, 0, c.n)
+            val base = tags.size
+            for (i in 0 until c.n) tagAt[at + i] = c.tagAt[i].let { if (it < 0) -1 else it + base }
+            tags.addAll(c.tags)
+            at += c.n
+        }
+        return NodeCols(ids, coords, versions, timestamps, cities, tagAt, tags)
+    }
     private class RelRec(val id: Long, val members: List<RelationMember>, val tags: Map<String, String>, val version: Int, val timestamp: Long, val cities: Int)
 
     private lateinit var ways: List<WayRec>          // sorted by id
     private lateinit var wayIds: LongArray
-    private lateinit var nodes: List<NodeRec>        // sorted by id
+    private lateinit var nodes: NodeCols             // sorted by id
     private lateinit var nodeIds: LongArray
+    /** per way, its [CitySets] id */
+    private lateinit var wayCities: IntArray
     private lateinit var relations: List<RelRec>
     private val geometryCreator = ElementGeometryCreator()
 
@@ -197,6 +247,7 @@ class AreaPass(
         var t0 = System.nanoTime()
         ways = parallelMap(wayStart, relStart) { collectWays(decodeBlock(blobs[it])) }.flatten()
         wayIds = LongArray(ways.size) { ways[it].id }
+        wayCities = IntArray(ways.size) { ways[it].cities }
         val needed = LongArray(ways.sumOf { it.refs.size }).also { a ->
             var k = 0
             for (w in ways) { w.refs.copyInto(a, k); k += w.refs.size }
@@ -205,8 +256,8 @@ class AreaPass(
         timing("area: ways", t0, "${ways.size} ways touch a city area, ${needed.size} way nodes")
 
         t0 = System.nanoTime()
-        nodes = parallelMap(0, wayStart) { collectNodes(decodeBlock(blobs[it]), needed) }.flatten()
-        nodeIds = LongArray(nodes.size) { nodes[it].id }
+        nodes = columnsOf(parallelMap(0, wayStart) { collectNodes(decodeBlock(blobs[it]), needed) })
+        nodeIds = nodes.ids
         timing("area: nodes", t0, "${nodes.size} nodes")
 
         t0 = System.nanoTime()
@@ -214,18 +265,38 @@ class AreaPass(
         timing("area: relations", t0, "${relations.size} tagged relations")
 
         if (unit == AreaUnit.TILES) { runTiles(); return }
-        for (c in cities) {
+        fun one(c: City) {
             // with --dump-elements, only the dumped city
-            if (engine.dumpElementsCity >= 0 && c.index != engine.dumpElementsCity) continue
-            t0 = System.nanoTime()
+            if (engine.dumpElementsCity >= 0 && c.index != engine.dumpElementsCity) return
+            val t0 = System.nanoTime()
             val enabledQuests = areaQuests.filter { engine.enabled[c.index][it] }
-            if (enabledQuests.isEmpty()) continue
+            if (enabledQuests.isEmpty()) return
             val mapData = buildMapData(c.index)
             val built = (System.nanoTime() - t0) / 1e9
             countCity(c, mapData, enabledQuests)
             engine.stats.timings["area: ${c.id}"] = (System.nanoTime() - t0) / 1e9
             log("area: %-18s %6.1f s  (map data %.1f s: %d nodes, %d ways, %d relations)".format(
                 c.id, (System.nanoTime() - t0) / 1e9, built, mapData.nodes.size, mapData.ways.size, mapData.relations.size))
+        }
+        if (AREA_CITIES <= 1 || cities.size == 1) for (c in cities) one(c)
+        else {
+            // several cities under way at once: a city's runs keep few threads busy for most of its time
+            // (it waits for its longest run), so the next city's fill the rest. Counts do not depend on it.
+            t0 = System.nanoTime()
+            val next = AtomicInteger()
+            val failure = java.util.concurrent.atomic.AtomicReference<Throwable>()
+            val drivers = List(minOf(AREA_CITIES, cities.size)) { d ->
+                Thread({
+                    while (failure.get() == null) {
+                        val i = next.getAndIncrement()
+                        if (i >= cities.size) break
+                        try { logTogether { one(cities[i]) } } catch (t: Throwable) { failure.compareAndSet(null, t) }
+                    }
+                }, "area-city-$d").apply { start() }
+            }
+            drivers.forEach { it.join() }
+            failure.get()?.let { throw it }
+            timing("area: cities", t0, "${cities.size} cities, $AREA_CITIES at once")
         }
         if (VERIFY_FAST) log("area: fast twins matched their ports on ${verifiedTwins.get()} map data runs")
     }
@@ -268,10 +339,9 @@ class AreaPass(
         val buckets = HashMap<Long, Bucket>()
         fun bucket(k: Long) = buckets.getOrPut(k) { Bucket() }
         for (i in ways.indices) for (k in wayTiles[i]) if (isCityTile(k)) bucket(k).ways.add(i)
-        for (i in nodes.indices) {
-            val n = nodes[i]
-            if (n.tags.isEmpty() || n.cities == 0) continue
-            val k = tileKey(unpackLat7(n.coord), unpackLon7(n.coord))
+        for (i in 0 until nodes.size) {
+            if (nodes.tagAt[i] < 0 || nodes.cities[i] == 0) continue
+            val k = tileKey(unpackLat7(nodes.coords[i]), unpackLon7(nodes.coords[i]))
             if (isCityTile(k)) bucket(k).nodes.add(i)
         }
         for (i in relations.indices) {
@@ -279,7 +349,7 @@ class AreaPass(
             for (m in relations[i].members) when (m.type) {
                 ElementType.WAY -> wayIds.binarySearch(m.ref).let { if (it >= 0) wayTiles[it].forEach { k -> keys += k } }
                 ElementType.NODE -> nodeIds.binarySearch(m.ref).let {
-                    if (it >= 0) keys += tileKey(unpackLat7(nodes[it].coord), unpackLon7(nodes[it].coord))
+                    if (it >= 0) keys += tileKey(unpackLat7(nodes.coords[it]), unpackLon7(nodes.coords[it]))
                 }
                 ElementType.RELATION -> {}
             }
@@ -294,7 +364,7 @@ class AreaPass(
             val key = tiles[ti]
             val b = buckets.getValue(key)
             val box = TilePos((key shr 32).toInt(), key.toInt()).asBoundingBox(AREA_TILE_ZOOM)
-            val mapData = assemble(box, b.ways.toArray().distinct().map { ways[it] }, b.nodes.toArray().distinct().map { nodes[it] },
+            val mapData = assemble(box, b.ways.toArray().distinct().map { ways[it] }, b.nodes.toArray().distinct().toIntArray(),
                 b.relations.toArray().distinct().map { relations[it] })
             for (qi in questIndices) countIn(mapData, box, qi, cityIndexes = null)
         }
@@ -457,10 +527,10 @@ class AreaPass(
         return out
     }
 
-    private fun collectNodes(b: Osmformat.PrimitiveBlock, needed: LongArray): List<NodeRec> {
+    private fun collectNodes(b: Osmformat.PrimitiveBlock, needed: LongArray): NodeChunk {
         require(b.kind() == BlockKind.NODES)
         val ctx = BlockContext(b)
-        val out = ArrayList<NodeRec>()
+        val out = NodeChunk()
         for (g in b.primitivegroupList) {
             if (g.hasDense()) {
                 val d = g.dense
@@ -488,7 +558,7 @@ class AreaPass(
                         var j = start
                         while (j < end) { m.add(ctx.strings[d.getKeysVals(j)], ctx.strings[d.getKeysVals(j + 1)]); j += 2 }
                     }
-                    out += NodeRec(id, pack(lat7, lon7), fitTags("area", "node", id, tags), if (hasInfo) info.getVersion(i) else 1,
+                    out.add(id, pack(lat7, lon7), fitTags("area", "node", id, tags), if (hasInfo) info.getVersion(i) else 1,
                         ts * ctx.dateGranularity, set)
                 }
             }
@@ -497,7 +567,7 @@ class AreaPass(
                 val set = setAt(lat7, lon7)
                 val isNeeded = needed.binarySearch(n.id) >= 0
                 if (!isNeeded && (n.keysCount == 0 || set == 0)) continue
-                out += NodeRec(n.id, pack(lat7, lon7), fitTags("area", "node", n.id, tagsOf(n.keysList, n.valsList, ctx.strings)),
+                out.add(n.id, pack(lat7, lon7), fitTags("area", "node", n.id, tagsOf(n.keysList, n.valsList, ctx.strings)),
                     if (n.hasInfo()) n.info.version else 1, n.info.timestamp * ctx.dateGranularity, set)
             }
         }
@@ -525,7 +595,7 @@ class AreaPass(
                 members += RelationMember(type, memId, ctx.strings[r.getRolesSid(i)])
                 set = citySets.union(set, when (type) {
                     ElementType.WAY -> wayIds.binarySearch(memId).let { if (it >= 0) ways[it].cities else 0 }
-                    ElementType.NODE -> nodeIds.binarySearch(memId).let { if (it >= 0) nodes[it].cities else 0 }
+                    ElementType.NODE -> nodeIds.binarySearch(memId).let { if (it >= 0) nodes.cities[it] else 0 }
                     ElementType.RELATION -> 0
                 })
             }
@@ -578,10 +648,9 @@ class AreaPass(
         val buckets = HashMap<Long, Bucket>()
         fun bucket(k: Long) = buckets.getOrPut(k) { Bucket() }
         for (i in ways.indices) for (k in wayTiles[i]) bucket(k).ways.add(i)
-        for (i in nodes.indices) {
-            val n = nodes[i]
-            if (n.tags.isEmpty() || !inCity[n.cities]) continue
-            val k = key(unpackLat7(n.coord), unpackLon7(n.coord))
+        for (i in 0 until nodes.size) {
+            if (nodes.tagAt[i] < 0 || !inCity[nodes.cities[i]]) continue
+            val k = key(unpackLat7(nodes.coords[i]), unpackLon7(nodes.coords[i]))
             if (k in needed) bucket(k).nodes.add(i)
         }
         for (i in relations.indices) {
@@ -590,7 +659,7 @@ class AreaPass(
             for (m in relations[i].members) when (m.type) {
                 ElementType.WAY -> wayIds.binarySearch(m.ref).let { if (it >= 0) wayTiles[it].forEach { k -> keys += k } }
                 ElementType.NODE -> nodeIds.binarySearch(m.ref).let {
-                    if (it >= 0) key(unpackLat7(nodes[it].coord), unpackLon7(nodes[it].coord)).let { k -> if (k in needed) keys += k }
+                    if (it >= 0) key(unpackLat7(nodes.coords[it]), unpackLon7(nodes.coords[it])).let { k -> if (k in needed) keys += k }
                 }
                 ElementType.RELATION -> {}
             }
@@ -606,7 +675,7 @@ class AreaPass(
                 for (t in tilesOf.getValue(k)) buckets[t]?.let { b ->
                     b.ways.toArray().forEach { w += it }; b.nodes.toArray().forEach { n += it }; b.relations.toArray().forEach { r += it }
                 }
-                val small = assemble(ringOf(k), w.map { ways[it] }, n.map { nodes[it] }, r.map { relations[it] })
+                val small = assemble(ringOf(k), w.map { ways[it] }, n.toIntArray(), r.map { relations[it] })
                 dateIn(small, cs, dated, undated, runs)
             }
         }
@@ -659,15 +728,22 @@ class AreaPass(
                 box.max.latitude - box.min.latitude, box.max.longitude - box.min.longitude, slots, MAX_RASTER_SLOTS)
         }
         val inCity = citySets.membersOf(city)
-        return assemble(box, ways.filter { inCity[it.cities] },
-            nodes.filter { inCity[it.cities] && it.tags.isNotEmpty() }, relations.filter { inCity[it.cities] },
-            parallel = true)
+        // the city's ways and tagged nodes, read off int columns
+        val areaWays = ArrayList<WayRec>()
+        for (i in wayCities.indices) if (inCity[wayCities[i]]) areaWays += ways[i]
+        val tagAt = nodes.tagAt; val nodeCities = nodes.cities
+        var n = 0
+        for (i in tagAt.indices) if (tagAt[i] >= 0 && inCity[nodeCities[i]]) n++
+        val tagged = IntArray(n)
+        n = 0
+        for (i in tagAt.indices) if (tagAt[i] >= 0 && inCity[nodeCities[i]]) tagged[n++] = i
+        return assemble(box, areaWays, tagged, relations.filter { inCity[it.cities] }, parallel = true)
     }
 
-    /** Map data of [areaWays] with all their nodes, [taggedNodes] and [areaRelations] (member way
-     *  geometry from the main pass), with SC's own geometry for each. */
+    /** Map data of [areaWays] with all their nodes, the nodes at [taggedNodes] (indices into [nodes], ascending)
+     *  and [areaRelations] (member way geometry from the main pass), with SC's own geometry for each. */
     private fun assemble(
-        box: BoundingBox, areaWays: List<WayRec>, taggedNodes: List<NodeRec>, areaRelations: List<RelRec>,
+        box: BoundingBox, areaWays: List<WayRec>, taggedNodes: IntArray, areaRelations: List<RelRec>,
         parallel: Boolean = false,
     ): MapDataWithGeometry {
         fun <T> each(n: Int, f: (Int) -> T): List<T> = if (parallel) parallelMap(0, n, f) else (0 until n).map(f)
@@ -686,7 +762,7 @@ class AreaPass(
         }
         val wanted = IntArray(taggedNodes.size + refs.sumOf { it.size })
         var filled = 0
-        for (n in taggedNodes) wanted[filled++] = nodeIds.binarySearch(n.id)
+        taggedNodes.copyInto(wanted, filled); filled += taggedNodes.size
         for (r in refs) { r.copyInto(wanted, filled); filled += r.size }
         val byNode = LongArray(wanted.size) { (wanted[it].toLong() shl 32) or it.toLong() }
         java.util.Arrays.parallelSort(byNode)
@@ -699,10 +775,11 @@ class AreaPass(
         val firstAt = byNode.copyOf(distinct)
         firstAt.sort()
         val nodeOrder = IntArray(distinct) { wanted[firstAt[it].toInt()] }
-        val inHashOrder = hashMapOrder(LongArray(distinct) { nodes[nodeOrder[it]].id })
+        val inHashOrder = hashMapOrder(LongArray(distinct) { nodes.ids[nodeOrder[it]] })
         val mapNodes = each(distinct) { i ->
-            val n = nodes[nodeOrder[inHashOrder[i]]]
-            Node(n.id, LatLon(unpackLat7(n.coord) / 1e7, unpackLon7(n.coord) / 1e7), n.tags, n.version, n.timestamp)
+            val n = nodeOrder[inHashOrder[i]]
+            val c = nodes.coords[n]
+            Node(nodes.ids[n], LatLon(unpackLat7(c) / 1e7, unpackLon7(c) / 1e7), nodes.tagsOf(n), nodes.versions[n], nodes.timestamps[n])
         }
 
         val wayOrder = hashMapOrder(LongArray(areaWays.size) { areaWays[it].id })

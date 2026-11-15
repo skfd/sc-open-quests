@@ -116,7 +116,7 @@ class PassStats {
     val ignoredRelations = java.util.concurrent.atomic.AtomicLong()
     /** matches (element, quest) not counted because an open note sits on their position */
     val hiddenByNotes = java.util.concurrent.atomic.AtomicLong()
-    val timings = LinkedHashMap<String, Double>()
+    val timings: MutableMap<String, Double> = java.util.Collections.synchronizedMap(LinkedHashMap<String, Double>())
 }
 
 /**
@@ -699,30 +699,72 @@ fun <T> parallelMap(from: Int, until: Int, f: (Int) -> T): List<T> =
  *  returns, so it may read what an earlier [f] wrote; some index must always be ready or running, or a
  *  thread waits for ever. [parallelMap] splits its range between threads, so an index late in it may
  *  start first. */
-fun <T> parallelWhenReady(size: Int, ready: (Int) -> Boolean, f: (Int) -> T): List<T> {
-    val lock = Object()
-    val taken = BooleanArray(size)
-    var left = size
-    var failed = false
-    val out = java.util.concurrent.atomic.AtomicReferenceArray<T>(size)
-    parallelMap(0, java.util.concurrent.ForkJoinPool.getCommonPoolParallelism() + 1) {
-        while (true) {
-            var k = -1
-            synchronized(lock) {
-                while (left > 0 && !failed) {
-                    k = (0 until size).firstOrNull { !taken[it] && ready(it) } ?: -1
-                    if (k >= 0) { taken[k] = true; left--; break }
-                    (lock as Object).wait()
+fun <T> parallelWhenReady(size: Int, ready: (Int) -> Boolean, f: (Int) -> T): List<T> = ReadyPool.run(size, ready, f)
+
+/** The threads behind [parallelWhenReady], shared by every caller: several cities' area runs may be
+ *  under way at once (AreaPass, `-Dopenquests.areaCities`), and a thread free of one city's runs takes
+ *  another's instead of waiting. Jobs are served in the order they came. */
+private object ReadyPool {
+    private class Job(val size: Int, val ready: (Int) -> Boolean, val f: (Int) -> Any?) {
+        val taken = BooleanArray(size)
+        var left = size
+        var running = 0
+        var failure: Throwable? = null
+        val out = arrayOfNulls<Any?>(size)
+        val over get() = running == 0 && (left == 0 || failure != null)
+    }
+
+    private val lock = Object()
+    private val jobs = ArrayList<Job>()
+    private var started = false
+
+    @Suppress("UNCHECKED_CAST")
+    fun <T> run(size: Int, ready: (Int) -> Boolean, f: (Int) -> T): List<T> {
+        if (size == 0) return emptyList()
+        val job = Job(size, ready, f)
+        synchronized(lock) {
+            if (!started) {
+                started = true
+                repeat(java.util.concurrent.ForkJoinPool.getCommonPoolParallelism() + 1) { i ->
+                    Thread({ work() }, "ready-$i").apply { isDaemon = true }.start()
                 }
             }
-            if (k < 0) break
-            var ok = false
-            try { out.set(k, f(k)); ok = true } finally {
-                synchronized(lock) { if (!ok) failed = true; (lock as Object).notifyAll() }
+            jobs += job
+            lock.notifyAll()
+            while (!job.over) lock.wait()
+            jobs -= job
+        }
+        job.failure?.let { throw it }
+        return List(size) { job.out[it] as T }
+    }
+
+    private fun work() {
+        while (true) {
+            var job: Job? = null
+            var k = -1
+            synchronized(lock) {
+                while (true) {
+                    for (j in jobs) {
+                        if (j.left == 0 || j.failure != null) continue
+                        k = (0 until j.size).firstOrNull { !j.taken[it] && j.ready(it) } ?: -1
+                        if (k >= 0) { job = j; j.taken[k] = true; j.left--; j.running++; break }
+                    }
+                    if (job != null) break
+                    lock.wait()
+                }
+            }
+            val j = job!!
+            var result: Any? = null
+            var failure: Throwable? = null
+            try { result = j.f(k) } catch (t: Throwable) { failure = t }
+            synchronized(lock) {
+                j.out[k] = result
+                if (failure != null && j.failure == null) j.failure = failure
+                j.running--
+                lock.notifyAll()
             }
         }
     }
-    return List(size) { out.get(it) }
 }
 
 /** First blob index whose kind is >= [kind]; kinds are monotonic in a Type_then_ID sorted file. */
@@ -735,4 +777,21 @@ fun lowerBound(blobs: List<ByteArray>, kind: BlockKind): Int {
     return lo
 }
 
-fun log(msg: String) = System.err.println(msg)
+/** Log lines of the current thread held back by [logTogether] */
+private val heldLog = ThreadLocal<StringBuilder?>()
+
+fun log(msg: String) {
+    val held = heldLog.get()
+    if (held != null) held.append(msg).append('\n') else System.err.println(msg)
+}
+
+/** [f] with this thread's log lines written in one piece at its end, so that the lines of things done
+ *  at once (cities' area runs) do not mix. */
+fun <T> logTogether(f: () -> T): T {
+    val held = StringBuilder()
+    heldLog.set(held)
+    try { return f() } finally {
+        heldLog.set(null)
+        if (held.isNotEmpty()) synchronized(System.err) { System.err.print(held); System.err.flush() }
+    }
+}
