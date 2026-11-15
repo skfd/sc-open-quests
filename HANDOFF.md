@@ -1589,17 +1589,20 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   30-40 min a planet) and a once-only history cut for the monthly backfill are described in DESIGN, not built.
 - **Batch engine speed-up, second round (11-15, midday; owner: "lets continue bulk engine optimisation
   work?").** DESIGN.md, "Batch engine speed-up, second round". Germany f0: **117.4 s to 91.5 s** (CPU 1,874 s to
-  1,566 s), f1 110 s to 86.9 s, with `--dump-state` 172 s to 130 s; 2.7 times since 11-14. Two changes, the same
+  1,566 s), f1 110 s to 86.9 s, with `--dump-state` 187.6 s to 129.8 s; 2.7 times since 11-14. **Merged into
+  main (fast-forward) and main's engine rebuilt the same afternoon; 96 engine tests pass on main,
+  SnapshotReproductionTest among them. Not pushed: the next 12:15 daily run is the first with the cache on and
+  pushes these commits; `-Dopenquests.matchCache=false` is the off switch if a count looks wrong.** Two changes, the same
   snapshot after each: (1) the level twins keep only the nodes near a mall (AddLevelThing was what every cell's run
   phase waited for: cells' phase 70 s to 53 s); (2) the main pass settles a quest once per tag signature
   (`MatchCache.kt`, on by default, `-Dopenquests.matchCache=false` for the old way, `=verify` to check every
   element against it): 98% of elements reuse an answer, 2 quests asked an element instead of 120. Ontario's daily
-  run does not gain (53 s both ways). Checked: verify mode on f0's 23.8M elements and on Dublin and Lisboa, f0/f1
+  run shows no gain beyond noise (pass 51.7 s and 51.4 s; its main pass 17.2 s to 13.3 s). Checked: verify mode on f0's 23.8M elements and on Dublin and Lisboa, f0/f1
   snapshots, f0's state rows, Ontario's 11-14 snapshot and grid against what main published, `verifyFast` on Dublin
   and Lisboa, 96 engine tests. **Not checked: a world file with a polar or antimeridian cell (as before: run the
   canary first on 12-07).** A custom port now names the filter it starts from (`CustomQuest.necessary`): **when a
-  port is redone at a repin, keep that in step with its `isApplicable`**, or `matchCache=verify` on any extract
-  finds it. Next for the engine, none built: one read of the ways (7.9% of CPU), AddHousenumber's node set as
+  port is redone at a repin, keep that in step with its `isApplicable`** (REPIN.md, step 4, has the
+  `matchCache=verify` run that finds a wrong one). Next for the engine, none built: one read of the ways (7.9% of CPU), AddHousenumber's node set as
   primitives (now a cell's longest run, 7.9 s), the kerb search (5%); nothing single is large any more, and the cut
   (262 min through Docker's bind mount) is the larger part of a world chain. `.scratch/batch-speed/m*` are this
-  round's runs.
+  round's runs; the worktree `../sc-open-quests-batch` (branch `batch-speed`, now equal to main) can go.

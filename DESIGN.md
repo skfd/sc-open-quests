@@ -3728,7 +3728,8 @@ count about 4.4 h to about 2.2 h: 10.5 h to about 8.3 h. With the cut off the bi
 ## Batch engine speed-up, second round: a match cache and the level quests (2026-11-15)
 
 Same test file, runner and comparer as the section above (Germany f0, 30 GB, two cells at once, the pause target).
-Built on `batch-speed`, each step with the same snapshot.
+Built on `batch-speed` and merged into main the same afternoon (main's engine rebuilt; 96 engine tests pass
+there, SnapshotReproductionTest among them). Each step with the same snapshot.
 
 | step | f0 wall | f0 CPU | main pass (nodes + ways) | cells |
 |---|---:|---:|---:|---:|
@@ -3736,9 +3737,12 @@ Built on `batch-speed`, each step with the same snapshot.
 | the level twins keep only the nodes near a mall | 101.1 s | 1,781 s | 8.3 + 19.6 s | 53.2 s |
 | **the main pass settles a quest once per tag signature** | **91.5 s** | 1,566 s | 6.2 + 10.9 s | 54.4 s |
 
-Single runs; wall time varies by about 5% between equal runs. f1: 110 s to 86.9 s. With `--dump-state`: 172 s to
-130 s. **2.7 times since the engine of 11-14 (245 s).** Ontario's daily-style run does not gain: 53.8 s published
-today by main's engine, 53.2 s recounted (its time is 53 cities' area runs one after another, not the main pass).
+Single runs; wall time varies by about 5% between equal runs. f1: 110 s to 86.9 s. With `--dump-state`: 187.6 s
+on main (measured the same hour) to 129.8 s, the same 31,695,753 rows. **2.7 times since the engine of 11-14
+(245 s).** Ontario's daily-style run shows no gain that can be told from noise: its pass was 51.7 s in today's
+daily run (36 GB, main's engine) and 51.4 s recounted alone at 30 GB; the main pass in it went from 17.2 s to
+13.3 s (nodes 8.9 to 5.3 s, ways 7.2 to 6.2 s) and the rest took as much longer in that one run. Only 4.6M of
+Ontario's ways lie in a city and reach the quests.
 
 **The level quests.** The task trace of the last run showed that a cell's run phase lasted as long as one run:
 AddLevelThing, 1.1 s to 10.8 s of a phase of 10.8 s (f0c10), the others done by 7.3 s. Its filter (`!level and
@@ -3751,7 +3755,7 @@ kept, so the result is the same. AddLevelThing's wall time over the file's cells
 phase 70 s to 53 s. A cell's longest run is now AddHousenumber (7.9 s).
 
 **The match cache** (`MatchCache.kt`, `-Dopenquests.matchCache=true|false|verify`, on by default). A profile of
-the engine as merged on 11-15 had a quarter of the Java samples in the main pass's `offer`: some 120 quests asked of
+last night's engine (`k3.jfr`, a three-cell run from before AddHousenumber's twin) had a quarter of the Java samples in the main pass's `offer`: some 120 quests asked of
 each of 23.8M tagged elements, 40% of it in SC's filter trees, 24% in the fast reject, 20% in the custom ports, 15%
 in the loop. Most elements are alike in everything a filter can see, so:
 

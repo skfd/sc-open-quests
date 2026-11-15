@@ -74,6 +74,9 @@ either: old snapshots keep them, the site shows them while the newest registry h
   then `:app:checkCustomQuests` in the SC checkout with the same `-PcheckBbox` and today, and diff.
   Guelph or Barrie takes minutes; do one German city too (Bremerhaven), the country metadata differs.
 - `-Dopenquests.verifyFast=true` with a whole-region run compares each twin with its port.
+- `-Dopenquests.matchCache=verify` with a whole-region run asks every quest of every element beside the match
+  cache and stops at the first difference. Run it after any change to a custom port: a port's `necessary()` must
+  name only filters its `isApplicable` requires, and this is what finds one that does not.
 
 ## 5. Site assets and pins
 
