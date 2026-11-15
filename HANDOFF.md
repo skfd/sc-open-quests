@@ -1625,3 +1625,14 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   the engine reads the store directly, so the 30 s PBF write of each read goes; Python stays the oracle and the
   orchestration. First step proposed, not started: the Kotlin cut of the europe clip of 11-12, held payload for
   payload against the Python store, then one world file's cut timed before the planet. Waiting on the owner's yes.
+- **The owner (11-15, evening): "I want to consider a rust version. Third tool chain is not a problem for us, since
+  agent handles technical side."** Reconsidered with that objection gone. What was left of the case for Kotlin: the
+  engine reading the store directly, and one build with shared tests. The first is small: the 30 s PBF write was
+  pyosmium's, native code writes that 60-100 MB PBF in a few seconds (projection; osmium's stamp-and-sort of the same
+  data took 1.6 s), and a Kotlin reader of the tile format stays possible later. What Rust gains is where Kotlin's
+  risk was: the planet cut and its memory (11 billion nodes, the pair indexes), with no heap to size. What Rust
+  costs: the tile rule (which relations the app ignores, the 300 m pad) lives a third time beside AreaPass.kt and
+  `tiles.py`, kept in step at a repin, held by the oracle check. **Recommended now: Rust for the store (cut, update,
+  read to PBF), the engine unchanged, proved by a spike first: the cut of the europe clip of 11-12 held against the
+  Python store's decoded payloads, and timed.** Rust is not installed here (no cargo/rustup; Visual Studio 2022 is,
+  so a linker should be): installing rustup needs the owner's yes. Nothing built.
