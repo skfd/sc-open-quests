@@ -63,6 +63,7 @@ inline fun matchVariants(usesAge: Boolean, test: () -> Boolean): Int {
     return r
 }
 internal val TYPE_NAMES = listOf("node", "way", "relation")
+private val NO_QUESTS = IntArray(0)
 
 /** Ways that count towards the `highwayKm` denominator: the road network a car or bike quest
  *  could be about. Area highways (`area=yes`) are left out. */
@@ -183,6 +184,7 @@ class Engine(val registry: Registry, val cities: List<City>, val parts: List<Par
         quests.indices.filter { quests[it].matcher?.includesElementType(type) == true }.toIntArray()
     }
     private val geometryCreator = ElementGeometryCreator()
+    private val matchCache: MatchCache? = if (MATCH_CACHE == "false") null else MatchCache(quests, questsByType)
 
     val counts = Counts(cities.size, quests.size)
     val stats = PassStats()
@@ -313,21 +315,28 @@ class Engine(val registry: Registry, val cities: List<City>, val parts: List<Par
         var ids: List<String>? = null
         // the parts holding the position, per city of cityIdx; looked up once, when a quest first counts there
         var partHits: Array<IntArray?>? = null
-        for (qi in questsByType[type]) {
+        // what the element's signature settles for every city alike (MatchCache); without it every quest is asked
+        val settled = matchCache?.outcome(type, e)
+        if (settled != null && MATCH_CACHE == "verify") verifySettled(e, type, settled)
+        val sure = settled?.sure ?: NO_QUESTS
+        val ask = settled?.ask ?: questsByType[type]
+        for (j in 0 until sure.size + ask.size) {
+            val isSure = j < sure.size
+            val qi = if (isSure) sure[j] else ask[j - sure.size]
             var anyEnabled = false
             for (c in cityIdx) if (enabled[c][qi]) { anyEnabled = true; break }
             if (!anyEnabled) continue
             val q = quests[qi]
             val matcher = q.matcher!!
-            if (!matcher.mayMatch(e)) continue
+            if (!isSure && !matcher.mayMatch(e)) continue
             // agedOnly: would it still match if no `older today -N` (or `< today`) test could be true?
-            val mask = matchVariants(q.usesAge) { matcher.matches(e) }
+            val mask = if (isSure) settled!!.sureMask[j] else matchVariants(q.usesAge) { matcher.matches(e) }
             val st = state
             // --dump-state: not open now at a setting, but from some day on (each of the three settings)
             var due = -1
             var due05 = -1
             var due2 = -1
-            if (st != null && q.usesAge) {
+            if (st != null && q.usesAge && !isSure) {
                 if (mask and M_NOW == 0) due = StateDump.dueMinute { matcher.matches(e) }
                 if (mask and M_05 == 0) due05 = StateDump.dueMinute { Resurvey.at(Resurvey.HALF) { matcher.matches(e) } }
                 if (mask and M_2 == 0) due2 = StateDump.dueMinute { Resurvey.at(Resurvey.DOUBLE) { matcher.matches(e) } }
@@ -360,6 +369,25 @@ class Engine(val registry: Registry, val cities: List<City>, val parts: List<Par
                     dumpLines += "${q.name}\t${TYPE_NAMES[type]}\t${e.id}\t${e.version}\t${e.timestampEdited}\t" +
                         "${cities[c].id}\t${center.latitude}\t${center.longitude}\t$aged"
                 }
+            }
+        }
+    }
+
+    /** `-Dopenquests.matchCache=verify`: [settled] against every quest asked of [e], the dates of --dump-state too */
+    private fun verifySettled(e: Element, type: Int, settled: MatchCache.Outcome) {
+        for (qi in questsByType[type]) {
+            if (qi in settled.ask) continue
+            val q = quests[qi]
+            val matcher = q.matcher!!
+            val mask = matchVariants(q.usesAge) { matcher.matches(e) }
+            val i = settled.sure.indexOf(qi)
+            val expected = if (i >= 0) settled.sureMask[i] else 0
+            check(mask == expected) { "match cache: ${q.name} on ${TYPE_NAMES[type]} ${e.id}: settled $expected, asked $mask" }
+            if (!q.usesAge || mask and (M_NOW or M_05 or M_2) == (M_NOW or M_05 or M_2)) continue
+            check(StateDump.dueMinute { matcher.matches(e) } < 0 &&
+                StateDump.dueMinute { Resurvey.at(Resurvey.HALF) { matcher.matches(e) } } < 0 &&
+                StateDump.dueMinute { Resurvey.at(Resurvey.DOUBLE) { matcher.matches(e) } } < 0) {
+                "match cache: ${q.name} on ${TYPE_NAMES[type]} ${e.id}: settled as never open, but it has a date"
             }
         }
     }
@@ -411,6 +439,7 @@ class Engine(val registry: Registry, val cities: List<City>, val parts: List<Par
             processRelations(decodeBlock(blobs[i]), memberWays)
         }
         timing("relations", t0, "")
+        matchCache?.logStats()
 
         AreaPass(this, blobs, wayStart, relStart, nodes, memberWays, areaUnit, tagDict ?: TagDict()).run()
         notes?.let { countNotes(it) }
