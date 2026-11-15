@@ -670,6 +670,11 @@ pub fn cut(pbf: &Path, out: &Path, day: &str, z: u32, bz: u32, keep_spill: bool)
     // the needs: each tagged node's record, to the buckets that hold a way of it and are not its home
     needs.par_sort_unstable();
     needs.dedup();
+    // TILESTORE_TEST_NO_NEEDS: a wrong cut on purpose, to show that the comparison with the in-memory cut fails
+    if std::env::var_os("TILESTORE_TEST_NO_NEEDS").is_some() {
+        log("TEST: the needs are dropped; this store is wrong on purpose");
+        needs.clear();
+    }
     {
         let f = File::open(&tagged_path).unwrap();
         let mut body = Vec::new();
