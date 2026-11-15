@@ -1437,6 +1437,13 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   already holding the 2 TB SK hynix; two USB4/Thunderbolt 4 ports (40 Gbps). So the drive goes external, on USB4.
   CPU and 88 GB are plenty for Overpass. In WSL its database must sit on ext4 (a VHDX on the new drive, or the drive
   mounted with `wsl --mount`), never on `/mnt/<letter>`, which crosses into Windows and is far slower.
+- **The shortlist (11-14, CAD, Canada Computers pages read that day; prices are 2-3x 2025's, NAND shortage):** WD
+  SN850X (DRAM, TLC) 2 TB $549.99 or 4 TB $1,099.99 (sale; regular $1,519.99), the same $275/TB; Lexar NM790 (no
+  DRAM, coolest) 2 TB $449.99 / 4 TB $799.99. Enclosure: StarTech 1USB4-NVME-ENCLOSURE (ASM2464PD, fanless aluminium,
+  pad) $121.95 at fleetnetwork.ca; Orico M2V01-C4 $59.99, in store only. ASM2464 enclosures drop out on Linux hosts
+  with AMD USB4 (Framework threads) but behave on Windows; here Windows owns the drive and WSL only sees a disk, so
+  the Windows case applies. Soak-test a week before trusting it. Against renting (EUR 40-80/mo) the 2 TB kit pays
+  back in roughly 8-12 months.
 - **The owner's decision (11-14, 22:30): "I will buy external ssd to have Overpass locally. The language selection --
   not sure yet, let's discuss in next session."** So tier 2's store for the world is to be an own Overpass instance
   with attic data (D and D-1 by `[date:]`) on an external SSD (attic planet about 400 GB in 2023 terms, growing: buy
