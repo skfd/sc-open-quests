@@ -1379,12 +1379,10 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   0 different each; the updated store equals a fresh 11-13 cut on every tile not touching the clip polygon's edge.
   One bug found and fixed on the way (a relation held in a tile only by an untagged label node). Size: 1.27x the PBF in
   all (about 108 GB for the planet), plus a way-tiles index that should shrink. **A day rewrites 23% of the bytes in
-  4.9% of the tiles** (2,893 of 59,026, the dense city-centre ones; the clip is 32 European city boxes, all urban),
+  4.4% of the tiles** (2,591 of 59,026, the dense city-centre ones; the clip is 32 European city boxes, all urban),
   so D-1 costs about 0.46 GB a day here; smaller tiles where data is dense would cut it. Speed is the Python
   prototype's (update about 9 min a day, read 34-45 s of which 31-41 s writing the PBF); a world store needs compiled
-  code. A second day through the store is not run. Rerun: `.scratch/tiles/chain.sh` (log `logs/tiles-chain.log`) or
-  `chain2.sh` (update only). `.scratch/tiles/` is 21 GB (geom-12/13 6.7 GB each, the two stores 6 GB): deletable
-  once the owner has read this.
+  code. Rerun: `tools/stream/tilecheck/` (`chain-z.sh`, `day12.sh`).
 - **For the owner (evening of 11-14), to ask as a wizard:** what next for tier 2 of the world: (a) measure smaller
   tiles for dense ground first (z15/z16 split; a Python rerun of the cut and the update, about an hour); (b) build the
   store for real in Kotlin beside the engine, cut from the 12-07 planet; (c) leave tier 2 and keep the world on tier 1
@@ -1393,21 +1391,25 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   adaptive split from the two); **push: yes**.
 - **Smaller tiles, running (11-14, 19:07).** The zoom is a setting now (`OPENQUESTS_TILE_Z`; a store records its own
   and refuses another), the update's region is the clip polygon (`--polygon`), tests pass at z14/15/16.
-  `.scratch/tiles/chain-z.sh 15` and `16` (logs `logs/tiles-z15.log`, `tiles-z16.log`) cut, update and check stores at
-  z15 and z16; then `chain-z.sh 14 update-only` reruns z14's update with the polygon, and `.scratch/tiles/adaptive.py
-  .scratch/tiles .scratch/tiles/ref/cities.json` sets uniform z14/15/16 against an adaptive split (z16 children of
+  `tools/stream/tilecheck/chain-z.sh 15` and `16` (logs `logs/tiles-z15.log`, `tiles-z16.log`) cut, update and check
+  stores at z15 and z16; then `chain-z.sh 14 update-only` reruns z14's update with the polygon, and
+  `tools/stream/tilecheck/adaptive.py .scratch/tiles .scratch/tiles/ref/cities.json` sets uniform z14/15/16 against an adaptive split (z16 children of
   any z14 tile over 64-512 KB): tiles, bytes, the day's write, the read for the day's rectangles.
 - **Smaller tiles measured (11-14, 20:20).** DESIGN.md, "Smaller tiles for the tile store". Exact at z14, z15 and z16
   (D 0 different through each updated store). A day writes 461 MB at z14 (23% of 2.00 GB), 285 MB at z15 (2.66 GB),
   198 MB at z16 (4.06 GB). **An adaptive split (z16 children for z14 tiles over 256 KB) costs +17% size for half the
   write (250 MB); over 128 KB, z15's size with z16's write.** The update's region is now the store's tiles plus the
   polygon's (two region bugs found by the higher zooms, both prototype-only). Stores in `.scratch/tiles/store-z15/`,
-  `store-z16/`, `store13-z15/`, `store13-z16/` (about 15 GB together with the rest of `.scratch/tiles/`).
+  `store-z16/`, `store13-z15/`, `store13-z16/`. The adaptive rows are an estimate from the two uniform stores.
 - **A second day: exact (11-14, 21:50).** DESIGN.md, "A second day". The z14 store through 5175 and 5176 equals fresh
   cuts of 11-13 and 11-14 everywhere inside the clip polygon (tiles, relation store, both tile indexes); D of day one
   0 different. Two gaps in the relation index found on the way, fixed, in the small test. Day two wrote 477 MB (24%).
-  `.scratch/tiles/` is now 47 GB (geom-12/13/14, stores at z14/15/16 and the fresh cuts): deletable whenever the
-  owner likes; nothing else reads it.
-- **For the owner, to ask as a wizard:** the store is proved and the layout measured. Next: (a) build it in Kotlin
-  beside the engine with the adaptive split (z16 children of z14 tiles over 256 KB), cut from the 12-07 planet;
-  (b) the same at 128 KB; (c) leave tier 2 for now. And: push the commits since 19:10; delete `.scratch/tiles/`.
+  After two days a day's pack is still half live (packs die slowly: compaction copies live tiles forward).
+  `.scratch/tiles/` is now 47 GB (geom-12/13/14 20 GB, stores at z14/15/16 and the fresh cuts, and `ref/`, the frozen
+  t2n recount the checks hold against).
+- **For the owner, to ask as a wizard:** the store is proved (two days at z14) and the layout measured. Next for tier
+  2: (a) build it in Kotlin beside the engine with an adaptive split (z16 children of z14 tiles over 256 KB, a tunable;
+  the split is an estimate from two uniform stores, not built), cut from the 12-07 planet; open for that build: the
+  way-tiles index (about 19 GB as plain pairs, rewritten whole each day in the prototype) and compaction; (b) leave
+  tier 2 for now. And: push the commits since 19:10. If (a), keep `store/`, `store-z16/` and the fresh cuts as the
+  build's oracle, and `ref/` always; the geom folders (20 GB) can go.
