@@ -4533,7 +4533,10 @@ bytes for "no node"; written in id order in runs, a seek where ids are more than
 **Against the threshold (both passes within 4 hours pass, over 12 hours fail): passed, by more than four times.**
 The node file by id works on this machine with the file (107 GiB) larger than what the OS can keep of it: pass 2's
 working set is the mapped file's pages in memory, 65 GiB; the program's own memory stayed under 1 GiB in both
-passes. Pass 2 took four times pass 1 for a seventh of the versions. Whether it waited on the disk or on the
+passes. **The seconds are an upper bound:** the engine session ran f0 counts from 17:23 to about 18:15 (up to 24
+threads and 30 GB each) and then two test suites, and around 18:10 no memory was free, which takes cache from the
+node file exactly while pass 2 reads it. Alone the run would be faster by an amount nobody measured.
+Pass 2 took four times pass 1 for a seventh of the versions. Whether it waited on the disk or on the
 processors was not measured (no CPU time or disk figures were taken), so what a faster disk or more memory would
 change is not known.
 

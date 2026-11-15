@@ -1830,8 +1830,14 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   `logs/planet-ptime.log`, figures `.scratch/planet-time/planet.loc.json`). Blob index 284 s (2.4M blobs), **pass 1
   630 s** (16.7 billion versions read, 10,975,350,797 nodes, the node file 114.7 GB), **pass 2 2,554 s**
   (1,229,012,042 ways, 13.08 billion refs, 1.393 billion way-tile pairs); the program's own memory under 1 GiB,
-  pass 2's working set 65 GiB of the mapped node file. Threshold was 4 h pass, 12 h fail. One run, another
-  session's engine runs beside it; whether pass 2 waited on disk or CPU was not measured. **Not the cut's time:**
+  pass 2's working set 65 GiB of the mapped node file. Threshold was 4 h pass, 12 h fail. **One run, and not
+  alone on the machine for almost any of it** (the engine session's note, kept): the engine session, not knowing
+  of it, ran f0 counts and checks from 17:23 to about 18:15 (up to 24 threads and 30 GB each, one after another)
+  and then two engine test suites; around 18:10 no memory was free. So the seconds are an upper bound: alone it
+  would be faster by an amount nobody measured, and pass 2, which leans on the OS cache for the node file, the
+  most. Whether pass 2 waited on disk or CPU was not measured. **From 18:25 the engine session runs ten more f0
+  counts (`.scratch/batch-speed/quiet6.sh`, about 15 minutes; it waits while a `tilestore` or `osmium` process
+  exists): do not time anything until `.scratch/batch-speed/q6.out` ends with "ended".** **Not the cut's time:**
   no pass 0, no spill, no tagged-node or member-way files, no buckets. **Settled for 2026-11-02:** no node or way
   is given twice at this date (relations not read); every ref has a node; no way has two nodes in a row over 180
   degrees apart (one way has a whole row of 16,384 tiles, not looked up); refs are 13.08 billion, so the spill as
