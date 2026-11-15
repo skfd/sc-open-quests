@@ -551,11 +551,15 @@ MEMORY_REFUSED = ("paging file is too small", "insufficient memory for the Java 
 # How many cells an engine has under way at once (-Dopenquests.areaCities). Two fill the threads a single cell
 # leaves idle and still fit a 30 GB heap; three gain nothing more at 30 or 40 GB (DESIGN.md, "Batch engine speed-up").
 AREA_CITIES = int(os.environ.get("WORLD_CELLS_AREA_CITIES", "2"))
+# A batch job: the collector may stop the run for seconds at a time, and then keeps a young generation large enough
+# that a cell's map data is copied less often. Measured on a cell file at 30 GB only, so it is set here, not in the
+# launcher the daily runs share.
+GC_OPTS = "-XX:MaxGCPauseMillis=5000"
 
 
 def engine(args: list[str], tz: str, heap_gb: int, log: Path, commit_all: bool = False) -> tuple[int, float]:
     env = run.engine_env(tz)  # no heap=True: the -Xmx below is what two engines at once can each have
-    opts = f" -Xmx{heap_gb}g -XX:ErrorFile={log.parent / 'hs_err_%p.log'} -Dopenquests.areaCities={AREA_CITIES}"
+    opts = f" -Xmx{heap_gb}g -XX:ErrorFile={log.parent / 'hs_err_%p.log'} -Dopenquests.areaCities={AREA_CITIES} {GC_OPTS}"
     if commit_all:  # the heap committed up front, so the next engine's memory check sees all of it
         opts += f" -Xms{heap_gb}g"
     env["JAVA_OPTS"] = (env.get("JAVA_OPTS", "") + opts).strip()

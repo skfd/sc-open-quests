@@ -46,9 +46,6 @@ application {
     applicationName = "sc-open-quests-engine"
     applicationDefaultJvmArgs = listOf(
         "-Xmx40g", // see README "Timings and memory": about 30-33 GB peak on Ontario with the per-city area pass
-        // a batch job: the collector may stop the run for seconds at a time, and then keeps a young generation
-        // large enough that a city's map data is copied less often (DESIGN.md, "Batch engine speed-up")
-        "-XX:MaxGCPauseMillis=5000",
     ) + engineJvmArgs
 }
 
