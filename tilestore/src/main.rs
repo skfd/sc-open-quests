@@ -9,6 +9,8 @@
 //!       history file as it was at T
 //!   tilestore at --pbf X.osh.pbf --at 2026-10-01T00:00:00Z [--out Y.osm.pbf] [--stamp T]
 //!       a history file at a date, as a snapshot PBF (history.rs)
+//!   tilestore ptime --pbf X.os[mh].pbf [--at T] --nodes F.loc [--z 14] [--sparse] [--keep]
+//!       the planet cut's passes 1 and 2 timed, the node places in a file by id (ptime.rs)
 //!   tilestore read --store S [--gen -1] --cities C.json [--base DIR] [--ring 300] --out Y.osm.pbf [--stamp T]
 
 mod clip;
@@ -17,6 +19,7 @@ mod history;
 mod npy;
 mod pairs;
 mod pbf;
+mod ptime;
 mod read;
 mod stream;
 mod tiles;
@@ -71,6 +74,14 @@ fn main() {
             out: PathBuf::from(arg(&args, "--out").expect("--out")),
             stamp: arg(&args, "--stamp"),
         }),
+        Some("ptime") => ptime::run(
+            &PathBuf::from(arg(&args, "--pbf").expect("--pbf")),
+            arg(&args, "--at").map(|s| read::stamp_seconds(&s)),
+            &PathBuf::from(arg(&args, "--nodes").expect("--nodes")),
+            arg(&args, "--z").map(|s| s.parse().unwrap()).unwrap_or(14),
+            args.iter().any(|a| a == "--sparse"),
+            args.iter().any(|a| a == "--keep"),
+        ),
         Some("at") => history::at(
             &PathBuf::from(arg(&args, "--pbf").expect("--pbf")),
             &arg(&args, "--at").expect("--at"),

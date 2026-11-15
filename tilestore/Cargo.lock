@@ -541,6 +541,7 @@ name = "tilestore"
 version = "0.1.0"
 dependencies = [
  "flate2",
+ "memmap2",
  "mimalloc",
  "osmpbf",
  "rayon",
