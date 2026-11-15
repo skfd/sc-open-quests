@@ -1488,3 +1488,20 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   the engine (Kotlin, JDK only, no new dependency). A query can union many boxes, so a world day may be one
   query per file and clock (128 x 2), not thousands. Here now: WSL Ubuntu (stopped), Docker Desktop, pyosmium;
   no osmium-tool yet.
+- **The owner's answers (11-14, 23:00):** language: **Python plus osmium**. The SSD: **not bought yet; "benchmark
+  overpass on this pc before committing"**. (Correction to the line above: osmium-tool 1.18 is here, in the Docker
+  image `name-ru-repair-osmium` that `osm_extracts.py` runs.)
+- **Overpass benchmark, planned (11-14, 23:10), waiting on the image download's go-ahead.** A history file cannot
+  seed attic (the Overpass wiki: unsupported, and an `.osh` fed to `update_database` leaves the db unusable), so:
+  Docker `wiktorn/overpass-api` (0.7.62.11, 105 MiB), a named volume; load the europe clip of 11-12 (1.64 GB,
+  stamp 2026-11-12T00:00Z) with attic kept, then apply planet day diff 5175 with attic kept, so one db answers
+  11-12 and 11-13. The query mirrors `tiles.py select()` on each rectangle's box padded by 300 m: nodes there, ways
+  by those nodes and ways crossing, relations with a member node or way there plus all their member ways, every
+  way's nodes, `out meta`; XML to PBF by osmium with the stamp in the header; `tiles.py recount` and `compare`
+  against `.scratch/tiles/ref/`. Checks in stages, so a difference has one cause: (1) after the load, undated,
+  against `ref/old` (11-12); (2) after 5175, undated, against `ref/state.bin` (11-13); (3) `[date:11-12T00:00Z]`
+  against `ref/old`, and against (1)'s output. Rehearsed first on one city box. Recorded: load time, db size, the
+  time to apply 5175, each rectangle's query time from a cold cache (reads and bytes too, since the SSD's latency is
+  what transfers), the union query's. What it cannot show: the external drive's speed, and fourteen years of attic
+  (one day here). XML goes to a bind mount, not into Docker's disk (which never shrinks by itself). Docker may take
+  46 GB; stop the container before a 30 GB recount.
