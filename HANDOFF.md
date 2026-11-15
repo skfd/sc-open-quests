@@ -1560,9 +1560,10 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   `drop_caches`; clip edge and midnight (`[date:]` by element timestamp against a cut by sequence) are expected sources
   of differences that are not Overpass's fault (none appeared). Its suggested real-attic test on overpass.private.coffee
   failed: 504s after 109-262 s and no answer to a tiny query in 90 s; stopped after 5 requests.
-- **Batch engine speed-up: merged into main (11-15, 02:55; the entry below was written before).** `batch-speed`
-  rebased and fast-forwarded; main's engine rebuilt; 93 engine tests pass on main, SnapshotReproductionTest among
-  them. **The 13:15 daily run now counts with this engine and pushes its data as usual** (its snapshots equal the old
+- **Batch engine speed-up: merged into main (11-15, 02:55 and 03:10; the entry below was written before).**
+  `batch-speed` rebased and fast-forwarded twice (the second time AddHousenumber's twin: 79 s to 30 s of its CPU a
+  file, f0 now 117 s against 245 s, 2.1 times); main's engine rebuilt; 93 engine tests pass on main,
+  SnapshotReproductionTest among them. **The 13:15 daily run now counts with this engine and pushes its data as usual** (its snapshots equal the old
   engine's on Ontario; the pause target and two cells at once are `world_cells.py`'s settings only, the daily runs
   keep their launcher). Not pushed by this session. Since the entry below: `world_cells.py count` runs one engine
   by default (one engine with two cells 243 s for two files, two engines side by side 223 s at 44 GB: the CPU is the

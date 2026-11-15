@@ -3645,10 +3645,11 @@ arrays and strings), walked by every marking cycle, and each cell allocated thre
 | `-XX:MaxGCPauseMillis=5000` (a larger young generation, less copying; `world_cells.py` sets it, the launcher the daily runs share does not: it is measured on a cell file at 30 GB only) | 145 s | 1,817 s |
 | **two cells at once** (`-Dopenquests.areaCities=2`, `world_cells.py`'s setting) | **123 s** | 1,912 s |
 | three cells at once, 30 GB / 40 GB | 120 s / 118 s | 2,032 s / 2,016 s |
+| two cells, and AddHousenumber's twin measuring only the areas that hold an address node (its step 5 measured and sorted every area of a city; the sort is stable, so the few kept come in the same order: 79 s to 30 s of its CPU) | **117 s** | 1,893 s |
 
 Single runs; wall time varies by about 5% between equal runs.
 
-- **2.0 times on f0** (245 s to 123 s). With `--dump-state`: 272 s to 172 s, `state.bin` the same 31,695,753 rows.
+- **2.1 times on f0** (245 s to 117 s; f1 110 s). With `--dump-state`: 272 s to 172 s, `state.bin` the same 31,695,753 rows.
   A daily-style run (Ontario's 53 cities on the 11-13 clip, with notes, parts and the tile grid): 78 s to 54 s, the
   snapshot equal and the grid files byte for byte.
 - **Cells at once needed the memory work first.** At the start three at once gained 6% and cost 6-12 full collections;
