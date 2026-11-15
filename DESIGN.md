@@ -4511,3 +4511,54 @@ snapshot's 85 GB. Not measured at that size.
 **Next:** the node file by id and the 108 GB timing of passes 1 and 2 on `history-261102.osh.pbf` at a date (the
 owner allowed it on C: after this proof; the file deleted after). Before or with it: the working set logged at each
 phase. Then the spill-file memory fix.
+
+### Passes 1 and 2 on the planet, the node places in a file by id: 53 minutes (11-15, 17:26-18:23; owner: "go ahead")
+
+`tilestore ptime --pbf history-261102.osh.pbf --at 2026-11-02T00:00:00Z --nodes .scratch/planet-time/planet.loc`
+(`tilestore/src/ptime.rs`; log `logs/planet-ptime.log`, figures `.scratch/planet-time/planet.loc.json`). It is the
+planet cut's unknown 2: the history file read at a date, every node's place written at 8 bytes an id, the file then
+mapped and every way's nodes found in it and its tiles computed (`keys_of_way`, z14). Nothing is spilled, no tagged
+node or member way is written, no store. The node file: latitude plus 2^31 and longitude, little-endian, eight zero
+bytes for "no node"; written in id order in runs, a seek where ids are more than 4,096 apart. Deleted at the end.
+
+**One run, 24 threads, another session's engine runs on the machine at the same time:**
+| phase | seconds | working set | private bytes | what |
+|---|---|---|---|---|
+| blob index | 284.1 | 0.22 GiB | 0.26 GiB | 2,406,776 blobs, one header read each, on one thread |
+| pass 1, nodes | 630.0 | 0.32 GiB (peak 0.60) | 0.63 GiB | 16,706,092,276 versions read, 10,975,350,797 nodes at the date (298,913,371 tagged); node file 106.84 GiB (114.7 GB), 49,267 seeks |
+| node file to disk | 2.0 | | | `sync_all` |
+| pass 2, ways | 2,554.4 | 65.11 GiB (peak 65.64) | 0.95 GiB | 2,479,548,086 versions read, 1,229,012,042 ways, 13,078,570,851 refs, 1,393,086,909 (way, tile) pairs |
+| **in all** | **3,470 (57.8 min)** | | | passes 1 and 2: **3,184 s, 53 min** |
+
+**Against the threshold (both passes within 4 hours pass, over 12 hours fail): passed, by more than four times.**
+The node file by id works on this machine with the file (107 GiB) larger than what the OS can keep of it: pass 2's
+working set is the mapped file's pages in memory, 65 GiB; the program's own memory stayed under 1 GiB in both
+passes. Pass 2 took four times pass 1 for a seventh of the versions. Whether it waited on the disk or on the
+processors was not measured (no CPU time or disk figures were taken), so what a faster disk or more memory would
+change is not known.
+
+**What this run does not include**, so it is not the planet cut's time: pass 0 (the relations, and with them
+the relation blocks' memory, which on Berlin was where the allocator hurt); the spill (every way written with its
+places, about 13 bytes a ref, on one thread as coded); the tagged-node and member-way files; the needs; the buckets
+(on Germany the largest share: 389 of 630 s). The blob index is 4.7 minutes on its own and would be read once.
+
+**Settled by it, for 2026-11-02:**
+- **No object is given twice at this date** among nodes and ways (`notIncreasing` 0 in both passes), though the file
+  has 61 node versions and 610 way versions older than the one before. Relations were not read.
+- **Every ref has a node:** 0 of 13.08 billion refs without a place (the file is the planet, so this is the
+  node file and the lookup agreeing with the data, at full size).
+- **The antimeridian: no way has two nodes in a row more than 180 degrees of longitude apart.** So the segment
+  rule's whole-row case does not arise from a way stepping across 180 degrees. One way does have 16,384 tiles, a
+  whole row at z14; which way was not looked up (a line of latitude drawn round the globe with nodes less than 180
+  degrees apart would give exactly that; not verified).
+- **Refs: 13.08 billion, not the 14.5 billion estimated,** so the spill as coded is about 167 GB, not 185 GB
+  (12.8 bytes a ref). The way-tiles index has 1.393 billion pairs, 1.134 a way (the clip: 1.057, Germany: 1.085).
+- **Node ids reach 14.34 billion,** so the node file is 114.7 GB; the table in "The planet cut, designed" said 108.
+
+**Not proven at this size:** the tiles themselves. The counts were held against `scut --at` on Berlin only (the
+same nodes, ways, refs and pairs through a sparse node file); the planet's 1.39 billion pairs have nothing to be
+held against until a planet store exists (unknown 5).
+
+**Next:** the spill-file memory fix (spill files per z7 or z8 cell, or fewer buckets at once, with the working set
+now logged per phase by `ptime::memory`), then the spill's coding and the passes' single threads; the whole cut
+still waits on disk (node file 115 GB, spill about 167 GB, store 97-136 GB with its indexes).

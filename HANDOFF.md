@@ -1824,22 +1824,19 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   holds the logs and `cmp-*.json`; its PBFs and stores are deleted. **Next: the node file by id and the 108 GB
   timing of passes 1 and 2 on `history-261102.osh.pbf` with `--at`** (allowed on C:, the file deleted after; log
   the working set per phase with it), then the spill-file memory fix. The update in Rust is independent.
-- **The planet timing of passes 1 and 2: RUNNING since 11-15 17:26 (owner: "go ahead").**
-  `tilestore/target/release/tilestore.exe ptime --pbf ~/Code/.osm-data/planet/history-261102.osh.pbf --at
-  2026-11-02T00:00:00Z --nodes .scratch/planet-time/planet.loc`, log `logs/planet-ptime.log`, result
-  `.scratch/planet-time/planet.loc.json` (`tilestore/src/ptime.rs`). It writes every node's place at 8 bytes an id
-  (lat + 2^31 and lon, zeros: no node), then maps the file and finds every way's nodes in it and computes its
-  tiles; nothing spilled, no store. It logs seconds, working set and private bytes per phase, and counts ways with
-  nodes over 180 degrees apart (the antimeridian unknown) and ids not increasing at the date. **The node file is
-  about 114 GB, not 108:** node ids reach 14.24 billion. It deletes the file at the end; **if the run died,
-  delete `.scratch/planet-time/planet.loc` by hand** (C: had 260 GB free before). Proven on Berlin first (sparse
-  file, `--sparse --keep`): 7,949,064 nodes, 1,337,301 ways, 10,438,110 refs, 1,398,340 pairs, the same as
-  `scut --at`. **It was not alone on the machine for almost any of its 58 minutes (it ended 18:23, 3,480 s):**
-  the engine session, not knowing of it, ran f0 counts and checks from 17:23 to about 18:15 (up to 24 threads
-  and 30 GB each, one after another) and then two engine test suites; around 18:10 no memory was free. So its
-  seconds are an upper bound: alone it would be faster by an amount nobody measured. **And from 18:25 the
-  engine session runs ten more f0 counts (`.scratch/batch-speed/quiet6.sh`, about 15 minutes; it waits while
-  a `tilestore` or `osmium` process exists, and only then): do not time anything until `.scratch/batch-speed/q6.out`
-  ends with "ended".** Threshold agreed
-  earlier: both passes within 4 h pass, over 12 h fail. Then: write the result into
-  DESIGN.md ("The history file read at a date", after it), then the spill-file memory fix.
+- **The planet timing of passes 1 and 2: done, 53 minutes, passed (11-15, 17:26-18:23; owner: "go ahead").**
+  DESIGN.md, "Passes 1 and 2 on the planet, the node places in a file by id". `tilestore ptime --pbf
+  history-261102.osh.pbf --at 2026-11-02T00:00:00Z --nodes F.loc` (`tilestore/src/ptime.rs`; log
+  `logs/planet-ptime.log`, figures `.scratch/planet-time/planet.loc.json`). Blob index 284 s (2.4M blobs), **pass 1
+  630 s** (16.7 billion versions read, 10,975,350,797 nodes, the node file 114.7 GB), **pass 2 2,554 s**
+  (1,229,012,042 ways, 13.08 billion refs, 1.393 billion way-tile pairs); the program's own memory under 1 GiB,
+  pass 2's working set 65 GiB of the mapped node file. Threshold was 4 h pass, 12 h fail. One run, another
+  session's engine runs beside it; whether pass 2 waited on disk or CPU was not measured. **Not the cut's time:**
+  no pass 0, no spill, no tagged-node or member-way files, no buckets. **Settled for 2026-11-02:** no node or way
+  is given twice at this date (relations not read); every ref has a node; no way has two nodes in a row over 180
+  degrees apart (one way has a whole row of 16,384 tiles, not looked up); refs are 13.08 billion, so the spill as
+  coded is about 167 GB; node ids reach 14.34 billion. **The node file is deleted** (C: 259 GB free). Checked
+  below planet size only: Berlin through a sparse node file gives `scut --at`'s nodes, ways, refs and pairs.
+  **Next: the spill-file memory fix** (Germany's 33.4 GiB; `ptime::memory` logs working set and private bytes),
+  then the spill's coding and the single-threaded spilling. The whole cut waits on disk: node file 115 GB, spill
+  about 167 GB, store 97-136 GB. The update in Rust is independent.
