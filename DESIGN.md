@@ -3897,15 +3897,21 @@ of 8,000 of one kind, dense nodes with version and timestamp, zlib blobs made on
 | Overpass, this machine (above) | | | | about 40 s (30 s selection) |
 
 So the "few seconds" handoff holds, with room: writing the 80 MB PBF takes 0.6 s, and the engine reads it as it
-reads any clip (13.6-14.7 s for the recount, the JVM's start included). **A date costs about 15 s, almost all of it
-the engine; both dates about 30 s, against about 80 s of Overpass plus the engine.** A reader of the tile format
-inside the engine would save under a second: not worth building.
+reads any clip (13.6-14.7 s for the recount, the JVM's start included). **Reading a date costs about 15 s, almost
+all of it the engine; both dates about 30 s, against about 80 s of Overpass plus the engine. That compares reads
+only:** Overpass's figure is from a store that keeps itself current, while the tile store's day also needs its
+update (9-10 min in Python on the clip, not built in Rust) and a planet cut that does not exist. A reader of the
+tile format inside the engine would save the 0.6 s write and part of the engine's own decoding (its node and way
+passes are 1.9 s and 2.9 s here, decoding and matching together, not split): a few seconds at most, not measured,
+not worth building now.
 
 *What the figure does not show.* The files were in the OS cache (the store was written minutes before): a cold read
-is 101 MB in 331 tile reads and 15,643 relation blob reads, not measured. Everything is held in memory (8.3M objects
-here); a world day's 0.4-2.1 billion objects per date (the estimate in "Overpass with attic") would be read region
-by region, and at this run's 8M objects a second that is 1-4 minutes a date on one process, a projection from one
-run of one size.
+is 101 MB in 331 tile reads and 15,643 relation blob reads, not measured; the only hint is generation 1's tile
+phase, 0.58 s against 0.26 s, on packs read less recently. Everything is held in memory: **849 MiB peak** for these
+8.3M objects (sampled every 20 ms). This run's rate is 8M objects a second; what a world day's read costs is not
+projected from it (one run, one size, cached files, and its 0.4-2.1 billion objects per date would have to be read
+region by region). **A known limit of the writer:** blocks are cut by count (8,000) and not by size; the format
+wants a blob under 32 MiB uncompressed, which 8,000 very large relations could pass. Not met here, not guarded.
 
 **Next:** the update in Rust (first the Python `update` on a Rust-cut store, then `storecmp.py --ga 1 --gb 1`),
 then the planet cut's design.

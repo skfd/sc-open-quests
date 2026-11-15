@@ -1666,7 +1666,11 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   40 s), of which the PBF write 0.6 s; the PBF writer is ours (`tilestore/src/pbf.rs`). **Exact three ways:** against
   the Python `read`'s PBF object for object (`tools/stream/tilecheck/pbfcmp.py`: 8,269,618 objects, 0 different); the
   engine's recount at 11-12, 1,114,046 rows, 0 different; and generation 1 of the Python store (the updated one)
-  read by Rust and recounted at 11-13, 1,116,244 rows, 0 different. A date is now about 15 s, nearly all engine. Not
-  measured: a cold read (the files were cached), and anything larger than these rectangles. Runs in
-  `.scratch/tiles/s12-rs/`, `s13-rs/`. **Next, proposed:** the update in Rust (first act: the Python `update` on
+  read by Rust and recounted at 11-13, 1,116,244 rows, 0 different. Reading a date is now about 15 s, nearly all
+  engine, 849 MiB peak for the read. **That is the read only:** against Overpass the tile store still owes its
+  daily update in Rust (9-10 min in Python on the clip) and the planet cut, which is the piece that could still
+  sink it. Not measured: a cold read (the files were cached), and anything larger than these rectangles. The PBF
+  writer cuts blocks by count, not size (a blob must stay under 32 MiB; not guarded). The handoff argument for
+  Kotlin is settled by this (0.6 s); planet memory is the open one. **For the owner to revisit, not decided here:**
+  whether this changes the Overpass and drive plan. Runs in `.scratch/tiles/s12-rs/`, `s13-rs/` (can go). **Next, proposed:** the update in Rust (first act: the Python `update` on
   `store-rs`, then `storecmp.py --ga 1 --gb 1`), then the planet cut's design.
