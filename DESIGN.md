@@ -3563,15 +3563,36 @@ bulk is ways and nodes over the big boxes, not relations).
 *Cost here* (internal NVMe; timings vary up to 2x between identical runs while other work runs):
 - Load of the 1.64 GB clip: 1,842 s, single-threaded; db 13.7 GB (8.4x the PBF). Day diff 5175 (the whole planet's day,
   so worldwide objects too): 409 s; db 18.7 GB after. A planet db takes a daily diff in minutes (dev.overpass-api.de keeps
-  up minutely); not measured on a planet-size db.
+  up minutely); not measured on a planet-size db, nor on the external drive.
 - One union query per date: 84-206 s warm, 86-113 s cold, of which most is writing 1.1 GB of XML (16k read requests,
   0.8 GB read from cold). XML to PBF (61 MB): 10-16 s. The engine on it: 21-23 s (48 s under load).
 - Each rectangle alone, 103 queries: current 87 s warm / 169 s cold; dated 130 s warm / 221 s cold (median 1.07 s warm,
-  1.9 s cold; 0.3-0.5 s of each is `docker exec`). **Dated costs 30-50% more than current** on a db with one day of attic.
-  The 65 rectangles under 1 km2 still take about 1.7 s each cold: a per-query floor, so a world day must batch rectangles
-  into union queries (per file or region), not query thousands one by one.
+  1.9 s cold; timed inside the container). **Dated costs 30-50% more than current** on a db with one day of attic.
+  The 65 rectangles under 1 km2 still take about 1.7 s each cold. That is selection work, not a floor (a trivial query
+  takes 0.02 s): each small box still brings its relations' member ways and the far nodes of long ways. The union
+  selects everything in 30 s, where the 103 alone add to 130-190 s warm (their results overlap), so a world day batches
+  rectangles into union queries (per world file or region), not one query each.
 - Reads from cold: 306k-361k requests, 18-20 GB, for the 103 alone; the union 16k requests. At a USB4 NVMe's latency
-  (some tens of microseconds more than internal) that adds seconds, not minutes: the external drive is not the limit.
+  (some tens of microseconds more than internal) that adds seconds, not minutes, on this 19 GB db with one day of attic;
+  a 708 GB db reads more per query, which only the real clone on the real drive will show.
+- **Where the union's time goes** (dated, warm; `tools/stream/overpass/split.py`, `.scratch/overpass/full/split-dated.json`):
+  selection alone (`out count;`) 30 s for 4,966,980 objects; with the XML written inside the container 50 s; **piped
+  straight into osmium inside the container, a stamped, sorted PBF in 36 s + 1.6 s**. The 84-206 s above (and their 2x
+  spread) were the Windows bind mount taking 1.1 GB of XML: the reader must convert inside the container (or WSL) and hand
+  over only the PBF (64 MB). So a date costs about 40 s here for these rectangles, both dates about 80 s.
+- **In parallel** (the 103 alone, dated, warm, to /dev/null): 207 s one at a time, 71 s four at a time (2.9x), 59 s eight
+  at a time (3.5x). Overpass serves concurrent queries; past four the db's reads or this machine's other load limit it.
+- No answer carried a `<remark>` (Overpass reports timeouts and memory limits there with exit 0; the reader must check
+  for it, since the staged runs are proven complete only by their recounts).
+- **A world day, estimated, not measured.** Europe-west's tier 2 (the files of Dublin, Lisboa and London, 2.46M elements)
+  asked 15-298 km2 of rectangles a day over 11-09..11-13; 11-13's 412 km2 padded gave 4.97M objects per date. The world's
+  seed has 1,061M elements, 430 times as many. Scaled linearly (these are urban edit hotspots, and at world scale
+  overlapping rectangles merge, so this leans high): 0.4-2.1 billion objects per date, 0.9-4.4 h per date at this
+  machine's 7.5 microseconds an object on one query stream, **15 min to 1.3 h per date at four streams, 0.5-2.5 h for a
+  world day's two dates**; the engine on the same data adds about 10-50 min per date (the world count ran at about 1.4
+  microseconds an object). That fits a day, but tier 2 at world scale reads perhaps a fifth of the planet twice a day:
+  the store's speed matters less than how much ground the cover asks for. To measure on the real db: one world file's
+  rectangles as one union query.
 - Against the tile store (Python prototype): its read of these rectangles was 34-45 s (31-41 s of it pyosmium writing a
   PBF); Overpass gives both dates in about 3.5-4 min with conversion. Fine for europe-west; for the world, the time goes
   with the output's size (about 10-25 MB of XML a second), which goes with the rectangles' area, not their count.

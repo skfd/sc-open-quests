@@ -1543,8 +1543,10 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   t2n's 103 rectangles: **0 rows different in all three stages** (11-12 current, 11-13 after diff 5175, 11-12 by
   `[date:]`), so one attic db answers D and D-1 exactly. Load of the 1.64 GB clip 31 min (db 13.7 GB, 8.4x); the planet's
   day diff 409 s; a union query per date 84-206 s (mostly 1.1 GB of XML), conversion 10-16 s; dated 30-50% slower than
-  current; a per-query floor of about 1-2 s, so a world day batches rectangles. The external drive's latency is not the
-  limit. **Drive to buy: 2 TB** (the attic clone is about 708 GB now, not 400). Not shown: speed with 14 years of attic
+  current; small boxes still cost 1-2 s each in selection, so a world day batches rectangles into union queries.
+  Follow-up (00:40): the union's 84-206 s was mostly the Windows bind mount; **piped into osmium inside the container a
+  date is about 40 s** (selection 30 s); four queries at a time 2.9x faster. A world day **estimated** (not measured) at
+  0.5-2.5 h of Overpass at four streams plus 10-50 min of engine per date, reading perhaps a fifth of the planet per date. **Drive to buy: 2 TB** (the attic clone is about 708 GB now, not 400). Not shown: speed with 14 years of attic
   (the public server was too loaded to tell). **Still up:** container and volume `opbench-full` (18.7 GB in Docker's
   VHDX, which does not shrink by itself); remove with `docker rm -f opbench-full; docker volume rm opbench-full`.
   **Next, the owner's:** buy the drive (2 TB NVMe in a USB4 enclosure), then: the clone (`download_clone.sh --meta=attic`,
