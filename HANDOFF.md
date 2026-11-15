@@ -1391,3 +1391,9 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   until the disk grows. And: push the commits since the last push.
 - **The owner's answers (11-14, 19:10):** next for tier 2: **measure smaller tiles first** (z15/z16, then an
   adaptive split from the two); **push: yes**.
+- **Smaller tiles, running (11-14, 19:07).** The zoom is a setting now (`OPENQUESTS_TILE_Z`; a store records its own
+  and refuses another), the update's region is the clip polygon (`--polygon`), tests pass at z14/15/16.
+  `.scratch/tiles/chain-z.sh 15` and `16` (logs `logs/tiles-z15.log`, `tiles-z16.log`) cut, update and check stores at
+  z15 and z16; then `chain-z.sh 14 update-only` reruns z14's update with the polygon, and `.scratch/tiles/adaptive.py
+  .scratch/tiles .scratch/tiles/ref/cities.json` sets uniform z14/15/16 against an adaptive split (z16 children of
+  any z14 tile over 64-512 KB): tiles, bytes, the day's write, the read for the day's rectangles.
