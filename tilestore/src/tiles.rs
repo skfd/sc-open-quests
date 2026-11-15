@@ -8,8 +8,13 @@ use std::f64::consts::PI;
 /// web mercator tile coordinates at z, fractional (tiles.py frac_xy)
 #[inline]
 pub fn frac_xy(lat7: i32, lon7: i32, nt: f64) -> (f64, f64) {
-    let lat = (lat7 as f64 / 1e7).clamp(-85.0511, 85.0511);
-    let lon = lon7 as f64 / 1e7;
+    frac_deg(lat7 as f64 / 1e7, lon7 as f64 / 1e7, nt)
+}
+
+/// the same from degrees
+#[inline]
+pub fn frac_deg(lat: f64, lon: f64, nt: f64) -> (f64, f64) {
+    let lat = lat.clamp(-85.0511, 85.0511);
     let fx = (lon + 180.0) / 360.0 * nt;
     let r = lat * (PI / 180.0);
     let fy = (1.0 - (r.tan() + 1.0 / r.cos()).ln() / PI) / 2.0 * nt;

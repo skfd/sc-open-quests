@@ -3,12 +3,15 @@
 //! so the Python reader and tools/stream/tilecheck/storecmp.py work on it unchanged.
 //!
 //!   tilestore cut --pbf X.osm.pbf --out S --day 2026-11-12 [--z 14]
+//!   tilestore read --store S [--gen -1] --cities C.json [--base DIR] [--ring 300] --out Y.osm.pbf [--stamp T]
 //!
 //! Everything is held in memory: right for a clip, not for the planet (the planet cut is not built).
 
 mod clip;
 mod cols;
 mod npy;
+mod pbf;
+mod read;
 mod tiles;
 
 use rayon::prelude::*;
@@ -30,9 +33,25 @@ fn arg(args: &[String], name: &str) -> Option<String> {
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
-    if args.get(1).map(String::as_str) != Some("cut") {
-        eprintln!("usage: tilestore cut --pbf X.osm.pbf --out S --day D [--z 14]");
-        std::process::exit(2);
+    match args.get(1).map(String::as_str) {
+        Some("cut") => {}
+        Some("read") => {
+            return read::read(&read::Args {
+                store: PathBuf::from(arg(&args, "--store").expect("--store")),
+                gen: arg(&args, "--gen").map(|s| s.parse().unwrap()).unwrap_or(-1),
+                cities: PathBuf::from(arg(&args, "--cities").expect("--cities")),
+                base: PathBuf::from(arg(&args, "--base").unwrap_or_else(|| ".".into())),
+                ring: arg(&args, "--ring").map(|s| s.parse().unwrap()).unwrap_or(300.0),
+                out: PathBuf::from(arg(&args, "--out").expect("--out")),
+                stamp: arg(&args, "--stamp"),
+            });
+        }
+        _ => {
+            eprintln!(
+                "usage: tilestore cut --pbf X.osm.pbf --out S --day D [--z 14]\n       tilestore read --store S [--gen -1] --cities C.json [--base DIR] [--ring 300] --out Y.osm.pbf [--stamp 2026-11-12T00:00:00Z]"
+            );
+            std::process::exit(2);
+        }
     }
     let pbf = PathBuf::from(arg(&args, "--pbf").expect("--pbf"));
     let out = PathBuf::from(arg(&args, "--out").expect("--out"));
@@ -57,7 +76,7 @@ fn cut(pbf: &Path, out: &Path, day: &str, z: u32) {
     let t0 = Instant::now();
     let mut phases: Vec<(&str, f64)> = Vec::new();
     let mut t = Instant::now();
-    let mut lap = |name: &'static str, t: &mut Instant, phases: &mut Vec<(&str, f64)>| {
+    let lap = |name: &'static str, t: &mut Instant, phases: &mut Vec<(&str, f64)>| {
         let s = t.elapsed().as_secs_f64();
         log(&format!("  {name}: {s:.1} s"));
         phases.push((name, s));

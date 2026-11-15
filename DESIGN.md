@@ -3869,3 +3869,43 @@ checked for exactness.
 `osmpbf` crate only reads, so the writer is ours to choose or write); adaptive tiles (z14 only here, `--z` up to 16).
 **Next, in this order:** the read (331 tiles to a PBF the engine takes, timed against Overpass's 40 s and Python's
 34-55 s), then the update, then the planet cut's design with one world file measured.
+
+### The read in Rust (11-15, 14:10-14:25; owner: "Yes, the read")
+
+`tilestore read --store S [--gen -1] --cities C.json [--base DIR] [--ring 300] --out Y.osm.pbf [--stamp T]`
+(`tilestore/src/read.rs`, `pbf.rs`): the tiles under the cities' boxes and ring (the same keys as `tiles.py
+tiles_of`), decoded on all threads, one copy of each id kept, every kept relation's member ways from the relation
+store, written as a PBF the engine takes. The `osmpbf` crate only reads, so the writer is ours (`pbf.rs`, about 250
+lines, the protobuf encoded by hand): a header with `osmosis_replication_timestamp` and `Sort.Type_then_ID`, blocks
+of 8,000 of one kind, dense nodes with version and timestamp, zlib blobs made on all threads.
+
+*Exact, three ways* (t2n's 103 rectangles, 331 tiles):
+| check | result |
+|---|---|
+| the Rust PBF against the Python `read`'s PBF of the same store, object for object (`tools/stream/tilecheck/pbfcmp.py`: type, id, version, timestamp, place, tags in order, refs, members and roles, the header's stamp) | 8,269,618 objects (6,847,049 nodes, 1,406,926 ways, 15,643 relations), **0 different** |
+| the engine's recount of it at 11-12 against `ref/old` | 1,114,046 rows, **0 different** |
+| generation 1 of the **Python** store (11-12 cut, updated by diff 5175: two packs, two relation packs) read by Rust at 11-13, recounted against `ref` | 1,116,244 rows, **0 different** |
+
+`pbfcmp.py` fails as it should on the 11-12 file against the 11-13 one.
+
+*Speed: about 1 s a date, against 34-55 s in Python and about 40 s from Overpass.*
+| | tiles read and decoded | merge | PBF written | in all |
+|---|---|---|---|---|
+| Python (`tilestore.py read`) | 2.2-2.6 s | 1.3-1.9 s | 30-50 s (pyosmium) | 34-55 s |
+| Rust, generation 0, three runs | 0.26-0.27 s | 0.13-0.14 s | 0.57-0.60 s | **0.97-1.00 s** |
+| Rust, generation 1 of the Python store | 0.58 s | 0.15 s | 0.57 s | 1.30 s |
+| Overpass, this machine (above) | | | | about 40 s (30 s selection) |
+
+So the "few seconds" handoff holds, with room: writing the 80 MB PBF takes 0.6 s, and the engine reads it as it
+reads any clip (13.6-14.7 s for the recount, the JVM's start included). **A date costs about 15 s, almost all of it
+the engine; both dates about 30 s, against about 80 s of Overpass plus the engine.** A reader of the tile format
+inside the engine would save under a second: not worth building.
+
+*What the figure does not show.* The files were in the OS cache (the store was written minutes before): a cold read
+is 101 MB in 331 tile reads and 15,643 relation blob reads, not measured. Everything is held in memory (8.3M objects
+here); a world day's 0.4-2.1 billion objects per date (the estimate in "Overpass with attic") would be read region
+by region, and at this run's 8M objects a second that is 1-4 minutes a date on one process, a projection from one
+run of one size.
+
+**Next:** the update in Rust (first the Python `update` on a Rust-cut store, then `storecmp.py --ga 1 --gb 1`),
+then the planet cut's design.

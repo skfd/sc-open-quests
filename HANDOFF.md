@@ -1659,3 +1659,14 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   is the command above. Main is 12 commits ahead of origin: the next daily run pushes them. **Next, proposed:** the read in
   Rust (331 tiles to a PBF, the engine on it, timed against Overpass's 40 s), then the update, then the planet
   cut's design and one world file. The Overpass plan and the drive stand as they were.
+- **The read in Rust: exact, about 1 s a date (11-15, 14:10-14:25; owner: "Yes, the read").** DESIGN.md, "The read
+  in Rust". `tilestore/target/release/tilestore.exe read --store .scratch/tiles/store-rs --cities
+  .scratch/tiles/ref/cities.json --out X.osm.pbf --stamp 2026-11-12T00:00:00Z` (`--gen N` for another generation;
+  run from the repo root, or pass `--base`): **0.97-1.00 s** for t2n's 331 tiles (Python 34-55 s, Overpass about
+  40 s), of which the PBF write 0.6 s; the PBF writer is ours (`tilestore/src/pbf.rs`). **Exact three ways:** against
+  the Python `read`'s PBF object for object (`tools/stream/tilecheck/pbfcmp.py`: 8,269,618 objects, 0 different); the
+  engine's recount at 11-12, 1,114,046 rows, 0 different; and generation 1 of the Python store (the updated one)
+  read by Rust and recounted at 11-13, 1,116,244 rows, 0 different. A date is now about 15 s, nearly all engine. Not
+  measured: a cold read (the files were cached), and anything larger than these rectangles. Runs in
+  `.scratch/tiles/s12-rs/`, `s13-rs/`. **Next, proposed:** the update in Rust (first act: the Python `update` on
+  `store-rs`, then `storecmp.py --ga 1 --gb 1`), then the planet cut's design.
