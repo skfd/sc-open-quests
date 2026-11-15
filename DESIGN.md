@@ -3414,3 +3414,52 @@ was kept and before relations were narrowed, wrote 5,664 tiles and 814 MB, half 
   about 9 min a day on this clip (the planet diff's reading alone 2-3 min), the read 34-45 s, 31-41 s of it pyosmium
   writing the PBF. A world store needs the cut, the update and the read in compiled code (the engine's parallel blob
   reader did this clip's 128M nodes in 6.7 s), and the engine reading the joined tiles directly instead of a PBF.
+
+## Smaller tiles for the tile store (2026-11-14, evening; owner: "measure smaller tiles first")
+
+A day rewrote 23% of the z14 store's bytes in 4.9% of its tiles (above): any edit rewrites its whole tile, and the
+tiles a day touches are the dense city-centre ones. Measured here: uniform z15 and z16 stores, and an adaptive split
+(a z14 tile over a threshold held as its 16 z16 children) estimated from the z14 and z16 stores. Same clip, same day.
+
+*Made for it.* The zoom is a setting (`OPENQUESTS_TILE_Z`; a store records its own and refuses another), tests pass at
+z14, z15 and z16. The update's region (the prototype's stand-in for a world with no edge: the planet diff's changes
+outside the clip stay out) is now the tiles the store holds plus the tiles under the clip polygon's parts; the earlier
+z14 runs took the store's tiles grown by one, which at z16 is too little ground and left out tiles a moved node's way
+newly crossed, and a first polygon-only region left out the far nodes of ways the clip holds whole. With it, z14's day
+writes 2,591 tiles (461 MB), none new at the edge. Scripts: `.scratch/tiles/chain-z.sh Z [update-only]` (logs
+`logs/tiles-z14.log`, `tiles-z15b.log`, `tiles-z16.log`), the table by `.scratch/tiles/adaptive.py`.
+
+*Exact at every zoom.* D through each updated store recounts **1,116,244 rows, 0 different**; the tiles under the
+rectangles (331 at z14, 1,004 at z15, 3,367 at z16) are byte for byte the fresh 11-13 cut's; every other differing
+tile touches the polygon's edge, except 3 at z15 and 7 at z16 wholly inside, and every node those miss is absent from
+the 11-12 clip: two ways in Vilnius (v3, v4) drawn into the city box on the day reuse old nodes from outside it, which
+the diff does not carry (they did not change) and the clip's node store never had. `planet.loc` has every node, so a
+world store cannot meet this.
+
+| layout | tiles | GB | written a day | MB | share of bytes | tiles read | MB read |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| z14 | 59,026 | 2.00 | 2,591 | 461 | 23.1% | 331 | 92 |
+| z15 | 167,105 | 2.66 | 4,475 | 285 | 10.7% | 1,004 | 83 |
+| z16 | 496,719 | 4.06 | 8,169 | 198 | 4.9% | 3,367 | 89 |
+| z14, z16 over 64 KB | 167,872 | 2.92 | 5,908 | 194 | 6.6% | 2,782 | 86 |
+| z14, z16 over 128 KB | 121,048 | 2.64 | 4,807 | 205 | 7.8% | 2,408 | 84 |
+| z14, z16 over 256 KB | 83,918 | 2.33 | 3,927 | 250 | 10.7% | 1,510 | 82 |
+| z14, z16 over 512 KB | 65,277 | 2.11 | 3,151 | 338 | 16.0% | 716 | 86 |
+
+(Tiles only; the relation store, 0.22 GB, is the same at every zoom. "Read" is the day's 103 rectangles and their ring,
+dominated by dublin-0's 12 x 7 km. Updates took 6-9 min each in Python at every zoom.)
+
+*What it says.*
+- **Size grows with the zoom** because a way is held whole in every tile it crosses: z15 +33%, z16 +103%. The daily
+  write falls faster than the size grows: z15 halves it, z16 cuts it to a fifth (in MB: 461, 285, 198).
+- **The adaptive split takes the best of both**: z16 children only for z14 tiles over 128 KB is z15's size (+32%) with
+  z16's write (205 MB, 7.8%); over 256 KB is +17% for half z14's write (250 MB). The index stays small (84-121k
+  entries here against z16's 497k; the planet at uniform z16 would be hundreds of millions of index entries).
+- **The read does not care**: 82-92 MB at every layout for these rectangles; more, smaller tiles (up to 3,367) cost
+  index lookups, not bytes.
+- **For the world**, with the split at 256 KB: tiles about 1.33x the planet PBF (1.14 x 1.165), with the relation store
+  about 124 GB beside the PBF's 85 GB; a day's write up to a tenth of it in a clip that is all city centre, less on the
+  planet's average ground (not measured). Keeping D-1 costs one day's write.
+- **The key for an adaptive store**: a quadtree cell (zoom, x, y); a box asks for the cells under it at z14, and a z14
+  cell that is split answers with its z16 children. The cut decides the split from the z14 payload size; a day may
+  leave a tile across the threshold, which only costs a later re-split (the content is the same either way).
