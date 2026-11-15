@@ -3960,7 +3960,8 @@ added, the script was rerun on all 40 ports from the SC v64.1 checkout
 one line, one import and its header.
 
 **Checks.** `same.py`: f0 twice and f1 equal to the third round's engine; f0's state dump the same 31,695,753
-rows; europe-west's 11-15 recount equal to the published snapshot, its grid byte for byte.
+rows; europe-west's 11-15 and Ontario's 11-14 recounts equal to the published snapshots, their grids byte for
+byte (Ontario and one more f0 on the final build, after the last commit).
 `-Dopenquests.verifyFast=true` on Dublin and Lisboa: the twelve ports have no twin, so under that switch
 `nodeIdsIn` builds SC's `HashSet` beside the marks and asks both about every node of the map data, every id
 of the set and every id a port asks about, and stops the run on a difference (`CheckedNodeIds`); the run
@@ -3970,21 +3971,25 @@ random map data whose ways name nodes the map data lacks, failing when those ids
 (`KEEP_OTHER_NODE_IDS`, the test's switch); each of the twelve ports on 300 random `ArrayMapData` against the
 same data seen as plain `MapDataWithGeometry` (no marks, no candidates by key: SC's path), same elements in
 the same order at both clocks, each port finding something; the set of ports that hold `nodeIdsIn` is exactly
-those twelve and none has a fast twin. 105 engine tests, none failing (2 skip in the worktree, as before).
+those twelve and none has a fast twin; the check that `verifyFast` turns on passes on whole sets and throws
+when the lacking nodes' ids are dropped (called with its switch as an argument, so the test does not depend
+on the property). 105 engine tests on main, none failing, SnapshotReproductionTest among them
+(TorontoRegressionTest skips, its extract pruned).
 
 **What it does not show.** The port test cannot fail on the dropped ids, since none of the twelve asks about
 an id that is no node of the map data (the direct test does). The wall gain is not separated from noise.
-London under `verifyFast` and the polar and antimeridian cells: as in the third round. Ontario was not
-recounted this round.
+London under `verifyFast` and the polar and antimeridian cells: as in the third round. The oracle
+(`tools/sc-harness` CheckCustomQuests), which the third round's text said would hold the rewritten ports, was
+not rerun: the ports are held by the tests and recounts above, not against the app's own run.
 
 **Where the time is now** (`d-marks-2`: 82.3 s wall, 1,284 s CPU): the main pass's nodes and ways about 370 s
-of CPU; the cells about 870 s, of which the quest runs are 324 s, so **about 550 s of the cells' CPU is making
+of CPU; the cells about 845 s (the log's cell lines), of which the quest runs are 324 s, so **about 515 s of the cells' CPU is making
 map data and the collector, and no one quest is above 27 s** (the shared searches 33 s together, AddHousenumber
 27, AddMaxHeight 25, AddIsAmenityIndoor 21, AddBarrierOnRoad 19, AddLevelThing 18, CheckExistence 14). More
 quest twins now buy a percent each.
 
 **Next for the engine, none built, in the order of what they could take out.** (1) What the collector is fed
-and the map data's making, the 550 s: profile one cell's allocation again (decoding a block was a sixth of a
+and the map data's making, the 515 s: profile one cell's allocation again (decoding a block was a sixth of a
 run's bytes at midday; `getLastCheckDateKeys` builds its strings for every age test) before choosing. (2)
 `WaysCrossingUtils.groupByNodeIds` behind AddBarrierOnRoad, AddBarrierOnPath and AddCrossing (41 s together
 now; maps of boxed ids to lists of ways; a twin has geometry to keep). (3) Small: five of the twelve ports are
