@@ -1516,7 +1516,8 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
 - **The world's resolution, decided (11-14, 23:12; another session, asked as a wizard):** the owner wants the world
   "daily resolution same as we have for city prototypes", and chose **"same as the cities": monthly points from
   2017-01, daily from the 11-08 seed onward**, not daily back to 2017. Not planned or built. Estimates given, none
-  measured: by batch about 118 world counts of up to 24 h each (3-4 months); by streaming from a 2017-01 seed about
+  measured: by batch about 118 world counts of about 10.5 h each (about 52 days; the 24 h first written here was
+  the 11-10 estimate, the 11-13 run measured 10.5 h, DESIGN.md "The stream: its state"); by streaming from a 2017-01 seed about
   3,600 days at 8-14 min, roughly 4 weeks for tier 1 (every day's diff is applied anyway, so the monthly points cost
   the same as daily ones), needing a full count and a node store at 2017-01 and every day diff since; an untested
   shortcut is a month's diffs merged and applied in one step. Tier 2's history waits on Overpass's measured speed
