@@ -429,9 +429,13 @@ class Engine(val registry: Registry, val cities: List<City>, val parts: List<Par
         timing("nodes", t0, "${nodes.size} nodes")
 
         t0 = System.nanoTime()
-        val memberWays = SortedIdMap(parallelMap(wayStart, relStart) { i ->
-            processWays(decodeBlock(blobs[i]).also { require(it.kind() == BlockKind.WAYS) }, nodes, neededWays)
-        })
+        // the area pass takes its ways off the same read (AreaPass.collectWay): a way's block is decoded once
+        // and each of its nodes looked up once for both passes
+        val area = if (keepNodes) AreaPass(this, blobs, wayStart, relStart, nodes, areaUnit, tagDict!!) else null
+        val wayBlocks = parallelMap(wayStart, relStart) { i ->
+            processWays(decodeBlock(blobs[i]).also { require(it.kind() == BlockKind.WAYS) }, nodes, neededWays, area)
+        }
+        val memberWays = SortedIdMap(wayBlocks.map { it.keptIds to it.keptCoords })
         timing("ways", t0, "${memberWays.size} member ways kept")
 
         t0 = System.nanoTime()
@@ -441,7 +445,9 @@ class Engine(val registry: Registry, val cities: List<City>, val parts: List<Par
         timing("relations", t0, "")
         matchCache?.logStats()
 
-        AreaPass(this, blobs, wayStart, relStart, nodes, memberWays, areaUnit, tagDict ?: TagDict()).run()
+        // the chunks are let go once they are one table: nothing else may hold them while the cities run
+        if (area != null) area.run(memberWays, wayBlocks.mapTo(ArrayList()) { b -> b.areaWays!!.also { b.areaWays = null } })
+        else AreaPass(this, blobs, wayStart, relStart, nodes, areaUnit, tagDict ?: TagDict()).run(memberWays, ArrayList())
         notes?.let { countNotes(it) }
     }
 
@@ -553,29 +559,44 @@ class Engine(val registry: Registry, val cities: List<City>, val parts: List<Par
         return out
     }
 
+    private class WayBlock(val keptIds: LongArray, val keptCoords: Array<LongArray?>, var areaWays: AreaPass.WayChunk?)
+
     private fun processWays(
         b: Osmformat.PrimitiveBlock,
         nodes: NodeStore,
         neededWays: LongArray,
-    ): Pair<LongArray, Array<LongArray?>> {
+        area: AreaPass?,
+    ): WayBlock {
         val ctx = BlockContext(b)
         val keptIds = LongList()
         val keptCoords = ArrayList<LongArray?>()
+        val areaWays = area?.newWayChunk()
         var refs = LongArray(2000)
         var coords = LongArray(2000)
+        var at = IntArray(2000) // each node's place in the node table, or -1
+        val nodeCoords = nodes.coords
         for (g in b.primitivegroupList) for (w in g.waysList) {
             val tagged = w.keysCount > 0
             val needed = neededWays.binarySearch(w.id) >= 0
-            if (!tagged && !needed) continue
+            if (!tagged && !needed && area == null) continue
             val rc = w.refsCount
-            if (refs.size < rc) { refs = LongArray(rc * 2); coords = LongArray(rc * 2) }
+            if (refs.size < rc) { refs = LongArray(rc * 2); coords = LongArray(rc * 2); at = IntArray(rc * 2) }
             var ref = 0L
             var complete = true
             for (i in 0 until rc) {
                 ref += w.getRefs(i); refs[i] = ref
-                val c = nodes[ref]
-                coords[i] = c
-                if (c == NO_COORD) complete = false
+                val p = nodes.indexOf(ref)
+                at[i] = p
+                if (p >= 0) coords[i] = nodeCoords[p] else { coords[i] = NO_COORD; complete = false }
+            }
+            var raw: Map<String, String>? = null
+            if (area != null) {
+                val set = area.citySetOf(coords, rc)
+                if (set != 0) {
+                    raw = tagsOf(w.keysList, w.valsList, ctx.strings)
+                    area.collectWay(areaWays!!, w.id, if (w.hasInfo()) w.info.version else 1, w.info.timestamp * ctx.dateGranularity,
+                        set, refs, at, rc, fitTags("area", "way", w.id, raw))
+                }
             }
             if (needed) { keptIds.add(w.id); keptCoords += if (complete) coords.copyOf(rc) else null }
             if (!tagged) continue
@@ -585,7 +606,7 @@ class Engine(val registry: Registry, val cities: List<City>, val parts: List<Par
 
             val positions = ArrayList<LatLon>(rc)
             for (i in 0 until rc) positions += LatLon(unpackLat7(coords[i]) / 1e7, unpackLon7(coords[i]) / 1e7)
-            val tags = fitTags("main", "way", w.id, tagsOf(w.keysList, w.valsList, ctx.strings))
+            val tags = fitTags("main", "way", w.id, raw ?: tagsOf(w.keysList, w.valsList, ctx.strings))
             val way = Way(w.id, LongArrayAsList(refs.copyOf(rc)), tags,
                 if (w.hasInfo()) w.info.version else 1, w.info.timestamp * ctx.dateGranularity)
             val geometry = geometryOf(WAY) { geometryCreator.create(way, positions) } ?: continue
@@ -600,7 +621,7 @@ class Engine(val registry: Registry, val cities: List<City>, val parts: List<Par
             }
             offer(way, WAY, cityIdx, center)
         }
-        return keptIds.toArray() to keptCoords.toTypedArray()
+        return WayBlock(keptIds.toArray(), keptCoords.toTypedArray(), areaWays)
     }
 
     private fun processRelations(b: Osmformat.PrimitiveBlock, memberWays: SortedIdMap<LongArray>) {

@@ -133,8 +133,6 @@ class AreaPass(
     private val relStart: Int,
     /** every node of the file, from the main pass: with each one's version and time and the tagged ones' tags */
     private val nodes: NodeStore,
-    /** packed coordinates of the member ways of tagged relations, from the main pass */
-    private val memberWays: SortedIdMap<LongArray>,
     private val unit: AreaUnit = AreaUnit.TILES,
     /** the dictionary of the tag strings in [nodes] */
     private val tagDict: TagDict = TagDict(),
@@ -197,8 +195,8 @@ class AreaPass(
         fun refCount(i: Int) = refStart[i + 1] - refStart[i]
     }
 
-    /** the ways of one block, as [collectWays] finds them */
-    private class WayChunk(dict: TagDict) {
+    /** the ways of one block, as [collectWay] is given them */
+    class WayChunk(dict: TagDict) {
         var n = 0
         var ids = LongArray(256); var versions = IntArray(256); var timestamps = LongArray(256); var cities = IntArray(256)
         var refEnd = IntArray(256); var tagEnd = IntArray(256)
@@ -274,15 +272,21 @@ class AreaPass(
     private class RelRec(val id: Long, val members: List<RelationMember>, val tags: Map<String, String>, val version: Int, val timestamp: Long, val cities: Int)
 
     private lateinit var ways: WayCols               // sorted by id
+    /** packed coordinates of the member ways of tagged relations, from the main pass */
+    private lateinit var memberWays: SortedIdMap<LongArray>
     private lateinit var wayIds: LongArray
     private lateinit var relations: List<RelRec>
     private val geometryCreator = ElementGeometryCreator()
 
-    fun run() {
+    /** [wayChunks]: the ways of each way block in the file's order, as the main pass handed them to [collectWay]. */
+    fun run(memberWays: SortedIdMap<LongArray>, wayChunks: MutableList<WayChunk>) {
         if (areaQuests.isEmpty()) return
         if (!AREA_PASS) { log("area pass skipped (-Dopenquests.areaPass=false): the ${areaQuests.size} area quests are not counted"); return }
+        this.memberWays = memberWays
+        require(wayChunks.size == relStart - wayStart) { "area: ${wayChunks.size} way blocks collected of ${relStart - wayStart}" }
         var t0 = System.nanoTime()
-        ways = wayColumnsOf(parallelMap(wayStart, relStart) { collectWays(decodeBlock(blobs[it])) })
+        ways = wayColumnsOf(wayChunks)
+        wayChunks.clear()
         wayIds = ways.ids
         timing("area: ways", t0, "${ways.size} ways touch a city area")
 
@@ -545,30 +549,27 @@ class AreaPass(
     // collection
 
 
-    private fun collectWays(b: Osmformat.PrimitiveBlock): WayChunk {
-        require(b.kind() == BlockKind.WAYS)
-        val ctx = BlockContext(b)
-        val out = WayChunk(tagDict)
-        for (g in b.primitivegroupList) for (w in g.waysList) {
-            val rc = w.refsCount
-            var ref = 0L
-            var set = 0
-            for (i in 0 until rc) {
-                ref += w.getRefs(i)
-                val c = nodeIndex[ref]
-                if (c != NO_COORD) set = citySets.union(set, setAt(unpackLat7(c), unpackLon7(c)))
-            }
-            if (set == 0) continue
-            ref = 0L
-            for (i in 0 until rc) {
-                ref += w.getRefs(i); out.ref(ref)
-                val p = nodes.indexOf(ref)
-                if (p >= 0) markNeeded(p)
-            }
-            out.add(w.id, if (w.hasInfo()) w.info.version else 1, w.info.timestamp * ctx.dateGranularity, set,
-                fitTags("area", "way", w.id, tagsOf(w.keysList, w.valsList, ctx.strings)))
+    fun newWayChunk() = WayChunk(tagDict)
+
+    /** The padded city boxes that hold a node of the way whose nodes' packed coordinates are [coords] (a node
+     *  the file lacks is [NO_COORD]), as a [citySets] id: 0 when the way is in no city's map data. */
+    fun citySetOf(coords: LongArray, n: Int): Int {
+        var set = 0
+        for (i in 0 until n) {
+            val c = coords[i]
+            if (c != NO_COORD) set = citySets.union(set, setAt(unpackLat7(c), unpackLon7(c)))
         }
-        return out
+        return set
+    }
+
+    /** A way of some city's map data ([set] from [citySetOf], not 0), from the main pass's read of its block:
+     *  kept with all its nodes, each of which then plays a part ([at]: its place in [nodes], or -1). */
+    fun collectWay(out: WayChunk, id: Long, version: Int, timestamp: Long, set: Int, refs: LongArray, at: IntArray, n: Int, tags: Map<String, String>) {
+        for (i in 0 until n) {
+            out.ref(refs[i])
+            if (at[i] >= 0) markNeeded(at[i])
+        }
+        out.add(id, version, timestamp, set, tags)
     }
 
     private fun collectRelations(b: Osmformat.PrimitiveBlock): List<RelRec> {
