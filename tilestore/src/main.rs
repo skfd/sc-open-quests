@@ -4,12 +4,16 @@
 //!
 //!   tilestore cut --pbf X.osm.pbf --out S --day 2026-11-12 [--z 14]
 //!       the cut with the whole file in memory: right for a clip, the oracle for the streaming cut
-//!   tilestore scut --pbf X.osm.pbf --out S --day 2026-11-12 [--z 14] [--bucket-z 8] [--keep-spill]
-//!       the streaming cut (stream.rs): three passes and buckets, the planet cut's shape
+//!   tilestore scut --pbf X.osm.pbf --out S --day 2026-11-12 [--z 14] [--bucket-z 8] [--keep-spill] [--at T]
+//!       the streaming cut (stream.rs): three passes and buckets, the planet cut's shape; with --at, of a
+//!       history file as it was at T
+//!   tilestore at --pbf X.osh.pbf --at 2026-10-01T00:00:00Z [--out Y.osm.pbf] [--stamp T]
+//!       a history file at a date, as a snapshot PBF (history.rs)
 //!   tilestore read --store S [--gen -1] --cities C.json [--base DIR] [--ring 300] --out Y.osm.pbf [--stamp T]
 
 mod clip;
 mod cols;
+mod history;
 mod npy;
 mod pairs;
 mod pbf;
@@ -25,6 +29,11 @@ use std::time::Instant;
 
 use clip::Clip;
 use cols::{pack_cols, Col};
+
+/// the system heap serialises large allocations: decoding a history file's relation blocks (many versions of
+/// large relations) on 24 threads took three times as long as on one
+#[global_allocator]
+static ALLOC: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
 pub fn log(msg: &str) {
     eprintln!("{msg}");
@@ -49,7 +58,8 @@ fn main() {
             } else {
                 let bz: u32 = arg(&args, "--bucket-z").map(|s| s.parse().unwrap()).unwrap_or(8);
                 assert!(bz <= z, "a bucket is no finer than a tile");
-                stream::cut(&pbf, &out, &day, z, bz, args.iter().any(|a| a == "--keep-spill"));
+                let at = arg(&args, "--at").map(|s| read::stamp_seconds(&s));
+                stream::cut(&pbf, &out, &day, z, bz, args.iter().any(|a| a == "--keep-spill"), at);
             }
         }
         Some("read") => read::read(&read::Args {
@@ -61,9 +71,15 @@ fn main() {
             out: PathBuf::from(arg(&args, "--out").expect("--out")),
             stamp: arg(&args, "--stamp"),
         }),
+        Some("at") => history::at(
+            &PathBuf::from(arg(&args, "--pbf").expect("--pbf")),
+            &arg(&args, "--at").expect("--at"),
+            arg(&args, "--out").map(PathBuf::from).as_deref(),
+            arg(&args, "--stamp").as_deref(),
+        ),
         _ => {
             eprintln!(
-                "usage: tilestore cut --pbf X.osm.pbf --out S --day D [--z 14]\n       tilestore scut --pbf X.osm.pbf --out S --day D [--z 14] [--bucket-z 8] [--keep-spill]\n       tilestore read --store S [--gen -1] --cities C.json [--base DIR] [--ring 300] --out Y.osm.pbf [--stamp 2026-11-12T00:00:00Z]"
+                "usage: tilestore cut --pbf X.osm.pbf --out S --day D [--z 14]\n       tilestore scut --pbf X.osm.pbf --out S --day D [--z 14] [--bucket-z 8] [--keep-spill] [--at T]\n       tilestore at --pbf X.osh.pbf --at 2026-10-01T00:00:00Z [--out Y.osm.pbf] [--stamp T]\n       tilestore read --store S [--gen -1] --cities C.json [--base DIR] [--ring 300] --out Y.osm.pbf [--stamp 2026-11-12T00:00:00Z]"
             );
             std::process::exit(2);
         }

@@ -56,6 +56,9 @@ pub struct Part {
     pub nid: Vec<i64>,
     pub lat7: Vec<i32>,
     pub lon7: Vec<i32>,
+    /// every node's version and timestamp (the tagged ones' are in tn_ver and tn_ts too)
+    pub n_ver: Vec<i32>,
+    pub n_ts: Vec<i64>,
     pub tn_local: Vec<u32>,
     pub tn_ver: Vec<i32>,
     pub tn_ts: Vec<i64>,
@@ -87,14 +90,60 @@ fn push_tag(out: &mut Vec<u8>, st: &[Vec<u8>], k: usize, v: usize) {
     out.push(0);
 }
 
-pub fn parse(block: &PrimitiveBlock) -> Part {
-    let mut p = Part::default();
-    let st = block.raw_stringtable();
+/// every version in the block, in the order `parse_into` walks it: (kind, id, timestamp in ms, visible)
+pub fn metas(block: &PrimitiveBlock) -> Vec<(u8, i64, i64, bool)> {
+    let mut m = Vec::new();
     for g in block.groups() {
         for n in g.dense_nodes() {
+            let (ms, vis) = n.info().map(|i| (i.milli_timestamp(), i.visible())).unwrap_or((0, true));
+            m.push((0, n.id(), ms, vis));
+        }
+        for n in g.nodes() {
+            let i = n.info();
+            m.push((0, n.id(), i.milli_timestamp().unwrap_or(0), i.visible()));
+        }
+        for w in g.ways() {
+            let i = w.info();
+            m.push((1, w.id(), i.milli_timestamp().unwrap_or(0), i.visible()));
+        }
+        for r in g.relations() {
+            let i = r.info();
+            m.push((2, r.id(), i.milli_timestamp().unwrap_or(0), i.visible()));
+        }
+    }
+    m
+}
+
+pub fn parse(block: &PrimitiveBlock) -> Part {
+    let mut p = Part::default();
+    parse_into(block, |_| 1, &mut p, &mut Part::default());
+    p
+}
+
+/// the block's objects, each where `dest` sends it by its number in the block: 0 nowhere (nothing of it is
+/// copied), 1 into `a`, anything else into `b`
+pub fn parse_into(block: &PrimitiveBlock, mut dest: impl FnMut(usize) -> u8, a: &mut Part, b: &mut Part) {
+    let st = block.raw_stringtable();
+    let mut at = 0usize;
+    macro_rules! part {
+        () => {{
+            at += 1;
+            match dest(at - 1) {
+                0 => continue,
+                1 => &mut *a,
+                _ => &mut *b,
+            }
+        }};
+    }
+    for g in block.groups() {
+        for n in g.dense_nodes() {
+            let p = part!();
             p.nid.push(n.id());
             p.lat7.push(n.decimicro_lat());
             p.lon7.push(n.decimicro_lon());
+            let (ver, ms) = n.info().map(|i| (i.version(), i.milli_timestamp())).unwrap_or((0, 0));
+            p.n_ver.push(ver);
+            p.n_ts.push(ms.div_euclid(1000));
             let before = p.tn_tags.len();
             for (k, v) in n.raw_tags() {
                 push_tag(&mut p.tn_tags, st, k as usize, v as usize);
@@ -102,15 +151,19 @@ pub fn parse(block: &PrimitiveBlock) -> Part {
             if p.tn_tags.len() > before {
                 p.tn_local.push(p.nid.len() as u32 - 1);
                 p.tn_tlen.push((p.tn_tags.len() - before) as u32);
-                let (ver, ms) = n.info().map(|i| (i.version(), i.milli_timestamp())).unwrap_or((0, 0));
                 p.tn_ver.push(ver);
                 p.tn_ts.push(ms.div_euclid(1000));
             }
         }
         for n in g.nodes() {
+            let p = part!();
             p.nid.push(n.id());
             p.lat7.push(n.decimicro_lat());
             p.lon7.push(n.decimicro_lon());
+            let i = n.info();
+            let (ver, ts) = (i.version().unwrap_or(0), i.milli_timestamp().unwrap_or(0).div_euclid(1000));
+            p.n_ver.push(ver);
+            p.n_ts.push(ts);
             let before = p.tn_tags.len();
             for (k, v) in n.raw_tags() {
                 push_tag(&mut p.tn_tags, st, k as usize, v as usize);
@@ -118,12 +171,12 @@ pub fn parse(block: &PrimitiveBlock) -> Part {
             if p.tn_tags.len() > before {
                 p.tn_local.push(p.nid.len() as u32 - 1);
                 p.tn_tlen.push((p.tn_tags.len() - before) as u32);
-                let i = n.info();
-                p.tn_ver.push(i.version().unwrap_or(0));
-                p.tn_ts.push(i.milli_timestamp().unwrap_or(0).div_euclid(1000));
+                p.tn_ver.push(ver);
+                p.tn_ts.push(ts);
             }
         }
         for w in g.ways() {
+            let p = part!();
             p.wid.push(w.id());
             let i = w.info();
             p.w_ver.push(i.version().unwrap_or(0));
@@ -138,6 +191,7 @@ pub fn parse(block: &PrimitiveBlock) -> Part {
             p.w_tlen.push((p.w_tags.len() - before) as u32);
         }
         for r in g.relations() {
+            let p = part!();
             p.rid.push(r.id());
             let i = r.info();
             p.r_ver.push(i.version().unwrap_or(0));
@@ -163,7 +217,6 @@ pub fn parse(block: &PrimitiveBlock) -> Part {
             p.r_tlen.push((p.r_tags.len() - before) as u32);
         }
     }
-    p
 }
 
 fn offsets(off: &mut Vec<u64>, lens: &[u32]) {

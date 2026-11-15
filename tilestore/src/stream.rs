@@ -7,7 +7,8 @@
 //! tagged nodes of its ways at home elsewhere (the "needs"), the member nodes of kept relations in it, and the kept
 //! relations with a tile in it. So a bucket is cut alone, by the in-memory cut's code, and only its own tiles kept.
 
-use crate::clip::{self, Clip};
+use crate::clip::{self, Clip, Part};
+use crate::history;
 use crate::cols::{delta32, delta64, pack_cols, Col};
 use crate::npy;
 use crate::pairs;
@@ -178,11 +179,11 @@ impl Spill {
 
 /// the data blobs' offsets, and the first blob that holds a way and the first that holds a relation (the file is
 /// sorted by type, so each pass reads one run of blobs)
-struct Blobs {
+pub struct Blobs {
     path: PathBuf,
-    offs: Vec<ByteOffset>,
-    first_way: usize,
-    first_rel: usize,
+    pub offs: Vec<ByteOffset>,
+    pub first_way: usize,
+    pub first_rel: usize,
 }
 
 fn kind_of(block: &PrimitiveBlock) -> u8 {
@@ -198,7 +199,7 @@ fn kind_of(block: &PrimitiveBlock) -> u8 {
 }
 
 impl Blobs {
-    fn index(path: &Path) -> Blobs {
+    pub fn index(path: &Path) -> Blobs {
         let mut r = BlobReader::seekable_from_path(path).expect("open the pbf");
         let mut offs = Vec::new();
         while let Some(h) = r.next_header_skip_blob() {
@@ -248,6 +249,64 @@ impl Blobs {
             }
             at = end;
         }
+    }
+
+    /// `each` over parsed blocks; with `at` (seconds), a history file read at that date (history.rs): each
+    /// block's versions decided and mapped on all threads, a version held at a block's end mapped and consumed
+    /// before the next block's. `from` is the file's start or the first blob of a kind.
+    pub fn each_at<T: Send>(
+        &self,
+        from: usize,
+        to: usize,
+        at: Option<i64>,
+        map: impl Fn(Part) -> T + Sync,
+        mut consume: impl FnMut(T),
+    ) -> history::Stats {
+        let mut stats = history::Stats::default();
+        let Some(at) = at else {
+            self.each(from, to, |block| map(clip::parse(block)), consume);
+            return stats;
+        };
+        let t_ms = at * 1000;
+        let mut stitch: history::Stitch<Part> = history::Stitch::new(t_ms);
+        self.each(
+            from,
+            to,
+            |block| {
+                let sel = history::select(&clip::metas(block), t_ms);
+                let (mut a, mut b) = (Part::default(), Part::default());
+                clip::parse_into(block, |i| sel.dest[i], &mut a, &mut b);
+                (map(a), sel, b)
+            },
+            |(t, sel, b)| {
+                stats.versions += sel.dest.len() as u64;
+                stats.kept += sel.dest.iter().filter(|&&d| d == 1).count() as u64;
+                stats.backwards += sel.backwards;
+                let held = (sel.dest.last() == Some(&2)).then_some(b);
+                if let Some(h) = stitch.block(sel.first, sel.last, held) {
+                    stats.kept += 1;
+                    consume(map(h));
+                }
+                consume(t);
+            },
+        );
+        // the last version read: the blob after the range, if there is one, may hold a later version of it
+        let mut tail = None;
+        if to < self.offs.len() {
+            let mut r = BlobReader::seekable_from_path(&self.path).expect("open the pbf");
+            let blob = r.blob_from_offset(self.offs[to]).expect("a blob");
+            if let BlobDecode::OsmData(block) = blob.decode().expect("decode a blob") {
+                if let Some(&(k, id, ms, _)) = clip::metas(&block).first() {
+                    tail = Some(stitch.block(Some((k, id, ms)), None, None));
+                }
+            }
+        }
+        if let Some(h) = tail.unwrap_or_else(|| stitch.end()) {
+            stats.kept += 1;
+            consume(map(h));
+        }
+        stats.backwards += stitch.backwards;
+        stats
     }
 }
 
@@ -434,7 +493,8 @@ struct WayOut {
     refs: u64,
 }
 
-pub fn cut(pbf: &Path, out: &Path, day: &str, z: u32, bz: u32, keep_spill: bool) {
+/// `at`: the file is a history file, cut as it was at that date (seconds)
+pub fn cut(pbf: &Path, out: &Path, day: &str, z: u32, bz: u32, keep_spill: bool, at: Option<i64>) {
     let t0 = Instant::now();
     let geo = Geo { z, bz, fz: bz.saturating_sub(2) };
     let nt = (1u64 << z) as f64;
@@ -457,13 +517,19 @@ pub fn cut(pbf: &Path, out: &Path, day: &str, z: u32, bz: u32, keep_spill: bool)
 
     // pass 0: the relations, whole; the member ways and member nodes of the kept ones
     let mut rel = Clip::new();
-    blobs.each(blobs.first_rel, nb, clip::parse, |p| {
+    let mut hist = history::Stats::default();
+    let mut seen = |s: history::Stats| {
+        hist.versions += s.versions;
+        hist.kept += s.kept;
+        hist.backwards += s.backwards;
+    };
+    seen(blobs.each_at(blobs.first_rel, nb, at, |p| p, |p| {
         // only the block's relations: a block shared with ways gives its ways to pass 2
         let mut q = clip::Part::default();
         (q.rid, q.r_ver, q.r_ts, q.r_nmem, q.mtype, q.mref) = (p.rid, p.r_ver, p.r_ts, p.r_nmem, p.mtype, p.mref);
         (q.m_rlen, q.roles, q.r_tlen, q.r_tags) = (p.m_rlen, p.roles, p.r_tlen, p.r_tags);
         rel.append(&q);
-    });
+    }));
     assert!(rel.rid.windows(2).all(|w| w[0] < w[1]), "relation ids are not strictly increasing: the file is not sorted");
     rel.keep_relations();
     let nr = rel.rid.len();
@@ -501,11 +567,11 @@ pub fn cut(pbf: &Path, out: &Path, day: &str, z: u32, bz: u32, keep_spill: bool)
     // the tagged-node file's index: (id, offset, length)
     let mut tagged_idx: Vec<(i64, u64, u32)> = Vec::new();
     let mut tagged_at = 0u64;
-    blobs.each(
+    seen(blobs.each_at(
         0,
         (blobs.first_way + 1).min(nb),
-        |block| {
-            let p = clip::parse(block);
+        at,
+        |p| {
             let mut o = NodeOut { ids: Vec::new(), lat: Vec::new(), lon: Vec::new(), bodies: Vec::new(), list: Vec::new(), member: Vec::new() };
             let (mut tj, mut toff) = (0usize, 0usize);
             for i in 0..p.nid.len() {
@@ -552,7 +618,7 @@ pub fn cut(pbf: &Path, out: &Path, day: &str, z: u32, bz: u32, keep_spill: bool)
             places.lat.extend_from_slice(&o.lat);
             places.lon.extend_from_slice(&o.lon);
         },
-    );
+    ));
     tagged_file.flush().unwrap();
     drop(tagged_file);
     assert!(places.ids.windows(2).all(|w| w[0] < w[1]), "node ids are not strictly increasing: the file is not sorted");
@@ -569,11 +635,11 @@ pub fn cut(pbf: &Path, out: &Path, day: &str, z: u32, bz: u32, keep_spill: bool)
         (Vec::new(), Vec::new(), vec![0], Vec::new());
     let mut member_at = 0u64;
     let (mut n_ways, mut n_refs, mut last_way) = (0u64, 0u64, i64::MIN);
-    blobs.each(
+    seen(blobs.each_at(
         blobs.first_way,
         (blobs.first_rel + 1).min(nb),
-        |block| {
-            let p = clip::parse(block);
+        at,
+        |p| {
             let mut o = WayOut { bodies: Vec::new(), list: Vec::new(), wt: Vec::new(), needs: Vec::new(), members: Vec::new(), keys: Vec::new(), refs: 0 };
             let mut pl: Vec<Option<(i32, i32)>> = Vec::new();
             let mut keys: Vec<u32> = Vec::new();
@@ -656,7 +722,10 @@ pub fn cut(pbf: &Path, out: &Path, day: &str, z: u32, bz: u32, keep_spill: bool)
             }
             n_refs += o.refs;
         },
-    );
+    ));
+    if at.is_some() {
+        log(&format!("history: {} versions read over the three passes, {} at the date, {} older than the one before", hist.versions, hist.kept, hist.backwards));
+    }
     member_file.flush().unwrap();
     drop(member_file);
     let way_copies = wtiles.finish();
