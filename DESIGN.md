@@ -3371,7 +3371,8 @@ through the old and new tiles of each changed node (its own place), each changed
 relation (an unchanged relation's tiles change only where a moved member way came or went, already reached; one the
 app ignores is in no tile). A reached tile that comes out the same keeps its old entry. Result: 59,279 nodes, 16,176
 ways and 1,657 relations of the diff reach the store, plus 2,459 ways holding a moved node; **2,902 tiles reached of
-59,026, 2,893 written (302 of them new, at the clip's edge), 461 MB: 4.9% of the tiles, 23% of the pack's 2.0 GB**;
+59,026, 2,893 written (302 of them new, at the clip's edge), 461 MB: 4.9% of the tiles, 23% of the pack's 2.0 GB**
+(with the region the later runs use, "Smaller tiles": 2,591 written, none new, the same 461 MB);
 993 relation blobs (2.4 MB). Reached through a changed node's home 1,796 tiles (328 MB as they were), through a moved
 way 2,036 (332 MB), through a changed relation 663 (82 MB); the sets overlap. 532 s in Python (diff 165 s, finding
 49 s, reaching 126 s, the rule 156 s, writing 35 s). Two earlier runs, before a reached tile that came out the same
@@ -3387,8 +3388,9 @@ was kept and before relations were narrowed, wrote 5,664 tiles and 814 MB, half 
   relations' member nodes (`tests/test_tilestore_update.py` has the case).
 - **D through the updated store:** the 331 tiles joined and recounted at 11-13: **1,116,244 rows, 0 different** from
   the recount on the clip; D-1 through generation 0 again 0 different. Each read 34-45 s, of which the tiles 2.2 s.
-- To rerun: `.scratch/tiles/chain.sh` (both cuts, the update, every check; log `logs/tiles-chain.log`) or
-  `.scratch/tiles/chain2.sh` (the update again from generation 0, with the checks).
+- To rerun: `tools/stream/tilecheck/chain-z.sh 14` (both cuts, the update, every check) or `day12.sh` there (two
+  days from generation 0). They read `.scratch/tiles/geom-*/` (from `tiles.py geom` and `attrs`) and the frozen t2n
+  recount in `.scratch/tiles/ref/`.
 
 *What it says for the world.*
 - **Correctness: exact on two days.** The tile rule, the store and the update reproduce the clip's recount exactly, D
@@ -3401,7 +3403,7 @@ was kept and before relations were narrowed, wrote 5,664 tiles and 814 MB, half 
   from that tile's complete copy) is 12 bytes a way, or none at all if a changed way is always found through its
   nodes' old home tiles (a deleted way whose nodes all stay is the case that needs it), and a day's changes belong in
   an overlay, not a rewrite.
-- **The day's write: 23% of the bytes for 4.9% of the tiles.** The tiles a day changes are the dense ones (city
+- **The day's write: 23% of the bytes for 4.4% of the tiles** (2,591). The tiles a day changes are the dense ones (city
   centres: up to 1.9 MB a z14 tile), and any edit rewrites its whole tile. So a generation's pack is about 0.46 GB a
   day on a 2 GB store, and keeping D-1 costs that much; packs whose tiles are all superseded by D-1 can be deleted, the
   few live tiles of the rest copied forward. This clip is 32 European city boxes padded by 2 km (Lisbon, Barcelona,
@@ -3426,8 +3428,11 @@ z14, z15 and z16. The update's region (the prototype's stand-in for a world with
 outside the clip stay out) is now the tiles the store holds plus the tiles under the clip polygon's parts; the earlier
 z14 runs took the store's tiles grown by one, which at z16 is too little ground and left out tiles a moved node's way
 newly crossed, and a first polygon-only region left out the far nodes of ways the clip holds whole. With it, z14's day
-writes 2,591 tiles (461 MB), none new at the edge. Scripts: `.scratch/tiles/chain-z.sh Z [update-only]` (logs
-`logs/tiles-z14.log`, `tiles-z15b.log`, `tiles-z16.log`), the table by `.scratch/tiles/adaptive.py`.
+writes 2,591 tiles (461 MB), none new at the edge. Scripts: `tools/stream/tilecheck/chain-z.sh Z [update-only]`
+(logs `logs/tiles-z14.log`, `tiles-z15b.log`, `tiles-z16.log`), the table by `tools/stream/tilecheck/adaptive.py
+.scratch/tiles .scratch/tiles/ref/cities.json`. The z15 and z16 runs predate the two relation-index fixes of "A second
+day" (which change only the way and relation tile indexes, not a tile); those fixes are checked at z15 and z16 by the
+small test only. The adaptive rows are an estimate from the two uniform stores; no adaptive store is built.
 
 *Exact at every zoom.* D through each updated store recounts **1,116,244 rows, 0 different**; the tiles under the
 rectangles (331 at z14, 1,004 at z15, 3,367 at z16) are byte for byte the fresh 11-13 cut's; every other differing
@@ -3464,7 +3469,7 @@ dominated by dublin-0's 12 x 7 km. Updates took 6-9 min each in Python at every 
   cell that is split answers with its z16 children. The cut decides the split from the z14 payload size; a day may
   leave a tile across the threshold, which only costs a later re-split (the content is the same either way).
 
-*A second day (11-14, 21:00-21:50; `.scratch/tiles/day12.sh`, log `logs/tiles-day12.log`).* The z14 store from
+*A second day (11-14, 21:00-21:50; `tools/stream/tilecheck/day12.sh`, log `logs/tiles-day12.log`).* The z14 store from
 generation 0 through diff 5175 and then 5176 (the second update reading the first's way and relation tile indexes,
 the node store before it being 11-13's), each held against a fresh cut of that day's clip (`store13/`, `store14/`):
 **no tile, relation blob, way-tiles or relation-tiles entry wholly inside the polygon differs on either day**, and D of
@@ -3475,3 +3480,9 @@ index was rebuilt from the working set alone, which lacks a far member node or w
 nodes lost entries (5 interior; their tiles were right); now a reached relation keeps its entries outside the day's
 reach. (2) A changed relation's new member nodes were neither reached nor in the working set (an untagged node no tile
 held); now they are, placed from the node store.
+
+*Packs die slowly.* After day two, 1,873 of day one's 2,591 tiles are still live (221 of its 461 MB; only 718 were
+rewritten again), and 54,727 of the cut's 59,026 (1.30 of 2.00 GB). A day's edits land mostly on other tiles than the
+day before's, so a pack is not dropped whole after a day or two: dead bytes build up (0.94 GB of the 2.93 GB of packs
+after two days) and a compaction copies the live tiles of a mostly dead pack forward. Keeping D-1 is still one day's
+write; the dead space beside it is what compaction bounds, at the cost of copying.
