@@ -1374,16 +1374,18 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   generation; no way index, a moved node's ways found in its old home tile) equals a fresh cut on a small clip
   (`tests/test_tilestore_update.py`). Running now (`.scratch/tiles/`, logs `logs/tiles-*.log`): the fresh cut of 11-13
   (`store13/`) and the update of `store/` by diff 5175; then compare them and recount D through the store.
-- **Measurement (c) done (11-14, 18:30).** DESIGN.md, "Measurement (c)". The tile store reproduces the clip's tier-2
-  recount exactly: D through the updated store 1,116,244 rows and D-1 through generation 0 1,114,046 rows, 0 different
-  each; the updated store equals a fresh 11-13 cut on every tile not touching the clip polygon's edge. One bug found
-  and fixed on the way (a relation held in a tile only by an untagged label node). Size: 1.27x the PBF in all (about
-  108 GB for the planet), plus a way-tiles index that should shrink. **The surprise: a day rewrote 41% of the bytes
-  (5,669 of 59,026 tiles, the dense city-centre ones)**, so D-1 costs about 0.8 GB a day here; smaller tiles where data
-  is dense would cut it. Speed is the Python prototype's (update about 10 min, read 34 s of which 31 s writing PBF);
-  a world store needs compiled code. `.scratch/tiles/` is 21 GB (geom-12/13 6.7 GB each, the two stores 6 GB):
-  deletable once the owner has read this.
+- **Measurement (c) done (11-14, 19:05).** DESIGN.md, "Measurement (c)". The tile store reproduces the clip's tier-2
+  recount exactly on one day: D through the updated store 1,116,244 rows and D-1 through generation 0 1,114,046 rows,
+  0 different each; the updated store equals a fresh 11-13 cut on every tile not touching the clip polygon's edge.
+  One bug found and fixed on the way (a relation held in a tile only by an untagged label node). Size: 1.27x the PBF in
+  all (about 108 GB for the planet), plus a way-tiles index that should shrink. **A day rewrites 23% of the bytes in
+  4.9% of the tiles** (2,893 of 59,026, the dense city-centre ones; the clip is 32 European city boxes, all urban),
+  so D-1 costs about 0.46 GB a day here; smaller tiles where data is dense would cut it. Speed is the Python
+  prototype's (update about 9 min a day, read 34-45 s of which 31-41 s writing the PBF); a world store needs compiled
+  code. A second day through the store is not run. Rerun: `.scratch/tiles/chain.sh` (log `logs/tiles-chain.log`) or
+  `chain2.sh` (update only). `.scratch/tiles/` is 21 GB (geom-12/13 6.7 GB each, the two stores 6 GB): deletable
+  once the owner has read this.
 - **For the owner (evening of 11-14), to ask as a wizard:** what next for tier 2 of the world: (a) measure smaller
   tiles for dense ground first (z15/z16 split; a Python rerun of the cut and the update, about an hour); (b) build the
   store for real in Kotlin beside the engine, cut from the 12-07 planet; (c) leave tier 2 and keep the world on tier 1
-  until the disk grows.
+  until the disk grows. And: push the commits since the last push.

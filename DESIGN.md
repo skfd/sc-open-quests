@@ -3349,7 +3349,7 @@ timestamp): the recount does not see the difference (below). The relation store 
 `relidx-GGGG.npy`), and two pair indexes, every way's and kept relation's tiles by id (`wtiles`, `rtiles`), for a
 day's update to find a changed object's old tiles.
 
-*Cut from europe-west 11-12* (`tilestore.py cut`, from `tiles.py geom` + `attrs`): **59,026 tiles, 1.86 GiB, against
+*Cut from the europe clip of 11-12* (the 32 city boxes europe-west's stream reads from; `tilestore.py cut`, from `tiles.py geom` + `attrs`): **59,026 tiles, 1.86 GiB, against
 the clip's 1.63 GiB** (1.14x), plus the relation store 218 MiB (438,232 kept relations, 1.76M member ways): 1.27x the
 clip in all. Copies: 175.6M node copies of 127.9M nodes (orphan untagged nodes dropped), 22.6M way copies of 21.4M
 ways (1.06x), 0.57M relation copies. Tile sizes: median 5 KB, 90% under 89 KB, 99% under 450 KB, largest 1.9 MB (47
@@ -3368,37 +3368,49 @@ the old payloads of every tile it reaches, the old relation-store blobs of the r
 and the tile rule run again; only the reached tiles are written, into a new pack and a new index. A tile is reached
 through the old and new tiles of each changed node (its own place), each changed way and each way holding a changed node
 (found in that node's old home tile, which holds every way with a node there: **no node-to-way index**), and each changed
-relation. Result: 59,279 nodes, 16,176 ways and 1,657 relations of the diff reach the store, plus 2,459 ways holding a
-moved node; **5,669 tiles reached of 59,026 (9.6%), holding 814 MB of the pack's 1.996 GB (41%)**; 993 relation blobs
-(2.4 MB). 571 s in Python (diff 125 s, finding 40 s, reaching 109 s, the rule 251 s, writing 45 s; a first run beside a
-cut took 817 s).
+relation (an unchanged relation's tiles change only where a moved member way came or went, already reached; one the
+app ignores is in no tile). A reached tile that comes out the same keeps its old entry. Result: 59,279 nodes, 16,176
+ways and 1,657 relations of the diff reach the store, plus 2,459 ways holding a moved node; **2,902 tiles reached of
+59,026, 2,893 written (302 of them new, at the clip's edge), 461 MB: 4.9% of the tiles, 23% of the pack's 2.0 GB**;
+993 relation blobs (2.4 MB). Reached through a changed node's home 1,796 tiles (328 MB as they were), through a moved
+way 2,036 (332 MB), through a changed relation 663 (82 MB); the sets overlap. 532 s in Python (diff 165 s, finding
+49 s, reaching 126 s, the rule 156 s, writing 35 s). Two earlier runs, before a reached tile that came out the same
+was kept and before relations were narrowed, wrote 5,664 tiles and 814 MB, half of them unchanged.
 - **Held against a fresh cut of 11-13:** the 331 tiles under the rectangles byte for byte the same; of all 59,373 tiles,
   58,610 the same and every one of the 755 others (408 different, 302 only in the update, 45 only in the cut) touches
   the clip polygon's edge or lies outside it: the planet diff carries what the polygon clip leaves out. No tile wholly
   inside differs. The relation store: 438,327 of 438,360 blobs the same, 32 of the rest at the edge, and one a
-  relation of relations created that day (no member ways, an empty blob in the cut, never reached by the update).
+  relation of relations created that day (no member ways, an empty blob in the cut, never reached by the update). The
+  day's way and relation tile indexes: their 4,856 and 33 differing objects all touch the edge.
 - **The bug the check found:** a rebuilt tile lost a relation held there only by an untagged member node no way holds
   (a site's label): the cut saw the node in the whole clip, the tile did not store it. A tile now stores its kept
   relations' member nodes (`tests/test_tilestore_update.py` has the case).
 - **D through the updated store:** the 331 tiles joined and recounted at 11-13: **1,116,244 rows, 0 different** from
-  the recount on the clip; D-1 through generation 0 again 0 different. Both reads 34-35 s, of which the tiles 2.2 s.
+  the recount on the clip; D-1 through generation 0 again 0 different. Each read 34-45 s, of which the tiles 2.2 s.
+- To rerun: `.scratch/tiles/chain.sh` (both cuts, the update, every check; log `logs/tiles-chain.log`) or
+  `.scratch/tiles/chain2.sh` (the update again from generation 0, with the checks).
 
 *What it says for the world.*
-- **Correctness: settled.** The tile rule, the store and the update reproduce the clip's recount exactly, D and D-1.
+- **Correctness: exact on one day.** The tile rule, the store and the update reproduce the clip's recount exactly, D
+  and D-1, and the updated store equals a fresh cut away from the clip's edge. A second day (the update reading its own
+  generation-1 way and relation indexes) is not run yet; those indexes equal the fresh cut's away from the edge.
 - **Size:** tiles 1.14x the PBF, relation store 0.13x: about 108 GB beside the planet's 85 GB PBF. The index is small
   (1.4 MB a generation here; tens of millions of tiles for the planet, about 1 GB a generation). The way-tiles index is
-  not: 362 MB here (16 bytes a pair, 22.6M pairs, 18% of the pack), about 19 GB for the planet as plain pairs. It only
-  serves a changed way's old tiles; a key per way (its first tile; the rest from that tile's complete copy) is 12 bytes
-  a way, or none at all if a changed way is always found through its nodes' old home tiles (a deleted way whose nodes
-  all stay is the case that needs it).
-- **The day's write is the surprise: 41% of the bytes for 9.6% of the tiles.** The tiles a day reaches are the dense
-  ones (central London, Dublin, Lisbon: up to 1.9 MB a z14 tile), and every edit rewrites its whole tile. So a
-  generation's pack is about 0.8 GB a day on a 2 GB store, and keeping D-1 costs that much; packs whose tiles are all
-  superseded by D-1 can be deleted, the few live tiles of the rest copied forward. This europe-west clip is three
-  city centres with 20 km rings, denser than the planet on average; the world's fraction will be lower but is not
+  not: 362 MB here (16 bytes a pair, 22.6M pairs, 18% of the pack), about 19 GB for the planet as plain pairs, and the
+  prototype writes it whole each day. It only serves a changed way's old tiles; a key per way (its first tile; the rest
+  from that tile's complete copy) is 12 bytes a way, or none at all if a changed way is always found through its
+  nodes' old home tiles (a deleted way whose nodes all stay is the case that needs it), and a day's changes belong in
+  an overlay, not a rewrite.
+- **The day's write: 23% of the bytes for 4.9% of the tiles.** The tiles a day changes are the dense ones (city
+  centres: up to 1.9 MB a z14 tile), and any edit rewrites its whole tile. So a generation's pack is about 0.46 GB a
+  day on a 2 GB store, and keeping D-1 costs that much; packs whose tiles are all superseded by D-1 can be deleted, the
+  few live tiles of the rest copied forward. This clip is 32 European city boxes padded by 2 km (Lisbon, Barcelona,
+  Toulouse, Milan, Zurich, Salzburg, Munich, Paris, Prague, Antwerp, London at 3,071 km2, Amsterdam, ...): all
+  urban, denser and more edited than the planet on average, so the world's share should be lower, but it is not
   measured. **Smaller tiles where data is dense** (a z15/z16 split of any tile over a few hundred KB, the index then
-  keyed by quadtree cell) would cut the rewrite in proportion; to measure before building.
+  keyed by quadtree cell) would cut the rewrite of point edits roughly in proportion; long ways and relations cover
+  the same ground at any zoom. To measure before building.
 - **Speed is the prototype's limit, not the design's.** In Python the cut is about 30 min with the passes, the update
-  about 10 min a day on this clip (the planet diff's reading alone 2-3 min), the read about 34 s, 31 s of it pyosmium
+  about 9 min a day on this clip (the planet diff's reading alone 2-3 min), the read 34-45 s, 31-41 s of it pyosmium
   writing the PBF. A world store needs the cut, the update and the read in compiled code (the engine's parallel blob
   reader did this clip's 128M nodes in 6.7 s), and the engine reading the joined tiles directly instead of a PBF.
