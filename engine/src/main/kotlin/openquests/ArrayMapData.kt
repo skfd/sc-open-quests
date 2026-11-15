@@ -22,11 +22,28 @@ class LongIndex(private val ids: LongArray) {
         shift = 64 - bits
         slots = IntArray(1 shl bits)
         val mask = slots.size - 1
-        for (i in ids.indices) {
-            var s = slotOf(ids[i])
-            while (slots[s] != 0) s = (s + 1) and mask
-            slots[s] = i + 1
+        if (ids.size < PARALLEL_FROM) {
+            for (i in ids.indices) {
+                var s = slotOf(ids[i])
+                while (slots[s] != 0) s = (s + 1) and mask
+                slots[s] = i + 1
+            }
+        } else {
+            // a city's nodes: filled from all threads, each slot claimed by compare-and-set. Which id ends
+            // in which slot of a run depends on who came first; what [get] answers does not.
+            val chunk = 1 shl 16
+            parallelMap(0, (ids.size + chunk - 1) / chunk) { c ->
+                for (i in c * chunk until minOf(ids.size, (c + 1) * chunk)) {
+                    var s = slotOf(ids[i])
+                    while (!SLOT.compareAndSet(slots, s, 0, i + 1)) s = (s + 1) and mask
+                }
+            }
         }
+    }
+
+    private companion object {
+        const val PARALLEL_FROM = 1 shl 20
+        val SLOT: java.lang.invoke.VarHandle = java.lang.invoke.MethodHandles.arrayElementVarHandle(IntArray::class.java)
     }
 
     private fun slotOf(id: Long) = ((id * -7046029254386353131L) ushr shift).toInt()
@@ -77,6 +94,9 @@ class ArrayMapData(
     private val wayGeometries: List<ElementGeometry?>,
     override val relations: List<Relation>,
     private val relationGeometries: List<ElementGeometry?>,
+    /** build the [KeyIndex]es now, on all threads, instead of on the first quest's thread while the others
+     *  that want one wait (a whole city; a tile's are small and often not asked for) */
+    eagerKeys: Boolean = false,
 ) : MapDataWithGeometry {
     private val nodeIndex = LongIndex(LongArray(nodes.size) { nodes[it].id })
     private val wayIndex = LongIndex(LongArray(ways.size) { ways[it].id })
@@ -109,8 +129,8 @@ class ArrayMapData(
         return if (i < 0) null else relationGeometries[i]
     }
 
-    private val nodeKeys by lazy { KeyIndex(nodes) }
-    private val wayKeys by lazy { KeyIndex(ways) }
+    private val nodeKeys by if (eagerKeys) lazyOf(KeyIndex(nodes, parallel = true)) else lazy { KeyIndex(nodes) }
+    private val wayKeys by if (eagerKeys) lazyOf(KeyIndex(ways, parallel = true)) else lazy { KeyIndex(ways) }
     private val relationKeys by lazy { KeyIndex(relations) }
 
     /** the [KeyIndex] of [list] if it is this map data's own nodes, ways or relations ([candidates]) */

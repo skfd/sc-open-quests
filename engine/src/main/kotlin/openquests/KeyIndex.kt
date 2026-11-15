@@ -8,17 +8,38 @@ import de.westnordost.streetcomplete.data.osm.mapdata.MapData
  * The positions of the elements of one list of [ArrayMapData] (its nodes, ways or relations) by tag
  * key, ascending. Built once per list, the first time a quest asks ([ArrayMapData.keyIndexOf]).
  */
-class KeyIndex(elements: List<Element>) {
+class KeyIndex(elements: List<Element>, parallel: Boolean = false) {
     private val byKey: Map<String, IntArray>
 
     init {
-        val lists = HashMap<String, Positions>()
-        for (i in elements.indices) {
-            val tags = elements[i].tags
-            if (tags.isEmpty()) continue
-            for (key in tags.keys) lists.getOrPut(key) { Positions() }.add(i)
+        fun listsOf(from: Int, until: Int): HashMap<String, Positions> {
+            val lists = HashMap<String, Positions>()
+            for (i in from until until) {
+                val tags = elements[i].tags
+                if (tags.isEmpty()) continue
+                for (key in tags.keys) lists.getOrPut(key) { Positions() }.add(i)
+            }
+            return lists
         }
-        byKey = lists.mapValuesTo(HashMap(lists.size * 2)) { it.value.toArray() }
+        if (!parallel) byKey = listsOf(0, elements.size).mapValuesTo(HashMap()) { it.value.toArray() }
+        else {
+            // the list in pieces on all threads, then each key's positions joined in the pieces' order: ascending
+            val chunk = 1 shl 16
+            val pieces = parallelMap(0, (elements.size + chunk - 1) / chunk) { c ->
+                listsOf(c * chunk, minOf(elements.size, (c + 1) * chunk))
+            }
+            val sizes = HashMap<String, Int>()
+            for (p in pieces) for ((k, v) in p) sizes[k] = (sizes[k] ?: 0) + v.size
+            val out = HashMap<String, IntArray>(sizes.size * 2)
+            val filled = HashMap<String, Int>(sizes.size * 2)
+            for ((k, n) in sizes) { out[k] = IntArray(n); filled[k] = 0 }
+            for (p in pieces) for ((k, v) in p) {
+                val at = filled.getValue(k)
+                v.copyInto(out.getValue(k), at)
+                filled[k] = at + v.size
+            }
+            byKey = out
+        }
     }
 
     fun positions(key: String): IntArray = byKey[key] ?: EMPTY
@@ -39,6 +60,8 @@ class KeyIndex(elements: List<Element>) {
         private var a = IntArray(4); private var n = 0
         fun add(v: Int) { if (n == a.size) a = a.copyOf(n * 2); a[n++] = v }
         fun toArray() = a.copyOf(n)
+        val size get() = n
+        fun copyInto(to: IntArray, at: Int) { a.copyInto(to, at, 0, n) }
     }
 
     private companion object { val EMPTY = IntArray(0) }

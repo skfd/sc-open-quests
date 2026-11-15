@@ -18,7 +18,6 @@ import de.westnordost.streetcomplete.data.osm.mapdata.Relation
 import de.westnordost.streetcomplete.data.osm.mapdata.Way
 import de.westnordost.streetcomplete.data.osm.mapdata.filter
 import de.westnordost.streetcomplete.util.ktx.isArea
-import de.westnordost.streetcomplete.util.math.LatLonRaster
 import de.westnordost.streetcomplete.util.math.isCompletelyInside
 import de.westnordost.streetcomplete.util.math.isInMultipolygon
 import de.westnordost.streetcomplete.util.math.measuredMultiPolygonArea
@@ -75,7 +74,7 @@ object FastAddHousenumber : FastTwin {
 
         /** 4. exclude buildings that contain an address node somewhere within their area */
 
-        val addressPositions = LatLonRaster(rasterBox(bbox), 0.0005)
+        val addressPositions = SparseLatLonRaster(rasterBox(bbox), 0.0005)
         for (node in addressNodesById.values) {
             addressPositions.insert(node.position)
         }
@@ -118,7 +117,7 @@ object FastAddHousenumber : FastTwin {
 
         val buildingsByCenterPosition: Map<LatLon?, Element> = buildings.associateBy { buildingGeometriesById[it.id]?.center }
 
-        val buildingPositions = LatLonRaster(rasterBox(bbox), 0.0005)
+        val buildingPositions = SparseLatLonRaster(rasterBox(bbox), 0.0005)
         for (buildingCenterPosition in buildingsByCenterPosition.keys) {
             if (buildingCenterPosition != null) buildingPositions.insert(buildingCenterPosition)
         }

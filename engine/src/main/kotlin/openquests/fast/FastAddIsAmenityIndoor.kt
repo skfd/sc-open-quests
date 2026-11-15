@@ -8,7 +8,6 @@ import de.westnordost.streetcomplete.data.osm.geometry.ElementPolygonsGeometry
 import de.westnordost.streetcomplete.data.osm.mapdata.BoundingBox
 import de.westnordost.streetcomplete.data.osm.mapdata.Element
 import de.westnordost.streetcomplete.data.osm.mapdata.MapDataWithGeometry
-import de.westnordost.streetcomplete.util.math.LatLonRaster
 import de.westnordost.streetcomplete.util.math.contains
 import de.westnordost.streetcomplete.util.math.isCompletelyInside
 import de.westnordost.streetcomplete.util.math.isInMultipolygon
@@ -58,7 +57,7 @@ object FastAddIsAmenityIndoor : FastTwin {
             it.id to mapData.getGeometry(it.type, it.id) as? ElementPolygonsGeometry
         }
 
-        val nodesPositions = LatLonRaster(rasterBox(bbox), 0.0005)
+        val nodesPositions = SparseLatLonRaster(rasterBox(bbox), 0.0005)
         for (node in nodes) {
             nodesPositions.insert(node.position)
         }

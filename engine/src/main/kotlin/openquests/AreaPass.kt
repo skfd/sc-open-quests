@@ -773,7 +773,7 @@ class AreaPass(
             previous = key ushr 32
         }
         val firstAt = byNode.copyOf(distinct)
-        firstAt.sort()
+        java.util.Arrays.parallelSort(firstAt)
         val nodeOrder = IntArray(distinct) { wanted[firstAt[it].toInt()] }
         val inHashOrder = hashMapOrder(LongArray(distinct) { nodes.ids[nodeOrder[it]] })
         val mapNodes = each(distinct) { i ->
@@ -811,7 +811,7 @@ class AreaPass(
             relation to if (geometries.isEmpty()) null else safeGeometry { geometryCreator.create(relation, geometries) }
         }
         return ArrayMapData(box, mapNodes, wayGeometries.map { it.first }, wayGeometries.map { it.second },
-            relationGeometries.map { it.first }, relationGeometries.map { it.second })
+            relationGeometries.map { it.first }, relationGeometries.map { it.second }, eagerKeys = parallel)
     }
 
     private inline fun safeGeometry(create: () -> ElementGeometry?): ElementGeometry? =
