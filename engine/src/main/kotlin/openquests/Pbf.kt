@@ -138,7 +138,7 @@ class NodeBlock(val keep: Boolean, dict: TagDict?) {
  * of the table, then a search among the few nodes of that stretch (a search by block and then inside the
  * block was two thirds of the area pass's read of the ways).
  */
-class NodeStore(blocks: List<NodeBlock>, dict: TagDict?) {
+class NodeStore(blocks: List<NodeBlock>, dict: TagDict?, maxBuckets: Long = MAX_BUCKETS) {
     private val nonEmpty = blocks.filter { it.n > 0 }
     private val blockStart = IntArray(nonEmpty.size + 1)
     val count: Int
@@ -183,14 +183,20 @@ class NodeStore(blocks: List<NodeBlock>, dict: TagDict?) {
 
     private val minId = if (count > 0) ids[0] else 0L
     private val maxId = if (count > 0) ids[count - 1] else -1L
-    /** bucketStart[b]: the first position whose id is at least minId + b * BUCKET (count past the last) */
+    /** a stretch is 256 ids, or more where the file's ids span more than maxBuckets of those (OSM's do not) */
+    private val bucketShift: Int = run {
+        require(count == 0 || maxId - minId >= 0) { "node ids span $minId..$maxId: over what the index holds" }
+        var shift = 8
+        while (count > 0 && ((maxId - minId) ushr shift) >= maxBuckets) shift++
+        shift
+    }
+    /** bucketStart[b]: the first position whose id is at least minId + (b shl bucketShift) (count past the last) */
     private val bucketStart: IntArray = run {
-        val buckets = if (count > 0) (maxId - minId) ushr BUCKET_SHIFT else 0L
-        require(buckets < Int.MAX_VALUE - 2) { "node ids span $minId..$maxId: over what the index holds" }
+        val buckets = if (count > 0) (maxId - minId) ushr bucketShift else 0L
         val start = IntArray(buckets.toInt() + 2)
         var b = 0
         for (i in 0 until count) {
-            val nb = ((ids[i] - minId) ushr BUCKET_SHIFT).toInt()
+            val nb = ((ids[i] - minId) ushr bucketShift).toInt()
             while (b < nb) start[++b] = i
         }
         while (b < start.size - 1) start[++b] = count
@@ -200,7 +206,7 @@ class NodeStore(blocks: List<NodeBlock>, dict: TagDict?) {
     /** the position of node [id], or -1 */
     fun indexOf(id: Long): Int {
         if (id < minId || id > maxId) return -1
-        val b = ((id - minId) ushr BUCKET_SHIFT).toInt()
+        val b = ((id - minId) ushr bucketShift).toInt()
         var lo = bucketStart[b]; var hi = bucketStart[b + 1] - 1
         while (lo <= hi) {
             val mid = (lo + hi) ushr 1
@@ -224,8 +230,8 @@ class NodeStore(blocks: List<NodeBlock>, dict: TagDict?) {
     fun timestampOf(position: Int): Long = seconds[position] * 1000L
 }
 
-/** a stretch of 256 ids per entry of [NodeStore]'s table: 4 bytes for each 256 ids between the file's first and last */
-private const val BUCKET_SHIFT = 8
+/** the most entries of [NodeStore]'s table (4 bytes each): at 256 ids an entry, ids up to 34 billion apart */
+private const val MAX_BUCKETS = 1L shl 27
 
 /** Every data blob of [path] handed to [f] as it is read, [threads] at once, with at most [ahead] read
  *  but not yet handled: memory stays bounded whatever the file's size (a planet). No hash. */

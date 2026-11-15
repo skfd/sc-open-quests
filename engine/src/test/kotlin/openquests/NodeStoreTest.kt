@@ -7,15 +7,15 @@ import kotlin.test.assertEquals
 /** [NodeStore.indexOf] finds a node through its table of id stretches: every id of the file at its own
  *  position, and -1 for the ids between, before and after them. */
 class NodeStoreTest {
-    private fun storeOf(ids: LongArray, blockSize: Int): NodeStore {
+    private fun storeOf(ids: LongArray, blockSize: Int, maxBuckets: Long = 1L shl 20): NodeStore {
         val blocks = ids.toList().chunked(blockSize).map { chunk ->
             NodeBlock(keep = false, dict = null).also { b -> for (id in chunk) b.add(id, pack((id % 900).toInt(), (id % 1800).toInt()), 1, 0) }
         }
-        return NodeStore(blocks + NodeBlock(keep = false, dict = null), null)
+        return NodeStore(blocks + NodeBlock(keep = false, dict = null), null, maxBuckets)
     }
 
-    private fun check(ids: LongArray, blockSize: Int = 8000) {
-        val store = storeOf(ids, blockSize)
+    private fun check(ids: LongArray, blockSize: Int = 8000, maxBuckets: Long = 1L shl 20) {
+        val store = storeOf(ids, blockSize, maxBuckets)
         assertEquals(ids.size, store.count)
         val held = ids.toHashSet()
         for ((i, id) in ids.withIndex()) {
@@ -41,12 +41,15 @@ class NodeStoreTest {
         }
         check(ids.toLongArray())
         check(ids.toLongArray(), blockSize = 1)
+        check(ids.toLongArray(), maxBuckets = 64) // stretches far longer than 256 ids
     }
 
     @Test fun `one node, two nodes at a stretch's edges, negative ids, and no node at all`() {
         check(longArrayOf(42))
         check(longArrayOf(0, 255, 256, 511, 512))
         check(longArrayOf(-700, -256, -1, 0, 1, 13_000_000_000L))
+        // ids further apart than the table has stretches of 256 for: the stretches grow
+        check(longArrayOf(5, 6, 1L shl 40, (1L shl 45) + 3, (1L shl 45) + 4, 1L shl 50))
         val empty = NodeStore(listOf(NodeBlock(keep = false, dict = null)), null)
         assertEquals(0, empty.count)
         assertEquals(-1, empty.indexOf(5))
