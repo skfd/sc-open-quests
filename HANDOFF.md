@@ -1416,3 +1416,9 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
 - **The owner's answers (11-14, 22:05):** push: yes. Tier 2 in Kotlin: "we can consider building it in kotlin, but i
   need to see reasons why this specific stack and not other". Next: the comparison (DESIGN.md, "Tier 2's store: this
   stack against the others").
+- **The comparison, written (11-14, 22:20):** DESIGN.md, "Tier 2's store: this stack against the others". Overpass
+  with attic (~400 GB) and OSMExpress (~600 GB) are ruled out by disk, GeoDesk by its model (no untagged node ids, no
+  daily updates yet), PostGIS by disk and model; osmium on a daily planet (170 GB, an hour or two a day, no new code)
+  is the credible fallback; the tile store wins on disk (~124 GB), daily work and is already exact. Kotlin over Python
+  (speed), and over C++/Rust (the engine reads the store directly, one toolchain). **Waiting on the owner:** build it
+  in Kotlin (first: the cut of one world file, measured), or take the osmium fallback, or wait.
