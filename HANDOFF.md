@@ -1737,10 +1737,26 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   the other twins come out of `FAST_TWINS` (FastTwins.kt). At a repin: `helper:KerbUtil` pins SC's `KerbUtil.kt`
   for the kerb twin (REPIN.md, step 3); the pin is the vendored copy's hash with LF endings, no SC checkout was on
   disk to hash, so a "moved" report there with no change in the file is that.
-  **Next for the engine, none built:** the line `.flatMapTo(HashSet()) { it.nodeIds }` is in twelve more ports
-  that run as they are (about 67 s of the 390 s of quest CPU left in f0's cells); one rewrite rule in
-  `port_area_quests.py` (as `CANDIDATES` was) would reach them all instead of a twin each.
-  Then `WaysCrossingUtils.groupByNodeIds` (AddBarrierOnRoad, AddBarrierOnPath, AddCrossing: about 46 s), then allocation
-  (block decoding, `getLastCheckDateKeys`). `.scratch/batch-speed/` holds this round's runs (`r3*`, `b-*`, `c-*`,
-  `q-*`) and four engine snapshots (`eng-*`, 11 MB each): all can go. The worktree
-  `../sc-open-quests-batch` (branch `batch-speed`, equal to main) can go too.
+  **Next for the engine:** the fourth round below built the rule this named. `.scratch/batch-speed/` holds this
+  round's runs (`r3*`, `b-*`, `c-*`, `q-*`) and four engine snapshots (`eng-*`, 11 MB each): all can go.
+- **Batch engine speed-up, fourth round: merged into main (11-15, 16:10 to 17:30; owner: "continue engine
+  optimization").** DESIGN.md, "Batch engine speed-up, fourth round". One rule in `engine/port_area_quests.py`
+  (`NODE_IDS`): a port's `.flatMapTo(HashSet()) { it.nodeIds }` becomes `.nodeIdsIn(mapData)`
+  (`openquests/NodeIds.kt`: a bit at a node's place on a city's map data, a `LongSet` for ids of nodes the map
+  data lacks, SC's `HashSet` on any other map data; no `Set`, so only `id in it` compiles). Twelve ports
+  regenerated from `%TEMP%\sc-v64.1`; quests with a fast twin keep SC's line. **A small gain: the twelve ports
+  63.5 and 60.0 s of CPU to 48.2 and 47.4 s on f0; a whole run 91.0 and 84.6 s to 88.6 and 82.3 s, within
+  noise.** The 67 s named before was those ports' whole CPU, mostly scans, not the set. **Checked:** f0 (twice)
+  and f1 snapshots, f0's 31,695,753 state rows, europe-west's 11-15 recount and grid against the published
+  ones, `verifyFast` on Dublin and Lisboa (under it every answer of the marks is held against SC's set),
+  `NodeIdsTest` (fails when the ids of lacking nodes are dropped), 105 engine tests. **Not checked:** Ontario
+  this round; London under `verifyFast`; polar and antimeridian cells (canary first on 12-07).
+  `-Dopenquests.nodeMarks=false` takes the rule out at run time. **Main's installed engine is still not
+  rebuilt** (another session has uncommitted tile store work on main): the next `run.py` rebuilds it, so the
+  next 12:15 daily run is the first with the third and fourth rounds.
+  **Next for the engine, none built:** quest twins now buy about a percent each (no quest above 27 s of 1,284 s
+  CPU). The larger part is the cells' map data and the collector, about 550 s: profile a cell's allocation
+  first. Then `groupByNodeIds` (AddBarrierOnRoad, AddBarrierOnPath, AddCrossing: 41 s), then the clock-free
+  node id sets of five age ports kept once per map data (a few seconds).
+  `.scratch/batch-speed/` also holds `d-*`, `r4-*` and `eng-marks`: all can go. The worktree
+  `../sc-open-quests-batch` (branch `batch-speed`, equal to main's engine commit) can go too.

@@ -269,6 +269,10 @@ download:
   `KerbUtil.kt`, pinned as `helper:KerbUtil`; `-Dopenquests.fastKerbs=false` runs SC's), AddEntrance and
   AddCrossingKerbHeight (`FastNodeSets.kt`), and AddHousenumber's address nodes (a `LongSet`). AddCycleway's twin
   does what reads no clock once per map data and looks up a road's country only where its answer turns on it.
+  Twelve more ports that gather such a set have no twin: the port script rewrites the line itself
+  (`NODE_IDS` in `port_area_quests.py`: `.flatMapTo(HashSet()) { it.nodeIds }` becomes `.nodeIdsIn(mapData)`,
+  an `openquests.NodeIds` that answers every id as SC's set does; `-Dopenquests.nodeMarks=false` keeps SC's
+  set; `NodeIdsTest`; DESIGN.md "Batch engine speed-up, fourth round"). A quest with a twin keeps SC's line.
   These fall back to the port on any other map data. `NodeSetTwinsTest` holds them against SC's code on random
   small map data, in order and at two clocks. A test ties each twin to the pinned sha256 of the SC
   file it copies, and of the helper files it copies (`helperSha256`), so a version bump that changes one fails
