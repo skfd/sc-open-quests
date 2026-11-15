@@ -1449,6 +1449,17 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   too) risk locking trouble. A NAS that runs Overpass itself (Docker, x86, 16 GB+, an NVMe pool rather than M.2 as
   cache only) works and keeps it off the laptop; a mini PC with two M.2 slots does the same job, usually for less and
   with more CPU. A spinning-disk NAS suits the archives. Not decided.
+- **The owner chose (11-14, late): a USB4 SSD on the laptop.** Checked before buying: the attic clone on
+  dev.overpass-api.de (2026-11-10, the newest complete one) is **about 708 GB** summed from its listing (455 GB without
+  attic, 360 GB without meta), not the 400-500 GB assumed; DESIGN.md's table now says so. 2 TB holds it with room
+  (plus the planet history pair, ~1 TB in all); 4 TB only for years of headroom. The download is 708 GB (hours at
+  500 Mbit/s, most of a day at 100). Port power: PSREF names the USB-C ports Thunderbolt 4 but gives no output figure;
+  Thunderbolt 4 requires 15 W for bus-powered devices, and the SN850X plus bridge is about 10-11 W, so it should hold
+  (the Framework dropouts were on 7.5 W ports). Not yet measured. **Open, asked:** does Overpass become tier 2's store
+  (instead of the Kotlin tile store), or sit beside it? Setup to settle when the drive comes: ext4 on the drive (a
+  distro imported there with `wsl --import`, no admin, or `wsl --mount`, which needs it), a keepalive so WSL doesn't
+  stop the service, and how to stop it safely before sleep or unplugging. A rehearsal on a small region (attic on,
+  one day of diffs, `[date:]` checked against the 11-13/11-14 cuts) can run before the drive arrives.
 - **The owner's decision (11-14, 22:30): "I will buy external ssd to have Overpass locally. The language selection --
   not sure yet, let's discuss in next session."** So tier 2's store for the world is to be an own Overpass instance
   with attic data (D and D-1 by `[date:]`) on an external SSD (attic planet about 400 GB in 2023 terms, growing: buy
