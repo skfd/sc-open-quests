@@ -320,6 +320,9 @@ class Engine(val registry: Registry, val cities: List<City>, val parts: List<Par
         if (settled != null && MATCH_CACHE == "verify") verifySettled(e, type, settled)
         val sure = settled?.sure ?: NO_QUESTS
         val ask = settled?.ask ?: questsByType[type]
+        // is a note at the position? The same for every quest of the element: asked once, when a quest first matches
+        var hidden = false
+        var hiddenAsked = false
         for (j in 0 until sure.size + ask.size) {
             val isSure = j < sure.size
             val qi = if (isSure) sure[j] else ask[j - sure.size]
@@ -346,7 +349,7 @@ class Engine(val registry: Registry, val cities: List<City>, val parts: List<Par
             var here = false
             for (c in cityIdx) if (enabledAt(c, qi) { ids ?: regionIdsAt(center).also { ids = it } }) { here = true; break }
             if (!here) continue
-            val hidden = notes?.hides(center) == true
+            if (!hiddenAsked) { hidden = notes?.hides(center) == true; hiddenAsked = true }
             if (st != null) {
                 if (mask != 0) st.match(type, e.id, center.latitude, center.longitude, qi, mask, hidden)
                 if (due >= 0) st.due(type, e.id, center.latitude, center.longitude, qi, hidden, M_NOW, due)
@@ -533,7 +536,11 @@ class Engine(val registry: Registry, val cities: List<City>, val parts: List<Par
                     var j = start
                     while (j < end) { raw.add(ctx.strings[d.getKeysVals(j)], ctx.strings[d.getKeysVals(j + 1)]); j += 2 }
                     val tags = fitTags("main", "node", id, raw)
-                    if (keep && tags.isNotEmpty()) out.tagLast(tags)
+                    if (keep && tags.isNotEmpty()) {
+                        // the usual node, no tag left out and no key twice: its tags kept by their places in the block's strings
+                        if (tags === raw && raw.size * 2 == end - start) out.tagLast(ctx.strings, d.keysValsList, start, end)
+                        else out.tagLast(tags)
+                    }
                     if (cityIdx.isEmpty()) continue
                     val node = Node(id, position, tags, version, ts * ctx.dateGranularity)
                     for (c in cityIdx) counts.taggedNodes.incrementAndGet(c)
@@ -575,17 +582,26 @@ class Engine(val registry: Registry, val cities: List<City>, val parts: List<Par
         var coords = LongArray(2000)
         var at = IntArray(2000) // each node's place in the node table, or -1
         val nodeCoords = nodes.coords
+        val places = TagPlaces(ctx.strings)
+        // where the way's id would be in neededWays: both ascend, so a search only at a block's first way
+        var neededAt = 0
+        var previousId = Long.MAX_VALUE
         for (g in b.primitivegroupList) for (w in g.waysList) {
             val tagged = w.keysCount > 0
-            val needed = neededWays.binarySearch(w.id) >= 0
+            val wayId = w.id
+            if (wayId <= previousId) neededAt = java.util.Arrays.binarySearch(neededWays, wayId).let { if (it >= 0) it else -it - 1 }
+            else while (neededAt < neededWays.size && neededWays[neededAt] < wayId) neededAt++
+            previousId = wayId
+            val needed = neededAt < neededWays.size && neededWays[neededAt] == wayId
             if (!tagged && !needed && area == null) continue
             val rc = w.refsCount
             if (refs.size < rc) { refs = LongArray(rc * 2); coords = LongArray(rc * 2); at = IntArray(rc * 2) }
             var ref = 0L
             var complete = true
+            var p = -1
             for (i in 0 until rc) {
                 ref += w.getRefs(i); refs[i] = ref
-                val p = nodes.indexOf(ref)
+                p = nodes.indexOfAfter(ref, p)
                 at[i] = p
                 if (p >= 0) coords[i] = nodeCoords[p] else { coords[i] = NO_COORD; complete = false }
             }
@@ -594,8 +610,11 @@ class Engine(val registry: Registry, val cities: List<City>, val parts: List<Par
                 val set = area.citySetOf(coords, rc)
                 if (set != 0) {
                     raw = tagsOf(w.keysList, w.valsList, ctx.strings)
+                    val fitted = fitTags("area", "way", w.id, raw)
+                    // the usual way, no tag left out and no key twice: its tags kept by their places in the block's strings
+                    val asGiven = fitted === raw && raw.size == w.keysCount
                     area.collectWay(areaWays!!, w.id, if (w.hasInfo()) w.info.version else 1, w.info.timestamp * ctx.dateGranularity,
-                        set, refs, at, rc, fitTags("area", "way", w.id, raw))
+                        set, refs, at, rc, fitted, if (asGiven) places.of(w.keysList, w.valsList) else null)
                 }
             }
             if (needed) { keptIds.add(w.id); keptCoords += if (complete) coords.copyOf(rc) else null }

@@ -21,8 +21,15 @@ class NodeStoreTest {
         for ((i, id) in ids.withIndex()) {
             assertEquals(i, store.indexOf(id), "node $id")
             assertEquals(pack((id % 900).toInt(), (id % 1800).toInt()), store[id])
+            // the place asked for before is only where to look first: right (the node before), or anything else
+            for (previous in intArrayOf(i - 1, -1, i, i + 1, i - 2, ids.size - 1, ids.size - 2, (i * 31) % ids.size)) {
+                if (previous >= -1) assertEquals(i, store.indexOfAfter(id, previous), "node $id after place $previous")
+            }
             for (near in longArrayOf(id - 1, id + 1, id - 255, id + 255, id - 256, id + 256, id + 257)) {
-                if (near !in held) { assertEquals(-1, store.indexOf(near), "node $near is not in the file"); assertEquals(NO_COORD, store[near]) }
+                if (near !in held) {
+                    assertEquals(-1, store.indexOf(near), "node $near is not in the file"); assertEquals(NO_COORD, store[near])
+                    for (previous in intArrayOf(i - 1, -1, i, ids.size - 1)) assertEquals(-1, store.indexOfAfter(near, previous), "node $near is not in the file")
+                }
             }
         }
         for (id in longArrayOf(Long.MIN_VALUE, -1, 0, ids.first() - 1, ids.last() + 1, Long.MAX_VALUE)) {
@@ -42,6 +49,36 @@ class NodeStoreTest {
         check(ids.toLongArray())
         check(ids.toLongArray(), blockSize = 1)
         check(ids.toLongArray(), maxBuckets = 64) // stretches far longer than 256 ids
+    }
+
+    @Test fun `a tagged node gives its tags and every other node none`() {
+        val r = Random(3)
+        val dict = TagDict()
+        val expected = HashMap<Int, Map<String, String>>()
+        var position = 0
+        // blocks of 1 to 200 nodes; tagged ones at the 64-node edges of the marks, in runs, and alone
+        val blocks = List(40) {
+            NodeBlock(keep = true, dict = dict).also { b ->
+                repeat(r.nextInt(1, 200)) {
+                    b.add(1_000L + position * 3L, pack(position, position), 1, 0)
+                    if (position % 64 == 0 || position % 64 == 63 || r.nextInt(9) == 0) {
+                        val tags = mapOf("k${position % 5}" to "v$position")
+                        b.tagLast(tags); expected[position] = tags
+                    }
+                    position++
+                }
+            }
+        }
+        val store = NodeStore(blocks, dict)
+        assertEquals(position, store.count)
+        assertEquals(expected.keys.sorted(), store.tagged.toList())
+        for (p in 0 until position) {
+            assertEquals(expected[p] ?: emptyMap(), store.tagsOf(p), "the node at $p")
+            assertEquals(expected.keys.sorted().indexOf(p), store.taggedIndexOf(p), "the node at $p")
+        }
+        // no node tagged at all: every node asked gives none
+        val bare = storeOf(longArrayOf(1, 2, 3, 400), 2)
+        for (p in 0 until 4) { assertEquals(-1, bare.taggedIndexOf(p)); assertEquals(emptyMap(), bare.tagsOf(p)) }
     }
 
     @Test fun `one node, two nodes at a stretch's edges, negative ids, and no node at all`() {

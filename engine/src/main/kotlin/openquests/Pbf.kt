@@ -85,8 +85,11 @@ class BlockContext(b: Osmformat.PrimitiveBlock) {
     private val lonOffset = b.lonOffset
     val dateGranularity = b.dateGranularity.toLong()
 
-    fun lat7(raw: Long): Int = ((latOffset + granularity * raw) / 100).toInt()
-    fun lon7(raw: Long): Int = ((lonOffset + granularity * raw) / 100).toInt()
+    /** the usual block: units of 1e-7 degrees and no offset, so a raw coordinate is the answer (100 * raw / 100) */
+    private val plain = granularity == 100L && latOffset == 0L && lonOffset == 0L
+
+    fun lat7(raw: Long): Int = if (plain) raw.toInt() else ((latOffset + granularity * raw) / 100).toInt()
+    fun lon7(raw: Long): Int = if (plain) raw.toInt() else ((lonOffset + granularity * raw) / 100).toInt()
 }
 
 fun pack(lat7: Int, lon7: Int): Long = (lat7.toLong() shl 32) or (lon7.toLong() and 0xffffffffL)
@@ -125,6 +128,14 @@ class NodeBlock(val keep: Boolean, dict: TagDict?) {
     fun tagLast(t: Map<String, String>) {
         if (taggedCount == tagged.size) { tagged = tagged.copyOf(taggedCount * 2); tagEnd = tagEnd.copyOf(taggedCount * 2) }
         tags!!.add(t)
+        tagged[taggedCount] = n - 1; tagEnd[taggedCount] = tags.n
+        taggedCount++
+    }
+
+    /** [tagLast] with the tags as the block gives them ([TagChunk.addPlaces]) */
+    fun tagLast(strings: Array<String>, keysVals: List<Int>, from: Int, until: Int) {
+        if (taggedCount == tagged.size) { tagged = tagged.copyOf(taggedCount * 2); tagEnd = tagEnd.copyOf(taggedCount * 2) }
+        tags!!.addPlaces(strings, keysVals, from, until)
         tagged[taggedCount] = n - 1; tagEnd[taggedCount] = tags.n
         taggedCount++
     }
@@ -181,6 +192,11 @@ class NodeStore(blocks: List<NodeBlock>, dict: TagDict?, maxBuckets: Long = MAX_
         }
     }
 
+    /** a bit per node: is it tagged? Most are not, and a map data asks every one of its nodes */
+    private val taggedBits = LongArray((count + 63) ushr 6).also { bits ->
+        for (p in tagged) bits[p ushr 6] = bits[p ushr 6] or (1L shl (p and 63))
+    }
+
     private val minId = if (count > 0) ids[0] else 0L
     private val maxId = if (count > 0) ids[count - 1] else -1L
     /** a stretch is 256 ids, or more where the file's ids span more than maxBuckets of those (OSM's do not) */
@@ -216,6 +232,13 @@ class NodeStore(blocks: List<NodeBlock>, dict: TagDict?, maxBuckets: Long = MAX_
         return -1
     }
 
+    /** [indexOf], looking first at the place after [previous] (the place of the node asked for before, or -1):
+     *  a way's nodes were mostly made together, so the next one is the next of the file, and no search is needed */
+    fun indexOfAfter(id: Long, previous: Int): Int {
+        val next = previous + 1
+        return if (next < count && ids[next] == id) next else indexOf(id)
+    }
+
     /** the packed coordinate of node [id], or [NO_COORD] */
     operator fun get(id: Long): Long {
         val i = indexOf(id)
@@ -223,7 +246,9 @@ class NodeStore(blocks: List<NodeBlock>, dict: TagDict?, maxBuckets: Long = MAX_
     }
 
     /** which of [tagged] the node at [position] is, or -1 */
-    fun taggedIndexOf(position: Int): Int = tagged.binarySearch(position).let { if (it >= 0) it else -1 }
+    fun taggedIndexOf(position: Int): Int =
+        if (taggedBits[position ushr 6] and (1L shl (position and 63)) == 0L) -1
+        else tagged.binarySearch(position).let { if (it >= 0) it else -1 }
 
     fun tagsOf(position: Int): Map<String, String> = taggedIndexOf(position).let { if (it < 0) emptyMap() else tags!!.tagsOf(it) }
 

@@ -40,6 +40,38 @@ class TagChunk(private val dict: TagDict) {
         if (tags is TagMap) tags.forEachTag { k, v -> put(k); put(v) }
         else for ((k, v) in tags) { put(k); put(v) }
     }
+
+    /** the block's string table, and the [dict] number of each of its strings once it was asked for (-1 before) */
+    private var table: Array<String>? = null
+    private var tableIds = IntArray(0)
+
+    private fun putAt(strings: Array<String>, place: Int) {
+        if (table !== strings) { table = strings; tableIds = IntArray(strings.size).also { it.fill(-1) } }
+        var id = tableIds[place]
+        if (id < 0) { id = known.getOrPut(strings[place]) { dict.idOf(strings[place]) }; tableIds[place] = id }
+        if (n == kv.size) kv = kv.copyOf(n * 2)
+        kv[n++] = id
+    }
+
+    /** Tags as the file gives them: a key's and its value's places in [strings], the block's string table, side
+     *  by side in [keysVals] from [from] until [until]. What [add] of the map of those strings gives, for tags
+     *  with no key twice, without a look-up by string for each. */
+    fun addPlaces(strings: Array<String>, keysVals: List<Int>, from: Int, until: Int) {
+        for (j in from until until) putAt(strings, keysVals[j])
+    }
+
+    /** [addPlaces] for keys and values in two lists (a way's) */
+    fun addPlaces(strings: Array<String>, keys: List<Int>, vals: List<Int>) {
+        for (j in keys.indices) { putAt(strings, keys[j]); putAt(strings, vals[j]) }
+    }
+}
+
+/** A block's string table and, for one element at a time, where its tags are in it: a way's [keys] and [vals].
+ *  One per block, set anew for each way ([TagChunk.addPlaces]). */
+class TagPlaces(val strings: Array<String>) {
+    var keys: List<Int>? = null
+    var vals: List<Int>? = null
+    fun of(keys: List<Int>, vals: List<Int>): TagPlaces { this.keys = keys; this.vals = vals; return this }
 }
 
 /** The tags of elements 0 until `start.size - 1`: element i's are `kv[start[i] until start[i + 1]]`. */

@@ -92,6 +92,10 @@ private inline fun <T> traced(out: ConcurrentLinkedQueue<Traced>?, label: () -> 
     return r
 }
 
+/** `-Dopenquests.assembleTrace=true`: a log line per city's map data with the seconds each step of building
+ *  it took, to see which steps run on one thread. Counts do not change. */
+private val ASSEMBLE_TRACE = System.getProperty("openquests.assembleTrace") == "true"
+
 /** `-Dopenquests.areaCities=<n>`: how many cities' map data are built and counted at once in city mode
  *  (default 1: one after the other). Each holds its own map data, so the heap must have room for n. */
 val AREA_CITIES: Int = System.getProperty("openquests.areaCities")?.toInt() ?: 1
@@ -202,13 +206,15 @@ class AreaPass(
         var refEnd = IntArray(256); var tagEnd = IntArray(256)
         var refs = LongArray(2048); var refCount = 0
         val tags = TagChunk(dict)
-        fun add(id: Long, version: Int, timestamp: Long, set: Int, t: Map<String, String>) {
+        /** [places]: the tags [t] as the block gives them (a way's keys and values, places in the block's string
+         *  table), when they are the same tags; null when a tag was left out or a key came twice */
+        fun add(id: Long, version: Int, timestamp: Long, set: Int, t: Map<String, String>, places: TagPlaces? = null) {
             if (n == ids.size) {
                 val m = n * 2
                 ids = ids.copyOf(m); versions = versions.copyOf(m); timestamps = timestamps.copyOf(m); cities = cities.copyOf(m)
                 refEnd = refEnd.copyOf(m); tagEnd = tagEnd.copyOf(m)
             }
-            tags.add(t)
+            if (places != null) tags.addPlaces(places.strings, places.keys!!, places.vals!!) else tags.add(t)
             ids[n] = id; versions[n] = version; timestamps[n] = timestamp; cities[n] = set
             refEnd[n] = refCount; tagEnd[n] = tags.n
             n++
@@ -564,12 +570,15 @@ class AreaPass(
 
     /** A way of some city's map data ([set] from [citySetOf], not 0), from the main pass's read of its block:
      *  kept with all its nodes, each of which then plays a part ([at]: its place in [nodes], or -1). */
-    fun collectWay(out: WayChunk, id: Long, version: Int, timestamp: Long, set: Int, refs: LongArray, at: IntArray, n: Int, tags: Map<String, String>) {
+    fun collectWay(
+        out: WayChunk, id: Long, version: Int, timestamp: Long, set: Int, refs: LongArray, at: IntArray, n: Int,
+        tags: Map<String, String>, places: TagPlaces? = null,
+    ) {
         for (i in 0 until n) {
             out.ref(refs[i])
             if (at[i] >= 0) markNeeded(at[i])
         }
-        out.add(id, version, timestamp, set, tags)
+        out.add(id, version, timestamp, set, tags, places)
     }
 
     private fun collectRelations(b: Osmformat.PrimitiveBlock): List<RelRec> {
@@ -749,6 +758,18 @@ class AreaPass(
         parallel: Boolean = false,
     ): MapDataWithGeometry {
         fun <T> each(n: Int, f: (Int) -> T): List<T> = if (parallel) parallelMap(0, n, f) else (0 until n).map(f)
+        fun eachDo(n: Int, f: (Int) -> Unit) {
+            if (parallel) java.util.stream.IntStream.range(0, n).parallel().forEach { f(it) } else for (i in 0 until n) f(i)
+        }
+        // -Dopenquests.assembleTrace=true: a line per city's map data with the seconds of each step
+        val steps = if (ASSEMBLE_TRACE && parallel) StringBuilder() else null
+        var stepStart = System.nanoTime()
+        fun step(name: String) {
+            if (steps == null) return
+            val now = System.nanoTime()
+            steps.append(" %s %.2f".format(name, (now - stepStart) / 1e9))
+            stepStart = now
+        }
 
         // the tagged nodes, then every node of a way, each where it first comes; a way's node that is not
         // in the file stays out, and the way has no geometry
@@ -756,42 +777,44 @@ class AreaPass(
             val w = areaWays[i]
             val found = IntArray(ways.refCount(w))
             var n = 0
+            var at = -1
             for (j in ways.refStart[w] until ways.refStart[w + 1]) {
-                val at = nodes.indexOf(ways.refs[j])
+                at = nodes.indexOfAfter(ways.refs[j], at)
                 if (at >= 0) found[n++] = at
             }
             if (n == found.size) found else found.copyOf(n)
         }
-        val wanted = IntArray(taggedNodes.size + refs.sumOf { it.size })
-        var filled = 0
-        taggedNodes.copyInto(wanted, filled); filled += taggedNodes.size
-        for (r in refs) { r.copyInto(wanted, filled); filled += r.size }
-        val byNode = LongArray(wanted.size) { (wanted[it].toLong() shl 32) or it.toLong() }
-        java.util.Arrays.parallelSort(byNode)
-        var distinct = 0
-        var previous = -1L
-        for (key in byNode) {
-            if (key ushr 32 != previous) byNode[distinct++] = key and 0xffffffffL
-            previous = key ushr 32
-        }
-        val firstAt = byNode.copyOf(distinct)
-        java.util.Arrays.parallelSort(firstAt)
-        val nodeOrder = IntArray(distinct) { wanted[firstAt[it].toInt()] }
+        step("refs")
+        val nodeOrder = firstSeen(taggedNodes, refs, nodes.count)
+        val distinct = nodeOrder.size
+        step("firstSeen")
         val inHashOrder = hashMapOrder(LongArray(distinct) { nodes.ids[nodeOrder[it]] })
+        step("nodeOrder")
+        // each node's id as it is made: read on the threads that make the nodes, not once more on one
+        val mapNodeIds = LongArray(distinct)
         val mapNodes = each(distinct) { i ->
             val n = nodeOrder[inHashOrder[i]]
             val c = nodes.coords[n]
-            Node(nodes.ids[n], LatLon(unpackLat7(c) / 1e7, unpackLon7(c) / 1e7), nodes.tagsOf(n), nodes.versions[n], nodes.timestampOf(n))
+            val id = nodes.ids[n]
+            mapNodeIds[i] = id
+            Node(id, LatLon(unpackLat7(c) / 1e7, unpackLon7(c) / 1e7), nodes.tagsOf(n), nodes.versions[n], nodes.timestampOf(n))
         }
 
         // where each node is in mapNodes: a way's geometry takes its nodes' own positions instead of a second
         // object per node of every way (a city's 25M)
-        val nodeLookup = LongIndex(LongArray(distinct) { nodes.ids[nodeOrder[inHashOrder[it]]] })
+        step("nodes")
+        val nodeLookup = LongIndex(mapNodeIds)
+        step("nodeLookup")
 
         val wayOrder = hashMapOrder(LongArray(areaWays.size) { ways.ids[areaWays[it]] })
         val relationOrder = hashMapOrder(LongArray(areaRelations.size) { areaRelations[it].id })
+        step("wayOrder")
 
-        val wayGeometries = each(areaWays.size) { i ->
+        // each way and its geometry put where it belongs by the thread that made it (a pair each and two lists
+        // read off the pairs on one thread were a tenth of a city's map data time)
+        val wayArray = arrayOfNulls<Way>(areaWays.size)
+        val wayGeometryArray = arrayOfNulls<ElementGeometry>(areaWays.size)
+        eachDo(areaWays.size) { i ->
             val w = areaWays[wayOrder[i]]
             val from = ways.refStart[w]; val count = ways.refCount(w)
             val way = Way(ways.ids[w], LongArrayAsList(ways.refs, from, count), ways.tags.tagsOf(w), ways.versions[w], ways.timestamps[w])
@@ -803,9 +826,11 @@ class AreaPass(
                 positions += mapNodes[at].position
             }
             // SC (MapData.getNodePositions): a way with a node missing has no geometry
-            way to if (complete) safeGeometry { geometryCreator.create(way, positions) } else null
+            wayArray[i] = way
+            wayGeometryArray[i] = if (complete) safeGeometry { geometryCreator.create(way, positions) } else null
         }
 
+        step("ways")
         val relationGeometries = each(areaRelations.size) { i ->
             val r = areaRelations[relationOrder[i]]
             val relation = Relation(r.id, r.members, r.tags, r.version, r.timestamp)
@@ -817,8 +842,16 @@ class AreaPass(
             }
             relation to if (geometries.isEmpty()) null else safeGeometry { geometryCreator.create(relation, geometries) }
         }
-        return ArrayMapData(box, mapNodes, wayGeometries.map { it.first }, wayGeometries.map { it.second },
-            relationGeometries.map { it.first }, relationGeometries.map { it.second }, eagerKeys = parallel, nodeIndex = nodeLookup)
+        step("relations")
+        @Suppress("UNCHECKED_CAST")
+        val wayList = (wayArray as Array<Way>).asList()
+        val wayGeometryList = wayGeometryArray.asList()
+        step("lists")
+        return ArrayMapData(box, mapNodes, wayList, wayGeometryList,
+            relationGeometries.map { it.first }, relationGeometries.map { it.second }, eagerKeys = parallel, nodeIndex = nodeLookup).also {
+            step("indexes")
+            if (steps != null) log("area: map data of ${mapNodes.size} nodes, ${wayList.size} ways:$steps")
+        }
     }
 
     private inline fun safeGeometry(create: () -> ElementGeometry?): ElementGeometry? =
@@ -895,6 +928,52 @@ private fun LongArray.lowerBoundIndex(v: Long): Int {
     var lo = 0; var hi = size
     while (lo < hi) { val mid = (lo + hi) ushr 1; if (this[mid] < v) lo = mid + 1 else hi = mid }
     return lo
+}
+
+/** The numbers of [first] and then of each of [rest], each once, where it first comes; all in 0 until [limit]. */
+internal fun firstSeen(first: IntArray, rest: List<IntArray>, limit: Int): IntArray {
+    val total = first.size.toLong() + rest.sumOf { it.size.toLong() }
+    require(total <= Int.MAX_VALUE) { "$total nodes asked of one map data: over what it may hold" }
+    // a bit per number of the range costs limit / 8 bytes to clear: for a city, less than sorting; for a tile of
+    // a few hundred nodes of a whole file's, far more
+    return if (total >= limit / FIRST_SEEN_BITS_FROM) firstSeenByBits(first, rest, limit, total.toInt())
+    else firstSeenBySort(first, rest, total.toInt())
+}
+
+/** [firstSeen] marks numbers in a bit set when it is asked for at least a 1/this of the range */
+private const val FIRST_SEEN_BITS_FROM = 256
+
+internal fun firstSeenByBits(first: IntArray, rest: List<IntArray>, limit: Int, total: Int): IntArray {
+    val seen = LongArray((limit + 63) ushr 6)
+    val out = IntArray(total)
+    var n = 0
+    for (p in first) {
+        val bit = 1L shl (p and 63)
+        if (seen[p ushr 6] and bit == 0L) { seen[p ushr 6] = seen[p ushr 6] or bit; out[n++] = p }
+    }
+    for (r in rest) for (p in r) {
+        val bit = 1L shl (p and 63)
+        if (seen[p ushr 6] and bit == 0L) { seen[p ushr 6] = seen[p ushr 6] or bit; out[n++] = p }
+    }
+    return if (n == total) out else out.copyOf(n)
+}
+
+internal fun firstSeenBySort(first: IntArray, rest: List<IntArray>, total: Int): IntArray {
+    val wanted = IntArray(total)
+    var filled = 0
+    first.copyInto(wanted, filled); filled += first.size
+    for (r in rest) { r.copyInto(wanted, filled); filled += r.size }
+    val byNumber = LongArray(wanted.size) { (wanted[it].toLong() shl 32) or it.toLong() }
+    java.util.Arrays.parallelSort(byNumber)
+    var distinct = 0
+    var previous = -1L
+    for (key in byNumber) {
+        if (key ushr 32 != previous) byNumber[distinct++] = key and 0xffffffffL
+        previous = key ushr 32
+    }
+    val firstAt = byNumber.copyOf(distinct)
+    java.util.Arrays.parallelSort(firstAt)
+    return IntArray(distinct) { wanted[firstAt[it].toInt()] }
 }
 
 /** Growable int list. */
