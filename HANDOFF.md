@@ -1513,3 +1513,12 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   1,000 reads, 55 MiB each); dated about 30% slower than undated. Container and volume removed. **Full run started** (all
   103 rectangles, the whole europe clip): `bench.sh full`, log `logs/opbench-full.log`, results `.scratch/overpass/full/`;
   cleanup after: `docker rm -f opbench-full; docker volume rm opbench-full`.
+- **The world's resolution, decided (11-14, 23:12; another session, asked as a wizard):** the owner wants the world
+  "daily resolution same as we have for city prototypes", and chose **"same as the cities": monthly points from
+  2017-01, daily from the 11-08 seed onward**, not daily back to 2017. Not planned or built. Estimates given, none
+  measured: by batch about 118 world counts of up to 24 h each (3-4 months); by streaming from a 2017-01 seed about
+  3,600 days at 8-14 min, roughly 4 weeks for tier 1 (every day's diff is applied anyway, so the monthly points cost
+  the same as daily ones), needing a full count and a node store at 2017-01 and every day diff since; an untested
+  shortcut is a month's diffs merged and applied in one step. Tier 2's history waits on Overpass's measured speed
+  (attic answers any past date). The only world reference is 11-08, so a stream from 2017 is checked where it
+  arrives.
