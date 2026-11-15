@@ -1389,3 +1389,5 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   tiles for dense ground first (z15/z16 split; a Python rerun of the cut and the update, about an hour); (b) build the
   store for real in Kotlin beside the engine, cut from the 12-07 planet; (c) leave tier 2 and keep the world on tier 1
   until the disk grows. And: push the commits since the last push.
+- **The owner's answers (11-14, 19:10):** next for tier 2: **measure smaller tiles first** (z15/z16, then an
+  adaptive split from the two); **push: yes**.
