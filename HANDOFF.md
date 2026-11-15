@@ -1422,3 +1422,10 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   is the credible fallback; the tile store wins on disk (~124 GB), daily work and is already exact. Kotlin over Python
   (speed), and over C++/Rust (the engine reads the store directly, one toolchain). **Waiting on the owner:** build it
   in Kotlin (first: the cut of one world file, measured), or take the osmium fallback, or wait.
+- **The owner asks (11-14): is there a paid Overpass with attic, and what would one cost to run?** Looked up the
+  pages: Overspan ($19-139/mo) says attic is "not yet"; Geofabrik (EUR 40-160/mo, own server from EUR 550) and
+  Tracestrack say nothing about attic; overpass.ch ($25-199/mo, dedicated from $649) shows "history back to Sep 2012"
+  and runs history queries on stock Overpass, but no `[date:]` is named, so ask them. Private.coffee (free, donations)
+  has attic but no promises. Own instance: ~0.5 TB growing, cloned from dev.overpass-api.de in about a day; a rented
+  64 GB / 2x1 TB NVMe box is roughly EUR 40-80/mo (Hetzner auction, not priced live), or one 2 TB NVMe here (one-off).
+  Not decided; the tier 2 question above still waits.
