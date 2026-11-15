@@ -1505,3 +1505,11 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   what transfers), the union query's. What it cannot show: the external drive's speed, and fourteen years of attic
   (one day here). XML goes to a bind mount, not into Docker's disk (which never shrinks by itself). Docker may take
   46 GB; stop the container before a 30 GB recount.
+- **Overpass benchmark: rehearsal passed (11-14, 23:02-23:10; owner: "yes, pull and run").** `tools/stream/overpass/bench.sh
+  rehearse` (log `logs/opbench-rehearse.log`, results `.scratch/overpass/rehearse/summary.json`): the 16 Lisboa rectangles on
+  a smart extract of the 11-12 clip. **All three stages 0 rows different** inside the boxes (11-12 undated, 11-13 after
+  diff 5175, `[date:11-12T00:00Z]`); stage 3's answer differs from stage 1's only in tag order on 28 objects. Load 26 s
+  (1.2 GB db); the whole planet's 5175 into it 189 s (db 4.3 GB). A rectangle alone 0.3-0.5 s warm, 0.6-1.0 s cold (about
+  1,000 reads, 55 MiB each); dated about 30% slower than undated. Container and volume removed. **Full run started** (all
+  103 rectangles, the whole europe clip): `bench.sh full`, log `logs/opbench-full.log`, results `.scratch/overpass/full/`;
+  cleanup after: `docker rm -f opbench-full; docker volume rm opbench-full`.
