@@ -5,10 +5,11 @@
 //!   tilestore cut --pbf X.osm.pbf --out S --day 2026-11-12 [--z 14]
 //!       the cut with the whole file in memory: right for a clip, the oracle for the streaming cut
 //!   tilestore scut --pbf X.osm.pbf --out S --day 2026-11-12 [--z 14] [--bucket-z 8] [--keep-spill] [--at T]
-//!       [--file-z B] [--cut-gib 2]
+//!       [--file-z B] [--cut-gib 2] [--nodes F.loc [--sparse]]
 //!       the streaming cut (stream.rs): three passes and buckets, the planet cut's shape; with --at, of a
 //!       history file as it was at T. A spill file is a cell of zoom --file-z (default: a file a bucket);
-//!       the spill files cut at once hold at most --cut-gib GiB of records (or are one file)
+//!       the spill files cut at once hold at most --cut-gib GiB of records (or are one file). With --nodes
+//!       the node places are kept in that file by id (nodefile.rs), not in memory; it is deleted after pass 2
 //!   tilestore at --pbf X.osh.pbf --at 2026-10-01T00:00:00Z [--out Y.osm.pbf] [--stamp T]
 //!       a history file at a date, as a snapshot PBF (history.rs)
 //!   tilestore ptime --pbf X.os[mh].pbf [--at T] --nodes F.loc [--z 14] [--sparse] [--keep]
@@ -18,6 +19,7 @@
 mod clip;
 mod cols;
 mod history;
+mod nodefile;
 mod npy;
 mod pairs;
 mod pbf;
@@ -69,7 +71,9 @@ fn main() {
                 // GiB of spilled records cut at once
                 let budget: f64 = arg(&args, "--cut-gib").map(|s| s.parse().unwrap()).unwrap_or(2.0);
                 let budget = (budget * (1u64 << 30) as f64) as u64;
-                stream::cut(&pbf, &out, &day, z, bz, fz, budget, args.iter().any(|a| a == "--keep-spill"), at);
+                let nodes = arg(&args, "--nodes").map(PathBuf::from);
+                let nodes = nodes.as_deref().map(|p| (p, args.iter().any(|a| a == "--sparse")));
+                stream::cut(&pbf, &out, &day, z, bz, fz, budget, args.iter().any(|a| a == "--keep-spill"), at, nodes);
             }
         }
         Some("read") => read::read(&read::Args {

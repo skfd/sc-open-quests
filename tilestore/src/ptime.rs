@@ -4,21 +4,17 @@
 //!
 //!   tilestore ptime --pbf X.os[mh].pbf [--at T] --nodes F.loc [--z 14] [--sparse] [--keep]
 //!
-//! The node file: at byte 8 * id the node's latitude and longitude in 1e-7 degrees, little-endian, the latitude
-//! with 2^31 added so that eight zero bytes mean "no such node". The planet's is about 108 GB. --sparse marks
+//! The node file is nodefile.rs's; the planet's is about 115 GB. --sparse marks
 //! it sparse (fsutil), for a region, whose nodes are spread over the planet's id range. It is deleted at the end
 //! unless --keep.
 
+use crate::nodefile::{self, NodeWriter};
 use crate::stream::Blobs;
 use crate::tiles::keys_of_way;
 use crate::log;
-use std::fs::{self, OpenOptions};
-use std::io::{BufWriter, Seek, SeekFrom, Write};
+use std::fs;
 use std::path::Path;
 use std::time::Instant;
-
-/// ids apart by more than this start a new run: the file is sought, not filled with zeros
-const GAP: i64 = 4096;
 
 #[repr(C)]
 #[derive(Default)]
@@ -45,23 +41,6 @@ pub fn memory() -> (f64, f64, f64) {
     unsafe { K32GetProcessMemoryInfo(GetCurrentProcess(), &mut c, c.cb) };
     let g = |b: usize| b as f64 / (1u64 << 30) as f64;
     (g(c.working_set), g(c.peak_working_set), g(c.pagefile))
-}
-
-fn place_bytes(lat: i32, lon: i32) -> [u8; 8] {
-    let mut b = [0u8; 8];
-    b[..4].copy_from_slice(&(lat.wrapping_sub(i32::MIN)).to_le_bytes());
-    b[4..].copy_from_slice(&lon.to_le_bytes());
-    b
-}
-
-fn place_at(map: &[u8], id: i64) -> Option<(i32, i32)> {
-    let at = (id as usize).checked_mul(8)?;
-    let b = map.get(at..at + 8)?;
-    let lat = i32::from_le_bytes(b[..4].try_into().unwrap());
-    if lat == 0 {
-        return None;
-    }
-    Some((lat.wrapping_add(i32::MIN), i32::from_le_bytes(b[4..].try_into().unwrap())))
 }
 
 #[derive(Default)]
@@ -96,66 +75,25 @@ pub fn run(pbf: &Path, at: Option<i64>, nodes: &Path, z: u32, sparse: bool, keep
     lap("index", &mut t, format!(", \"blobs\": {nb}, \"firstWay\": {}, \"firstRelation\": {}", blobs.first_way, blobs.first_rel));
 
     // pass 1: every node's place into the file, at its id
-    if let Some(d) = nodes.parent() {
-        fs::create_dir_all(d).unwrap();
-    }
-    let file = OpenOptions::new().read(true).write(true).create(true).truncate(true).open(nodes).expect("create the node file");
-    if sparse {
-        let ok = std::process::Command::new("fsutil").args(["sparse", "setflag"]).arg(nodes).status().map(|s| s.success()).unwrap_or(false);
-        assert!(ok, "fsutil sparse setflag failed");
-    }
-    let mut w = BufWriter::with_capacity(1 << 24, file);
-    let (mut next, mut n_nodes, mut n_tagged, mut seeks, mut top) = (0i64, 0u64, 0u64, 0u64, -1i64);
+    let mut nw = NodeWriter::create(nodes, sparse);
+    let (mut n_nodes, mut n_tagged) = (0u64, 0u64);
     let st1 = blobs.each_at(
         0,
         (blobs.first_way + 1).min(nb),
         at,
         |p| {
-            // runs of ids close together, each as the bytes of its stretch of the file
-            let mut runs: Vec<(i64, Vec<u8>)> = Vec::new();
-            let mut last = i64::MIN;
-            for i in 0..p.nid.len() {
-                let id = p.nid[i];
-                assert!(id >= 0, "a negative node id");
-                if id <= last {
-                    // given twice or out of order: counted by the reader, not written
-                    continue;
-                }
-                if runs.is_empty() || id - last > GAP {
-                    runs.push((id, Vec::new()));
-                } else {
-                    let r = &mut runs.last_mut().unwrap().1;
-                    r.resize(r.len() + (id - last - 1) as usize * 8, 0);
-                }
-                runs.last_mut().unwrap().1.extend_from_slice(&place_bytes(p.lat7[i], p.lon7[i]));
-                last = id;
-            }
-            (runs, p.nid.len() as u64, p.tn_local.len() as u64)
+            (nodefile::runs(&p.nid, &p.lat7, &p.lon7), p.nid.len() as u64, p.tn_local.len() as u64)
         },
         |(runs, n, tagged)| {
             n_nodes += n;
             n_tagged += tagged;
-            for (start, bytes) in runs {
-                if start < next {
-                    continue;
-                }
-                if start - next <= GAP {
-                    for _ in next..start {
-                        w.write_all(&[0u8; 8]).unwrap();
-                    }
-                } else {
-                    w.seek(SeekFrom::Start(start as u64 * 8)).unwrap();
-                    seeks += 1;
-                }
-                w.write_all(&bytes).unwrap();
-                next = start + bytes.len() as i64 / 8;
-                top = next - 1;
-            }
+            nw.add(&runs);
         },
     );
-    w.flush().unwrap();
-    let file = w.into_inner().unwrap();
-    let node_bytes = file.metadata().unwrap().len();
+    let (seeks, top) = (nw.seeks, nw.top());
+    // written out and on the disk before it is read: the wait is part of pass 1
+    let map = nw.finish(true);
+    let node_bytes = map.bytes;
     log(&format!(
         "pass 1: {n_nodes} nodes, {n_tagged} tagged, highest id {top}; node file {:.2} GiB, {seeks} seeks; {} versions read, {} older than the one before, {} ids not increasing",
         node_bytes as f64 / (1u64 << 30) as f64,
@@ -171,12 +109,6 @@ pub fn run(pbf: &Path, at: Option<i64>, nodes: &Path, z: u32, sparse: bool, keep
             st1.versions, st1.backwards, st1.not_increasing
         ),
     );
-    file.sync_all().unwrap();
-    lap("nodeFileToDisk", &mut t, String::new());
-
-    // pass 2: every way's nodes found in the file, its tiles computed
-    // SAFETY: the file is ours and is not written while it is mapped
-    let map = unsafe { memmap2::Mmap::map(&file) }.expect("map the node file");
     let mut ways = Ways::default();
     let st2 = blobs.each_at(
         blobs.first_way,
@@ -191,7 +123,7 @@ pub fn run(pbf: &Path, at: Option<i64>, nodes: &Path, z: u32, sparse: bool, keep
                 let refs = &p.w_refs[roff..roff + p.w_nref[wi] as usize];
                 roff += refs.len();
                 pl.clear();
-                pl.extend(refs.iter().map(|&r| place_at(&map, r)));
+                pl.extend(refs.iter().map(|&r| map.get(r)));
                 keys_of_way(&pl, z, &mut keys);
                 o.ways += 1;
                 o.refs += refs.len() as u64;
@@ -235,10 +167,10 @@ pub fn run(pbf: &Path, at: Option<i64>, nodes: &Path, z: u32, sparse: bool, keep
             ways.ways, ways.no_tile, ways.refs, ways.absent, ways.pairs, ways.most_keys, ways.wide, ways.wide_pairs, ways.key_sum, st2.versions, st2.backwards, st2.not_increasing
         ),
     );
-    drop(map);
-    drop(file);
-    if !keep {
-        fs::remove_file(nodes).unwrap();
+    if keep {
+        drop(map);
+    } else {
+        map.delete();
         log("the node file is deleted");
     }
     let s = format!(

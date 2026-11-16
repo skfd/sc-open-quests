@@ -253,6 +253,33 @@ fn ignore_relation(tags: &[u8]) -> bool {
     }
 }
 
+/// a part's kept relations (tagged, not ones the app ignores) and nothing else of it
+pub fn kept_relations(p: &Part) -> Part {
+    let mut q = Part::default();
+    let (mut m, mut ro, mut to) = (0usize, 0usize, 0usize);
+    for r in 0..p.rid.len() {
+        let (nm, tl) = (p.r_nmem[r] as usize, p.r_tlen[r] as usize);
+        let rl: usize = p.m_rlen[m..m + nm].iter().map(|&l| l as usize).sum();
+        let tags = &p.r_tags[to..to + tl];
+        if !tags.is_empty() && !ignore_relation(tags) {
+            q.rid.push(p.rid[r]);
+            q.r_ver.push(p.r_ver[r]);
+            q.r_ts.push(p.r_ts[r]);
+            q.r_nmem.push(p.r_nmem[r]);
+            q.mtype.extend_from_slice(&p.mtype[m..m + nm]);
+            q.mref.extend_from_slice(&p.mref[m..m + nm]);
+            q.m_rlen.extend_from_slice(&p.m_rlen[m..m + nm]);
+            q.roles.extend_from_slice(&p.roles[ro..ro + rl]);
+            q.r_tlen.push(p.r_tlen[r]);
+            q.r_tags.extend_from_slice(tags);
+        }
+        m += nm;
+        ro += rl;
+        to += tl;
+    }
+    q
+}
+
 impl Clip {
     /// an empty clip, its offset columns started
     pub fn new() -> Clip {

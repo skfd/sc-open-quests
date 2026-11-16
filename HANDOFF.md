@@ -1869,3 +1869,13 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   (today only `ptime` has it), held against `scut` on the clip and Germany through a sparse file; then trim those
   tables. Then the planet cut needs only disk (node file 115 GB, spill about 167 GB, store 97-136 GB). The update
   in Rust is independent.
+- **INCIDENT, 11-15 about 21:13-21:14: C: was full (2.0 GB free) for a minute or two.** `scut --nodes --sparse`
+  on Germany: a region's sparse node file is not small. NTFS allocates a sparse file in 64 KB units and Germany's
+  442.6M nodes are spread over the whole id range, so the file took all 258 GB that were free and the run died
+  with "not enough space on the disk" in pass 1 (no store written). The file was deleted by hand at 21:14:37; the
+  space comes back over minutes, not at once. Anything else writing to C: in that minute may have failed: nothing
+  of this repo did (git clean but for this work), the engine session's last files are from 19:32; other projects
+  were not looked at. **Guard, built:** the node-file writer checks the free space of its disk every 256 blocks and
+  below 40 GiB deletes its file and stops (`tilestore/src/nodefile.rs`, `FLOOR`). **Do not run a country through
+  `--nodes --sparse`**: the clip (127.9M nodes) and Berlin fit, Germany does not; the planet's own file is 115 GB,
+  not sparse, and is the smaller case.

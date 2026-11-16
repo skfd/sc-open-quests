@@ -9,6 +9,7 @@
 
 use crate::clip::{self, Clip, Part};
 use crate::history;
+use crate::nodefile::{self, NodeMap, NodeWriter};
 use crate::cols::{delta32, delta64, pack_cols, Col};
 use crate::npy;
 use crate::pairs;
@@ -347,18 +348,33 @@ impl Blobs {
 
 // --- node places -------------------------------------------------------------------------------------
 
-/// every node's place, found by id. In memory, sorted by id, as the file gives them: right up to a country. The
-/// planet's is a file by id (8 bytes an id), not built here.
+/// every node's place, found by id: in memory, sorted by id, as the file gives them (right up to a country), or
+/// in a file by id (nodefile.rs: the planet's way, 8 bytes an id)
 #[derive(Default)]
-struct Places {
+struct MemPlaces {
     ids: Vec<i64>,
     lat: Vec<i32>,
     lon: Vec<i32>,
 }
 
+enum Places {
+    Mem(MemPlaces),
+    File(NodeMap),
+}
+
 impl Places {
     fn get(&self, id: i64) -> Option<(i32, i32)> {
-        self.ids.binary_search(&id).ok().map(|i| (self.lat[i], self.lon[i]))
+        match self {
+            Places::Mem(m) => m.ids.binary_search(&id).ok().map(|i| (m.lat[i], m.lon[i])),
+            Places::File(f) => f.get(id),
+        }
+    }
+
+    /// no pass needs them any more: the memory given back, the file deleted
+    fn done(self) {
+        if let Places::File(f) = self {
+            f.delete();
+        }
     }
 }
 
@@ -508,6 +524,9 @@ struct NodeOut {
     ids: Vec<i64>,
     lat: Vec<i32>,
     lon: Vec<i32>,
+    /// with a node file: the places as its runs, and how many nodes
+    runs: Vec<(i64, Vec<u8>)>,
+    n: u64,
     bodies: Vec<u8>,
     /// (home bucket, body start, body end, tagged, id)
     list: Vec<(u32, u32, u32, bool, i64)>,
@@ -529,9 +548,10 @@ struct WayOut {
 }
 
 /// `at`: the file is a history file, cut as it was at that date (seconds)
+/// `nodes`: the node places go into this file by id, not into memory (and is it sparse);
 /// `fz`: a spill file is a cell of this zoom (at most `bz`: a file a bucket); `budget`: the spill files cut at
 /// once hold at most this many bytes of records, or are one file
-pub fn cut(pbf: &Path, out: &Path, day: &str, z: u32, bz: u32, fz: u32, budget: u64, keep_spill: bool, at: Option<i64>) {
+pub fn cut(pbf: &Path, out: &Path, day: &str, z: u32, bz: u32, fz: u32, budget: u64, keep_spill: bool, at: Option<i64>, nodes: Option<(&Path, bool)>) {
     let t0 = Instant::now();
     let geo = Geo { z, bz, fz };
     let nt = (1u64 << z) as f64;
@@ -563,14 +583,24 @@ pub fn cut(pbf: &Path, out: &Path, day: &str, z: u32, bz: u32, fz: u32, budget: 
         // the rule gave an object twice (its timestamps run backwards around the date): no store of that
         assert!(s.not_increasing == 0, "{} objects are given twice or out of order at this date: the history file's timestamps run backwards around it", s.not_increasing);
     };
-    seen(blobs.each_at(blobs.first_rel, nb, at, |p| p, |p| {
-        // only the block's relations: a block shared with ways gives its ways to pass 2
-        let mut q = clip::Part::default();
-        (q.rid, q.r_ver, q.r_ts, q.r_nmem, q.mtype, q.mref) = (p.rid, p.r_ver, p.r_ts, p.r_nmem, p.mtype, p.mref);
-        (q.m_rlen, q.roles, q.r_tlen, q.r_tags) = (p.m_rlen, p.roles, p.r_tlen, p.r_tags);
-        rel.append(&q);
-    }));
-    assert!(rel.rid.windows(2).all(|w| w[0] < w[1]), "relation ids are not strictly increasing: the file is not sorted");
+    // only the block's relations (a block shared with ways gives its ways to pass 2), and of them only the kept:
+    // the others are counted and let go
+    let (mut n_rels, mut last_rel) = (0usize, i64::MIN);
+    seen(blobs.each_at(
+        blobs.first_rel,
+        nb,
+        at,
+        |p| {
+            let increasing = p.rid.windows(2).all(|w| w[0] < w[1]);
+            (clip::kept_relations(&p), p.rid.len(), p.rid.first().copied(), p.rid.last().copied(), increasing)
+        },
+        |(q, n, first, last, increasing)| {
+            assert!(increasing && first.is_none_or(|f| f > last_rel), "relation ids are not strictly increasing: the file is not sorted");
+            last_rel = last.unwrap_or(last_rel);
+            n_rels += n;
+            rel.append(&q);
+        },
+    ));
     rel.keep_relations();
     let nr = rel.rid.len();
     let (mut member_ways, mut member_nodes): (Vec<i64>, Vec<i64>) = (Vec::new(), Vec::new());
@@ -591,7 +621,7 @@ pub fn cut(pbf: &Path, out: &Path, day: &str, z: u32, bz: u32, fz: u32, budget: 
     member_nodes.dedup();
     let kept: Vec<usize> = (0..nr).filter(|&r| rel.r_kept[r]).collect();
     log(&format!(
-        "pass 0: {nr} relations, {} kept, with {} member ways and {} member nodes",
+        "pass 0: {n_rels} relations, {} kept, with {} member ways and {} member nodes",
         kept.len(),
         member_ways.len(),
         member_nodes.len()
@@ -599,20 +629,21 @@ pub fn cut(pbf: &Path, out: &Path, day: &str, z: u32, bz: u32, fz: u32, budget: 
     lap("pass0Relations", &mut t, &mut phases);
 
     // pass 1: the nodes' places; tagged nodes and kept relations' member nodes to their home buckets
-    let mut places = Places::default();
+    let mut mem = MemPlaces::default();
+    let mut node_writer = nodes.map(|(path, sparse)| NodeWriter::create(path, sparse));
+    let use_file = node_writer.is_some();
+    let mut n_nodes = 0u64;
     let mut tagged_bit = Bits::default();
     let mut mn_key = vec![NO_KEY; member_nodes.len()];
     let tagged_path = work.join("tagged.bin");
     let mut tagged_file = BufWriter::with_capacity(1 << 22, File::create(&tagged_path).unwrap());
-    // the tagged-node file's index: (id, offset, length)
-    let mut tagged_idx: Vec<(i64, u64, u32)> = Vec::new();
-    let mut tagged_at = 0u64;
+    let mut n_tagged = 0u64;
     seen(blobs.each_at(
         0,
         (blobs.first_way + 1).min(nb),
         at,
         |p| {
-            let mut o = NodeOut { ids: Vec::new(), lat: Vec::new(), lon: Vec::new(), bodies: Vec::new(), list: Vec::new(), member: Vec::new() };
+            let mut o = NodeOut { ids: Vec::new(), lat: Vec::new(), lon: Vec::new(), runs: Vec::new(), n: p.nid.len() as u64, bodies: Vec::new(), list: Vec::new(), member: Vec::new() };
             let (mut tj, mut toff) = (0usize, 0usize);
             for i in 0..p.nid.len() {
                 let (id, lat, lon) = (p.nid[i], p.lat7[i], p.lon7[i]);
@@ -637,7 +668,11 @@ pub fn cut(pbf: &Path, out: &Path, day: &str, z: u32, bz: u32, fz: u32, budget: 
                     o.member.push((m, key));
                 }
             }
-            (o.ids, o.lat, o.lon) = (p.nid, p.lat7, p.lon7);
+            if use_file {
+                o.runs = nodefile::runs(&p.nid, &p.lat7, &p.lon7);
+            } else {
+                (o.ids, o.lat, o.lon) = (p.nid, p.lat7, p.lon7);
+            }
             o
         },
         |o| {
@@ -647,22 +682,42 @@ pub fn cut(pbf: &Path, out: &Path, day: &str, z: u32, bz: u32, fz: u32, budget: 
                 if tagged {
                     tagged_bit.set(id);
                     tagged_file.write_all(body).unwrap();
-                    tagged_idx.push((id, tagged_at, body.len() as u32));
-                    tagged_at += body.len() as u64;
+                    n_tagged += 1;
                 }
             }
             for &(m, key) in &o.member {
                 mn_key[m] = key;
             }
-            places.ids.extend_from_slice(&o.ids);
-            places.lat.extend_from_slice(&o.lat);
-            places.lon.extend_from_slice(&o.lon);
+            n_nodes += o.n;
+            match node_writer.as_mut() {
+                Some(w) => w.add(&o.runs),
+                None => {
+                    mem.ids.extend_from_slice(&o.ids);
+                    mem.lat.extend_from_slice(&o.lat);
+                    mem.lon.extend_from_slice(&o.lon);
+                }
+            }
         },
     ));
     tagged_file.flush().unwrap();
     drop(tagged_file);
-    assert!(places.ids.windows(2).all(|w| w[0] < w[1]), "node ids are not strictly increasing: the file is not sorted");
-    log(&format!("pass 1: {} nodes, {} tagged", places.ids.len(), tagged_idx.len()));
+    assert!(mem.ids.windows(2).all(|w| w[0] < w[1]), "node ids are not strictly increasing: the file is not sorted");
+    let places = match node_writer {
+        Some(w) => {
+            assert!(w.out_of_order == 0, "node ids are not increasing: the file is not sorted");
+            let (seeks, top) = (w.seeks, w.top());
+            // what the file took of the disk, as the free space says (other writers on the disk are in it too)
+            let took = match (w.free_at_start, w.free()) {
+                (Some(a), Some(b)) => format!("{:.1} GiB less free on its disk than before it", (a as f64 - b as f64) / (1u64 << 30) as f64),
+                _ => "free space not read".to_string(),
+            };
+            let m = w.finish(false);
+            log(&format!("node file: {:.2} GiB long, highest id {top}, {seeks} seeks; {took}", m.bytes as f64 / (1u64 << 30) as f64));
+            Places::File(m)
+        }
+        None => Places::Mem(mem),
+    };
+    log(&format!("pass 1: {n_nodes} nodes, {n_tagged} tagged"));
     lap("pass1Nodes", &mut t, &mut phases);
 
     // pass 2: the ways, with their nodes' places, to every bucket they cross
@@ -774,6 +829,7 @@ pub fn cut(pbf: &Path, out: &Path, day: &str, z: u32, bz: u32, fz: u32, budget: 
         needs.len(),
         mw_id.len()
     ));
+    places.done();
     lap("pass2Ways", &mut t, &mut phases);
 
     // the needs: each tagged node's record, to the buckets that hold a way of it and are not its home
@@ -785,14 +841,23 @@ pub fn cut(pbf: &Path, out: &Path, day: &str, z: u32, bz: u32, fz: u32, budget: 
         needs.clear();
     }
     {
-        let f = File::open(&tagged_path).unwrap();
-        let mut body = Vec::new();
-        for &(id, bucket) in &needs {
-            let i = tagged_idx.binary_search_by_key(&id, |e| e.0).expect("a needed node is tagged");
-            let (_, off, len) = tagged_idx[i];
-            body.resize(len as usize, 0);
-            f.seek_read(&mut body, off).unwrap();
-            spill.add(KIND_NODE, bucket, &body);
+        // the needs and the tagged-node file are both in id order: one read of the file, no index of it. A
+        // record: id, place, 1, version, timestamp, the tags' length (at byte 29), the tags.
+        let mut f = BufReader::with_capacity(1 << 22, File::open(&tagged_path).unwrap());
+        let mut body = vec![0u8; 33];
+        let mut j = 0;
+        while j < needs.len() {
+            body.resize(33, 0);
+            f.read_exact(&mut body).expect("a needed node is tagged");
+            let id = i64::from_le_bytes(body[0..8].try_into().unwrap());
+            let tl = u32::from_le_bytes(body[29..33].try_into().unwrap()) as usize;
+            body.resize(33 + tl, 0);
+            f.read_exact(&mut body[33..]).unwrap();
+            assert!(needs[j].0 >= id, "a needed node is tagged");
+            while j < needs.len() && needs[j].0 == id {
+                spill.add(KIND_NODE, needs[j].1, &body);
+                j += 1;
+            }
         }
     }
     let n_needs = needs.len();
@@ -942,9 +1007,8 @@ pub fn cut(pbf: &Path, out: &Path, day: &str, z: u32, bz: u32, fz: u32, budget: 
     npy::save_idx(&out.join("relidx-0000.npy"), &ridx);
     lap("relationStore", &mut t, &mut phases);
     // nothing of the passes is needed by the buckets
-    drop(places);
     drop(rel);
-    drop((member_ways, member_nodes, mn_key, tagged_idx, tagged_bit));
+    drop((member_ways, member_nodes, mn_key, tagged_bit));
     drop((mw_id, mw_pos, mw_koff, mw_keys));
 
     // the buckets: each spill file's buckets cut in memory, only their own tiles kept
