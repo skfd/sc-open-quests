@@ -27,9 +27,13 @@
 //!       | loc check --loc F.loc --pbf Y.osm.pbf
 //!       the node places by id in osmium's dense_file_array layout, as --before-loc reads them (locfile.rs): built
 //!       from a file at a date, moved forward by a day's diff, checked against a snapshot of the same instant
+//!   tilestore compact --store S [--min-dead 0.0] [--dry-run]
+//!       the live tiles and relation blobs of older daily packs copied into the newest generation's files, the old
+//!       packs and older generations' indexes removed; only the newest generation stays readable (compact.rs)
 //!   tilestore read --store S [--gen -1] --cities C.json [--base DIR] [--ring 300] --out Y.osm.pbf [--stamp T]
 
 mod clip;
+mod compact;
 mod cols;
 mod history;
 mod locfile;
@@ -150,6 +154,11 @@ fn main() {
                 std::process::exit(2);
             }
         },
+        Some("compact") => compact::compact(
+            &PathBuf::from(arg(&args, "--store").expect("--store")),
+            arg(&args, "--min-dead").map(|s| s.parse().unwrap()).unwrap_or(0.0),
+            args.iter().any(|a| a == "--dry-run"),
+        ),
         Some("at") => history::at(
             &PathBuf::from(arg(&args, "--pbf").expect("--pbf")),
             &arg(&args, "--at").expect("--at"),

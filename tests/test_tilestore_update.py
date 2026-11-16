@@ -187,6 +187,24 @@ class UpdateTest(unittest.TestCase):
             for f in ("wtiles", "rtiles"):
                 self.assertTrue(np.array_equal(np.load(d / "p-world" / f"{f}-0001.npy"),
                                                np.load(d / "r-before" / f"{f}-0001.npy")), ("planet flags", f))
+            # compaction: an empty second day, then day 1's pack copied into day 2's and removed; the store the same
+            (d / "empty.osc").write_text('<?xml version="1.0" encoding="UTF-8"?>\n<osmChange version="0.6">\n</osmChange>\n',
+                                         encoding="utf-8")
+            run("update", "--store", d / "p-world", "--diff", d / "empty.osc", "--before-loc", d / "before.loc",
+                "--day", "after2", "--world", "--group-mib", "0", "--prune-pairs")
+            run("compact", "--store", d / "p-world")
+            self.assertFalse((d / "p-world" / "pack-0001.bin").exists())
+            self.assertFalse((d / "p-world" / "idx-0001.npy").exists())
+            self.assertTrue((d / "p-world" / "pack-0000.bin").exists())
+            import json
+            meta = json.loads((d / "p-world" / "store.json").read_text())
+            self.assertEqual([g.get("readable", True) for g in meta["generations"]], [False, False, True])
+            self.assertGreater(meta["compactions"][-1]["copied"]["pack"]["rows"], 0)
+            r = S.compare_stores(d / "p-world", d / "r-after", ga=2, gb=0)
+            self.assertEqual((r["differ"], r["onlyA"], r["onlyB"]), (0, 0, 0), ("compacted", r))
+            for rid in S.Store(d / "r-after", 0).ridx["key"].tolist():
+                self.assertEqual(zstd_d(S.Store(d / "p-world", 2).relation(rid)), zstd_d(S.Store(d / "r-after", 0).relation(rid)),
+                                 ("compacted", rid))
             for f in ("wtiles", "rtiles", "relidx"):
                 a, b = np.load(d / "w-before" / f"{f}-0001.npy"), np.load(d / "r-before" / f"{f}-0001.npy")
                 self.assertTrue(np.array_equal(a if f != "relidx" else a["key"], b if f != "relidx" else b["key"]), f)
