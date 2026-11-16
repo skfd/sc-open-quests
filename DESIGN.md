@@ -4793,7 +4793,7 @@ store 97-136 GB with its indexes), so it waits on the 2 TB drive.
   first and last is the disk's own drift, not the delete: the Berlin test run again at 01:02 with readings around
   it (314,621 and 314,620 MiB free in the 45 s before, 314,620 MiB after the program deleted its file, 314,617 MiB
   30 s later) lost nothing, and between 00:59 and 01:01, with no run of ours going, free space rose by about 22 GiB
-  (285 GiB to 307 GiB; why was not looked at).
+  (285 GiB to 307 GiB: another session deleted 23 GB of stale files from the shared OSM store, commit f3f18ecd).
 - **Memory:** private bytes 4.0 GiB after pass 1 and after pass 2 (11.0 and 7.7 with the places in memory). The
   working set reached 34.8 GiB in pass 2: the mapped file's pages, which the system can take back, counted as the
   process's. The bucket phase's working set 7.69 GiB, as without the file.
