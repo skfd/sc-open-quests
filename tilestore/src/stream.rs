@@ -22,6 +22,8 @@ use std::fs::{self, File, OpenOptions};
 use std::io::{BufReader, BufWriter, Read, Write};
 use std::os::windows::fs::FileExt;
 use std::path::{Path, PathBuf};
+use std::sync::mpsc::{sync_channel, SyncSender};
+use std::thread::JoinHandle;
 use std::time::Instant;
 
 /// a way's ref with no node in the file, in a spilled way
@@ -102,7 +104,16 @@ impl Geo {
 
 /// records by spill file, kept in memory until a file's share passes a few MB, then appended to it as one zstd
 /// frame: [compressed length][raw length][bytes]. A record: [kind][bucket][body length][body].
+/// The pass's thread only fills the buffers: a full one is handed to a worker, which compresses it and appends
+/// it. A file always goes to the same worker, so its frames are whole and in order.
 struct Spill {
+    /// to each worker: a file and a buffer of its records. Bounded, so the pass waits when the workers are behind
+    /// and what is queued stays small
+    to: Vec<SyncSender<(u32, Vec<u8>)>>,
+    /// each worker: the bytes it wrote and the seconds it worked
+    workers: Vec<JoinHandle<(u64, f64)>>,
+    /// the workers' seconds together, known at the end
+    worker_secs: f64,
     dir: PathBuf,
     geo: Geo,
     bufs: HashMap<u32, Vec<u8>>,
@@ -113,21 +124,51 @@ struct Spill {
     held: usize,
     raw: u64,
     written: u64,
-    /// appends to spill files, the times all buffers went out at once, and the seconds spent writing
+    /// appends to spill files, the times all buffers went out at once, and the seconds the pass's thread spent
+    /// handing buffers over (waiting for a worker, when they are behind)
     flushes: u64,
     flush_alls: u64,
     flush_secs: f64,
+    /// per kind: records and their bytes before compression; and the refs of the way records
+    kinds: [(u64, u64); 3],
+    way_refs: u64,
 }
 
 impl Spill {
     const FLUSH: usize = 4 << 20;
     /// all the buffers together: past this every one is written out (a file a bucket means many files)
     const HELD: usize = 1 << 30;
+    const WORKERS: usize = 6;
+    /// buffers waiting for one worker, at most
+    const QUEUE: usize = 8;
 
     fn new(dir: &Path, geo: Geo) -> Spill {
         let _ = fs::remove_dir_all(dir);
         fs::create_dir_all(dir).unwrap();
-        Spill { dir: dir.to_path_buf(), geo, bufs: HashMap::new(), files: BTreeSet::new(), sizes: HashMap::new(), held: 0, raw: 0, written: 0, flushes: 0, flush_alls: 0, flush_secs: 0.0 }
+        let (mut to, mut workers) = (Vec::new(), Vec::new());
+        for _ in 0..Self::WORKERS {
+            let (tx, rx) = sync_channel::<(u32, Vec<u8>)>(Self::QUEUE);
+            let dir = dir.to_path_buf();
+            to.push(tx);
+            workers.push(std::thread::spawn(move || {
+                let (mut written, mut secs) = (0u64, 0f64);
+                let mut frame = Vec::new();
+                for (file, b) in rx {
+                    let t = Instant::now();
+                    let z = zstd::bulk::compress(&b, 1).expect("compress a spill frame");
+                    frame.clear();
+                    frame.extend_from_slice(&(z.len() as u32).to_le_bytes());
+                    frame.extend_from_slice(&(b.len() as u32).to_le_bytes());
+                    frame.extend_from_slice(&z);
+                    let mut f = OpenOptions::new().create(true).append(true).open(dir.join(format!("f{file}.bin"))).expect("open a spill file");
+                    f.write_all(&frame).expect("append to a spill file");
+                    written += frame.len() as u64;
+                    secs += t.elapsed().as_secs_f64();
+                }
+                (written, secs)
+            }));
+        }
+        Spill { to, workers, worker_secs: 0.0, dir: dir.to_path_buf(), geo, bufs: HashMap::new(), files: BTreeSet::new(), sizes: HashMap::new(), held: 0, raw: 0, written: 0, flushes: 0, flush_alls: 0, flush_secs: 0.0, kinds: [(0, 0); 3], way_refs: 0 }
     }
 
     fn path(&self, file: u32) -> PathBuf {
@@ -142,6 +183,11 @@ impl Spill {
         p32(b, body.len() as u32);
         b.extend_from_slice(body);
         self.held += 9 + body.len();
+        self.kinds[kind as usize].0 += 1;
+        self.kinds[kind as usize].1 += 9 + body.len() as u64;
+        if kind == KIND_WAY {
+            self.way_refs += u32::from_le_bytes(body[20..24].try_into().unwrap()) as u64;
+        }
         if b.len() >= Self::FLUSH {
             self.flush(file);
         } else if self.held >= Self::HELD {
@@ -156,38 +202,36 @@ impl Spill {
     }
 
     fn flush(&mut self, file: u32) {
-        let path = self.path(file);
         let Some(b) = self.bufs.get_mut(&file) else { return };
         if b.is_empty() {
             return;
         }
         let t = Instant::now();
+        // the buffer itself goes to the worker; the next records of this file start a new one
+        let b = std::mem::take(b);
         self.flushes += 1;
-        let z = zstd::bulk::compress(b, 1).unwrap();
-        let mut f = OpenOptions::new().create(true).append(true).open(path).unwrap();
-        f.write_all(&(z.len() as u32).to_le_bytes()).unwrap();
-        f.write_all(&(b.len() as u32).to_le_bytes()).unwrap();
-        f.write_all(&z).unwrap();
         self.raw += b.len() as u64;
-        self.written += z.len() as u64 + 8;
         self.files.insert(file);
         *self.sizes.entry(file).or_default() += b.len() as u64;
         self.held -= b.len();
-        // a buffer that grew large gives its memory back
-        if b.capacity() > Self::FLUSH * 2 {
-            *b = Vec::new();
-        } else {
-            b.clear();
-        }
+        // a worker that died (a write failed) has closed its end: the run stops here
+        self.to[file as usize % Self::WORKERS].send((file, b)).expect("a spill worker stopped: its write failed");
         self.flush_secs += t.elapsed().as_secs_f64();
     }
 
+    /// everything written and the workers ended: after this the files can be read
     fn finish(&mut self) {
         let files: Vec<u32> = self.bufs.keys().copied().collect();
         for f in files {
             self.flush(f);
         }
         self.bufs.clear();
+        self.to.clear();
+        for w in self.workers.drain(..) {
+            let (written, secs) = w.join().expect("a spill worker failed");
+            self.written += written;
+            self.worker_secs += secs;
+        }
     }
 
     /// a spill file's records, decompressed
@@ -923,15 +967,25 @@ pub fn cut(pbf: &Path, out: &Path, day: &str, z: u32, bz: u32, fz: u32, budget: 
     rtiles.finish();
     spill.finish();
     log(&format!(
-        "spill: {} files, {:.2} GiB raw, {:.2} GiB written; {:.2} bytes a ref written; {} appends ({} times every buffer at once), {:.1} s compressing and writing them",
+        "spill: {} files, {:.2} GiB raw, {:.2} GiB written; {:.2} bytes a ref written; {} appends ({} times every buffer at once); the pass waited {:.1} s handing them to {} workers, which compressed and wrote for {:.1} s together",
         spill.files.len(),
         spill.raw as f64 / (1u64 << 30) as f64,
         spill.written as f64 / (1u64 << 30) as f64,
         spill.written as f64 / n_refs.max(1) as f64,
         spill.flushes,
         spill.flush_alls,
-        spill.flush_secs
+        spill.flush_secs,
+        Spill::WORKERS,
+        spill.worker_secs
     ));
+    {
+        let g = |b: u64| b as f64 / (1u64 << 30) as f64;
+        let k = spill.kinds;
+        log(&format!(
+            "spill by kind, before compression: {} node records {:.2} GiB; {} way records {:.2} GiB with {} refs; {} relation records {:.2} GiB",
+            k[0].0, g(k[0].1), k[1].0, g(k[1].1), spill.way_refs, k[2].0, g(k[2].1)
+        ));
+    }
     lap("needsAndRelations", &mut t, &mut phases);
 
     // the relation store: per kept relation, its member ways whole with their nodes' places, from the member-way file
