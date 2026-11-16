@@ -4971,10 +4971,12 @@ The planet also needs a "no region" mode: `region_of` without a polygon spreads 
 right for a clip and wrong for the world. The only oracle for a planet update is a clip of the day after, compared
 inside its polygon (`subcmp.py`): `europe-2026-11-03.osm.pbf` for diff 5165, pinned for that until the check is done.
 
-### Toward the planet: world mode, the node file, pair indexes in a stream, and the rebuild in groups (11-16, 08:40-09:50)
+### Toward the planet: world mode, the node file, pair indexes in a stream, and the rebuild in groups (11-16, 08:40-09:30)
 
-Three of the four obstacles named above are now built and held against the Python store. The fourth, disk, is the
-owner's call. Each piece has its own commit.
+Three of the four obstacles named above are now addressed and held against the Python store: the node places, the
+pair indexes, and the memory of the tile rebuild. Memory is only partly addressed: grouping bounds the tile rebuild,
+but the first working set (the carried copies) and the relation store's working set are still single. The fourth
+obstacle, disk, is the owner's call. Each piece has its own commit.
 
 - **`--world` and `--before-loc F`** (8bb2b2a0). World mode has no region, so every tile counts. The node places
   before the day come from a node file by id in osmium's `dense_file_array` layout. That is the layout the world
@@ -5010,6 +5012,23 @@ owner's call. Each piece has its own commit.
   | `--group-z 10` | 45.7 s | 5.48 GiB |
   | `--group-z 12` | 73 s | not measured |
   | `--group-z 14` | 159 s | not measured |
+
+  **Every group carries the whole diff share and the carried copies,** so a group costs a fixed amount on top of its
+  tiles. That amount grows with the diff, not with the store. In world mode, where the share is the whole diff, it
+  was about 0.2 s a group on the clip: diff 5175 on the Rust cut of 11-12 with `--world` took 9.7 s of rule time
+  in one working set and 27.8 s in 91 groups at zoom 4. Those two runs are equal to each other: 131,000 tiles
+  (71,974 of them new), every blob, both pair indexes. **Hence `--group-mib M`** (08a86e24): the tiles in zoom-8
+  cell order, a group closed once its old payloads reach M MiB. Any partition gives the same store.
+  - **World mode, diff 5175, 256 MiB:** 3 groups, 38.2 s, peak 8.43 GiB, equal to the single working set (10.65 GiB).
+  - **Both polygon days, 64 MiB:** 7 and 8 groups, 35.0 s and 32.9 s, equal to the Python store.
+  - **Synthetic day:** run with all of the planet's flags together (`--world --before-loc --group-mib 0
+    --prune-pairs`).
+
+  **For the planet, from diff 5165 against the planet store** (lower bounds, `.scratch/planet-cut/reach-5165.json`):
+  - the reached tiles lie in 3,623 zoom-8 cells (666 at zoom 6, 13,865 at zoom 10), so a group per cell would add on
+    the order of 12 minutes, and a 512 MiB budget makes about 15 groups
+  - the diff's own relations have 13,938 blobs of 49 MB, so the relation store's working set is small beside the
+    tiles
 
   What remains at 5.5 GiB does not depend on the groups. It is the clip's node places read from its PBF (about 2 GB;
   on the planet that is the mapped node file) and the parsed diff, which is the planet's on any store. On the planet

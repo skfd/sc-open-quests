@@ -1994,13 +1994,19 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   - **Owner's call, open:** disk, and where the planet store starts. The 268 GiB 11-02 store plus 14 days of catch-up
     (more than 100 GB of packs before compaction), or a fresh cut of the 12-07 history file. Either way it sits
     beside `planet.loc` and the 12-07 job, and C: cannot hold all three.
-  - **Built after that, no disk needed (11-16, 08:40-09:50):** DESIGN.md, "Toward the planet". Each is held
+  - **Built after that, no disk needed (11-16, 08:40-09:30):** DESIGN.md, "Toward the planet". Each is held
     against the Python store on both clip days (`.scratch/tiles/rsu-days.sh [update args]` resets `store-rsu` to
     generation 0 and checks both).
     - `--world`, and `--before-loc F`: a node file in the world stream's layout (8bb2b2a0)
     - pair indexes mapped and merged in a stream, and `--prune-pairs` (e1f90086)
     - `--group-z G`: the reached tiles rebuilt one cell at a time (02811a1b). Equal at G = 8, 12 and 14; the clip
       day's peak drops from 10.3 GiB to 5.5 GiB.
+    - `--group-mib M`: groups by a budget of old payload (08a86e24). A group costs about 0.2 s on top of its tiles
+      when the diff share is the whole diff, and a planet day spans at least 3,623 zoom-8 cells. In world mode on
+      the clip, 3 groups at 256 MiB equal one working set (131,000 tiles). With all the planet's flags together
+      it is shown only on the synthetic day.
+    - Grouping bounds the tile rebuild only. The carried copies and the relation store's working set are still
+      single; on a planet day the relation side is small (the diff's relations: 49 MB of blobs).
   - **Left before a planet run:**
     - a Rust step moving the node file forward by a day's diff (small, not built). The stream's `planet.sh` moves
       its file to 11-08 in the same run, and the 11-02 store needs it at 11-02.
