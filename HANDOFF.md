@@ -1881,7 +1881,9 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   the owner's elevated output:** shadow copies hold 11.8 GB (ruled out); `fsutil volume diskfree C:` shows 42.5 GB
   free, 38.2 GB "Total Reserved" and the rest (about 178 GB) allocated to nothing listed; no tilestore process is
   left. The large reserve points at deleted sparse files still held in the kernel, which a restart would clear;
-  that is a lead, not shown. **Asked of the owner: a restart** (it ends 12 python processes from 11-03 to 11-14
+  that is a lead, not shown. **Found 22:35 (owner's WinDirStat):** `C:\$Extend\$Deleted` holds 176.4 GiB on disk
+  (482 GiB of length), among them two files of 95.06 GiB length and 66.73 GiB on disk: the node files, deleted by
+  name and still referenced. **Asked of the owner: a restart** (it ends 12 python processes from 11-03 to 11-14
   that are not this project's). **After it: read free space first.** If it is not near 250 GB, the next step is
   an elevated `chkdsk C: /scan`, the owner's. Until then: the 12-07 planet job needs about 170 GB; the daily runs need little.
   The delete now cuts the file to length 0 first (`NodeMap::delete`), **not shown to help**: test it on Berlin
