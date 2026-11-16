@@ -1923,3 +1923,7 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   `level.sh`). **Next:** the planet cut, which waits on the 2 TB drive (node file 115 GB, spill about 137 GB, store
   97-136 GB). Not done and not needed for it: the spill's tags coded, the passes' single thread, the
   antimeridian's whole-row way.
+- **Built 11-16, 00:53-01:00:** the spill and the bucket phase stop under 40 GiB free, as the node file does
+  (DESIGN.md, the last paragraph). The spill's stop was seen (`TILESTORE_TEST_FLOOR_GIB`), the bucket phase's was
+  not. The clip and Germany equal their oracles after it. So a planet cut that runs out of room stops with a
+  message and 40 GiB left, it does not fill the disk. **Next:** unchanged, the planet cut on the 2 TB drive.

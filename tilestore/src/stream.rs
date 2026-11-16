@@ -239,6 +239,17 @@ impl Spill {
         if b.is_empty() {
             return;
         }
+        // the spill is the largest thing the passes write: under the floor it is deleted and the run stops
+        if self.flushes % 64 == 0 {
+            if let Some(free) = nodefile::under_floor(&self.dir) {
+                self.to.clear();
+                for w in self.workers.drain(..) {
+                    let _ = w.join();
+                }
+                let _ = fs::remove_dir_all(&self.dir);
+                panic!("the spill is deleted and the run stopped: {:.1} GiB free on its disk, under the floor of {} GiB", free as f64 / (1u64 << 30) as f64, nodefile::floor() >> 30);
+            }
+        }
         let t = Instant::now();
         // the buffer itself goes to the worker; the next records of this file start a new one
         let b = std::mem::take(b);
@@ -1186,6 +1197,10 @@ pub fn cut(pbf: &Path, out: &Path, day: &str, z: u32, bz: u32, fz: u32, budget: 
             }
             let group = &files[at_file..end];
             at_file = end;
+            // the pack grows as the spill goes; under the floor the run stops, what is written is left
+            if let Some(free) = nodefile::under_floor(out) {
+                panic!("the run stopped in the bucket phase, group {} of the spill files: {:.1} GiB free on the store's disk, under the floor of {} GiB; the store in {} is not whole", n_groups + 1, free as f64 / (1u64 << 30) as f64, nodefile::floor() >> 30, out.display());
+            }
             largest = largest.max(group.iter().map(|f| spill.sizes[f] as usize).max().unwrap());
             largest_group = largest_group.max(sum);
             let cut: Vec<(usize, Vec<(u32, Vec<u8>, [usize; 3])>)> = group

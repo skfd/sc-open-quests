@@ -14,6 +14,17 @@ const GAP: i64 = 4096;
 /// sparse file can still take hundreds of GB (Germany's filled a disk with 258 GB free)
 const FLOOR: u64 = 40 << 30;
 
+/// the floor in bytes: every large writer of the cut (the node file, the spill, the pack) stops under it.
+/// TILESTORE_TEST_FLOOR_GIB sets another one, to show that a run stops.
+pub fn floor() -> u64 {
+    std::env::var("TILESTORE_TEST_FLOOR_GIB").ok().and_then(|v| v.parse::<u64>().ok()).map_or(FLOOR, |g| g << 30)
+}
+
+/// `Some(free)` when the disk that holds this folder has less than the floor free
+pub fn under_floor(dir: &Path) -> Option<u64> {
+    free_bytes(dir).filter(|&f| f < floor())
+}
+
 extern "system" {
     fn GetDiskFreeSpaceExW(dir: *const u16, free_to_caller: *mut u64, total: *mut u64, free: *mut u64) -> i32;
 }
@@ -99,12 +110,10 @@ impl NodeWriter {
     pub fn add(&mut self, runs: &[(i64, Vec<u8>)]) {
         self.adds += 1;
         if self.adds % 256 == 0 {
-            if let Some(free) = self.free() {
-                if free < FLOOR {
-                    let _ = self.w.get_ref().set_len(0);
-                    let _ = fs::remove_file(&self.path);
-                    panic!("the node file is deleted and the run stopped: {:.1} GiB free on its disk, under the floor of {} GiB", free as f64 / (1u64 << 30) as f64, FLOOR >> 30);
-                }
+            if let Some(free) = under_floor(self.dir()) {
+                let _ = self.w.get_ref().set_len(0);
+                let _ = fs::remove_file(&self.path);
+                panic!("the node file is deleted and the run stopped: {:.1} GiB free on its disk, under the floor of {} GiB", free as f64 / (1u64 << 30) as f64, floor() >> 30);
             }
         }
         for (start, bytes) in runs {

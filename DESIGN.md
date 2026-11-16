@@ -4808,3 +4808,12 @@ level 1). Germany, the places in memory, each equal to the oracle, one run each 
 Level 3 is 4 % smaller for twice the workers' time, level 6 is 9 % smaller for nearly six times and holds the pass
 up. For the planet that would be about 6 or 12 GB of about 137. If the spill has to be smaller, it is the tags'
 and heads' own coding that is left, not the level.
+
+**A free-space floor on the spill and the pack too (11-16, 00:53-01:00).** The node file's floor (40 GiB free on
+its disk) now holds for every large writer of the cut (`nodefile::under_floor`). The spill looks at its disk every
+64 appends, and under the floor ends its workers, deletes the spill and stops the run. The bucket phase looks
+before each group of spill files, and under the floor stops and says the store is not whole (what is written is
+left). **Seen for the spill:** with `TILESTORE_TEST_FLOOR_GIB=100000` the clip's run stopped at its first append
+("the spill is deleted and the run stopped: 285.0 GiB free on its disk, under the floor of 100000 GiB", exit 101)
+and no spill was left. **Not seen: the bucket phase's stop** (the spill's comes first under any floor that would
+show it). The clip (z8, z12) and Germany equal their oracles with it built (`spill4.out`).
