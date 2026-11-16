@@ -4712,7 +4712,11 @@ took 155.8 s and 183.3 s against 6-9 s in memory, pass 2 49.3 s and 64.2 s again
    the program (unmapped, then removed while its handle was still open) the name goes and 20.4 GB stays taken, with
    the process gone and 20 s later still. The four files deleted that way on the way to the incident (Berlin twice,
    the clip twice) and two tests after it account for the missing space: C: had 258 GB free at 21:00 and has 43 GB
-   now, with nothing of that size on the disk. **The cause is not known.** It is not cached pages: taking 54 GB of
+   now, with nothing of that size on the disk. **The cause is not known.** Seen at 22:20 from the owner's elevated prompt: shadow
+   copies hold 11.8 GB (ruled out); `fsutil volume diskfree C:` gives 42.5 GB free, 38.2 GB "Total Reserved" and
+   about 178 GB allocated to nothing listed; no tilestore process is left. The reserve suggests sparse files still
+   held in the kernel (a restart would clear that), not shown. Which difference from `rm` after the exit matters
+   is not established either. Taking 54 GB of
    memory for a moment, until 2.5 GB was available, freed nothing (and grew the pagefile by 17 GB for a minute;
    the owner was using the machine). The planet's node file at 18:23, not sparse, deleted the same way, did come
    back within minutes. What is known to work is deleting after the handle is closed. **Changed, not yet shown to

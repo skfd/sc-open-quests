@@ -1876,10 +1876,14 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   --sparse`**. Guard built and seen to work: under 40 GiB free the writer deletes its file and stops
   (`tilestore/src/nodefile.rs`, `FLOOR`). (2) **About 216 GB is still taken by node files that are deleted:** the
   ones the program removed itself (Berlin three times, the clip twice, a test) did not give their space back,
-  while the same file removed with `rm` after the program ended does. Cause not known; it is not cached pages
-  (taking 54 GB of memory freed nothing). No such file is listed anywhere under `.scratch/`. **To find or free it:
-  an elevated prompt** (`vssadmin list shadowstorage`, `fsutil volume diskfree C:`, read-only `chkdsk C:`) **or a
-  restart**; neither was done. Until then: the 12-07 planet job needs about 170 GB; the daily runs need little.
+  while the same file removed with `rm` after the program ended does. Cause not known; taking 54 GB of memory
+  (down to 2.5 GB available) freed nothing. No such file is listed anywhere under `.scratch/`. **Checked 22:20 with
+  the owner's elevated output:** shadow copies hold 11.8 GB (ruled out); `fsutil volume diskfree C:` shows 42.5 GB
+  free, 38.2 GB "Total Reserved" and the rest (about 178 GB) allocated to nothing listed; no tilestore process is
+  left. The large reserve points at deleted sparse files still held in the kernel, which a restart would clear;
+  that is a lead, not shown. **Asked of the owner: a restart** (it ends 12 python processes from 11-03 to 11-14
+  that are not this project's). **After it: read free space first.** If it is not near 250 GB, the next step is
+  an elevated `chkdsk C: /scan`, the owner's. Until then: the 12-07 planet job needs about 170 GB; the daily runs need little.
   The delete now cuts the file to length 0 first (`NodeMap::delete`), **not shown to help**: test it on Berlin
   (`tilestore ptime --pbf berlin-history-261005.osh.pbf --at 2026-10-01T00:00:00Z --nodes X.loc --sparse`, 23 GB;
   free space before and after) only when more than 70 GB is free. `.scratch/tiles/store-rs` (2.5 GB) and
