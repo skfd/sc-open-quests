@@ -1774,34 +1774,31 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   `run.py`. **Next for the engine, none built:** a dense-node decoder without protobuf's builders (the largest
   piece left, a larger change with its own oracle), then `Way.isClosed`'s boxed ids, `Element.checkValidity`
   over a `TagMap`, `groupByNodeIds`: 2 to 3% of the allocated bytes each (the sixth round below reorders this).
-  `.scratch/batch-speed/` also holds `e-*`, `g-*`, `r5-*`, `eng-types`: all can go. **Keep `eng-pairs`** (this
-  round's build) until the sixth round's quiet pairs have run.
-- **Batch engine speed-up, sixth round: merged into main (e95f9b6c; 11-15, 17:20 to 18:30; owner: "fifth round
-  of speedup", already merged, so the next). Exact; its gain is NOT measured yet.** DESIGN.md, "Batch engine
-  speed-up, sixth round". Eight small changes read off the fifth round's profile, none an SC patch: a way's
-  node found at the place after the one before (`NodeStore.indexOfAfter`), the member ways walked instead of
-  searched per way, a bit per node for "tagged", a raw coordinate taken as it is in a plain block, the note
-  check once per element, tags kept by their places in a block's string table (`TagChunk.addPlaces`), a cell's
-  node order from a bit set instead of two sorts (`firstSeen`), a cell's ways and node ids put in place by
-  the threads that make them. New switch `-Dopenquests.assembleTrace=true` (a cell's map data, seconds per
-  step). **Checked on the final build:** f0 and f1 snapshots, the 31,695,753 state rows, Ontario and
-  europe-west recounts and grids, `verifyFast` on Dublin and Lisboa (25 runs), `matchCache=verify`, 112 engine
-  tests on main (four new; five of the six new or changed tests fail on purposely broken code). **Not
-  checked:** the oracle; London under `verifyFast`; a file not in units of 1e-7 degrees.
-  **The timing: three pairs under the planet timing's load say 10% less CPU, 2% more, 3% less, so nothing.**
-  **Waiting, started 18:35 in this session: `bash .scratch/batch-speed/quiet6.sh`** waits until no `tilestore`
-  or engine runs, 50 GB is available and the load is under 10%, then runs three interleaved pairs
-  (`eng-pairs` against `eng-six3`, runs `q6-*`) and writes `.scratch/batch-speed/q6.out`. **If that session is
-  gone, run it again by hand when the machine is free, and put the table into the design section** (it says
-  where). Quiet figures for the fifth round's engine, to hold it against: 83.1 and 79.9 s, 1,261 and 1,283 s
-  CPU. About 9 s of f0's wall here is the rehearsal's whole notes clip read on one thread, which a world file
-  does not have. Main's installed engine is still the second round's build until the next `run.py`.
-  **Next for the engine, none built:** the quiet pairs first; then the dense-node decoder (smaller now), the
-  `ScFeatures.getFeature` lock (24 s of threads waiting in a run; needs osmfeatures' source read), the
-  collector (a cell's untagged nodes made when asked for), and last the items that only save bytes.
-  `.scratch/batch-speed/` also holds `h-*`, `i-*`, `j-*`, `k-*`, `r6-*`, `eng-six`, `eng-six2`: all can go;
-  keep `eng-six3` and `eng-pairs` for the pairs. The worktree `../sc-open-quests-batch` (branch `batch-speed`,
-  equal to main's engine commit) can go.
+  `.scratch/batch-speed/` also holds `e-*`, `g-*`, `r5-*`, `eng-types`, `eng-pairs` (this round's build): all can go.
+- **Batch engine speed-up, sixth round: merged into main (11-15, 17:20 to 19:35; owner: "fifth round of
+  speedup", already merged, so the next).** DESIGN.md, "Batch engine speed-up, sixth round". **Four changes to
+  how a cell's map data is put together: the cells' phase 12 to 17% shorter on f0, a whole run 6 to 9.5% (80.0 s
+  to 72.4 s in three pairs on a calm machine, 8% less CPU).** A bit per node for "tagged"; a cell's node order
+  from a bit set instead of two sorts (`firstSeen`); a way's node found at the place after the one before
+  (`NodeStore.indexOfAfter`); a cell's ways and node ids put in place by the threads that make them. New
+  switch `-Dopenquests.assembleTrace=true` (a cell's map data, seconds per step). **Five more changes, to the
+  main pass, were built, exact, measured and taken out** (commit e95f9b6c has them, the next removes them):
+  nothing net in three interleaved rounds. **Checked on the merged build (dbd3989b):** f0 and f1 snapshots, the 31,695,753 state rows, Ontario and
+  europe-west recounts and grids, `verifyFast` on Dublin and Lisboa (25 runs), `matchCache=verify`, 111 engine
+  tests on main (`FirstSeenTest` and two in `NodeStoreTest` are new). **Not checked:** the oracle;
+  London under `verifyFast`; a world run.
+  Timing scripts: `.scratch/batch-speed/quietn.sh` (`V="pairs six5" P=q8 bash .scratch/batch-speed/quietn.sh 3`
+  waits for a free machine, then interleaves the builds `eng-<name>` on f0 and writes `q8.out` with the load at
+  each run's start). About 9 s of f0's wall there is the rehearsal's whole notes clip read on one thread, which
+  a world file does not have. Main's installed engine is still the second round's build until the next `run.py`.
+  **Next for the engine, none built:** the collector (a cell's untagged nodes made when asked for); what is
+  still one-threaded in a cell's map data, and three cells at once again; the `ScFeatures.getFeature` lock
+  (24 s of threads waiting in a run; needs osmfeatures' source read); the main pass measured by itself before
+  any other change there (it is 30% of the CPU and none of five guesses moved it), the dense-node decoder
+  after that; last the items that only save bytes.
+  `.scratch/batch-speed/` also holds `h-*`, `i-*`, `j-*`, `k-*`, `q6-*`, `q7-*`, `r6-*`, `r6b-*`, `eng-six`,
+  `eng-six2`, `eng-six3`, `eng-six4`, `eng-pairs`: all can go; `eng-six5` is the merged build. The worktree
+  `../sc-open-quests-batch` (branch `batch-speed`, equal to main's engine commit) can go.
 - **The history file read at a date in Rust: exact against osmium (11-15, 16:00-17:00; owner: "The next step
   toward the planet timing is the history-file reader").** DESIGN.md, "The history file read at a date".
   `tilestore/target/release/tilestore.exe at --pbf X.osh.pbf --at 2026-10-01T00:00:00Z [--out Y.osm.pbf]` and
@@ -1839,7 +1836,7 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   counts (`.scratch/batch-speed/quiet6.sh`, about 15 minutes; it waits while a `tilestore` or `osmium` process
   exists): do not time anything until `.scratch/batch-speed/q6.out` ends with "ended"** (it did, 18:55), **nor until
   `q7.out` does** (nine more runs from about 19:00, some 15 minutes; then the checks of the build they choose,
-  some 25 minutes more, not timing-critical). **Not the cut's time:**
+  some 25 minutes more, not timing-critical). **All of that ended at 19:35: the engine session runs nothing more.** **Not the cut's time:**
   no pass 0, no spill, no tagged-node or member-way files, no buckets. **Settled for 2026-11-02:** no node or way
   is given twice at this date (relations not read); every ref has a node; no way has two nodes in a row over 180
   degrees apart (one way has a whole row of 16,384 tiles, not looked up); refs are 13.08 billion, so the spill as
