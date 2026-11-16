@@ -115,6 +115,57 @@ class UpdateTest(unittest.TestCase):
             self.assertEqual(r0["differ"], 0)
             self.assertEqual(old.gen, 0)
 
+    def test_rust_update_equals_fresh_cut(self):
+        """the same day through the Rust store (tilestore/): its cut of the clip before, its update by the diff, held
+        against its cut of the clip after and against the Python update of the Python cut"""
+        exe = Path(__file__).resolve().parents[1] / "tilestore" / "target" / "release" / "tilestore.exe"
+        if not exe.exists():
+            self.skipTest("the Rust tilestore is not built (cargo build --release in tilestore/)")
+        import subprocess
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp:
+            d = Path(tmp)
+            write_pbf(d / "before.osm.pbf", BASE_NODES, BASE_WAYS, BASE_RELS, {})
+            nodes = dict(BASE_NODES)
+            nodes[2] = (51.540, -0.090, {})
+            del nodes[4]
+            nodes[10] = (51.505, -0.070, {"shop": "bakery"})
+            ways = dict(BASE_WAYS)
+            ways[2] = ([1, 3], {"highway": "footway", "surface": "paved"})
+            ways[5] = ([9, 10], {"highway": "service"})
+            rels = dict(BASE_RELS)
+            rels[1] = (BASE_RELS[1][0] + [("n", 15, "")], {"type": "multipolygon", "landuse": "grass", "name": "Park"})
+            versions = {("n", 2): (2, T1), ("n", 10): (1, T1), ("w", 2): (2, T1), ("w", 5): (1, T1), ("r", 1): (2, T1)}
+            write_pbf(d / "after.osm.pbf", nodes, ways, rels, versions)
+            (d / "day.osc").write_text(OSC, encoding="utf-8")
+            poly = d / "polygon.geojson"
+            poly.write_text('{"features": [{"geometry": {"type": "Polygon", "coordinates": '
+                            '[[[-0.2, 51.45], [0.0, 51.45], [0.0, 51.6], [-0.2, 51.6], [-0.2, 51.45]]]}}]}')
+
+            def run(*a):
+                subprocess.run([str(exe), *map(str, a)], check=True, capture_output=True)
+
+            for name in ("before", "after"):
+                run("cut", "--pbf", d / f"{name}.osm.pbf", "--out", d / f"r-{name}", "--day", name)
+            run("update", "--store", d / "r-before", "--diff", d / "day.osc", "--before", d / "before.osm.pbf",
+                "--day", "after", "--polygon", poly)
+            # the Python update of the Python cut, the oracle the Rust update is a port of
+            T.geom(d / "before.osm.pbf", d / "g-before")
+            T.attrs(d / "before.osm.pbf", d / "g-before")
+            S.cut(d / "g-before", d / "p-before", "before")
+            S.update(d / "p-before", d / "day.osc", d / "g-before", "after", poly)
+            from compression import zstd
+            for other, g in (("r-after", 0), ("p-before", 1)):
+                r = S.compare_stores(d / "r-before", d / other, ga=1, gb=g)
+                self.assertEqual((r["differ"], r["onlyA"], r["onlyB"]), (0, 0, 0), (other, r))
+                self.assertGreater(r["same"], 0)
+                for f in ("wtiles", "rtiles"):
+                    a, b = np.load(d / "r-before" / f"{f}-0001.npy"), np.load(d / other / f"{f}-{g:04d}.npy")
+                    self.assertTrue(np.array_equal(a, b), (other, f))
+                sa, sb = S.Store(d / "r-before", 1), S.Store(d / other, g)
+                self.assertEqual(sa.ridx["key"].tolist(), sb.ridx["key"].tolist(), other)
+                for rid in sb.ridx["key"].tolist():
+                    self.assertEqual(zstd.decompress(sa.relation(rid)), zstd.decompress(sb.relation(rid)), (other, rid))
+
 
 if __name__ == "__main__":
     unittest.main()

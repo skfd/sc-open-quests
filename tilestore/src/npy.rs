@@ -58,6 +58,19 @@ pub fn load_idx(path: &Path) -> Vec<(i64, i32, i64, i32)> {
         .collect()
 }
 
+/// a pair file's rows: (id, key)
+pub fn load_pairs(path: &Path) -> Vec<(i64, i64)> {
+    let b = std::fs::read(path).unwrap_or_else(|e| panic!("{}: {e}", path.display()));
+    assert!(b.starts_with(b"\x93NUMPY\x01"), "{}: not a version 1 .npy", path.display());
+    let start = 10 + u16::from_le_bytes([b[8], b[9]]) as usize;
+    let head = std::str::from_utf8(&b[10..start]).unwrap();
+    assert!(head.contains("('id', '<i8'), ('key', '<i8')"), "{}: {head}", path.display());
+    b[start..]
+        .chunks_exact(16)
+        .map(|r| (i64::from_le_bytes(r[0..8].try_into().unwrap()), i64::from_le_bytes(r[8..16].try_into().unwrap())))
+        .collect()
+}
+
 /// (id, key) pairs written as they come; the count goes into the header at the end
 pub struct PairWriter {
     f: BufWriter<File>,

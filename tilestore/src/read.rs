@@ -58,38 +58,43 @@ pub fn stamp_seconds(s: &str) -> i64 {
 
 /// what one payload holds, decoded: a tile (nodes, ways, relations) or a relation store blob (ways, places)
 #[derive(Default)]
-struct Part {
-    nid: Vec<i64>,
-    lat: Vec<i32>,
-    lon: Vec<i32>,
+pub(crate) struct Part {
+    pub(crate) nid: Vec<i64>,
+    pub(crate) lat: Vec<i32>,
+    pub(crate) lon: Vec<i32>,
     /// per node, its number among the tagged ones, or -1
-    tag_of: Vec<i32>,
-    tver: Vec<i32>,
-    tts: Vec<i64>,
-    n_toff: Vec<usize>,
-    ntb: Vec<u8>,
-    wid: Vec<i64>,
-    wver: Vec<i32>,
-    wts: Vec<i64>,
-    w_roff: Vec<usize>,
-    wrefs: Vec<i64>,
-    w_toff: Vec<usize>,
-    wtb: Vec<u8>,
-    rid: Vec<i64>,
-    rver: Vec<i32>,
-    rts: Vec<i64>,
-    r_moff: Vec<usize>,
-    rmt: Vec<i8>,
-    rmref: Vec<i64>,
-    rrl: Vec<i32>,
+    pub(crate) tag_of: Vec<i32>,
+    pub(crate) tver: Vec<i32>,
+    pub(crate) tts: Vec<i64>,
+    pub(crate) n_toff: Vec<usize>,
+    pub(crate) ntb: Vec<u8>,
+    pub(crate) wid: Vec<i64>,
+    pub(crate) wver: Vec<i32>,
+    pub(crate) wts: Vec<i64>,
+    pub(crate) w_roff: Vec<usize>,
+    pub(crate) wrefs: Vec<i64>,
+    pub(crate) w_toff: Vec<usize>,
+    pub(crate) wtb: Vec<u8>,
+    pub(crate) rid: Vec<i64>,
+    pub(crate) rver: Vec<i32>,
+    pub(crate) rts: Vec<i64>,
+    pub(crate) r_moff: Vec<usize>,
+    pub(crate) rmt: Vec<i8>,
+    pub(crate) rmref: Vec<i64>,
+    pub(crate) rrl: Vec<i32>,
     /// per member, where its role starts in rroles
-    r_rloff: Vec<usize>,
-    rroles: Vec<u8>,
-    r_toff: Vec<usize>,
-    rtb: Vec<u8>,
+    pub(crate) r_rloff: Vec<usize>,
+    pub(crate) rroles: Vec<u8>,
+    pub(crate) r_toff: Vec<usize>,
+    pub(crate) rtb: Vec<u8>,
 }
 
 impl Part {
+    /// nothing yet, every offset column started (for appending)
+    pub(crate) fn empty() -> Part {
+        Part { n_toff: vec![0], w_roff: vec![0], w_toff: vec![0], r_moff: vec![0], r_rloff: vec![0], r_toff: vec![0], ..Default::default() }
+    }
+
     fn ways(&mut self, c: &mut impl Iterator<Item = crate::cols::Col>) {
         self.wid = undelta(c.next().unwrap().i64());
         self.wver = c.next().unwrap().i32();
@@ -107,7 +112,7 @@ impl Part {
         self.tag_of = vec![-1; self.nid.len()];
     }
 
-    fn tile(buf: &[u8]) -> Part {
+    pub(crate) fn tile(buf: &[u8]) -> Part {
         let cols = unpack_cols(buf);
         assert!(cols.len() == 25, "a tile payload has 25 columns, not {}", cols.len());
         let mut c = cols.into_iter();
@@ -135,7 +140,7 @@ impl Part {
         p
     }
 
-    fn relation_blob(buf: &[u8]) -> Part {
+    pub(crate) fn relation_blob(buf: &[u8]) -> Part {
         let cols = unpack_cols(buf);
         assert!(cols.len() == 10, "a relation store blob has 10 columns, not {}", cols.len());
         let mut c = cols.into_iter();
@@ -147,7 +152,7 @@ impl Part {
 }
 
 /// the payloads of these index rows, read one after another
-fn payloads(dir: &Path, prefix: &str, rows: &[(i64, i32, i64, i32)]) -> Vec<Vec<u8>> {
+pub(crate) fn payloads(dir: &Path, prefix: &str, rows: &[(i64, i32, i64, i32)]) -> Vec<Vec<u8>> {
     let mut files: HashMap<i32, File> = HashMap::new();
     rows.iter()
         .map(|&(_, pack, off, len)| {
@@ -163,7 +168,7 @@ fn payloads(dir: &Path, prefix: &str, rows: &[(i64, i32, i64, i32)]) -> Vec<Vec<
         .collect()
 }
 
-fn find(idx: &[(i64, i32, i64, i32)], key: i64) -> Option<(i64, i32, i64, i32)> {
+pub(crate) fn find(idx: &[(i64, i32, i64, i32)], key: i64) -> Option<(i64, i32, i64, i32)> {
     idx.binary_search_by_key(&key, |r| r.0).ok().map(|i| idx[i])
 }
 

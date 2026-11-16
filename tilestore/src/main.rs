@@ -14,6 +14,9 @@
 //!       a history file at a date, as a snapshot PBF (history.rs)
 //!   tilestore ptime --pbf X.os[mh].pbf [--at T] --nodes F.loc [--z 14] [--sparse] [--keep]
 //!       the planet cut's passes 1 and 2 timed, the node places in a file by id (ptime.rs)
+//!   tilestore update --store S --diff N.osc.gz --before D-1.osm.pbf --day 2026-11-13 [--polygon P.geojson]
+//!       a day's diff into a new generation of the store (update.rs, tilestore.py update step for step); the node
+//!       places before the day from the clip's PBF of the day before; the polygon is the clip's, the store's region
 //!   tilestore read --store S [--gen -1] --cities C.json [--base DIR] [--ring 300] --out Y.osm.pbf [--stamp T]
 
 mod clip;
@@ -21,12 +24,14 @@ mod cols;
 mod history;
 mod nodefile;
 mod npy;
+mod osc;
 mod pairs;
 mod pbf;
 mod ptime;
 mod read;
 mod stream;
 mod tiles;
+mod update;
 
 use rayon::prelude::*;
 use std::fs::{self, File};
@@ -84,6 +89,13 @@ fn main() {
             ring: arg(&args, "--ring").map(|s| s.parse().unwrap()).unwrap_or(300.0),
             out: PathBuf::from(arg(&args, "--out").expect("--out")),
             stamp: arg(&args, "--stamp"),
+        }),
+        Some("update") => update::update(&update::Args {
+            store: PathBuf::from(arg(&args, "--store").expect("--store")),
+            diff: PathBuf::from(arg(&args, "--diff").expect("--diff")),
+            before: PathBuf::from(arg(&args, "--before").expect("--before")),
+            day: arg(&args, "--day").expect("--day"),
+            polygon: arg(&args, "--polygon").map(PathBuf::from),
         }),
         Some("ptime") => ptime::run(
             &PathBuf::from(arg(&args, "--pbf").expect("--pbf")),
