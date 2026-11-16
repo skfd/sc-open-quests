@@ -2076,3 +2076,10 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   (daily packs copied forward; the cut's pack given back in place, 64 KiB holes). C: 115 GiB free.
   **Disk for the owner, firm now:** for a month of daily planet updates after 12-07 with the node file, the world
   stream and the monthly job: about 345 GB more than today without compaction, about 150 GB with it.
+- **Compaction built (11-16, 11:35-11:50):** DESIGN.md, "Compaction". `tilestore compact` (daily packs copied
+  forward) and `tilestore punch` (pack 0's whole dead 64 KiB units zeroed in place), both exact on the clip, punch's
+  negative control caught. The planet store is compacted at generation 2 and unchanged against `clip-1104`.
+  **Running:** `.scratch/planet-day/run3.sh` (hidden, log `logs/planet-day3.log`), waiting for today's 12:15 daily
+  run to end, then day 3 (diff 5167) on the compacted store with `--prune-pairs`, checked against
+  `europe-2026-11-05` (generation 2 as the control). **Next:** the planet punch at generation 3 (dry run against an
+  independent count first; then subcmp of generation 3 again), then compaction's effect over days.

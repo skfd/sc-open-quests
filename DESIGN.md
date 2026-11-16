@@ -5118,3 +5118,31 @@ newest pack, the old pack deleted; small, since a daily pack is a few GiB and lo
 **the cut's pack** given back in place (marked sparse, whole dead 64 KiB ranges zeroed: about 62% of its dead bytes
 after two days, without rewriting 220 GiB). Either makes older generations unreadable where their tiles were, so
 only the newest generation would stay readable.
+
+### Compaction: daily packs copied forward, the cut's pack given back in place (11-16, 11:35-11:50)
+
+Two commands, both leaving only the newest generation readable (store.json marks the older ones `"readable":
+false` before any file changes):
+- **`tilestore compact --store S [--min-dead F] [--dry-run]`** (`compact.rs`, ed6f7efd): the live tiles and
+  relation blobs of packs 1 .. newest-1 (those at least F dead) appended to the newest generation's pack and
+  relation file, every copy read back and held against its source byte for byte, then the newest indexes
+  replaced (written aside and renamed), then the copied packs and the older generations' indexes removed. The
+  newest files' lengths are recorded (`packBytes`, `relFileBytes`), and a stopped run's bytes past them are cut off
+  by the next. Pack 0 and rel 0 are never copied.
+- **`tilestore punch --store S [--dry-run]`** (`punch.rs`, 9e79a347): pack-0000 made sparse and every whole 64
+  KiB unit no live tile touches zeroed (`FSCTL_SET_ZERO_DATA`), each return checked; every live tile of pack 0
+  hashed before and after, a change marks the store `damaged` and stops; generation 0's pair indexes removed
+  after (a redo from the cut is no longer possible).
+
+**On the clip** (`.scratch/tiles/compact-days.sh`: a copy of store-rsu's generation 0, day 1, compact, day 2,
+compact): every generation equal to the Python store's, the day after a compaction too; the second compaction
+copied pack 1's 1,873 live tiles. **Punch** on that store at generation 2: 600,965,120 bytes in 990 ranges, equal
+to an independent count in Python; free space up 0.56 GiB (the pack 1.3 GB on disk, 1.9 GB long); storecmp equal
+after. **Negative control** (`TILESTORE_TEST_PUNCH_LIVE=1` on a copy, one unit holding a live tile punched too):
+21 live tiles changed, caught, exit 101, `damaged` set. Unit test `dead_ranges_are_whole_untouched_units`; the
+synthetic test compacts after an empty second day.
+
+**On the planet, compaction at generation 2** (`.scratch/planet-day/run3.sh`): dry run as measured (pack 1 5.20
+of 7.48 GiB live), 15.6 s, 138,827 tiles and 18,601 relation blobs copied, 9.59 GiB of files removed (about 4.3
+GiB net); the compacted generation 2 against `clip-1104` gives exactly what it gave before (13,968 same, 32
+differ, 5 only in the planet).
