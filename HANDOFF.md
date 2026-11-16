@@ -1936,3 +1936,16 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   7 GB): the nine provinces, Hamburg, Bremen. **A recount at a repin now re-clips such a region from the current
   planet** (`backfill_history.py`, about an hour each), or reads the `canada-germany` clip's history once the
   regions switch to it. `berlin-history` is kept (the tile store's checks use it).
+- **Scratch cleared (11-16, owner: "delete both sets and the stream, keep the seed"), C: 307 GB free to 521 GB.**
+  Deleted: `tiles/geom-12/13/14`, the z15/z16 stores, `s12-rs`, `s13-rs`; `batch-speed/` but its scripts; the
+  worktree `../sc-open-quests-batch` and branch `batch-speed` (merged); `world-de/cut`, `world-de2/cut`,
+  `planet/world-test`, `world-places/lv-one`, `lv-many`, `de`; **the world stream's node store
+  (`store/planet.loc` and `.state`) and rows (`planet/world-stream/`).** Kept: the seed
+  `planet/world-places/` (6,460 files, checked after), `world-places/world/`, `tiles/ref`, `store`, `store13`,
+  `store14`, `store-rs`, `store-rs-germany`, `stream/europe-west/`. The daily run reads none of `.scratch`.
+  **To take the stream up again, before 12-07 (the 12-07 job retires `history-261102`, which the node store is
+  built from):** `bash .scratch/store/planet.sh > logs/planet-loc.log 2>&1` (about 40 min; the old log says
+  "planet done", so overwrite it, or `world-days.sh` would stop at the missing `planet.loc.state`), then
+  `tools/stream/world-days.sh` (it fetches kept diffs, rebuilds `world-stream/` from the seed and applies every
+  day from 11-09, 8-14 min a day). **The Rust planet cut now fits on C:** about 260-310 GB peak plus its 40 GiB
+  floor against 521 GB free, so it no longer has to wait for the 2 TB drive (the owner's call).
