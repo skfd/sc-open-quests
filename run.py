@@ -712,16 +712,33 @@ def build_part_history(snapshots: list[dict], registries: dict[str, dict]) -> di
     return out
 
 
+COUNTED_PART = re.compile(r'"([^"/]+/[0-9a-f]{12})"\]')
+
+
+def counted_place_files(places_dir: Path) -> dict[str, str]:
+    """{"<city>/<placeId>": "<cc>/<regionId>"}: the name-layer file each counted part is in (its last
+    field, DATA-FORMAT.md "Places and parts"); the first file when a part is in several. Empty
+    without a name layer."""
+    found: dict[str, str] = {}
+    for p in sorted(places_dir.glob("*/*.json")):
+        for mark in COUNTED_PART.findall(p.read_text(encoding="utf-8")):
+            found.setdefault(mark, f"{p.parent.name}/{p.stem}")
+    return found
+
+
 def write_part_history(data_dir: Path, snapshots: list[dict], parts_dir: Path) -> int:
     """data_dir/history/<cityId>/<partId>.json for every part in the registry that has a count
     (build_part_history); a part or city no longer there loses its file. Returns the number of files
     changed."""
     registries = {p.stem: read_json(p) for p in sorted(parts_dir.glob("*.json"))}
     out = build_part_history(snapshots, registries)
+    files = counted_place_files(data_dir.parent / "places")
     changed = 0
     root = data_dir / "history"
     for cid, parts in out.items():
         for pid, series in parts.items():
+            if f"{cid}/{pid}" in files:   # the site's ?in=, so a link opens the part's page
+                series["in"] = files[f"{cid}/{pid}"]
             changed += write_json(root / cid / f"{pid}.json", series, compact=True)
     for stale in list(root.glob("*/*.json")):
         if stale.stem not in out.get(stale.parent.name, {}):

@@ -71,33 +71,33 @@ def snap(date, city):
 
 
 class PartHistoryTest(unittest.TestCase):
-    REG = {"x": {"parts": [{"id": "p1", "name": "Annex", "en": None, "subtype": "neighborhood"},
-                           {"id": "p2", "name": "Later", "en": "Later", "subtype": "microhood"},
-                           {"id": "p3", "name": "Never", "en": None, "subtype": "neighborhood"}]}}
+    REG = {"x": {"parts": [{"id": "aaaaaaaaaaa1", "name": "Annex", "en": None, "subtype": "neighborhood"},
+                           {"id": "aaaaaaaaaaa2", "name": "Later", "en": "Later", "subtype": "microhood"},
+                           {"id": "aaaaaaaaaaa3", "name": "Never", "en": None, "subtype": "neighborhood"}]}}
     SNAPS = [
         # before parts were counted: no entry
         snap("2026-10-20", {"quests": {"A": {"open": 9, "agedOnly": 1}}}),
         # parts, no aged split yet; B is not counted in the city
         snap("2026-10-27", {"quests": {"A": {"open": 9, "agedOnly": 1}},
-                            "parts": {"p1": {"A": 4}}}),
-        # B counted now; p1 has no B (a zero left out), p2 appears
+                            "parts": {"aaaaaaaaaaa1": {"A": 4}}}),
+        # B counted now; aaaaaaaaaaa1 has no B (a zero left out), aaaaaaaaaaa2 appears
         snap("2026-10-28", {"quests": {"A": {"open": 9, "agedOnly": 1}, "B": {"open": 3, "agedOnly": None}},
-                            "parts": {"p1": {"A": 5}, "p2": {"B": 3}}, "partsAged": {"p1": {"A": 1}}}),
-        # p1 drops to zero on everything: left out of parts, but still counted
+                            "parts": {"aaaaaaaaaaa1": {"A": 5}, "aaaaaaaaaaa2": {"B": 3}}, "partsAged": {"aaaaaaaaaaa1": {"A": 1}}}),
+        # aaaaaaaaaaa1 drops to zero on everything: left out of parts, but still counted
         snap("2026-10-29", {"quests": {"A": {"open": 2, "agedOnly": 0}, "B": {"open": 3, "agedOnly": None}},
-                            "parts": {"p2": {"A": 2, "B": 3}}, "partsAged": {}}),
+                            "parts": {"aaaaaaaaaaa2": {"A": 2, "B": 3}}, "partsAged": {}}),
     ]
 
     def test_zeros_nulls_and_dates(self):
         out = run.build_part_history(self.SNAPS, self.REG)["x"]
-        self.assertEqual(set(out), {"p1", "p2"})   # p3 never had a count
-        p1 = out["p1"]
-        self.assertEqual(p1["dates"], ["2026-10-27", "2026-10-28", "2026-10-29"])
-        self.assertEqual(p1["quests"], {"A": {"open": [4, 5, 0], "agedOnly": [None, 1, 0]}})
-        self.assertEqual((p1["city"], p1["part"], p1["name"]), ("x", "p1", "Annex"))
-        p2 = out["p2"]
-        self.assertEqual(p2["dates"], ["2026-10-28", "2026-10-29"])   # not counted before it appeared
-        self.assertEqual(p2["quests"], {"A": {"open": [0, 2], "agedOnly": [0, 0]},
+        self.assertEqual(set(out), {"aaaaaaaaaaa1", "aaaaaaaaaaa2"})   # aaaaaaaaaaa3 never had a count
+        aaaaaaaaaaa1 = out["aaaaaaaaaaa1"]
+        self.assertEqual(aaaaaaaaaaa1["dates"], ["2026-10-27", "2026-10-28", "2026-10-29"])
+        self.assertEqual(aaaaaaaaaaa1["quests"], {"A": {"open": [4, 5, 0], "agedOnly": [None, 1, 0]}})
+        self.assertEqual((aaaaaaaaaaa1["city"], aaaaaaaaaaa1["part"], aaaaaaaaaaa1["name"]), ("x", "aaaaaaaaaaa1", "Annex"))
+        aaaaaaaaaaa2 = out["aaaaaaaaaaa2"]
+        self.assertEqual(aaaaaaaaaaa2["dates"], ["2026-10-28", "2026-10-29"])   # not counted before it appeared
+        self.assertEqual(aaaaaaaaaaa2["quests"], {"A": {"open": [0, 2], "agedOnly": [0, 0]},
                                         "B": {"open": [3, 3], "agedOnly": [None, None]}})
 
     def test_files_written_and_stale_ones_removed(self):
@@ -111,11 +111,17 @@ class PartHistoryTest(unittest.TestCase):
             stale.write_text("{}")
             city_file = tmp / "data" / "history" / "x.json"
             city_file.write_text("{}")
+            shard = tmp / "places" / "ca" / "r1.json"
+            shard.parent.mkdir(parents=True)
+            shard.write_text('{"schema":1,"region":"r1","places":[\n["r1","R",2,-1,0,0,1,1,null,null],\n'
+                             '["aaaaaaaaaaa1","Annex",8,0,0,0,1,1,null,"x/aaaaaaaaaaa1"]]}')
             self.assertEqual(run.write_part_history(tmp / "data", self.SNAPS, parts), 3)
             self.assertFalse(stale.parent.exists())
             self.assertTrue(city_file.exists())          # a city's own series is not a part's
-            got = run.read_json(tmp / "data" / "history" / "x" / "p1.json")
+            got = run.read_json(tmp / "data" / "history" / "x" / "aaaaaaaaaaa1.json")
             self.assertEqual(got["quests"]["A"]["open"], [4, 5, 0])
+            self.assertEqual(got["in"], "ca/r1")
+            self.assertNotIn("in", run.read_json(tmp / "data" / "history" / "x" / "aaaaaaaaaaa2.json"))
             self.assertEqual(run.write_part_history(tmp / "data", self.SNAPS, parts), 0)
         finally:
             shutil.rmtree(tmp)

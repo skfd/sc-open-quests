@@ -300,7 +300,8 @@ request"). Agreed before the work was split, so the builders, the engine and the
 - **A part's series** (since 2026-11-16): `docs/data/history/<city>/<placeId>.json`, written by `run.py
   history` from the archive for every part in the registry that has a count, in a city series' shape so
   the same code reads both: `{ "city", "part": "<placeId>", "name", "en", "subtype", "dates": [...],
-  "quests": { "<Quest>": { "open": [...], "agedOnly": [...] } } }`. Dates are the city's snapshots with
+  "quests": { "<Quest>": { "open": [...], "agedOnly": [...] } }, "in": "<cc>/<regionId>" }`, `in` the
+  name-layer file that holds the part (the site's `?place=<placeId>&in=`), absent if none does. Dates are the city's snapshots with
   `parts`, from the first that has the part (2026-10-27 for every part there was then). Snapshots leave
   zeros out, so here a quest the part lacks is `0` when the city counted that quest that day and `null`
   when it did not; `agedOnly` is `null` on a date without `partsAged`. Only quests with something open in
