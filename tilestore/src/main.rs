@@ -30,6 +30,9 @@
 //!   tilestore compact --store S [--min-dead 0.0] [--dry-run]
 //!       the live tiles and relation blobs of older daily packs copied into the newest generation's files, the old
 //!       packs and older generations' indexes removed; only the newest generation stays readable (compact.rs)
+//!   tilestore punch --store S [--dry-run]
+//!       pack 0's whole 64 KiB units no live tile touches given back in place (sparse file, zeroed ranges), every
+//!       live tile hashed before and after; generation 0's pair indexes removed (punch.rs)
 //!   tilestore read --store S [--gen -1] --cities C.json [--base DIR] [--ring 300] --out Y.osm.pbf [--stamp T]
 
 mod clip;
@@ -42,6 +45,7 @@ mod npy;
 mod osc;
 mod pairs;
 mod pbf;
+mod punch;
 mod ptime;
 mod read;
 mod stream;
@@ -159,6 +163,7 @@ fn main() {
             arg(&args, "--min-dead").map(|s| s.parse().unwrap()).unwrap_or(0.0),
             args.iter().any(|a| a == "--dry-run"),
         ),
+        Some("punch") => punch::punch(&PathBuf::from(arg(&args, "--store").expect("--store")), args.iter().any(|a| a == "--dry-run")),
         Some("at") => history::at(
             &PathBuf::from(arg(&args, "--pbf").expect("--pbf")),
             &arg(&args, "--at").expect("--at"),
