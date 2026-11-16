@@ -1949,3 +1949,10 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   `tools/stream/world-days.sh` (it fetches kept diffs, rebuilds `world-stream/` from the seed and applies every
   day from 11-09, 8-14 min a day). **The Rust planet cut now fits on C:** about 260-310 GB peak plus its 40 GiB
   floor against 521 GB free, so it no longer has to wait for the 2 TB drive (the owner's call).
+- **PLANET CUT RUNNING since 11-16 ~01:50 (owner: "Yes, run the cut").** `.scratch/planet-cut/run.sh`, hidden, log
+  `logs/planet-cut.log`; binary `.scratch/planet-cut/tilestore-4b1003b4.exe` (main at 4b1003b4, smoke-tested first:
+  `gnode.sh gsmoke` on Germany equal to `store-rs-germany`). `scut` of `history-261102` at 2026-11-02T00:00:00Z,
+  defaults (z14, bucket z8, 2 GiB), node file `.scratch/planet-cut/planet.loc` (115 GB, not sparse), store
+  `.scratch/planet-cut/store`. C: 544 GB free at the start. **While it runs: no node-file tests, no timings, no
+  large writes on C:.** If it stops with exit 101, remove `planet.loc` and `store/work` by hand. The oracle for
+  its exactness, `europe-2026-11-02.osm.pbf` (sequence 5164, the same instant), is pinned in `europe/pins.json`.
