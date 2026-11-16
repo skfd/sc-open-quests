@@ -177,6 +177,16 @@ class UpdateTest(unittest.TestCase):
             for f in ("wtiles", "rtiles"):
                 self.assertTrue(np.array_equal(np.load(d / "g-before" / f"{f}-0001.npy"),
                                                np.load(d / "r-before" / f"{f}-0001.npy")), ("grouped", f))
+            # the planet's flags together: the world, the node file, groups (a budget of 0: a tile each), pruning
+            run("cut", "--pbf", d / "before.osm.pbf", "--out", d / "p-world", "--day", "before")
+            run("update", "--store", d / "p-world", "--diff", d / "day.osc", "--before-loc", d / "before.loc",
+                "--day", "after", "--world", "--group-mib", "0", "--prune-pairs")
+            r = S.compare_stores(d / "p-world", d / "r-after", ga=1, gb=0)
+            self.assertEqual((r["differ"], r["onlyA"], r["onlyB"]), (0, 0, 0), ("planet flags", r))
+            self.assertFalse((d / "p-world" / "wtiles-0000.npy").exists())
+            for f in ("wtiles", "rtiles"):
+                self.assertTrue(np.array_equal(np.load(d / "p-world" / f"{f}-0001.npy"),
+                                               np.load(d / "r-before" / f"{f}-0001.npy")), ("planet flags", f))
             for f in ("wtiles", "rtiles", "relidx"):
                 a, b = np.load(d / "w-before" / f"{f}-0001.npy"), np.load(d / "r-before" / f"{f}-0001.npy")
                 self.assertTrue(np.array_equal(a if f != "relidx" else a["key"], b if f != "relidx" else b["key"]), f)

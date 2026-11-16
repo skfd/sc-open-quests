@@ -39,6 +39,8 @@ pub struct Args {
     /// rebuild the reached tiles in groups, one per cell of this zoom, not in one working set (a planet day's would
     /// not fit in memory)
     pub group_z: Option<u32>,
+    /// rebuild the reached tiles in groups of about this many MiB of old payload, in the order of their zoom-8 cells
+    pub group_mib: Option<u64>,
     pub day: String,
     /// the clip's polygon: the store's region (the planet diff's changes elsewhere stay out)
     pub polygon: Option<PathBuf>,
@@ -588,8 +590,9 @@ pub fn update(a: &Args) {
     let st = Store::open(&a.store);
     let (z, g) = (st.z, st.gen);
     let ng = g + 1;
-    let gz = a.group_z;
-    assert!(gz.is_none_or(|x| x <= z), "a group is no finer than a tile");
+    assert!(a.group_z.is_none_or(|x| x <= z), "a group is no finer than a tile");
+    assert!(!(a.group_z.is_some() && a.group_mib.is_some()), "groups by cell or by size, not both");
+    let grouped = a.group_z.is_some() || a.group_mib.is_some();
     let wtm = npy::PairMap::open(&pair_path(&st.dir, "wtiles", g));
     let rtm = npy::PairMap::open(&pair_path(&st.dir, "rtiles", g));
     let (wt, rt) = (wtm.rows(), rtm.rows());
@@ -634,7 +637,7 @@ pub fn update(a: &Args) {
             }
         }
     };
-    if gz.is_none() {
+    if !grouped {
         dec.add(&st, homes.iter().copied());
         for k in &homes {
             if let Some(p) = &dec.map[k] {
@@ -701,7 +704,7 @@ pub fn update(a: &Args) {
         }
     };
     let orph;
-    let m1 = if gz.is_none() {
+    let m1 = if !grouped {
         dec.add(&st, old_mins.iter().copied());
         dec.add(&st, before_keys.iter().copied());
         let mut srcs: Vec<&Part> = dec.parts().collect();
@@ -850,7 +853,7 @@ pub fn update(a: &Args) {
     // per reached relation the app keeps, its new blob; and the ids of those
     let rel_out: Vec<(i64, Vec<u8>)>;
     let mut groups = 1usize;
-    if gz.is_none() {
+    if !grouped {
         drop(m1);
         dec.add(&st, reach.iter().copied());
         let mut srcs: Vec<&Part> = dec.parts().chain(blobs.iter()).collect();
@@ -874,21 +877,37 @@ pub fn update(a: &Args) {
         rel_out = kept.par_iter().map(|&r| (m.rid[r], rel_blob(&m, r))).collect();
         decoded_n = dec.order.len();
     } else {
-        // in groups of the reached tiles under one cell of zoom gz: each group's working set is its own old tiles and
-        // the carried copies; it holds every object that lands in the group's tiles, whole (DESIGN.md)
-        let gz = gz.unwrap();
-        let (sh, mask) = (z - gz, (1u32 << z) - 1);
-        let cell = |k: u32| ((k >> z) >> sh) << gz | ((k & mask) >> sh);
+        // the reached tiles in groups, in the order of their cells at zoom cz: a whole cell each with --group-z; with
+        // --group-mib, cells run together until the old payloads reach the budget. Each group's working set is its own
+        // old tiles and the carried copies, which hold every object that lands in its tiles (DESIGN.md); any partition
+        // gives the same store
+        let cz = a.group_z.unwrap_or(z.min(8));
+        let (sh, mask) = (z - cz, (1u32 << z) - 1);
+        let cell = |k: u32| ((k >> z) >> sh) << cz | ((k & mask) >> sh);
         let mut by_cell: Vec<(u32, u32)> = reach.iter().map(|&k| (cell(k), k)).collect();
         by_cell.sort_unstable();
-        let mut i = 0;
-        groups = 0;
-        while i < by_cell.len() {
-            let c = by_cell[i].0;
-            let j = i + by_cell[i..].partition_point(|x| x.0 == c);
-            let keys: Vec<u32> = by_cell[i..j].iter().map(|x| x.1).collect();
-            i = j;
-            groups += 1;
+        let budget = a.group_mib.map(|m| m << 20);
+        let mut glist: Vec<Vec<u32>> = Vec::new();
+        let (mut cur, mut acc, mut cur_cell): (Vec<u32>, u64, Option<u32>) = (Vec::new(), 0, None);
+        for &(c, k) in &by_cell {
+            let close = match budget {
+                None => cur_cell.is_some_and(|x| x != c),
+                Some(b) => acc >= b,
+            };
+            if close {
+                glist.push(std::mem::take(&mut cur));
+                acc = 0;
+            }
+            cur.push(k);
+            acc += st.row(k).map_or(0, |r| r.3 as u64) + 1024;
+            cur_cell = Some(c);
+        }
+        if !cur.is_empty() {
+            glist.push(cur);
+        }
+        groups = glist.len();
+        for mut keys in glist {
+            keys.sort_unstable();
             let rows: Vec<Row> = keys.iter().filter_map(|&k| st.row(k)).collect();
             let parts: Vec<Part> = payloads(dir, "pack", &rows).par_iter().map(|b| Part::tile(b)).collect();
             decoded_n += parts.len();
@@ -916,7 +935,7 @@ pub fn update(a: &Args) {
         let mc = working(&ctx, &srcs);
         let kept: Vec<usize> = ar.iter().filter_map(|&rid| mc.rid.binary_search(&rid).ok()).filter(|&r| mc.r_kept[r]).collect();
         rel_out = kept.par_iter().map(|&r| (mc.rid[r], rel_blob(&mc, r))).collect();
-        log(&format!("{groups} groups at zoom {gz}; {} member ways of changed relations carried for the relation store", capc.part.wid.len()));
+        log(&format!("{groups} groups (cells of zoom {cz}, budget {:?} MiB); {} member ways of changed relations carried for the relation store", a.group_mib, capc.part.wid.len()));
     }
     tw.f.flush().unwrap();
     let t_rule = t3.elapsed().as_secs_f64();
@@ -978,7 +997,7 @@ pub fn update(a: &Args) {
         "tilesUnchanged": unchanged.len(), "gen": ng, "day": a.day, "diff": a.diff.to_string_lossy(),
         "by": "tilestore update (Rust)", "before": a.before.to_string_lossy(),
         "polygon": a.polygon.as_ref().map(|p| p.to_string_lossy().into_owned()), "world": a.world, "prunePairs": a.prune_pairs,
-        "groupZ": a.group_z, "groups": groups,
+        "groupZ": a.group_z, "groupMiB": a.group_mib, "groups": groups,
         "tilesReached": reach.len(), "tilesWritten": new_entries.len(), "tilesNew": tiles_new, "tilesDropped": tiles_dropped,
         "bytes": off, "relBytes": roff, "relBlobs": rentries.len(), "tilesDecoded": decoded_n,
         "secondsDiff": r1(t_diff), "secondsFind": r1(t_find), "secondsReach": r1(t_reach), "secondsRule": r1(t_rule),
