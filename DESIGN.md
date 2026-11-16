@@ -4889,3 +4889,37 @@ relation blobs against 9.0 MB: a planet relation carries its member ways whole),
 **Not done:** the update in Rust (a current store is this cut plus every day since, or a cut of the 12-07 file);
 the engine's count on a read of the planet store; the antimeridian's whole-row way in this store. Left on disk:
 `.scratch/planet-cut/store` (268 GiB), `clip-1102` (1.9 GiB), `subcmp-*.json`, `read-*.osm.pbf`, `why*.py`.
+
+### The day's update in Rust, equal to the Python update on two days (11-16, 08:05-08:25; owner: "rebuild daily update")
+
+`tilestore/target/release/tilestore.exe update --store S --diff N.osc.gz --before D-1.osm.pbf --day D [--polygon P]`
+(`tilestore/src/update.rs`, `osc.rs`). A step-for-step port of `tilestore.py update`. That includes the choices that
+look arbitrary: which copies make up the working set, and what is filtered by the store's region and what is not.
+The port is held against the prototype's output, so it keeps them. New code beyond the port:
+- **The diff reader:** the last version of each object in file order. A node in `<delete>`, or one without a valid
+  location, counts as deleted. Coordinates are parsed to 1e-7 as libosmium parses them, with no float in between.
+  Attribute values are normalised as an XML parser must, then unescaped.
+- **The node places before the day:** read from the clip's PBF of the day before, not from `geom-N/nodes.idx`. Those
+  were deleted in the scratch cleanup, and they came from the same PBF.
+- **`store.json` last:** written to a temporary file and renamed, so a generation exists only once its files do.
+
+**Held against the Python store's generations 1 and 2 (`.scratch/tiles/store`, made by `day12.sh`)** on a copy of
+the Rust cut of 11-12 (`.scratch/tiles/store-rsu`; generation 0 was shown equal to the Python store's on 11-15):
+
+| day | diff | Rust | Python | storecmp (tiles, relation blobs, both pair indexes) |
+|---|---|---|---|---|
+| 11-13 | 5175 | 42.5 s, 10.3 GiB peak | 623 s | equal: 59,026 tiles, 438,348 blobs, 22,607,707 + 570,881 pairs |
+| 11-14 | 5176, on the Rust generation 1 | 38.5 s, 10.7 GiB peak | 571 s | equal: 59,026 tiles, 438,514 blobs, 22,614,482 + 571,106 pairs |
+
+Every count the prototype records also agrees, for example changed nodes, parent ways, relations reached, tiles
+reached by each cause with their bytes, tiles written, and bytes written.
+
+Checks:
+- **Negative control:** the Rust generation 2 against the Python generation 1 differs (2,426 tiles, 744 blobs,
+  both pair indexes), and storecmp exits 1.
+- **Synthetic day:** `tests/test_tilestore_update.py` now sends the synthetic day through the binary too, against a
+  fresh Rust cut of the day after and against the Python update. It covers a deleted tagged node, a moved node, a
+  new way and node, and a relation gaining a far member node.
+
+Of the 42.5 s, 14.2 s is the diff (single-threaded XML), 6.8 s the node places, and 5.8 s the tile rule. The rest
+is finding and writing the tiles.
