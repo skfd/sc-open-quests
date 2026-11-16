@@ -14,9 +14,12 @@
 //!       a history file at a date, as a snapshot PBF (history.rs)
 //!   tilestore ptime --pbf X.os[mh].pbf [--at T] --nodes F.loc [--z 14] [--sparse] [--keep]
 //!       the planet cut's passes 1 and 2 timed, the node places in a file by id (ptime.rs)
-//!   tilestore update --store S --diff N.osc.gz --before D-1.osm.pbf --day 2026-11-13 [--polygon P.geojson]
+//!   tilestore update --store S --diff N.osc.gz (--before D-1.osm.pbf | --before-loc planet.loc) --day 2026-11-13
+//!       [--polygon P.geojson | --world]
 //!       a day's diff into a new generation of the store (update.rs, tilestore.py update step for step); the node
-//!       places before the day from the clip's PBF of the day before; the polygon is the clip's, the store's region
+//!       places before the day from the clip's PBF of the day before, or from a node file by id in osmium's
+//!       dense_file_array layout (the world stream's planet.loc); the polygon is the clip's, the store's region;
+//!       --world: a store of the whole world, every tile in its region
 //!   tilestore read --store S [--gen -1] --cities C.json [--base DIR] [--ring 300] --out Y.osm.pbf [--stamp T]
 
 mod clip;
@@ -93,7 +96,9 @@ fn main() {
         Some("update") => update::update(&update::Args {
             store: PathBuf::from(arg(&args, "--store").expect("--store")),
             diff: PathBuf::from(arg(&args, "--diff").expect("--diff")),
-            before: PathBuf::from(arg(&args, "--before").expect("--before")),
+            before: PathBuf::from(arg(&args, "--before").or_else(|| arg(&args, "--before-loc")).expect("--before or --before-loc")),
+            before_loc: arg(&args, "--before-loc").is_some(),
+            world: args.iter().any(|x| x == "--world"),
             day: arg(&args, "--day").expect("--day"),
             polygon: arg(&args, "--polygon").map(PathBuf::from),
         }),

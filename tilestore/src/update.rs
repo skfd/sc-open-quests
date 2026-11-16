@@ -28,23 +28,41 @@ type Row = (i64, i32, i64, i32);
 pub struct Args {
     pub store: PathBuf,
     pub diff: PathBuf,
-    /// the node places before the day: a clip's PBF of the day before
+    /// the node places before the day: a clip's PBF of the day before, or a node file by id
     pub before: PathBuf,
+    /// `before` is a node file by id in osmium's dense_file_array layout (the world stream's planet.loc), not a PBF
+    pub before_loc: bool,
+    /// a store of the whole world: every tile is in its region (no polygon, no edge)
+    pub world: bool,
     pub day: String,
     /// the clip's polygon: the store's region (the planet diff's changes elsewhere stay out)
     pub polygon: Option<PathBuf>,
 }
 
-/// the node places before the day (tilestore.py NodeTable), from a PBF
-struct NodeTable {
-    id: Vec<i64>,
-    lat: Vec<i32>,
-    lon: Vec<i32>,
+/// the node places before the day (tilestore.py NodeTable): a clip's, read from its PBF into memory, or the world's,
+/// a node file by id mapped (osmium's dense_file_array, as stream.py DenseLocations keeps it: at byte 8 * id the
+/// longitude and latitude in 1e-7 degrees, int32 little-endian; both 2^31-1 when there is no such node)
+enum NodeTable {
+    Mem { id: Vec<i64>, lat: Vec<i32>, lon: Vec<i32> },
+    Dense(memmap2::Mmap),
 }
 
 impl NodeTable {
+    fn len(&self) -> usize {
+        match self {
+            NodeTable::Mem { id, .. } => id.len(),
+            NodeTable::Dense(m) => m.len() / 8,
+        }
+    }
+
+    fn dense(path: &Path) -> NodeTable {
+        let f = File::open(path).unwrap_or_else(|e| panic!("{}: {e}", path.display()));
+        // SAFETY: read only; the stream writes its node file only on its own save(), not while an update runs
+        NodeTable::Dense(unsafe { memmap2::Mmap::map(&f) }.unwrap_or_else(|e| panic!("map {}: {e}", path.display())))
+    }
+
     fn from_pbf(pbf: &Path) -> NodeTable {
-        let mut t = NodeTable { id: Vec::new(), lat: Vec::new(), lon: Vec::new() };
+        let (mut ids, mut lats, mut lons) = (Vec::new(), Vec::new(), Vec::new());
         let mut reader = BlobReader::from_path(pbf).unwrap_or_else(|e| panic!("{}: {e}", pbf.display()));
         loop {
             let batch: Vec<_> = reader.by_ref().take(256).map(|b| b.expect("read a blob")).collect();
@@ -73,17 +91,28 @@ impl NodeTable {
                 })
                 .collect();
             for (i, la, lo) in parts {
-                t.id.extend_from_slice(&i);
-                t.lat.extend_from_slice(&la);
-                t.lon.extend_from_slice(&lo);
+                ids.extend_from_slice(&i);
+                lats.extend_from_slice(&la);
+                lons.extend_from_slice(&lo);
             }
         }
-        assert!(t.id.windows(2).all(|w| w[0] < w[1]), "{}: node ids not increasing", pbf.display());
-        t
+        assert!(ids.windows(2).all(|w| w[0] < w[1]), "{}: node ids not increasing", pbf.display());
+        NodeTable::Mem { id: ids, lat: lats, lon: lons }
     }
 
     fn get(&self, id: i64) -> Option<(i32, i32)> {
-        self.id.binary_search(&id).ok().map(|i| (self.lat[i], self.lon[i]))
+        match self {
+            NodeTable::Mem { id: ids, lat, lon } => ids.binary_search(&id).ok().map(|i| (lat[i], lon[i])),
+            NodeTable::Dense(m) => {
+                let at = usize::try_from(id).ok()?.checked_mul(8)?;
+                let b = m.get(at..at + 8)?;
+                let x = i32::from_le_bytes(b[..4].try_into().unwrap());
+                let y = i32::from_le_bytes(b[4..].try_into().unwrap());
+                // osmium's Location::valid(): an empty place (both 2^31-1) is outside the world too
+                let ok = (-1_800_000_000..=1_800_000_000).contains(&x) && (-900_000_000..=900_000_000).contains(&y);
+                ok.then_some((y, x))
+            }
+        }
     }
 }
 
@@ -358,14 +387,16 @@ pub fn update(a: &Args) {
     let ng = g + 1;
     let wt = load_pairs(&st.dir, "wtiles", g);
     let rt = load_pairs(&st.dir, "rtiles", g);
-    let region = region_of(&st, a.polygon.as_deref());
-    let in_region = |k: Option<u32>| k.is_some_and(|k| region.binary_search(&k).is_ok());
+    assert!(!(a.world && a.polygon.is_some()), "a world store has no polygon");
+    // None: the whole world
+    let region = (!a.world).then(|| region_of(&st, a.polygon.as_deref()));
+    let in_region = |k: Option<u32>| k.is_some_and(|k| region.as_ref().is_none_or(|r| r.binary_search(&k).is_ok()));
     let diff = osc::read(&a.diff);
     let d = &diff;
     let t_diff = t0.elapsed().as_secs_f64();
     let t = Instant::now();
-    let bt = NodeTable::from_pbf(&a.before);
-    log(&format!("node places before the day: {} nodes in {:.1} s", bt.id.len(), t.elapsed().as_secs_f64()));
+    let bt = if a.before_loc { NodeTable::dense(&a.before) } else { NodeTable::from_pbf(&a.before) };
+    log(&format!("node places before the day: {} nodes (or ids) in {:.1} s", bt.len(), t.elapsed().as_secs_f64()));
     let t1 = Instant::now();
     let dn_get = |id: i64| d.part.nid.binary_search(&id).ok().map(|i| (d.part.lat[i], d.part.lon[i]));
     // node places after the day: the diff's (none for a deleted node), else the store before
@@ -678,7 +709,7 @@ pub fn update(a: &Args) {
         "reachedBy": {"node": by(&why_node), "way": by(&why_way), "relation": by(&why_rel)},
         "tilesUnchanged": unchanged.len(), "gen": ng, "day": a.day, "diff": a.diff.to_string_lossy(),
         "by": "tilestore update (Rust)", "before": a.before.to_string_lossy(),
-        "polygon": a.polygon.as_ref().map(|p| p.to_string_lossy().into_owned()),
+        "polygon": a.polygon.as_ref().map(|p| p.to_string_lossy().into_owned()), "world": a.world,
         "tilesReached": reach.len(), "tilesWritten": new_entries.len(), "tilesNew": tiles_new, "tilesDropped": tiles_dropped,
         "bytes": off, "relBytes": roff, "relBlobs": rentries.len(), "tilesDecoded": dec.order.len(),
         "secondsDiff": r1(t_diff), "secondsFind": r1(t_find), "secondsReach": r1(t_reach), "secondsRule": r1(t_rule),

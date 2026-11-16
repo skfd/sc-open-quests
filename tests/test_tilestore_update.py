@@ -148,6 +148,22 @@ class UpdateTest(unittest.TestCase):
                 run("cut", "--pbf", d / f"{name}.osm.pbf", "--out", d / f"r-{name}", "--day", name)
             run("update", "--store", d / "r-before", "--diff", d / "day.osc", "--before", d / "before.osm.pbf",
                 "--day", "after", "--polygon", poly)
+            # the world's way: no region, the node places from a node file by id as the world stream keeps it
+            # (osmium dense_file_array); nothing in this day lies outside the polygon, so the result is the same
+            import osmium
+            import osmium.index
+            loc = osmium.index.create_map(f"dense_file_array,{d / 'before.loc'}")
+            for n in osmium.FileProcessor(str(d / "before.osm.pbf"), osmium.osm.NODE):
+                loc.set(n.id, n.location)
+            del loc
+            run("cut", "--pbf", d / "before.osm.pbf", "--out", d / "w-before", "--day", "before")
+            run("update", "--store", d / "w-before", "--diff", d / "day.osc", "--before-loc", d / "before.loc",
+                "--day", "after", "--world")
+            r = S.compare_stores(d / "w-before", d / "r-after", ga=1, gb=0)
+            self.assertEqual((r["differ"], r["onlyA"], r["onlyB"]), (0, 0, 0), ("world", r))
+            for f in ("wtiles", "rtiles", "relidx"):
+                a, b = np.load(d / "w-before" / f"{f}-0001.npy"), np.load(d / "r-before" / f"{f}-0001.npy")
+                self.assertTrue(np.array_equal(a if f != "relidx" else a["key"], b if f != "relidx" else b["key"]), f)
             # the Python update of the Python cut, the oracle the Rust update is a port of
             T.geom(d / "before.osm.pbf", d / "g-before")
             T.attrs(d / "before.osm.pbf", d / "g-before")
