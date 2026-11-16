@@ -1871,8 +1871,9 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   in Rust is independent.
 - **CLOSED 11-15, 23:20: the space is back and the delete is fixed.** The owner restarted at 23:14; C: had 283 GB
   free after it (the files in `$Extend\$Deleted` went with the restart). The Berlin test of the delete that cuts
-  the file to length 0 first, run once: free space 291.5 GB before, 291.0 GB after the program deleted its file,
-  291.0 GB 20 s later, and `ptime`'s counts as wanted. Before the change the same run left 20.4 GB taken. What in
+  the file to length 0 first, run once: free space 291,519 MiB before (284.7 GiB), 291,046 MiB after the program deleted
+  its file, 291,023 MiB 20 s later (the 0.5 GiB is drift: run again at 01:02 with idle readings around it, it lost
+  nothing), and `ptime`'s counts as wanted. Before the change the same run left 20.4 GB taken. What in
   Windows held the deleted files was never found. Still true: never run a country through `--nodes --sparse`.
   **Next:** see the last entry (the spill's appends and coding are done). What follows is the incident
   as it was written while open.
@@ -1912,8 +1913,8 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   back from its record equal (`TILESTORE_TEST_WAY_CODING=1`). The cut budget still counts the uncoded bytes, so
   the bucket phase's memory is unchanged. Rerun: `bash .scratch/history/spill.sh NAME [warm]` (about 6 minutes;
   the places in memory, no node file). **Next:** nothing here is blocked but the planet cut, which waits on the
-  2 TB drive. Open if wanted before it: the spill's tags (a higher zstd level on the workers is the cheap try),
-  Germany through a node file that is not sparse.
+  2 TB drive. Both things left open here were done at 00:35-00:55, the entry below (the level stays 1; Germany through
+  a node file that is not sparse equals its oracle).
 - **Built 11-16, 00:35-00:55 (owner: "keep building"):** DESIGN.md, "Germany through a node file that is not sparse,
   and the spill's compression level". (1) **Germany with `scut --nodes F.loc` (no `--sparse`) equals its oracle:**
   the whole planet path (node file by id, the passes, the coded spill, the buckets) has now run end to end on a
@@ -1926,7 +1927,8 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
 - **Built 11-16, 00:53-01:00:** the spill and the bucket phase stop under 40 GiB free, as the node file does
   (DESIGN.md, the last paragraph). The spill's stop was seen (`TILESTORE_TEST_FLOOR_GIB`), the bucket phase's was
   not. The clip and Germany equal their oracles after it. So a planet cut that runs out of room stops with a
-  message and 40 GiB left, it does not fill the disk. **Next:** unchanged, the planet cut on the 2 TB drive.
+  message and 40 GiB left, it does not fill the disk. **After such a stop, remove by hand** the node file given
+  to `--nodes` (115 GB on the planet; the stop does not delete it) and the store's `work` folder. **Next:** unchanged, the planet cut on the 2 TB drive.
 - **Stale files deleted from `~/Code/.osm-data` (11-16, owner: "all three"), C: 285 GB free to 308 GB.** The
   changesets dump of 10-26 (8.3 GB; `rank_sc_cities.py` keeps its scan in `.scratch/rank/`, a rerun fetches a
   newer weekly dump), skyditor's 22 European extracts of 10-27 (7.5 GB; its squares are cut in

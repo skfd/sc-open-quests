@@ -4790,7 +4790,10 @@ store 97-136 GB with its indexes), so it waits on the 2 TB drive.
 - **The file:** 106.97 GiB long (highest id 14,357,382,709), 553,711 seeks, 110.1 GiB less free while it stood. It
   was deleted by the program when pass 2 ended and **its space came back**: 288.7 GiB free before the run, 276.5
   GiB with the finished store (8 GiB) still there, 285.4 GiB after the store was removed. The 3.3 GiB between
-  first and last is not explained; free space moved by more than that over the night with nothing of ours running.
+  first and last is the disk's own drift, not the delete: the Berlin test run again at 01:02 with readings around
+  it (314,621 and 314,620 MiB free in the 45 s before, 314,620 MiB after the program deleted its file, 314,617 MiB
+  30 s later) lost nothing, and between 00:59 and 01:01, with no run of ours going, free space rose by about 22 GiB
+  (285 GiB to 307 GiB; why was not looked at).
 - **Memory:** private bytes 4.0 GiB after pass 1 and after pass 2 (11.0 and 7.7 with the places in memory). The
   working set reached 34.8 GiB in pass 2: the mapped file's pages, which the system can take back, counted as the
   process's. The bucket phase's working set 7.69 GiB, as without the file.
@@ -4815,5 +4818,7 @@ its disk) now holds for every large writer of the cut (`nodefile::under_floor`).
 before each group of spill files, and under the floor stops and says the store is not whole (what is written is
 left). **Seen for the spill:** with `TILESTORE_TEST_FLOOR_GIB=100000` the clip's run stopped at its first append
 ("the spill is deleted and the run stopped: 285.0 GiB free on its disk, under the floor of 100000 GiB", exit 101)
-and no spill was left. **Not seen: the bucket phase's stop** (the spill's comes first under any floor that would
+and no spill was left. **What a stop of the spill leaves:** the rest of the `work` folder (the tagged-node file, the member-way
+file) and, with `--nodes`, the node file itself, 115 GB on the planet: nothing on that path deletes it. Both are
+removed by hand, which frees the space at once. **Not seen: the bucket phase's stop** (the spill's comes first under any floor that would
 show it). The clip (z8, z12) and Germany equal their oracles with it built (`spill4.out`).
