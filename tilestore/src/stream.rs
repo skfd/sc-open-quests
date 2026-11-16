@@ -112,6 +112,10 @@ struct Spill {
     held: usize,
     raw: u64,
     written: u64,
+    /// appends to spill files, the times all buffers went out at once, and the seconds spent writing
+    flushes: u64,
+    flush_alls: u64,
+    flush_secs: f64,
 }
 
 impl Spill {
@@ -122,7 +126,7 @@ impl Spill {
     fn new(dir: &Path, geo: Geo) -> Spill {
         let _ = fs::remove_dir_all(dir);
         fs::create_dir_all(dir).unwrap();
-        Spill { dir: dir.to_path_buf(), geo, bufs: HashMap::new(), files: BTreeSet::new(), sizes: HashMap::new(), held: 0, raw: 0, written: 0 }
+        Spill { dir: dir.to_path_buf(), geo, bufs: HashMap::new(), files: BTreeSet::new(), sizes: HashMap::new(), held: 0, raw: 0, written: 0, flushes: 0, flush_alls: 0, flush_secs: 0.0 }
     }
 
     fn path(&self, file: u32) -> PathBuf {
@@ -144,6 +148,9 @@ impl Spill {
             for f in files {
                 self.flush(f);
             }
+            // the buffers themselves go too: cleared ones would keep what they grew to
+            self.bufs.clear();
+            self.flush_alls += 1;
         }
     }
 
@@ -153,6 +160,8 @@ impl Spill {
         if b.is_empty() {
             return;
         }
+        let t = Instant::now();
+        self.flushes += 1;
         let z = zstd::bulk::compress(b, 1).unwrap();
         let mut f = OpenOptions::new().create(true).append(true).open(path).unwrap();
         f.write_all(&(z.len() as u32).to_le_bytes()).unwrap();
@@ -169,6 +178,7 @@ impl Spill {
         } else {
             b.clear();
         }
+        self.flush_secs += t.elapsed().as_secs_f64();
     }
 
     fn finish(&mut self) {
@@ -848,11 +858,14 @@ pub fn cut(pbf: &Path, out: &Path, day: &str, z: u32, bz: u32, fz: u32, budget: 
     rtiles.finish();
     spill.finish();
     log(&format!(
-        "spill: {} files, {:.2} GiB raw, {:.2} GiB written; {:.2} bytes a ref written",
+        "spill: {} files, {:.2} GiB raw, {:.2} GiB written; {:.2} bytes a ref written; {} appends ({} times every buffer at once), {:.1} s compressing and writing them",
         spill.files.len(),
         spill.raw as f64 / (1u64 << 30) as f64,
         spill.written as f64 / (1u64 << 30) as f64,
-        spill.written as f64 / n_refs.max(1) as f64
+        spill.written as f64 / n_refs.max(1) as f64,
+        spill.flushes,
+        spill.flush_alls,
+        spill.flush_secs
     ));
     lap("needsAndRelations", &mut t, &mut phases);
 

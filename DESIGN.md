@@ -4449,7 +4449,7 @@ measured (the wrapper reports the peak, not when it came): Germany's largest spi
 uncompressed and is read whole, then its z8 buckets are cut side by side, after the node places (7 GB here) are
 freed. If so the peak no longer grows with the file but is set by the densest z6 cell. For the planet: spill files
 per z7 or z8 cell, or fewer buckets at once; the first act of that fix is the working set logged at each phase.
-**Bounded memory is designed, not yet shown.** Not done.
+**Bounded memory is designed, not yet shown.** Not done here; done in "The bucket phase in bounded memory" below.
 
 **A planet-only unknown, added: the antimeridian.** Neither input holds a way with nodes on both sides of 180
 degrees. `segment_tiles` (here and in `tiles.py`, the same rule) walks every column between the two ends' x, so such
@@ -4541,7 +4541,7 @@ snapshot's 85 GB. Not measured at that size.
 
 **Next:** the node file by id and the 108 GB timing of passes 1 and 2 on `history-261102.osh.pbf` at a date (the
 owner allowed it on C: after this proof; the file deleted after). Before or with it: the working set logged at each
-phase. Then the spill-file memory fix.
+phase. Then the spill-file memory fix. (Both done, the two sections below.)
 
 ### Passes 1 and 2 on the planet, the node places in a file by id: 53 minutes (11-15, 17:26-18:23; owner: "go ahead")
 
@@ -4593,8 +4593,7 @@ places, about 13 bytes a ref, on one thread as coded); the tagged-node and membe
 same nodes, ways, refs and pairs through a sparse node file); the planet's 1.39 billion pairs have nothing to be
 held against until a planet store exists (unknown 5).
 
-**Next:** the spill-file memory fix (spill files per z7 or z8 cell, or fewer buckets at once, with the working set
-now logged per phase by `ptime::memory`), then the spill's coding and the passes' single threads; the whole cut
+**Next:** the spill-file memory fix (done, the next section), then the spill's coding and the passes' single threads; the whole cut
 still waits on disk (node file 115 GB, spill about 167 GB, store 97-136 GB with its indexes).
 
 ### The bucket phase in bounded memory (11-15, 19:10-20:00; owner: "go on")
@@ -4618,8 +4617,9 @@ Before the phase, what the passes held is dropped (the relations, the member and
 node places.
 
 **Exact: every run below equals its oracle** (`storecmp.py`: tiles, relation blobs, both pair indexes; Germany
-against `store-rs-germany`, 190,006 tiles and 628,034 blobs; the clip against `store-rs`, 59,026 and 438,232). Each
-setting was run twice (once before the sampler was added), eleven runs in all, 0 different in each.
+against `store-rs-germany`, 190,006 tiles and 628,034 blobs; the clip against `store-rs`, 59,026 and 438,232).
+Fifteen runs in all, 0 different in each: five settings before the sampler was added, the six of the table below
+(the 8 GiB budget ran only there), and four after the spill's appends were counted and its buffers freed (below).
 
 **Memory and time, the second set of runs, the machine otherwise idle (pass 2 took 61-62 s in all four Germany
 runs):**
@@ -4632,17 +4632,38 @@ runs):**
 | clip, bucket z8 | a bucket | 2 GiB | 4 | 1.95 GiB | 7.6 GiB | 14.2 s | 54.3 s | 7.6 GiB |
 | clip, bucket z12 | a bucket | 2 GiB | 4 | 2.00 GiB | 5.4 GiB | 18.8 s | 82.1 s | 7.8 GiB |
 
-- **The bucket phase's memory now follows the budget, not the file:** about 3 to 3.5 GiB of working set for each
-  GiB of records cut at once (31.3 for 9.07, 25.7 for 7.60, 7.8 for 1.98). One run per setting with the sampler.
+- **The bucket phase's memory now follows the budget, not the file.** The three large points lie near 1.5 GiB plus
+  3.2 GiB for each GiB of records cut at once (31.3 for 9.07, 25.7 for 7.60, 7.8 for 1.98); the small one is above
+  that line (6.7 for 1.17). It moves between runs: the default gave Germany 7.8 and then 8.3 GiB, the clip at z8
+  7.6 and then 7.9.
 - **Its floor is the largest single bucket.** At a 0.5 GiB budget the largest group is still 1.17 GiB: Germany's
   densest z8 bucket alone, which no budget splits. The planet's densest z8 bucket is not known; if it is too large,
   a finer bucket zoom is the lever (the clip is exact at z12).
 - **Germany's process peak is now the passes', 11.4 GiB,** of which about 7 GiB is the node places held in memory
   here. The planet keeps those in the file by id (`ptime`), so this figure does not carry over either way.
-- **Time is not worse at the default:** the bucket phase 62.7 s against 76.5 s, the cut 161.0 s against 175.6 s. A
-  smaller budget costs time (93.9 s at 0.5 GiB), a larger one buys a little (48.2 s at 8 GiB) for 18 GiB more.
+- **Time is not worse at the default on Germany, with its 167 files:** the bucket phase 62.7 s against 76.5 s, the
+  cut 161.0 s against 175.6 s. A smaller budget costs time (93.9 s at 0.5 GiB), a larger one buys a little (48.2 s
+  at 8 GiB) for 18 GiB more. **Many files do cost time,** next paragraph.
 - The spill is slightly smaller with a file a bucket on Germany (6.71 GiB, 11.96 bytes a ref, against 6.89 and
   12.28) and slightly larger on the clip at z12 (13.30 bytes a ref against 12.79): frames are smaller.
+
+**What a file a bucket costs the passes: the appends.** Every record is spilled on one thread, and each buffer
+that goes out is compressed, its file opened, appended to and closed. Counted (`spill:` in the log), one run each:
+| input | spill files | appends | all buffers at once | compressing and writing | pass 2 | needs and relations |
+|---|---|---|---|---|---|---|
+| clip, bucket z8, a file a bucket | 253 | 1,771 | 0 | 14.0 s | 17.1 s | 1.2 s |
+| clip, bucket z12, a file a z10 cell (old) | 1,411 | 2,929 | 0 | 15.2 s | 16.9 s | 4.4 s |
+| clip, bucket z12, a file a bucket | 8,561 | 23,725 | 4 times | 31.6 s | 31.1 s | 11.9 s |
+| Germany, bucket z8, a file a bucket | 167 | 4,856 | 0 | 44.0 s | 60.4 s | 1.7 s |
+
+At bucket zoom 12 a file a bucket adds 16.4 s of writing for 20,796 more appends of the same 6.34 GiB: about
+0.8 ms an append beyond the compression, and it makes pass 2 nearly twice as long (31.1 s against 16.9 s). Where
+appends are few the time is the compression itself, on that one thread: 2.3 to 2.4 s for each GiB of records (clip
+z8 and Germany). **The planet's count of buckets and of appends is not known, and no planet time is taken from
+this.** If the appends matter there: a spill file a coarser cell again (`--file-z`), which the group budget now
+makes safe only while a file fits the budget; or files kept open; or the spill compressed off the pass's thread.
+The 1 GiB cap on the buffers together was reached only at z12 (4 times); when it is, the buffers themselves are
+now freed, not only emptied (an emptied buffer keeps what it grew to, so the cap bounded bytes waiting, not memory).
 
 **The earlier figures, for the record:** 33.4 GiB and 629.5 s for Germany were before `mimalloc`; the old
 arrangement with it is 31.3 GiB and 175.6 s, so most of the time lost then was the allocator, not the cut.

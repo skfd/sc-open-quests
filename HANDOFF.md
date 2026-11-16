@@ -1708,9 +1708,9 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   (C: has 262 GB free). The 33.4 GiB's cause is likely, not measured (log the working set per phase first).
   **Antimeridian, unknown:** a way across 180 degrees would be copied into a whole row of tiles by the segment
   rule (Python's too); count such ways and split the segment before the planet cut. **Next, in this order:** (1) the history file read at a date in Rust, proven on
-  `berlin-history` against `osmium time-filter` (done, the last entry of this list); (2) the node file by id and the 108 GB timing of passes 1 and 2
+  `berlin-history` against `osmium time-filter` (done, the last entry of this list); (2, done too) the node file by id and the 108 GB timing of passes 1 and 2
   on the planet's history file (the owner allowed it on C: after this proof; delete the file after); (3) the
-  spill-file memory fix. The update in Rust is independent of these. **Next, proposed:** the update in Rust (first act: the Python `update` on
+  spill-file memory fix (done too; the entries below). The update in Rust is independent of these. **Next, proposed:** the update in Rust (first act: the Python `update` on
   `store-rs`, then `storecmp.py --ga 1 --gb 1`), then the planet cut's design.
 - **Batch engine speed-up, third round: merged into main (11-15, 14:15 to 15:50; owner: "continue engine
   optimisation").** DESIGN.md, "Batch engine speed-up, third round". It replaces the second round's "Next for the
@@ -1851,14 +1851,19 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   (the passes 11.3 GiB), the densest z6 spill file read whole. Now **a spill file a bucket** (`--file-z`, default
   the bucket zoom), the spill buffers capped at 1 GiB together, and **spill files cut in groups under a budget**
   (`--cut-gib`, default 2 GiB of records). Germany's bucket phase: **7.8 GiB instead of 31.3**, 62.7 s instead of
-  76.5 s; about 3 to 3.5 GiB of working set per GiB of records cut at once; the floor is the largest single bucket
+  76.5 s; about 1.5 GiB plus 3.2 GiB per GiB of records cut at once; the floor is the largest single bucket
   (Germany's z8: 1.17 GiB of records; the planet's is not known, a finer `--bucket-z` is the lever). **Equal to the
-  oracles in all eleven runs** (Germany against `.scratch/tiles/store-rs-germany`, the clip at bucket zoom 8 and 12
+  oracles in all fifteen runs** (Germany against `.scratch/tiles/store-rs-germany`, the clip at bucket zoom 8 and 12
   against `store-rs`; `--file-z 6 --cut-gib 0` is the old arrangement). `scut` logs working set and private bytes
   per phase and samples the bucket phase. Germany's process peak is now the passes' 11.4 GiB, mostly the node
   places in memory, which the planet keeps in a file. `.scratch/history/mem.sh` reruns the six settings (about 20
   minutes; results `mem.out`, `mem2.out`, logs `g2-*.log`, `c2-*.log`, `storecmp-*.json` there); the test stores
   are deleted, the two oracles kept (12 GB, can go once `scut` with the node file is proven).
+  **A file a bucket costs appends:** the spill is written on one thread, each append compresses, opens, writes
+  and closes; at bucket zoom 12 on the clip (8,561 files, 23,725 appends) pass 2 takes 31.1 s against 16.9 s with
+  1,411 files, about 0.8 ms an append; with few files the cost is zstd on that thread, 2.3-2.4 s a GiB of records.
+  The planet's appends are not known (`spill:` in the log counts them); `--file-z` coarser, files kept open or
+  compression off the pass's thread are the levers, none built.
   **Still unbounded for the planet, in the passes:** all relations in memory, the tagged-node index (about 7 GB for
   298.9M tagged nodes), the member ways' tables. **Next: `scut --nodes F.loc`**, the node file by id inside the cut
   (today only `ptime` has it), held against `scut` on the clip and Germany through a sparse file; then trim those
