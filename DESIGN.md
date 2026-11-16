@@ -5096,3 +5096,25 @@ from `mem.ps1`), binary 9f65401e, nothing else of ours running.
 
 Left on disk: `.scratch/planet-day/planet.loc` (106.9 GiB, at 11-03), `clip-1103` (1.9 GiB), the store with
 generations 0 and 1 and both generations' pair indexes (gen 0's kept so the day can be redone from 0).
+
+**The second day, diff 5166 (11-16, 11:18-11:33; `.scratch/planet-day/run2.sh`, log `logs/planet-day2.log`), with
+`--prune-pairs`:** 638.0 s, 14 groups, 159,722 tiles reached, 158,582 written, pack 7.10 GB; generation 1's pair
+indexes deleted after generation 2's were written (generation 0's kept). Node file moved to 11-04 in 17.3 s (2.53M
+new, 438k moved, 1.03M emptied), **equal to `europe-2026-11-04`** (127,760,942 nodes). **Tiles:** generation 2
+against a cut of that clip at 2 km: 13,968 of 14,005 equal, 32 differ, 5 only in the planet, **all 37 explained by
+the same four ways**; control, generation 1 against the same clip: 1,314 differ.
+
+**What two days say about disk.** The live payload stays where the cut left it: 232.60 GiB after day 2 (pack 0
+220.79, pack 1 5.20, pack 2 6.61) against 232.55. What grows is dead space, about one pack a day:
+
+| pack | written | dead after day 2 |
+|---|---|---|
+| 0 (the cut) | 232.55 GiB | 11.76 GiB (5.1%; day 1 7.45, day 2 4.31 more); 7.28 GiB of it in whole 64 KiB chunks |
+| 1 | 7.48 GiB | 2.28 GiB (30.5%) after one more day |
+
+So a store without compaction grows by about 8.5 GB a day (pack plus the new tile and relation indexes), about 255
+GB a month. Two kinds of compaction, neither built: **daily packs** copied forward (their live tiles into the
+newest pack, the old pack deleted; small, since a daily pack is a few GiB and loses a third the next day), and
+**the cut's pack** given back in place (marked sparse, whole dead 64 KiB ranges zeroed: about 62% of its dead bytes
+after two days, without rewriting 220 GiB). Either makes older generations unreadable where their tiles were, so
+only the newest generation would stay readable.
