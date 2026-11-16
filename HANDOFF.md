@@ -2012,3 +2012,19 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
       its file to 11-08 in the same run, and the 11-02 store needs it at 11-02.
     - the disk call above
     - the size of the carried copies on a planet day (not measured)
+- **The planet store's first day: running since 11-16 10:41 (owner: "keep building whatever needs to be built").**
+  Built first (9f65401e): `tilestore loc build|advance|check` (`tilestore/src/locfile.rs`), the node file in
+  osmium's dense_file_array layout (the layout `update --before-loc` and the world stream's `planet.loc` share),
+  built from a history file at a date, moved forward by a day's diff (refuses a diff not after what
+  `F.loc.state` holds), checked against a snapshot; equal to pyosmium's file before and after the synthetic day
+  (`tests/test_tilestore_update.py`). The update now refuses to start under the 40 GiB floor.
+  **Running:** `.scratch/planet-day/run.sh` (hidden, log `logs/planet-day.log`; rerun with the Start-Process line
+  in its header, every step skips what is done): node file at 11-02 (`.scratch/planet-day/planet.loc`, about 107
+  GiB), `loc check` against `europe-2026-11-02`, `update` of `.scratch/planet-cut/store` by diff 5165 (`--world
+  --group-mib 512`, **no `--prune-pairs`**, so generation 0's pair indexes stay and a wrong result can be redone),
+  `loc advance` to 11-03, `loc check` against `europe-2026-11-03`, a cut of that clip (`clip-1103`), then `subcmp.py
+  --gp 1` at 2 and 0.5 km. Differences to explain with `.scratch/planet-day/why.py subcmp-K.json clip-1103 store 1`.
+  **Disk told to the owner:** this run fits (about 180 GiB at the peak with the floor, 266 free at the start);
+  before the 12-07 job (07:30, about 170 GB) about 50 GB short if the store and the node file both stay; to run
+  store, node file, world stream and the monthly job daily, about 350 GB more (a month of packs at about 8 GB a day
+  without compaction is most of it). The owner is clearing personal files.
