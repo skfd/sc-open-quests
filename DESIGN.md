@@ -4932,18 +4932,21 @@ store's bytes. These come from three sources, which overlap:
 - the old tiles of its relations that had any: 89,412 tiles
 
 Missing from the bound are the old homes of changed nodes, the parent ways, and the new tiles of changed ways. The
-clip's day for comparison reached 2,595 tiles of about 0.74 GB and peaked at 10.3 GiB, so the planet day is at least
-70 times the tiles and 10 times the bytes. 5165 is a light day: 3.6 million nodes, where 5175 had 6.0 million.
+clip's day for comparison reached 2,595 tiles and rewrote 2,591 of them, which held 0.46 GB before the day. It
+peaked at 10.3 GiB. So the planet day is at least 70 times the tiles and 17 times the bytes. 5165 is a light day: 3.6 million nodes, where 5175 had 6.0 million.
 
 **So this port cannot run on the planet store as it is. That is the next design, not built.** Four things stand
 in the way:
 1. **Node places before the day.** On the planet these come from a node file by id. `scut` deletes its file after
-   pass 2, so it would have to be rebuilt: about 115 GB, pass 1 alone, about 18 minutes from the history file. It
+   pass 2, so it would have to be rebuilt: about 115 GB, about 18 minutes for the blob index and pass 1 (`ptime --keep` runs pass 2 as well; pass 1 alone needs a small
+   subcommand). It
    would then be kept and moved forward each day by the diff's nodes. A smaller choice needs design: one tile key
    per id (4 bytes, about 57 GB). A node in a way is in its home tile, so its place can be read from there. A side
    table would hold the few nodes no tile holds.
-2. **Memory.** At the clip's ratio, one working set for a planet day is roughly 80 GiB or more, on an 87.6 GB
-   machine, before the node file. The rebuild has to go in groups of reached tiles. Each group's working set is:
+2. **Memory.** One working set for a planet day would be roughly 80 GiB or more, an estimate scaled from the
+   clip's peak, on an 87.6 GB machine. Part of the clip's 10.3 GiB does not grow with the reach: about 2 GB of node
+   places and the parsed diff. But `load_pairs` alone would hold the planet's 22.3 GB of way pairs, and the new
+   copy beside it. The rebuild has to go in groups of reached tiles. Each group's working set is:
    - the group's old tiles
    - one old tile of each moved way that reaches the group (a tile holds every node of its ways)
    - the relation blobs it needs
@@ -4956,6 +4959,13 @@ in the way:
    not fit on C: before 12-07, and the space of tiles superseded by later generations never comes back without
    compaction (rewriting live tiles out of old packs). The alternative is to cut the 12-07 history file anew and
    update from there.
+
+**The node store need not be extra disk.** The world stream's node store (`.scratch/store/planet.loc`, to be
+rebuilt before 12-07 by `.scratch/store/planet.sh`) is an osmium `dense_file_array`: 8 bytes per node id, longitude
+then latitude, an empty place at both values 2^31-1. `stream.py` `DenseLocations` moves it forward each day. That
+is the same information as the cut's node file, in another byte order. So if the update reads that layout as
+`--before`, one file serves both. The cost is order: the tile store's update for day D has to run after the stream
+has saved day D-1 and before it saves day D.
 
 The planet also needs a "no region" mode: `region_of` without a polygon spreads the held tiles by one, which is
 right for a clip and wrong for the world. The only oracle for a planet update is a clip of the day after, compared

@@ -1983,12 +1983,18 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
     `.scratch/planet-cut/reach-5165.json`), against the clip's 2,595 tiles. Four things stand in the way, designed
     in outline only:
     - a node store kept and moved forward daily: about 115 GB, or about 57 GB as tile keys
-    - the rebuild in groups of tiles: a single working set would be about 80 GiB on an 87.6 GB machine
+    - the rebuild in groups of tiles: a single working set would be roughly 80 GiB (an estimate) on an 87.6 GB machine
     - pair indexes merged in a stream, not rewritten: 22.3 GB a day
     - disk: about 8 GB a day of new pack plus compaction. Fourteen days of catch-up does not fit on C: before 12-07.
   - **Pinned:** `europe-2026-11-03.osm.pbf`, the oracle for a first planet update (diff 5165); unpin when done.
     Diffs 5165-5176 are hard-linked in `.scratch/planet/diffs-keep`.
   - **Left on disk:** `.scratch/tiles/store-rsu` (4.1 GB, can go).
-  - **Owner's call, open:** build the planet update (the four items above), or cut the 12-07 history file anew and
-    update from there. That waits on the disk question either way: the store and `planet.loc` cannot both stay
-    beside the 12-07 job.
+  - **The node store can be the world stream's `planet.loc`** (osmium `dense_file_array`, 8 bytes per id, the
+    same information). If the update reads that layout, the node store costs no disk beyond the stream's rebuild.
+  - **Owner's call, open:** disk, and where the planet store starts. The 268 GiB 11-02 store plus 14 days of catch-up
+    (more than 100 GB of packs before compaction), or a fresh cut of the 12-07 history file. Either way it sits
+    beside `planet.loc` and the 12-07 job, and C: cannot hold all three.
+  - **Building now, no disk needed, each with an oracle on the clip:**
+    - world mode, and the node places from a node file by id (the osmium layout) as `--before`
+    - pair indexes read mapped and merged in a stream
+    - the rebuild in groups of reached tiles
