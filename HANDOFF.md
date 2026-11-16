@@ -1988,7 +1988,7 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
     - disk: about 8 GB a day of new pack plus compaction. Fourteen days of catch-up does not fit on C: before 12-07.
   - **Pinned:** `europe-2026-11-03.osm.pbf`, the oracle for a first planet update (diff 5165); unpin when done.
     Diffs 5165-5176 are hard-linked in `.scratch/planet/diffs-keep`.
-  - **Left on disk:** `.scratch/tiles/store-rsu` (3.3 GB, can go).
+  - **Left on disk:** `.scratch/tiles/store-rsu` (4.1 GB, can go).
   - **Owner's call, open:** build the planet update (the four items above), or cut the 12-07 history file anew and
     update from there. That waits on the disk question either way: the store and `planet.loc` cannot both stay
     beside the 12-07 job.
