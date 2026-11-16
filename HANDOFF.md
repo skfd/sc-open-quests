@@ -2094,3 +2094,10 @@ series, which the site does not yet use. After that: open the chart on recent ti
 import steps, call the change "net", fold zero rows into "N done here", drop the density tiles from the
 city page, and fix the phone table's clipped questions. Four questions to the owner are at the end of
 the file.
+
+## Pinned chart titles in sentence case again (2026-11-16, evening; owner: "was it always there?")
+
+- Pinned quest cards showed titles Capitalized On Every Word ("Is There A Shelter At This Stop?"). Not always:
+  pins came 10-21 in sentence case; the places page's `.card h3 { text-transform: capitalize }` (10-24, for
+  lowercase place kinds like "county (12)") reached them too. `.multiples .card h3 { text-transform: none }`
+  in `docs/style.css` undoes it for the pins only; places headings keep their capital.
