@@ -101,6 +101,7 @@ impl NodeWriter {
         if self.adds % 256 == 0 {
             if let Some(free) = self.free() {
                 if free < FLOOR {
+                    let _ = self.w.get_ref().set_len(0);
                     let _ = fs::remove_file(&self.path);
                     panic!("the node file is deleted and the run stopped: {:.1} GiB free on its disk, under the floor of {} GiB", free as f64 / (1u64 << 30) as f64, FLOOR >> 30);
                 }
@@ -166,6 +167,12 @@ impl NodeMap {
     pub fn delete(self) {
         let NodeMap { path, map, _file, .. } = self;
         drop(map);
+        // cut to nothing before the name goes: a file that was mapped keeps its space after it is deleted, for as
+        // long as its pages stay in the system's cache (seen: 194 GB of deleted node files still taken an hour
+        // later, the process long gone). Cutting it gives the space back at once.
+        if let Err(e) = _file.set_len(0) {
+            crate::log(&format!("the node file could not be cut to nothing before deleting it ({e}): its space may come back late"));
+        }
         drop(_file);
         fs::remove_file(path).unwrap();
     }

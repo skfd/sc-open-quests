@@ -1869,13 +1869,25 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   (today only `ptime` has it), held against `scut` on the clip and Germany through a sparse file; then trim those
   tables. Then the planet cut needs only disk (node file 115 GB, spill about 167 GB, store 97-136 GB). The update
   in Rust is independent.
-- **INCIDENT, 11-15 about 21:13-21:14: C: was full (2.0 GB free) for a minute or two.** `scut --nodes --sparse`
-  on Germany: a region's sparse node file is not small. NTFS allocates a sparse file in 64 KB units and Germany's
-  442.6M nodes are spread over the whole id range, so the file took all 258 GB that were free and the run died
-  with "not enough space on the disk" in pass 1 (no store written). The file was deleted by hand at 21:14:37; the
-  space comes back over minutes, not at once. Anything else writing to C: in that minute may have failed: nothing
-  of this repo did (git clean but for this work), the engine session's last files are from 19:32; other projects
-  were not looked at. **Guard, built:** the node-file writer checks the free space of its disk every 256 blocks and
-  below 40 GiB deletes its file and stops (`tilestore/src/nodefile.rs`, `FLOOR`). **Do not run a country through
-  `--nodes --sparse`**: the clip (127.9M nodes) and Berlin fit, Germany does not; the planet's own file is 115 GB,
-  not sparse, and is the smaller case.
+- **OPEN, the owner's: C: has about 43 GB free, not 258 GB (11-15, 21:45).** DESIGN.md, "The node file inside the
+  cut, two tables trimmed, and a disk incident". Two things happened. (1) At about 21:13 `scut --nodes --sparse`
+  on Germany filled the disk (2.0 GB free) and died; its file was deleted by hand at 21:14:37. A region's sparse
+  node file is large (Berlin 22.9 GB, Germany more than 250 GB); **never run a country through `--nodes
+  --sparse`**. Guard built and seen to work: under 40 GiB free the writer deletes its file and stops
+  (`tilestore/src/nodefile.rs`, `FLOOR`). (2) **About 216 GB is still taken by node files that are deleted:** the
+  ones the program removed itself (Berlin three times, the clip twice, a test) did not give their space back,
+  while the same file removed with `rm` after the program ended does. Cause not known; it is not cached pages
+  (taking 54 GB of memory freed nothing). No such file is listed anywhere under `.scratch/`. **To find or free it:
+  an elevated prompt** (`vssadmin list shadowstorage`, `fsutil volume diskfree C:`, read-only `chkdsk C:`) **or a
+  restart**; neither was done. Until then: the 12-07 planet job needs about 170 GB; the daily runs need little.
+  The delete now cuts the file to length 0 first (`NodeMap::delete`), **not shown to help**: test it on Berlin
+  (`tilestore ptime --pbf berlin-history-261005.osh.pbf --at 2026-10-01T00:00:00Z --nodes X.loc --sparse`, 23 GB;
+  free space before and after) only when more than 70 GB is free. `.scratch/tiles/store-rs` (2.5 GB) and
+  `store-rs-germany` (8.9 GB) are the oracles and can go if space is needed.
+- **Built before that (11-15, 20:15-21:30; owner: "keep building"):** `scut --nodes F.loc [--sparse]`, the node
+  places in the file by id inside the cut (deleted after pass 2): equal to the oracles on Berlin, and the clip at
+  bucket zoom 8 and 12; Germany not run to the end. The needs now come from one read of the tagged-node file (no
+  index, about 7 GB less at planet size) and unkept relations are let go as read: equal to the oracles on the clip
+  (z8, z12) and Germany. `.scratch/history/nodes.sh`, `trim.sh` and their `.out` files; **do not rerun `nodes.sh`
+  as it is** (its last line is the Germany run). **Next:** the delete's test above, then the spill's appends and
+  coding; the planet cut waits on the 2 TB drive.

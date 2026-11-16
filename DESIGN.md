@@ -4680,3 +4680,45 @@ spill); the spill written on one thread; the spill's coding (12-13 bytes a ref);
 **Next:** `scut` with the node file by id (`--nodes F.loc`), held against today's `scut` on the clip and Germany
 through a sparse file; then the tagged-node index and the relations trimmed. After that the planet cut needs only
 disk: node file 115 GB, spill about 167 GB as coded, store 97-136 GB with its indexes.
+
+### The node file inside the cut, two tables trimmed, and a disk incident (11-15, 20:15-21:45; owner: "keep building")
+
+**`scut --nodes F.loc [--sparse]`: the node places in the file by id, not in memory** (`tilestore/src/nodefile.rs`,
+shared with `ptime`; `Places` in `stream.rs` is now memory or file). Pass 1 writes the file, pass 2 reads it
+through a mapping, and it is deleted when pass 2 ends (the member-way file and the spill carry the places on).
+**Exact where it was run** (`storecmp.py`, 0 different): Berlin's history at 2026-10-01 against the same cut with
+the places in memory (1,719 tiles), the clip at bucket zoom 8 and at 12 against `store-rs` (59,026 tiles, 438,232
+blobs). `ptime` on Berlin, moved onto the shared module, gives its counts again. **Germany was not run to the end**
+(the incident below). A region's file is sparse and its timing means nothing for the planet: the clip's pass 1
+took 155.8 s and 183.3 s against 6-9 s in memory, pass 2 49.3 s and 64.2 s against 17-31 s.
+
+**Two tables trimmed, exact on the clip (z8, z12) and Germany against their oracles, the places in memory:**
+- **No index of the tagged-node file.** The needs and the file are both in id order, so the needs are served by one
+  read of the file. The index was 24 bytes a tagged node: about 7 GB for the planet's 298.9 million.
+- **Relations that are not kept are let go as they are read** (in the block's own thread), not held to the end.
+  Private bytes after pass 0: Germany 1.70 GiB (2.97 before), the clip 1.59 GiB (1.83).
+- Germany's process peak: 10.5 GiB (11.4 before), still the node places in memory. With them in the file the clip's
+  passes hold 4.6 to 6.1 GiB of private bytes; what the planet's hold has not been run. Still held through the
+  passes: the kept relations, the tagged bit (1.8 GB at planet size), the member ways' tables, the needs.
+
+**The incident: C: full at about 21:13, and about 216 GB not given back since.** Two separate things.
+1. *A region's sparse node file is large.* NTFS allocates a sparse file in 64 KB units and a region's nodes are
+   spread over the whole id range: Berlin's file (7.9M nodes) takes 22.9 GB of disk, and Germany's (442.6M nodes)
+   took everything that was free and stopped the run with "not enough space on the disk". **Guard, built and seen
+   to work:** the writer reads the free space of its disk every 256 blocks and under 40 GiB deletes its file and
+   stops. Do not run a country through `--nodes --sparse`. The planet's own file is 115 GB, not sparse.
+2. *A node file the program deleted itself did not give its space back.* Reproduced on Berlin: the same file
+   deleted with `rm` after the program ended frees its 22.9 GB at once (free space 42.4 GB to 65.3 GB); deleted by
+   the program (unmapped, then removed while its handle was still open) the name goes and 20.4 GB stays taken, with
+   the process gone and 20 s later still. The four files deleted that way on the way to the incident (Berlin twice,
+   the clip twice) and two tests after it account for the missing space: C: had 258 GB free at 21:00 and has 43 GB
+   now, with nothing of that size on the disk. **The cause is not known.** It is not cached pages: taking 54 GB of
+   memory for a moment, until 2.5 GB was available, freed nothing (and grew the pagefile by 17 GB for a minute;
+   the owner was using the machine). The planet's node file at 18:23, not sparse, deleted the same way, did come
+   back within minutes. What is known to work is deleting after the handle is closed. **Changed, not yet shown to
+   help:** the file is cut to length 0 before it is removed (the guard's path too); the one test of it ran into the
+   40 GiB floor instead. Finding or freeing the space needs an elevated prompt (`vssadmin list shadowstorage`,
+   `fsutil volume diskfree C:`, `chkdsk C:` read-only) or a restart, which are the owner's.
+
+**Next, once the disk is back:** show the cut-to-nothing delete frees the space (Berlin, 23 GB, watch free space
+before and after); then the spill's appends and coding. The planet cut itself waits on the 2 TB drive.
