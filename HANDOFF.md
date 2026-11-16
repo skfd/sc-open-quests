@@ -1914,3 +1914,12 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   the places in memory, no node file). **Next:** nothing here is blocked but the planet cut, which waits on the
   2 TB drive. Open if wanted before it: the spill's tags (a higher zstd level on the workers is the cheap try),
   Germany through a node file that is not sparse.
+- **Built 11-16, 00:35-00:55 (owner: "keep building"):** DESIGN.md, "Germany through a node file that is not sparse,
+  and the spill's compression level". (1) **Germany with `scut --nodes F.loc` (no `--sparse`) equals its oracle:**
+  the whole planet path (node file by id, the passes, the coded spill, the buckets) has now run end to end on a
+  country. The 107 GiB file was deleted by the program and its space came back. Private bytes through the passes
+  4.0 GiB. Rerun: `bash .scratch/history/gnode.sh` (4.5 minutes, needs about 150 GB free). (2) **The spill stays
+  at zstd level 1:** level 3 is 4 % smaller, level 6 is 9 % smaller and slower (`TILESTORE_SPILL_LEVEL`,
+  `level.sh`). **Next:** the planet cut, which waits on the 2 TB drive (node file 115 GB, spill about 137 GB, store
+  97-136 GB). Not done and not needed for it: the spill's tags coded, the passes' single thread, the
+  antimeridian's whole-row way.

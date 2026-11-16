@@ -168,6 +168,11 @@ impl Spill {
         let _ = fs::remove_dir_all(dir);
         fs::create_dir_all(dir).unwrap();
         let (mut to, mut workers) = (Vec::new(), Vec::new());
+        // TILESTORE_SPILL_LEVEL: the zstd level of the spill's frames (1 if not set), to measure what a higher one buys
+        let level: i32 = std::env::var("TILESTORE_SPILL_LEVEL").ok().and_then(|v| v.parse().ok()).unwrap_or(1);
+        if level != 1 {
+            crate::log(&format!("TEST: the spill is compressed at zstd level {level}"));
+        }
         for _ in 0..Self::WORKERS {
             let (tx, rx) = sync_channel::<(u32, Vec<u8>)>(Self::QUEUE);
             let dir = dir.to_path_buf();
@@ -177,7 +182,7 @@ impl Spill {
                 let mut frame = Vec::new();
                 for (file, b) in rx {
                     let t = Instant::now();
-                    let z = zstd::bulk::compress(&b, 1).expect("compress a spill frame");
+                    let z = zstd::bulk::compress(&b, level).expect("compress a spill frame");
                     frame.clear();
                     frame.extend_from_slice(&(z.len() as u32).to_le_bytes());
                     frame.extend_from_slice(&(b.len() as u32).to_le_bytes());

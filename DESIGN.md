@@ -4781,3 +4781,30 @@ the clip (both zooms) and 71,518,636 on Germany, all as they went in.
 cheap thing to try); the passes' own single thread (the records are still handed to the spill one by one); the
 antimeridian's whole-row way. **Next:** the planet cut needs only disk (node file 115 GB, spill about 137 GB,
 store 97-136 GB with its indexes), so it waits on the 2 TB drive.
+
+### Germany through a node file that is not sparse, and the spill's compression level (11-16, 00:35-00:55; owner: "keep building")
+
+**Germany, the node places in a file by id as the planet's will be, equals its oracle** (`.scratch/history/gnode.sh`:
+`scut --nodes F.loc`, no `--sparse`; `storecmp.py` against `store-rs-germany`, 0 different, 190,006 tiles and
+628,034 blobs). This was the run the disk incident stopped. One run.
+- **The file:** 106.97 GiB long (highest id 14,357,382,709), 553,711 seeks, 110.1 GiB less free while it stood. It
+  was deleted by the program when pass 2 ended and **its space came back**: 288.7 GiB free before the run, 276.5
+  GiB with the finished store (8 GiB) still there, 285.4 GiB after the store was removed. The 3.3 GiB between
+  first and last is not explained; free space moved by more than that over the night with nothing of ours running.
+- **Memory:** private bytes 4.0 GiB after pass 1 and after pass 2 (11.0 and 7.7 with the places in memory). The
+  working set reached 34.8 GiB in pass 2: the mapped file's pages, which the system can take back, counted as the
+  process's. The bucket phase's working set 7.69 GiB, as without the file.
+- **Time, which says little for the planet** (a country's nodes are a thin scatter over the whole id range, the
+  planet's fill it): pass 1 63.5 s (12.7 s in memory), pass 2 123.6 s (27.3 s), the cut 269.1 s (121.9 s).
+
+**A higher zstd level on the spill buys little: level 1 stays.** `TILESTORE_SPILL_LEVEL` (a test switch; unset is
+level 1). Germany, the places in memory, each equal to the oracle, one run each (`level.sh`):
+| level | spill written | bytes a ref | the workers together | the pass waited | pass 2 | whole cut |
+|---|---|---|---|---|---|---|
+| 1 | 5.49 GiB | 9.79 | 45.3 s | 0.2 s | 25.9 s | 122.6 s |
+| 3 | 5.25 GiB | 9.35 | 94.4 s | 1.2 s | 29.5 s | 119.4 s |
+| 6 | 5.00 GiB | 8.91 | 259.2 s | 13.7 s | 43.9 s | 138.3 s |
+
+Level 3 is 4 % smaller for twice the workers' time, level 6 is 9 % smaller for nearly six times and holds the pass
+up. For the planet that would be about 6 or 12 GB of about 137. If the spill has to be smaller, it is the tags'
+and heads' own coding that is left, not the level.
