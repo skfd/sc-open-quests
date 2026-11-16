@@ -2059,3 +2059,10 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   writes the 4,214 files). Left for the owner: download `open-quests.js` again on the phone (the phone
   keeps its copy: the old script answers `Toronto/Parkdale` with "No city called ..."). Widget repo commits
   (0701ac0, 370ffe0) are on its main, not pushed.
+
+## Chart ends hoverable from the gutters (2026-11-16, 11:25; owner: "hard to hover first and last point")
+
+- Done in `docs/app.js` (`edgeHover`, and the `setCursor` hook): level with the plot, the y-axis gutter
+  reads out the first snapshot and the right margin the last, synced to the other charts. Fixed with it: the
+  hover rings never showed when the pointer arrived on the last snapshot from idle. DESIGN.md "The chart's
+  ends from its gutters". Checked by `.scratch/edge-hover/probe.py` (serve `docs/` on 8766), 13 of 13 ok.

@@ -350,6 +350,7 @@ function lineChart(target, h, series, { height = 260, showAged = true, questSetB
   const tickFmt = long ? { month: "short", year: "numeric", timeZone: "UTC" } : { month: "short", day: "numeric", timeZone: "UTC" };
   const surface = css("--surface");
   const rel = releaseLayer(xs, { note, idle: noteIdle });
+  let idle = true;   // the legend reads out the latest snapshot, not the pointer
   const mk = (label, color, data) => ({
     label, stroke: color, width: 2, value: (u, v) => (v == null ? "—" : nf.format(v)),
     points: { show: few, size: 8, width: 2, stroke: color, fill: color },
@@ -384,7 +385,18 @@ function lineChart(target, h, series, { height = 260, showAged = true, questSetB
     hooks: {
       // With no pointer over the plot, the legend reads out the latest snapshot.
       ready: [(u) => u.setLegend({ idx: xs.length - 1 })],
-      setCursor: [(u) => { if (u.cursor.idx == null) u.setLegend({ idx: xs.length - 1 }); rel.cursor(u); }],
+      // uPlot places the hover rings only when the index changes, and the idle legend already holds the
+      // last one, so a pointer arriving on the latest snapshot would get its line without rings. Clearing
+      // the legend and placing the cursor again, quietly, makes it a change.
+      setCursor: [(u) => {
+        const i = u.cursor.idx;
+        if (i == null) { u.setLegend({ idx: xs.length - 1 }); idle = true; }
+        else if (idle) {
+          idle = false;
+          if (i === xs.length - 1) { u.setLegend({ idx: null }); u.setCursor({ left: u.cursor.left, top: u.cursor.top }, false, false); }
+        }
+        rel.cursor(u);
+      }],
       draw: [(u) => {
         rel.draw(u);
         if (!brk.length) return;
@@ -411,8 +423,30 @@ function lineChart(target, h, series, { height = 260, showAged = true, questSetB
   };
   target.replaceChildren();
   const u = new uPlot(opts, [xs, ...ser.map((s) => s._data)], target);
+  edgeHover(u, xs);
   charts.push({ u, target });
   return u;
+}
+
+// The first and last points sit on the plot's very edges, where a pixel or two holds them (the latest
+// days of daily counts crowd into the last few). Level with the plot, the gutters beside it stand for
+// those ends: the pointer over the y-axis reads out the first snapshot, past the right edge the last.
+// uPlot only follows the pointer over the plot itself, so the gutters move its cursor by hand, synced
+// to the other charts like a hover is. Listening on u.root rather than the target, a redraw that
+// replaces the chart takes its listeners with it.
+function edgeHover(u, xs) {
+  let on = false;
+  const off = () => { if (on) { on = false; u.setCursor({ left: -10, top: -10 }, true, true); } };
+  u.root.addEventListener("mousemove", (e) => {
+    if (u.over.contains(e.target)) { on = false; return; }   // uPlot's own ground
+    const r = u.over.getBoundingClientRect();
+    const end = e.clientY < r.top || e.clientY >= r.bottom ? null
+      : e.clientX < r.left ? xs[0] : e.clientX >= r.right ? last(xs) : null;
+    if (end == null) return off();
+    on = true;
+    u.setCursor({ left: u.valToPos(end, "x"), top: e.clientY - r.top }, true, true);
+  });
+  u.root.addEventListener("mouseleave", off);
 }
 
 // A row's trend: an inline SVG line over time (x by date, not index, since monthly history runs into

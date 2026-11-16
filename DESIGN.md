@@ -297,6 +297,12 @@ Known gaps:
   says under the legend. They are kept apart from the break lines, which mark changes in *this site's*
   counting.
 - Both files are optional; without them the site falls back to class names and hides the releases toggle.
+- **The chart's ends from its gutters (2026-11-16).** The first and last snapshots sit on the plot's
+  edges, and the latest days of daily counts share the last few pixels, so they were hard to hover. Level
+  with the plot, the y-axis gutter reads out the first snapshot and the margin past the right edge the
+  last, synced to the other charts like any hover; above or below the plot stays off. The idle legend's
+  hold on the last index also kept uPlot from drawing the hover rings when the pointer arrived there;
+  the cursor hook now clears it first.
 
 ## Selection, pins and the link (2026-10-21)
 
