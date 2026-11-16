@@ -4923,3 +4923,40 @@ Checks:
 
 Of the 42.5 s, 14.2 s is the diff (single-threaded XML), 6.8 s the node places, and 5.8 s the tile rule. The rest
 is finding and writing the tiles.
+
+**What a planet day would take, measured as a lower bound (`.scratch/planet-cut/reach.py`, diff 5165, 11-02 to
+11-03, against the planet store's own indexes):** 180,583 tiles holding 7.71 GB of compressed payload, 3.1% of the
+store's bytes. These come from three sources, which overlap:
+- the new home tiles of the diff's 3.62 million nodes: 46,165 tiles
+- the old tiles of its ways that had any: 84,213 tiles
+- the old tiles of its relations that had any: 89,412 tiles
+
+Missing from the bound are the old homes of changed nodes, the parent ways, and the new tiles of changed ways. The
+clip's day for comparison reached 2,595 tiles of about 0.74 GB and peaked at 10.3 GiB, so the planet day is at least
+70 times the tiles and 10 times the bytes. 5165 is a light day: 3.6 million nodes, where 5175 had 6.0 million.
+
+**So this port cannot run on the planet store as it is. That is the next design, not built.** Four things stand
+in the way:
+1. **Node places before the day.** On the planet these come from a node file by id. `scut` deletes its file after
+   pass 2, so it would have to be rebuilt: about 115 GB, pass 1 alone, about 18 minutes from the history file. It
+   would then be kept and moved forward each day by the diff's nodes. A smaller choice needs design: one tile key
+   per id (4 bytes, about 57 GB). A node in a way is in its home tile, so its place can be read from there. A side
+   table would hold the few nodes no tile holds.
+2. **Memory.** At the clip's ratio, one working set for a planet day is roughly 80 GiB or more, on an 87.6 GB
+   machine, before the node file. The rebuild has to go in groups of reached tiles. Each group's working set is:
+   - the group's old tiles
+   - one old tile of each moved way that reaches the group (a tile holds every node of its ways)
+   - the relation blobs it needs
+   The result must equal the single working set's, restricted to the group, and the clip can show that.
+3. **The pair indexes.** The prototype rewrites them whole each day. On the planet the way pairs alone are
+   22.3 GB, and each generation keeps its own copy. Read them mapped, merge the day's changes in a stream, and keep
+   only the newest (an update needs only that).
+4. **Disk.** Each day writes at least the bytes of its changed tiles, about 8 GB, plus a 0.77 GB index. Fourteen
+   days to reach today from 11-02 come to well over 100 GB beside the 268 GiB store and the node file. That does
+   not fit on C: before 12-07, and the space of tiles superseded by later generations never comes back without
+   compaction (rewriting live tiles out of old packs). The alternative is to cut the 12-07 history file anew and
+   update from there.
+
+The planet also needs a "no region" mode: `region_of` without a polygon spreads the held tiles by one, which is
+right for a clip and wrong for the world. The only oracle for a planet update is a clip of the day after, compared
+inside its polygon (`subcmp.py`): `europe-2026-11-03.osm.pbf` for diff 5165, pinned for that until the check is done.
