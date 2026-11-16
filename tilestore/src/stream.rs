@@ -106,17 +106,23 @@ struct Spill {
     geo: Geo,
     bufs: HashMap<u32, Vec<u8>>,
     files: BTreeSet<u32>,
+    /// per file, its records' bytes before compression
+    sizes: HashMap<u32, u64>,
+    /// bytes waiting in `bufs`
+    held: usize,
     raw: u64,
     written: u64,
 }
 
 impl Spill {
     const FLUSH: usize = 4 << 20;
+    /// all the buffers together: past this every one is written out (a file a bucket means many files)
+    const HELD: usize = 1 << 30;
 
     fn new(dir: &Path, geo: Geo) -> Spill {
         let _ = fs::remove_dir_all(dir);
         fs::create_dir_all(dir).unwrap();
-        Spill { dir: dir.to_path_buf(), geo, bufs: HashMap::new(), files: BTreeSet::new(), raw: 0, written: 0 }
+        Spill { dir: dir.to_path_buf(), geo, bufs: HashMap::new(), files: BTreeSet::new(), sizes: HashMap::new(), held: 0, raw: 0, written: 0 }
     }
 
     fn path(&self, file: u32) -> PathBuf {
@@ -130,8 +136,14 @@ impl Spill {
         p32(b, bucket);
         p32(b, body.len() as u32);
         b.extend_from_slice(body);
+        self.held += 9 + body.len();
         if b.len() >= Self::FLUSH {
             self.flush(file);
+        } else if self.held >= Self::HELD {
+            let files: Vec<u32> = self.bufs.iter().filter(|(_, b)| !b.is_empty()).map(|(&f, _)| f).collect();
+            for f in files {
+                self.flush(f);
+            }
         }
     }
 
@@ -149,7 +161,14 @@ impl Spill {
         self.raw += b.len() as u64;
         self.written += z.len() as u64 + 8;
         self.files.insert(file);
-        b.clear();
+        *self.sizes.entry(file).or_default() += b.len() as u64;
+        self.held -= b.len();
+        // a buffer that grew large gives its memory back
+        if b.capacity() > Self::FLUSH * 2 {
+            *b = Vec::new();
+        } else {
+            b.clear();
+        }
     }
 
     fn finish(&mut self) {
@@ -500,15 +519,18 @@ struct WayOut {
 }
 
 /// `at`: the file is a history file, cut as it was at that date (seconds)
-pub fn cut(pbf: &Path, out: &Path, day: &str, z: u32, bz: u32, keep_spill: bool, at: Option<i64>) {
+/// `fz`: a spill file is a cell of this zoom (at most `bz`: a file a bucket); `budget`: the spill files cut at
+/// once hold at most this many bytes of records, or are one file
+pub fn cut(pbf: &Path, out: &Path, day: &str, z: u32, bz: u32, fz: u32, budget: u64, keep_spill: bool, at: Option<i64>) {
     let t0 = Instant::now();
-    let geo = Geo { z, bz, fz: bz.saturating_sub(2) };
+    let geo = Geo { z, bz, fz };
     let nt = (1u64 << z) as f64;
     let mut phases: Vec<(&str, f64)> = Vec::new();
     let mut t = Instant::now();
     let lap = |name: &'static str, t: &mut Instant, phases: &mut Vec<(&str, f64)>| {
         let s = t.elapsed().as_secs_f64();
-        log(&format!("  {name}: {s:.1} s"));
+        let (ws, peak, private) = crate::ptime::memory();
+        log(&format!("  {name}: {s:.1} s; working set {ws:.2} GiB (peak so far {peak:.2}), private {private:.2} GiB"));
         phases.push((name, s));
         *t = Instant::now();
     };
@@ -906,54 +928,94 @@ pub fn cut(pbf: &Path, out: &Path, day: &str, z: u32, bz: u32, keep_spill: bool,
     }
     npy::save_idx(&out.join("relidx-0000.npy"), &ridx);
     lap("relationStore", &mut t, &mut phases);
+    // nothing of the passes is needed by the buckets
     drop(places);
+    drop(rel);
+    drop((member_ways, member_nodes, mn_key, tagged_idx, tagged_bit));
+    drop((mw_id, mw_pos, mw_koff, mw_keys));
 
     // the buckets: each spill file's buckets cut in memory, only their own tiles kept
     let mut idx: Vec<(i64, i32, i64, i32)> = Vec::new();
     let mut off: i64 = 0;
     let mut copies = [0usize; 3];
-    let (mut n_buckets, mut largest) = (0usize, 0usize);
+    let (mut n_buckets, mut largest, mut largest_group, mut n_groups) = (0usize, 0usize, 0u64, 0usize);
+    // the working set through this phase, looked at every 50 ms: the process's own peak cannot be reset, and
+    // the passes before may have set it
+    let stop = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let sampler = {
+        let stop = stop.clone();
+        std::thread::spawn(move || {
+            let mut top = 0f64;
+            while !stop.load(std::sync::atomic::Ordering::Relaxed) {
+                top = top.max(crate::ptime::memory().0);
+                std::thread::sleep(std::time::Duration::from_millis(50));
+            }
+            top
+        })
+    };
     {
         let mut f = BufWriter::with_capacity(1 << 22, File::create(out.join("pack-0000.bin")).unwrap());
         let files: Vec<u32> = spill.files.iter().copied().collect();
-        for file in files {
-            let data = spill.load(file);
-            largest = largest.max(data.len());
-            let mut by: HashMap<u32, Vec<(u8, usize, usize)>> = HashMap::new();
-            let mut c = Cur::new(&data);
-            while !c.done() {
-                let (kind, bucket, len) = (c.u8(), c.u32(), c.u32() as usize);
-                by.entry(bucket).or_default().push((kind, c.p, c.p + len));
-                c.p += len;
+        let mut at_file = 0;
+        while at_file < files.len() {
+            // the files cut at once: as many as the budget holds, one at least
+            let mut end = at_file;
+            let mut sum = 0u64;
+            while end < files.len() && (end == at_file || sum + spill.sizes[&files[end]] <= budget) {
+                sum += spill.sizes[&files[end]];
+                end += 1;
             }
-            let mut buckets: Vec<(u32, Vec<(u8, usize, usize)>)> = by.into_iter().collect();
-            buckets.sort_unstable_by_key(|b| b.0);
-            n_buckets += buckets.len();
-            let tiles: Vec<Vec<(u32, Vec<u8>, [usize; 3])>> = buckets
+            let group = &files[at_file..end];
+            at_file = end;
+            largest = largest.max(group.iter().map(|f| spill.sizes[f] as usize).max().unwrap());
+            largest_group = largest_group.max(sum);
+            let cut: Vec<(usize, Vec<(u32, Vec<u8>, [usize; 3])>)> = group
                 .par_iter()
-                .map(|(bucket, recs)| {
-                    let mut c = clip_of(&data, recs);
-                    c.place(z);
-                    let p = pairs::build(&c, z);
-                    let keys: Vec<u32> = p.keys().into_iter().filter(|&k| geo.bucket(k) == *bucket).collect();
-                    keys.par_iter()
-                        .map(|&k| {
-                            let (buf, n) = p.payload(&c, k);
-                            (k, buf, n)
+                .map(|&file| {
+                    let data = spill.load(file);
+                    let mut by: HashMap<u32, Vec<(u8, usize, usize)>> = HashMap::new();
+                    let mut c = Cur::new(&data);
+                    while !c.done() {
+                        let (kind, bucket, len) = (c.u8(), c.u32(), c.u32() as usize);
+                        by.entry(bucket).or_default().push((kind, c.p, c.p + len));
+                        c.p += len;
+                    }
+                    let mut buckets: Vec<(u32, Vec<(u8, usize, usize)>)> = by.into_iter().collect();
+                    buckets.sort_unstable_by_key(|b| b.0);
+                    let tiles: Vec<Vec<(u32, Vec<u8>, [usize; 3])>> = buckets
+                        .par_iter()
+                        .map(|(bucket, recs)| {
+                            let mut c = clip_of(&data, recs);
+                            c.place(z);
+                            let p = pairs::build(&c, z);
+                            let keys: Vec<u32> = p.keys().into_iter().filter(|&k| geo.bucket(k) == *bucket).collect();
+                            keys.par_iter()
+                                .map(|&k| {
+                                    let (buf, n) = p.payload(&c, k);
+                                    (k, buf, n)
+                                })
+                                .collect()
                         })
-                        .collect()
+                        .collect();
+                    (buckets.len(), tiles.into_iter().flatten().collect())
                 })
                 .collect();
-            for (k, buf, n) in tiles.into_iter().flatten() {
-                f.write_all(&buf).unwrap();
-                idx.push((k as i64, 0, off, buf.len() as i32));
-                off += buf.len() as i64;
-                for i in 0..3 {
-                    copies[i] += n[i];
+            for (nb, tiles) in cut {
+                n_buckets += nb;
+                for (k, buf, n) in tiles {
+                    f.write_all(&buf).unwrap();
+                    idx.push((k as i64, 0, off, buf.len() as i32));
+                    off += buf.len() as i64;
+                    for i in 0..3 {
+                        copies[i] += n[i];
+                    }
                 }
             }
+            n_groups += 1;
             if !keep_spill {
-                fs::remove_file(spill.path(file)).unwrap();
+                for &file in group {
+                    fs::remove_file(spill.path(file)).unwrap();
+                }
             }
         }
         f.flush().unwrap();
@@ -961,6 +1023,9 @@ pub fn cut(pbf: &Path, out: &Path, day: &str, z: u32, bz: u32, keep_spill: bool,
     idx.par_sort_unstable();
     assert!(idx.windows(2).all(|w| w[0].0 < w[1].0), "a tile was written by two buckets");
     npy::save_idx(&out.join("idx-0000.npy"), &idx);
+    stop.store(true, std::sync::atomic::Ordering::Relaxed);
+    let buckets_top = sampler.join().unwrap();
+    log(&format!("buckets: {n_groups} groups of spill files, the largest {:.2} GiB of records; working set at most {buckets_top:.2} GiB in this phase", largest_group as f64 / (1u64 << 30) as f64));
     lap("buckets", &mut t, &mut phases);
     if !keep_spill {
         let _ = fs::remove_dir_all(&work);
@@ -968,10 +1033,12 @@ pub fn cut(pbf: &Path, out: &Path, day: &str, z: u32, bz: u32, keep_spill: bool,
 
     let secs = t0.elapsed().as_secs_f64();
     let extra = format!(
-        "\n   \"bucketZ\": {bz},\n   \"buckets\": {n_buckets},\n   \"spillFiles\": {},\n   \"spillRawBytes\": {},\n   \"spillBytes\": {},\n   \"largestSpillFileRawBytes\": {largest},\n   \"refs\": {n_refs},\n   \"needs\": {n_needs},",
+        "\n   \"bucketZ\": {bz},\n   \"buckets\": {n_buckets},\n   \"spillFiles\": {},\n   \"spillRawBytes\": {},\n   \"spillBytes\": {},\n   \"largestSpillFileRawBytes\": {largest},\n   \"fileZ\": {fz},\n   \"cutBudgetBytes\": {budget},\n   \"cutGroups\": {n_groups},\n   \"largestCutGroupRawBytes\": {largest_group},\n   \"peakWorkingSetGiB\": {:.2},\n   \"bucketsWorkingSetGiB\": {:.2},\n   \"refs\": {n_refs},\n   \"needs\": {n_needs},",
         spill.files.len(),
         spill.raw,
-        spill.written
+        spill.written,
+        crate::ptime::memory().1,
+        buckets_top
     );
     write_meta(
         out,
