@@ -4970,3 +4970,57 @@ has saved day D-1 and before it saves day D.
 The planet also needs a "no region" mode: `region_of` without a polygon spreads the held tiles by one, which is
 right for a clip and wrong for the world. The only oracle for a planet update is a clip of the day after, compared
 inside its polygon (`subcmp.py`): `europe-2026-11-03.osm.pbf` for diff 5165, pinned for that until the check is done.
+
+### Toward the planet: world mode, the node file, pair indexes in a stream, and the rebuild in groups (11-16, 08:40-09:50)
+
+Three of the four obstacles named above are now built and held against the Python store. The fourth, disk, is the
+owner's call. Each piece has its own commit.
+
+- **`--world` and `--before-loc F`** (8bb2b2a0). World mode has no region, so every tile counts. The node places
+  before the day come from a node file by id in osmium's `dense_file_array` layout. That is the layout the world
+  stream's `planet.loc` already has, and `stream.py` `DenseLocations` keeps it current: 8 bytes per id, longitude
+  then latitude as int32, both 2^31-1 when empty (checked on a file written by pyosmium). The synthetic day run
+  this way equals the fresh cut, and an empty node file changes the result.
+- **Pair indexes mapped and merged in a stream, and `--prune-pairs`** (e1f90086). The way and relation pairs are
+  read through a mapping. The new file is the old one, less what the day drops, merged in one pass with the day's
+  sorted additions, so the planet's 22.3 GB of way pairs never enter memory. `--prune-pairs` deletes the previous
+  generation's pair files once the new ones are written; only the next update reads them. Both clip days are
+  still equal to Python, with and without pruning.
+- **`--group-z G`: the reached tiles rebuilt one cell of zoom G at a time** (02811a1b). Three phases:
+  - **Finding** decodes tiles only in passing. These are the old homes of the changed nodes, one old tile of each
+    moved way, and the old homes of the new versions' nodes, which together are the prototype's first working set.
+    From them it keeps copies of four things: the moved ways with their nodes, the relations that a moved way or a
+    changed node reaches, the needed nodes, and the changed relations' member ways that did not move. The first
+    working set is built from those copies, and it finds the same new way tiles, relations and reach.
+  - **Each group's working set** is the group's own old tiles plus the carried copies. That is enough because the
+    tile rule puts an object in a tile only if the object was there before (its old payload has it, with every
+    node of its ways) or the day moved it there. A day moves things only through moved ways, changed nodes and
+    the relations they reach, and the carried copies hold all of those whole.
+  - **The relation store** is rebuilt from the reached relations' old blobs and the carried copies.
+
+  **Equal to the Python store on both clip days at group zoom 8 (72 and 86 groups), 12 (794 and 841) and 14 (2,595
+  and 2,438, one tile each)**: every tile, relation blob and pair. The synthetic day runs grouped too. The equality
+  rests on every copy of an object in one generation being the same, which a cut and this update keep. It is shown
+  on these two days, not proved for every day.
+
+  | day one (5175) | wall | peak working set |
+  |---|---|---|
+  | one working set | 37.9 s | 10.3 GiB |
+  | `--group-z 8` | 38.9 s | 5.51 GiB |
+  | `--group-z 10` | 45.7 s | 5.48 GiB |
+  | `--group-z 12` | 73 s | not measured |
+  | `--group-z 14` | 159 s | not measured |
+
+  What remains at 5.5 GiB does not depend on the groups. It is the clip's node places read from its PBF (about 2 GB;
+  on the planet that is the mapped node file) and the parsed diff, which is the planet's on any store. On the planet
+  the carried copies grow with the day; their size there is not measured.
+
+**Still in the way of a planet update.**
+- **The node file at the store's day.** The world stream's `.scratch/store/planet.sh` builds `planet.loc` at 11-02
+  and then moves it forward to 11-08 in the same run. Bringing the 11-02 tile store forward needs the file at 11-02
+  and moved one day at a time beside it. Moving it forward in Rust, by writing the diff's places, is small and not
+  built.
+- **Disk:** about 115 GB for the node file, and about 8 GB of pack a day without compaction. That is the owner's
+  call.
+- **The only oracle is the 11-03 clip** (`subcmp.py` inside its polygon, pinned), and only for a first day from
+  11-02.
