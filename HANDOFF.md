@@ -1949,10 +1949,21 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   `tools/stream/world-days.sh` (it fetches kept diffs, rebuilds `world-stream/` from the seed and applies every
   day from 11-09, 8-14 min a day). **The Rust planet cut now fits on C:** about 260-310 GB peak plus its 40 GiB
   floor against 521 GB free, so it no longer has to wait for the 2 TB drive (the owner's call).
-- **PLANET CUT RUNNING since 11-16 ~01:50 (owner: "Yes, run the cut").** `.scratch/planet-cut/run.sh`, hidden, log
+- **The planet cut, as it was started (11-16 01:47; ended 03:30, the entry below).** `.scratch/planet-cut/run.sh`, hidden, log
   `logs/planet-cut.log`; binary `.scratch/planet-cut/tilestore-4b1003b4.exe` (main at 4b1003b4, smoke-tested first:
   `gnode.sh gsmoke` on Germany equal to `store-rs-germany`). `scut` of `history-261102` at 2026-11-02T00:00:00Z,
   defaults (z14, bucket z8, 2 GiB), node file `.scratch/planet-cut/planet.loc` (115 GB, not sparse), store
-  `.scratch/planet-cut/store`. C: 544 GB free at the start. **While it runs: no node-file tests, no timings, no
-  large writes on C:.** If it stops with exit 101, remove `planet.loc` and `store/work` by hand. The oracle for
+  `.scratch/planet-cut/store`. C: 544 GB free at the start. (While it ran: no node-file tests, no timings, no
+  large writes on C:.) If it stops with exit 101, remove `planet.loc` and `store/work` by hand. The oracle for
   its exactness, `europe-2026-11-02.osm.pbf` (sequence 5164, the same instant), is pinned in `europe/pins.json`.
+- **The planet cut ran to the end and agrees with the clip of the same instant (11-16, 01:47-03:30; owner: "Yes,
+  run the cut").** DESIGN.md, "The planet cut, run". 6,135.7 s; 32,110,824 tiles; **the store is 268 GB on disk**
+  (pack 232.55 GiB, about 2.7 times the planet's PBF, against the design's 97-136 GB), `.scratch/planet-cut/store`.
+  Spill 90.16 GiB (7.40 bytes a ref); lowest free reading 249.9 GB (about 294 GB at the peak); private memory at
+  most 11.6 GiB. **Exactness:** inside the 11-02 europe clip (2 km in), 13,964 of 14,001 tiles equal; the 37 others
+  hold three ways the planet has and the clip lacks, each with every node outside the clip's polygon (osmium's
+  extract drops them; the planet is right). `tools/stream/tilecheck/subcmp.py`. A read of t2n's 331 tiles from it:
+  3.17 s cold. **C: 274 GB free now**, the 12-07 job needs about 170 GB. **Next, proposed:** the update in Rust
+  (first act: the Python `update` on `store-rs`, then `storecmp.py --ga 1 --gb 1`), so this store can be brought to
+  a current day; or the engine's count on a planet read of t2n's rectangles against `.scratch/tiles/ref/`. Open for
+  the owner: whether the 268 GB store stays on C: until the 12-07 cut replaces it.
