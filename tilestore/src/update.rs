@@ -600,6 +600,11 @@ pub fn update(a: &Args) {
     // None: the whole world
     let region = (!a.world).then(|| region_of(&st, a.polygon.as_deref()));
     let in_region = |k: Option<u32>| k.is_some_and(|k| region.as_ref().is_none_or(|r| r.binary_search(&k).is_ok()));
+    // a planet day writes about 30 GB (its tiles, a second copy of the way pairs): it does not start under the
+    // floor every large writer keeps
+    if let Some(free) = crate::nodefile::under_floor(&st.dir) {
+        panic!("{:.1} GiB free on the store's disk, under the floor of {} GiB: nothing written", free as f64 / (1u64 << 30) as f64, crate::nodefile::floor() >> 30);
+    }
     let diff = osc::read(&a.diff);
     let d = &diff;
     let t_diff = t0.elapsed().as_secs_f64();

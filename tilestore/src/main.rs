@@ -23,11 +23,16 @@
 //!       way and relation pair indexes deleted once this one's are written (the planet's way pairs are 22 GB);
 //!       --group-z G: the reached tiles rebuilt a cell of zoom G at a time, not in one working set; --group-mib M:
 //!       in groups of about M MiB of old payload, cells of zoom 8 in order
+//!   tilestore loc build --pbf X.os[mh].pbf [--at T] --out F.loc | loc advance --loc F.loc --diff N.osc.gz --at T
+//!       | loc check --loc F.loc --pbf Y.osm.pbf
+//!       the node places by id in osmium's dense_file_array layout, as --before-loc reads them (locfile.rs): built
+//!       from a file at a date, moved forward by a day's diff, checked against a snapshot of the same instant
 //!   tilestore read --store S [--gen -1] --cities C.json [--base DIR] [--ring 300] --out Y.osm.pbf [--stamp T]
 
 mod clip;
 mod cols;
 mod history;
+mod locfile;
 mod nodefile;
 mod npy;
 mod osc;
@@ -116,6 +121,35 @@ fn main() {
             args.iter().any(|a| a == "--sparse"),
             args.iter().any(|a| a == "--keep"),
         ),
+        Some("loc") => match args.get(2).map(String::as_str) {
+            Some("build") => {
+                let at_text = arg(&args, "--at");
+                locfile::build(
+                    &PathBuf::from(arg(&args, "--pbf").expect("--pbf")),
+                    at_text.as_deref().map(read::stamp_seconds),
+                    at_text.as_deref(),
+                    &PathBuf::from(arg(&args, "--out").expect("--out")),
+                )
+            }
+            Some("advance") => locfile::advance(
+                &PathBuf::from(arg(&args, "--loc").expect("--loc")),
+                &PathBuf::from(arg(&args, "--diff").expect("--diff")),
+                &arg(&args, "--at").expect("--at: the instant the diff ends at"),
+            ),
+            Some("check") => {
+                let differ = locfile::check(
+                    &PathBuf::from(arg(&args, "--loc").expect("--loc")),
+                    &PathBuf::from(arg(&args, "--pbf").expect("--pbf")),
+                );
+                if differ > 0 {
+                    std::process::exit(1);
+                }
+            }
+            _ => {
+                eprintln!("tilestore loc build|advance|check: see main.rs");
+                std::process::exit(2);
+            }
+        },
         Some("at") => history::at(
             &PathBuf::from(arg(&args, "--pbf").expect("--pbf")),
             &arg(&args, "--at").expect("--at"),

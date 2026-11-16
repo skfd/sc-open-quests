@@ -208,6 +208,70 @@ class UpdateTest(unittest.TestCase):
                 for rid in sb.ridx["key"].tolist():
                     self.assertEqual(zstd.decompress(sa.relation(rid)), zstd.decompress(sb.relation(rid)), (other, rid))
 
+    def test_rust_node_file_built_and_moved_forward(self):
+        """`tilestore loc`: the node file built from a PBF equals pyosmium's dense_file_array of it byte for byte, and
+        moved forward by the day's diff equals pyosmium's file of the day after (a node moved, one deleted, one new
+        above the old end); `loc check` holds the result against the day after and fails it against the day before;
+        a diff not after what the file holds is refused"""
+        exe = Path(__file__).resolve().parents[1] / "tilestore" / "target" / "release" / "tilestore.exe"
+        if not exe.exists():
+            self.skipTest("the Rust tilestore is not built (cargo build --release in tilestore/)")
+        import subprocess
+        import osmium
+        import osmium.index
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp:
+            d = Path(tmp)
+            write_pbf(d / "before.osm.pbf", BASE_NODES, BASE_WAYS, BASE_RELS, {})
+            nodes = dict(BASE_NODES)
+            nodes[2] = (51.540, -0.090, {})
+            del nodes[4]
+            nodes[10] = (51.505, -0.070, {"shop": "bakery"})
+            nodes[16] = (51.507, -0.071, {})
+            versions = {("n", 2): (2, T1), ("n", 10): (1, T1), ("n", 16): (1, T1)}
+            write_pbf(d / "after.osm.pbf", nodes, {}, {}, versions)
+            osc = OSC.replace("</create>", "<node id=\"16\" version=\"1\" timestamp=\"2026-11-13T10:00:00Z\" "
+                                           "lat=\"51.507\" lon=\"-0.071\"/>\n</create>", 1)
+            self.assertIn('id="16"', osc)
+            (d / "day.osc").write_text(osc, encoding="utf-8")
+
+            def oracle(pbf, loc):
+                idx = osmium.index.create_map(f"dense_file_array,{loc}")
+                for n in osmium.FileProcessor(str(pbf), osmium.osm.NODE):
+                    idx.set(n.id, n.location)
+                del idx
+                return loc.read_bytes()
+
+            empty = bytes([0xFF, 0xFF, 0xFF, 0x7F]) * 2
+
+            def same(ours, theirs):
+                # pyosmium grows its file in large steps, the rest empty places: equal up to a tail of empties
+                n = min(len(ours), len(theirs))
+                rest = ours[n:] + theirs[n:]
+                return ours[:n] == theirs[:n] and rest == empty * (len(rest) // 8) and len(rest) % 8 == 0
+
+            def run(*a, ok=True):
+                p = subprocess.run([str(exe), *map(str, a)], capture_output=True, text=True)
+                self.assertEqual(p.returncode == 0, ok, p.stderr)
+                return p.stderr
+
+            run("loc", "build", "--pbf", d / "before.osm.pbf", "--out", d / "f.loc")
+            self.assertTrue(same((d / "f.loc").read_bytes(), oracle(d / "before.osm.pbf", d / "py-before.loc")))
+            self.assertEqual(len((d / "f.loc").read_bytes()), 8 * 16)
+            self.assertIn("snapshot", (d / "f.loc.state").read_text())
+            run("loc", "check", "--loc", d / "f.loc", "--pbf", d / "before.osm.pbf")
+            run("loc", "advance", "--loc", d / "f.loc", "--diff", d / "day.osc", "--at", "2026-11-14T00:00:00Z")
+            self.assertTrue(same((d / "f.loc").read_bytes(), oracle(d / "after.osm.pbf", d / "py-after.loc")))
+            self.assertEqual(len((d / "f.loc").read_bytes()), 8 * 17)
+            self.assertFalse(same((d / "f.loc").read_bytes(), oracle(d / "before.osm.pbf", d / "py-before2.loc")))
+            self.assertEqual((d / "f.loc.state").read_text(), "2026-11-14T00:00:00Z")
+            run("loc", "check", "--loc", d / "f.loc", "--pbf", d / "after.osm.pbf")
+            err = run("loc", "check", "--loc", d / "f.loc", "--pbf", d / "before.osm.pbf", ok=False)
+            self.assertIn("2 differ (1 of them absent", err)
+            # the same diff again, or an older one: refused, the file untouched
+            before = (d / "f.loc").read_bytes()
+            run("loc", "advance", "--loc", d / "f.loc", "--diff", d / "day.osc", "--at", "2026-11-14T00:00:00Z", ok=False)
+            self.assertEqual((d / "f.loc").read_bytes(), before)
+
 
 if __name__ == "__main__":
     unittest.main()
