@@ -112,7 +112,7 @@ pub fn punch(dir: &Path, dry: bool) {
     let dead: i64 = ranges.iter().map(|r| r.1 - r.0).sum();
     let gib = |x: i64| x as f64 / (1u64 << 30) as f64;
     log(&format!(
-        "pack-0000: {:.2} GiB, {} live tiles {:.2} GiB; {} dead ranges of whole 64 KiB units, {:.2} GiB",
+        "pack-0000: {:.2} GiB, {} live tiles {:.2} GiB; {} dead ranges of whole 64 KiB units, {:.2} GiB ({dead} bytes)",
         gib(len),
         live.len(),
         gib(live_bytes),
