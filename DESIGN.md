@@ -4971,7 +4971,7 @@ The planet also needs a "no region" mode: `region_of` without a polygon spreads 
 right for a clip and wrong for the world. The only oracle for a planet update is a clip of the day after, compared
 inside its polygon (`subcmp.py`): `europe-2026-11-03.osm.pbf` for diff 5165, pinned for that until the check is done.
 
-### Toward the planet: world mode, the node file, pair indexes in a stream, and the rebuild in groups (11-16, 08:40-09:30)
+### Toward the planet: world mode, the node file, pair indexes in a stream, and the rebuild in groups (11-16, 08:40-09:20)
 
 Three of the four obstacles named above are now addressed and held against the Python store: the node places, the
 pair indexes, and the memory of the tile rebuild. Memory is only partly addressed: grouping bounds the tile rebuild,
