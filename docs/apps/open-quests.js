@@ -4,15 +4,15 @@
 
 // Open Quests for StreetComplete — an iPhone home-screen widget for the Scriptable app.
 //
-// How many StreetComplete quests are open in a city, or for one quest type in it, how that moved over
-// four weeks, and which quests moved this week. Data: https://street-complete-statistics.comentality.com
-// (a day or more old: the widget always says "as of").
+// How many StreetComplete quests are open in a city or one of its neighbourhoods, or for one quest type
+// there, how that moved over four weeks, and which quests moved this week. Data:
+// https://street-complete-statistics.comentality.com (a day or more old: the widget always says "as of").
 //
 // Install: get Scriptable from the App Store, put this file in Scriptable (iCloud Drive › Scriptable,
 // or paste it into a new script), add a Scriptable widget to the home screen, long-press it › Edit
-// Widget, pick this script and type a city as the Parameter: "Berlin", or "Berlin; Bus stop shelter"
-// for one quest type. No parameter shows Toronto. Small, medium and large work, and the lock screen's
-// rectangular and inline slots.
+// Widget, pick this script and type a city as the Parameter: "Berlin", "Toronto/Parkdale" for a
+// neighbourhood, and "; Bus stop shelter" after either for one quest type. No parameter shows Toronto.
+// Small, medium and large work, and the lock screen's rectangular and inline slots.
 //
 // A port of the Android widget's model (Summary.kt, Movers.kt), pinned on the same fixtures by
 // ios/test/model.test.js. GPL-3.0. Quest names are StreetComplete's (Tobias Zwick and contributors).
@@ -29,7 +29,11 @@ function epochDay(iso) {
   return Math.round(Date.UTC(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10)) / 86400000);
 }
 
-/** One city's series from data/history/<cityId>.json. A missing count stays null, never 0. */
+/**
+ * One city's series from data/history/<cityId>.json, or one part's from data/history/<cityId>/<partId>.json
+ * (the same shape, plus the part's id and the name-layer file the site finds it by). A missing count
+ * stays null, never 0.
+ */
 function parseHistory(json) {
   const root = typeof json === "string" ? JSON.parse(json) : json;
   const n = root.dates.length;
@@ -39,7 +43,8 @@ function parseHistory(json) {
     const fill = (a) => Array.from({ length: n }, (_, i) => (a && i < a.length && a[i] != null ? a[i] : null));
     quests[name] = { open: fill(q.open), agedOnly: fill(q.agedOnly) };
   }
-  return { cityId: root.city || "", name: root.name || "", dates: root.dates, quests };
+  const part = root.part ? { id: root.part, in: root.in || null } : null;
+  return { cityId: root.city || "", name: root.en || root.name || "", part, dates: root.dates, quests };
 }
 
 /** The names of the quests on by default, from the site's data/quests.json. */
@@ -87,6 +92,7 @@ function summarize(h, defaultOn, quest = null, windowDays = WINDOW_DAYS) {
   return {
     cityId: h.cityId,
     name: h.name,
+    part: h.part || null,
     quest,
     asOf: h.dates[b],
     open,
@@ -317,13 +323,41 @@ function findQuest(h, query) {
     null;
 }
 
-/** "Berlin; Bus stop shelter" -> { city: "Berlin", quest: "Bus stop shelter" }. ";" or "|" splits. */
-function parseParameter(p) {
-  const [city, quest] = String(p || "").split(/[;|]/, 2).map((s) => s.trim());
-  return { city: city || DEFAULT_CITY, quest: quest || null };
+/** The parts (neighbourhoods) in data/parts/<cityId>.json: id, name, en. */
+function parseParts(json) {
+  const root = typeof json === "string" ? JSON.parse(json) : json;
+  return root.parts.map((p) => ({ id: p.id, name: p.name, en: p.en || null }));
 }
 
-function placeUrl(cityId, quest) {
+/**
+ * The part a parameter names, as findCity does: an exact name, English name or id first, then the first
+ * whose name starts with it, then one with a word that does. "Parkdale" is Parkdale, not South Parkdale.
+ */
+function findPart(parts, query) {
+  const q = fold(query.trim()).replace(/\s+/g, " ");
+  if (!q) return null;
+  const names = (p) => [p.name, p.en].filter(Boolean).map(fold);
+  return parts.find((p) => p.id === q || names(p).some((x) => x === q)) ||
+    parts.find((p) => names(p).some((x) => x.startsWith(q))) ||
+    parts.find((p) => names(p).some((x) => [...x].some((ch, i) => /[ \-(/—–]/.test(ch) && x.startsWith(q, i + 1)))) ||
+    null;
+}
+
+/**
+ * "Toronto/Parkdale; Bus stop shelter" -> { city: "Toronto", part: "Parkdale", quest: "Bus stop shelter" }.
+ * ";" or "|" starts the quest type; the first "/", "›" or ">" the part (part names may hold a "/").
+ */
+function parseParameter(p) {
+  const [place, quest] = String(p || "").split(/[;|]/, 2).map((s) => s.trim());
+  const cut = (place || "").search(/[/›>]/);
+  const city = (cut < 0 ? place : place.slice(0, cut)).trim();
+  const part = cut < 0 ? "" : place.slice(cut + 1).trim();
+  return { city: city || DEFAULT_CITY, part: part || null, quest: quest || null };
+}
+
+/** The site's page for the city, or for the part when [part] ({ id, in }) is given. */
+function placeUrl(cityId, quest, part = null) {
+  if (part && part.in) return `${BASE}/?place=${encodeURIComponent(part.id)}&in=${encodeURIComponent(part.in)}`;
   return `${BASE}/?city=${encodeURIComponent(cityId)}` + (quest ? `&pin=${encodeURIComponent(quest)}` : "");
 }
 
@@ -373,19 +407,43 @@ async function load(param) {
   // Only the set is kept: quests.json is 742 KB, mostly per-city status the widget does not need.
   const defaultOn = new Set(await cached(fm, dir, "default-on", `${BASE}/data/quests.json`, 24 * HOUR,
     (t) => [...parseDefaultOn(t)]));
-  const h = parseHistory(await cached(fm, dir, "history-" + city.id,
-    `${BASE}/data/history/${encodeURIComponent(city.id)}.json`, 2 * HOUR, (t) => JSON.parse(t)));
-  if (!h.name) h.name = city.name;
+  let place = city.name;
+  let key = city.id;
+  let url = `${BASE}/data/history/${encodeURIComponent(city.id)}.json`;
+  if (p.part) {
+    let parts;
+    try {
+      parts = await cached(fm, dir, "parts-" + city.id, `${BASE}/data/parts/${encodeURIComponent(city.id)}.json`,
+        24 * HOUR, (t) => parseParts(t));
+    } catch (e) {
+      if (/HTTP 404/.test(String(e.message))) return { error: `${city.name} has no neighbourhoods counted.` };
+      throw e;
+    }
+    const part = findPart(parts, p.part);
+    if (!part) return { error: `No neighbourhood “${p.part}” in ${city.name}.`, hint: "Its name as on the city’s page" };
+    place = part.en || part.name;
+    key = `${city.id}-${part.id}`;
+    url = `${BASE}/data/history/${encodeURIComponent(city.id)}/${encodeURIComponent(part.id)}.json`;
+  }
+  let raw;
+  try {
+    raw = await cached(fm, dir, "history-" + key, url, 2 * HOUR, (t) => JSON.parse(t));
+  } catch (e) {
+    if (p.part && /HTTP 404/.test(String(e.message))) return { error: `No data for ${place} yet.` };
+    throw e;
+  }
+  const h = parseHistory(raw);
+  if (!h.name) h.name = place;
   if (!h.cityId) h.cityId = city.id;
 
   let quest = null;
   if (p.quest) {
     quest = findQuest(h, p.quest);
-    if (!quest) return { error: `No quest “${p.quest}” in ${city.name}.`, hint: "Try its name as on the site" };
+    if (!quest) return { error: `No quest “${p.quest}” in ${place}.`, hint: "Try its name as on the site" };
   }
   const summary = summarize(h, defaultOn, quest);
-  if (!summary && quest) return { error: `${questLabel(quest)} is not counted in ${city.name} now.`, hint: "Long-press › Edit Widget to pick another" };
-  if (!summary) return { error: `No data for ${city.name} yet.` };
+  if (!summary && quest) return { error: `${questLabel(quest)} is not counted in ${place} now.`, hint: "Long-press › Edit Widget to pick another" };
+  if (!summary) return { error: `No data for ${place} yet.` };
   const week = quest ? null : movers(h, defaultOn);
   const wanted = quest ? [quest]
     : [...week.groups.slice(0, 6).map((g) => g[0].quest), ...week.top.map((t) => t[0])];
@@ -711,7 +769,7 @@ async function makeWidget(param, family) {
   }
   const s = result.summary;
   ICONS = result.icons || {};
-  w.url = placeUrl(s.cityId, s.quest);
+  w.url = placeUrl(s.cityId, s.quest, s.part);
   if (accessory) buildAccessory(w, s, locale, family);
   else if (family === "small") buildSmall(w, s, result.week, locale);
   else if (family === "large" || family === "extraLarge") buildLarge(w, s, result.week, locale);
@@ -724,7 +782,7 @@ async function makeWidget(param, family) {
 async function runInApp() {
   const ask = new Alert();
   ask.title = "Open Quests";
-  ask.message = "Preview a widget. A city, or “city; quest type”.";
+  ask.message = "Preview a widget. A city, “city/neighbourhood”, and “; quest type” after either.";
   ask.addTextField("Toronto", DEFAULT_CITY);
   for (const size of ["Small", "Medium", "Large"]) ask.addAction(size);
   ask.addCancelAction("Cancel");
