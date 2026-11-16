@@ -50,7 +50,7 @@ import os
 import re
 import subprocess
 import sys
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
@@ -670,7 +670,11 @@ def build_history(snapshots: list[dict], city_config: list[dict], disabled: set[
             "compare": {q: {"quest": q, "open": dict(sorted(v.items()))} for q, v in sorted(compare.items())}}
 
 
-def build_part_history(snapshots: list[dict], registries: dict[str, dict]) -> dict[str, dict[str, dict]]:
+PART_SERIES_DAYS = 35   # a part's published series: the city's newest date and the 35 days before it
+
+
+def build_part_history(snapshots: list[dict], registries: dict[str, dict],
+                       days: int | None = PART_SERIES_DAYS) -> dict[str, dict[str, dict]]:
     """Each part's series, {cityId: {partId: series}}, in a city series' shape (dates, quests with open
     and agedOnly per date), for the parts in registries ({cityId: registry}, config/parts).
 
@@ -679,11 +683,16 @@ def build_part_history(snapshots: list[dict], registries: dict[str, dict]) -> di
     counts out, so on its dates a quest the part lacks is 0 when the city counted that quest that day,
     and null when it did not (not counted under that SC version). agedOnly is null on a date whose
     snapshot has no partsAged, and where the city's own agedOnly is null. Only quests with something
-    open in the part on some date are listed."""
+    open in the part on some date are listed. With [days], only the city's dates within that many days
+    of its newest are kept (the archive keeps them all); None keeps every date."""
     out: dict[str, dict[str, dict]] = {}
     for cid, reg in registries.items():
         rows = [c for s in snapshots if (c := s["cities"].get(cid)) is not None and "parts" in c]
         dates = [s["asOfDate"] for s in snapshots if "parts" in s["cities"].get(cid, {})]
+        if days is not None and dates:
+            cut = (date.fromisoformat(dates[-1]) - timedelta(days=days)).isoformat()
+            keep = [i for i, d in enumerate(dates) if d >= cut]
+            rows, dates = [rows[i] for i in keep], [dates[i] for i in keep]
         series = {}
         for part in reg["parts"]:
             pid = part["id"]

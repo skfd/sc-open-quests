@@ -90,15 +90,24 @@ class PartHistoryTest(unittest.TestCase):
 
     def test_zeros_nulls_and_dates(self):
         out = run.build_part_history(self.SNAPS, self.REG)["x"]
-        self.assertEqual(set(out), {"aaaaaaaaaaa1", "aaaaaaaaaaa2"})   # aaaaaaaaaaa3 never had a count
-        aaaaaaaaaaa1 = out["aaaaaaaaaaa1"]
-        self.assertEqual(aaaaaaaaaaa1["dates"], ["2026-10-27", "2026-10-28", "2026-10-29"])
-        self.assertEqual(aaaaaaaaaaa1["quests"], {"A": {"open": [4, 5, 0], "agedOnly": [None, 1, 0]}})
-        self.assertEqual((aaaaaaaaaaa1["city"], aaaaaaaaaaa1["part"], aaaaaaaaaaa1["name"]), ("x", "aaaaaaaaaaa1", "Annex"))
-        aaaaaaaaaaa2 = out["aaaaaaaaaaa2"]
-        self.assertEqual(aaaaaaaaaaa2["dates"], ["2026-10-28", "2026-10-29"])   # not counted before it appeared
-        self.assertEqual(aaaaaaaaaaa2["quests"], {"A": {"open": [0, 2], "agedOnly": [0, 0]},
+        self.assertEqual(set(out), {"aaaaaaaaaaa1", "aaaaaaaaaaa2"})   # the third never had a count
+        p1 = out["aaaaaaaaaaa1"]
+        self.assertEqual(p1["dates"], ["2026-10-27", "2026-10-28", "2026-10-29"])
+        self.assertEqual(p1["quests"], {"A": {"open": [4, 5, 0], "agedOnly": [None, 1, 0]}})
+        self.assertEqual((p1["city"], p1["part"], p1["name"]), ("x", "aaaaaaaaaaa1", "Annex"))
+        p2 = out["aaaaaaaaaaa2"]
+        self.assertEqual(p2["dates"], ["2026-10-28", "2026-10-29"])   # not counted before it appeared
+        self.assertEqual(p2["quests"], {"A": {"open": [0, 2], "agedOnly": [0, 0]},
                                         "B": {"open": [3, 3], "agedOnly": [None, None]}})
+
+    def test_only_the_last_days_are_kept(self):
+        snaps = self.SNAPS + [snap("2026-12-02", {"quests": {"A": {"open": 1, "agedOnly": 0}},
+                                                  "parts": {"aaaaaaaaaaa1": {"A": 1}}, "partsAged": {}})]
+        p1 = run.build_part_history(snaps, self.REG)["x"]["aaaaaaaaaaa1"]   # 35 days: 10-27 is out
+        self.assertEqual(p1["dates"], ["2026-10-28", "2026-10-29", "2026-12-02"])
+        self.assertEqual(p1["quests"]["A"]["open"], [5, 0, 1])
+        every = run.build_part_history(snaps, self.REG, days=None)["x"]["aaaaaaaaaaa1"]
+        self.assertEqual(every["dates"][0], "2026-10-27")
 
     def test_files_written_and_stale_ones_removed(self):
         tmp = Path(tempfile.mkdtemp())

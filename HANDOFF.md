@@ -2041,7 +2041,11 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   monthly snapshots with parts. Measured over the real archive into `C:/tmp/hoods`: 4,214 files, 34 MB raw,
   1.5 MB gzip in all; Parkdale 11.5 KB raw, 1.5 KB gzip; about 24 s on top of `history` (the name-layer scan
   is 0.3 s warm, up to a minute cold). docs/ goes from 5,125 files to about 9,340, under the 20,000 cap;
-  every part file changes each day the city is counted.
+  every part file changes each day the city is counted. **Growth:** about 1.6 MB raw a day across the files
+  (25 MB for 16 dates), so a full series would add about 570 MB a year to a 135 MB docs/; built with a
+  window instead, `PART_SERIES_DAYS = 35` (the widget needs 28 + a week), about 55 MB steady, the archive
+  keeping every day. `days=None` keeps all, if the owner prefers. A full `history` into `C:/tmp/hfull`
+  left every published file byte-equal (440 of 440) and added only the 4,214.
 - **Not the final layout:** DESIGN.md "Place statistics for the whole world" puts place series on an R2 data
   subdomain (`place/<id>.json`). This is the interim on static assets; it can move when that is built.
 - **Widget (`../sc-open-quests-widget`, 0701ac0, main, not pushed):** Parameter `Toronto/Parkdale` (first
@@ -2049,6 +2053,7 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   19 model tests pass; `PREVIEW_DOCS=C:/tmp/hoods-site node ios/test/preview.js ... "Toronto/Parkdale"`
   renders 1,685 open, -5 since 10-27, equal to the 11-14 snapshot's default-on sum. `tools/check.js` fails
   only on "published apps page is current" until `node tools/apps-page.js ../sc-open-quests/docs/apps`.
-- **Waiting on the owner:** merge `hood-series` into main (the next daily run publishes the files) and
-  write the apps page (publishes the new script). Until both, `Toronto/Parkdale` on the phone shows
-  "No data for Parkdale yet".
+- **Waiting on the owner, in this order:** (1) merge `hood-series` into main (`--ff-only`), so the next
+  daily run publishes the files; (2) `node tools/apps-page.js ../sc-open-quests/docs/apps` in the widget
+  repo, which publishes the new script with the same run; (3) download `open-quests.js` again on the phone
+  (the phone keeps its copy: the old script answers `Toronto/Parkdale` with "No city called ...").
