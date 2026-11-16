@@ -34,6 +34,8 @@ pub struct Args {
     pub before_loc: bool,
     /// a store of the whole world: every tile is in its region (no polygon, no edge)
     pub world: bool,
+    /// delete the generation before's pair indexes once this one is written (the next update reads only the newest)
+    pub prune_pairs: bool,
     pub day: String,
     /// the clip's polygon: the store's region (the planet diff's changes elsewhere stay out)
     pub polygon: Option<PathBuf>,
@@ -121,9 +123,9 @@ fn has(v: &[i64], x: i64) -> bool {
 }
 
 /// the (id, key) pairs of one id in a sorted pair index
-fn pairs_of(p: &[(i64, i64)], id: i64) -> &[(i64, i64)] {
-    let lo = p.partition_point(|x| x.0 < id);
-    let hi = lo + p[lo..].partition_point(|x| x.0 <= id);
+fn pairs_of(p: &[[i64; 2]], id: i64) -> &[[i64; 2]] {
+    let lo = p.partition_point(|x| x[0] < id);
+    let hi = lo + p[lo..].partition_point(|x| x[0] <= id);
     &p[lo..hi]
 }
 
@@ -376,8 +378,8 @@ fn key7(lat: i32, lon: i32, z: u32) -> u32 {
     key_of(fx.floor() as i64, fy.floor() as i64, z)
 }
 
-fn load_pairs(dir: &Path, name: &str, gen: i64) -> Vec<(i64, i64)> {
-    npy::load_pairs(&dir.join(format!("{name}-{gen:04}.npy")))
+fn pair_path(dir: &Path, name: &str, gen: i64) -> PathBuf {
+    dir.join(format!("{name}-{gen:04}.npy"))
 }
 
 pub fn update(a: &Args) {
@@ -385,8 +387,9 @@ pub fn update(a: &Args) {
     let st = Store::open(&a.store);
     let (z, g) = (st.z, st.gen);
     let ng = g + 1;
-    let wt = load_pairs(&st.dir, "wtiles", g);
-    let rt = load_pairs(&st.dir, "rtiles", g);
+    let wtm = npy::PairMap::open(&pair_path(&st.dir, "wtiles", g));
+    let rtm = npy::PairMap::open(&pair_path(&st.dir, "rtiles", g));
+    let (wt, rt) = (wtm.rows(), rtm.rows());
     assert!(!(a.world && a.polygon.is_some()), "a world store has no polygon");
     // None: the whole world
     let region = (!a.world).then(|| region_of(&st, a.polygon.as_deref()));
@@ -430,7 +433,7 @@ pub fn update(a: &Args) {
         }
     }
     // changed ways reaching the region: old tiles from the index, new ones from their refs' places after the day
-    let mut cw: Vec<i64> = d.w_all.iter().copied().filter(|&id| !pairs_of(&wt, id).is_empty()).collect();
+    let mut cw: Vec<i64> = d.w_all.iter().copied().filter(|&id| !pairs_of(wt, id).is_empty()).collect();
     let dp = &d.part;
     for w in 0..dp.wid.len() {
         if dp.wrefs[dp.w_roff[w]..dp.w_roff[w + 1]].iter().any(|&r| in_region(k7(after_pos(r)))) {
@@ -445,8 +448,8 @@ pub fn update(a: &Args) {
     let moved = sorted_union(&cw, &parents);
     // one old tile of each (it holds the old version, its nodes, and every relation it is a member of), and the old
     // home tiles of the nodes of the new versions (their tagged attributes)
-    let old_w: Vec<&[(i64, i64)]> = moved.iter().map(|&id| pairs_of(&wt, id)).collect();
-    dec.add(&st, old_w.iter().filter(|s| !s.is_empty()).map(|s| s.iter().map(|p| p.1 as u32).min().unwrap()));
+    let old_w: Vec<&[[i64; 2]]> = moved.iter().map(|&id| pairs_of(wt, id)).collect();
+    dec.add(&st, old_w.iter().filter(|s| !s.is_empty()).map(|s| s.iter().map(|p| p[1] as u32).min().unwrap()));
     let mut new_refs: Vec<i64> = Vec::new();
     for w in 0..dp.wid.len() {
         if has(&cw, dp.wid[w]) {
@@ -490,14 +493,14 @@ pub fn update(a: &Args) {
         }
     }
     for &rid in &d.r_all {
-        if !pairs_of(&rt, rid).is_empty() {
+        if !pairs_of(rt, rid).is_empty() {
             ar.insert(rid);
         }
     }
     // a changed relation reaching the region: a member way with tiles, or a member node placed there
     for r in 0..dp.rid.len() {
         let hit = (dp.r_moff[r]..dp.r_moff[r + 1]).any(|m| match dp.rmt[m] {
-            1 => has(&moved, dp.rmref[m]) || !pairs_of(&wt, dp.rmref[m]).is_empty(),
+            1 => has(&moved, dp.rmref[m]) || !pairs_of(wt, dp.rmref[m]).is_empty(),
             0 => in_region(k7(after_pos(dp.rmref[m]))),
             _ => false,
         });
@@ -512,14 +515,14 @@ pub fn update(a: &Args) {
     let why_node: BTreeSet<u32> = okey.iter().chain(nkey.iter()).flatten().copied().collect();
     let mut why_way: BTreeSet<u32> = BTreeSet::new();
     for s in &old_w {
-        why_way.extend(s.iter().map(|p| p.1 as u32));
+        why_way.extend(s.iter().map(|p| p[1] as u32));
     }
     for s in new_w.values() {
         why_way.extend(s.iter().copied());
     }
     let mut why_rel: BTreeSet<u32> = BTreeSet::new();
     for &rid in ar.iter().filter(|&&r| has(&d.r_all, r)) {
-        why_rel.extend(pairs_of(&rt, rid).iter().map(|p| p.1 as u32));
+        why_rel.extend(pairs_of(rt, rid).iter().map(|p| p[1] as u32));
     }
     let mut member_nodes: Vec<i64> = Vec::new();
     for &rid in ar.iter().filter(|&&r| has(&dp.rid, r)) {
@@ -535,7 +538,7 @@ pub fn update(a: &Args) {
                         why_rel.extend(s.iter().copied());
                     }
                     if !has(&moved, r) {
-                        why_rel.extend(pairs_of(&wt, r).iter().map(|p| p.1 as u32));
+                        why_rel.extend(pairs_of(wt, r).iter().map(|p| p[1] as u32));
                     }
                 }
                 0 => member_nodes.push(r),
@@ -621,31 +624,27 @@ pub fn update(a: &Args) {
     npy::save_idx(&dir.join(format!("idx-{ng:04}.npy")), &idx);
     // the way and relation tile indexes
     let gone_w = sorted_union(&moved, &d.w_all);
-    let mut wt2: Vec<(i64, i64)> = wt.iter().copied().filter(|p| !has(&gone_w, p.0)).collect();
+    let mut add: Vec<[i64; 2]> = Vec::new();
     for &id in &moved {
         if let Ok(r) = m.wid.binary_search(&id) {
-            wt2.extend(p.wt_key[p.wt_off[r] as usize..p.wt_off[r + 1] as usize].iter().map(|&k| (id, k as i64)));
+            add.extend(p.wt_key[p.wt_off[r] as usize..p.wt_off[r + 1] as usize].iter().map(|&k| [id, k as i64]));
         }
     }
-    wt2.par_sort_unstable();
-    npy::save_pairs(&dir.join(format!("wtiles-{ng:04}.npy")), &wt2);
-    drop(wt2);
+    add.sort_unstable();
+    npy::merge_pairs(&pair_path(dir, "wtiles", ng), wt, |q| !has(&gone_w, q[0]), &add);
     // a reached relation's tiles: the working set's inside the day's reach, the old ones outside it (a far member node
     // or way is not in the working set, and a tile not reached did not change)
     let ar_rows: Vec<usize> = ar.iter().filter_map(|&rid| m.rid.binary_search(&rid).ok()).collect();
     let kept_ar: Vec<i64> = ar_rows.iter().filter(|&&r| m.r_kept[r]).map(|&r| m.rid[r]).collect();
     let gone_r = sorted_union(&ar, &d.r_all);
-    let mut rt2: Vec<(i64, i64)> = rt
-        .iter()
-        .copied()
-        .filter(|q| !has(&gone_r, q.0) || (has(&kept_ar, q.0) && reach.binary_search(&(q.1 as u32)).is_err()))
-        .collect();
+    let mut add: Vec<[i64; 2]> = Vec::new();
     for &r in &ar_rows {
-        rt2.extend(p.rel_keys[r].iter().filter(|k| reach.binary_search(k).is_ok()).map(|&k| (m.rid[r], k as i64)));
+        add.extend(p.rel_keys[r].iter().filter(|k| reach.binary_search(k).is_ok()).map(|&k| [m.rid[r], k as i64]));
     }
-    rt2.par_sort_unstable();
-    npy::save_pairs(&dir.join(format!("rtiles-{ng:04}.npy")), &rt2);
-    drop(rt2);
+    add.sort_unstable();
+    npy::merge_pairs(&pair_path(dir, "rtiles", ng), rt, |q| {
+        !has(&gone_r, q[0]) || (has(&kept_ar, q[0]) && reach.binary_search(&(q[1] as u32)).is_err())
+    }, &add);
     // the relation store: the reached relations' blobs again, from the working set
     let mut rentries: Vec<Row> = Vec::new();
     let mut roff: i64 = 0;
@@ -709,7 +708,7 @@ pub fn update(a: &Args) {
         "reachedBy": {"node": by(&why_node), "way": by(&why_way), "relation": by(&why_rel)},
         "tilesUnchanged": unchanged.len(), "gen": ng, "day": a.day, "diff": a.diff.to_string_lossy(),
         "by": "tilestore update (Rust)", "before": a.before.to_string_lossy(),
-        "polygon": a.polygon.as_ref().map(|p| p.to_string_lossy().into_owned()), "world": a.world,
+        "polygon": a.polygon.as_ref().map(|p| p.to_string_lossy().into_owned()), "world": a.world, "prunePairs": a.prune_pairs,
         "tilesReached": reach.len(), "tilesWritten": new_entries.len(), "tilesNew": tiles_new, "tilesDropped": tiles_dropped,
         "bytes": off, "relBytes": roff, "relBlobs": rentries.len(), "tilesDecoded": dec.order.len(),
         "secondsDiff": r1(t_diff), "secondsFind": r1(t_find), "secondsReach": r1(t_reach), "secondsRule": r1(t_rule),
@@ -721,5 +720,12 @@ pub fn update(a: &Args) {
     let tmp = dir.join("store.json.tmp");
     fs::write(&tmp, serde_json::to_string_pretty(&meta).unwrap()).unwrap();
     fs::rename(&tmp, dir.join("store.json")).unwrap();
+    if a.prune_pairs {
+        // only the newest pair indexes are read (by the next update); a planet generation's way pairs are 22 GB
+        drop((wtm, rtm));
+        for name in ["wtiles", "rtiles"] {
+            fs::remove_file(pair_path(dir, name, g)).unwrap();
+        }
+    }
     log(&format!("update to {}: {}", a.day, stats));
 }
