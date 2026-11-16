@@ -423,31 +423,37 @@ function lineChart(target, h, series, { height = 260, showAged = true, questSetB
   };
   target.replaceChildren();
   const u = new uPlot(opts, [xs, ...ser.map((s) => s._data)], target);
-  edgeHover(u, xs);
   charts.push({ u, target });
   return u;
 }
 
 // The first and last points sit on the plot's very edges, where a pixel or two holds them (the latest
-// days of daily counts crowd into the last few). Level with the plot, the gutters beside it stand for
-// those ends: the pointer over the y-axis reads out the first snapshot, past the right edge the last.
-// uPlot only follows the pointer over the plot itself, so the gutters move its cursor by hand, synced
-// to the other charts like a hover is. Listening on u.root rather than the target, a redraw that
-// replaces the chart takes its listeners with it.
-function edgeHover(u, xs) {
-  let on = false;
-  const off = () => { if (on) { on = false; u.setCursor({ left: -10, top: -10 }, true, true); } };
-  u.root.addEventListener("mousemove", (e) => {
-    if (u.over.contains(e.target)) { on = false; return; }   // uPlot's own ground
-    const r = u.over.getBoundingClientRect();
-    const end = e.clientY < r.top || e.clientY >= r.bottom ? null
-      : e.clientX < r.left ? xs[0] : e.clientX >= r.right ? last(xs) : null;
-    if (end == null) return off();
-    on = true;
-    u.setCursor({ left: u.valToPos(end, "x"), top: e.clientY - r.top }, true, true);
-  });
-  u.root.addEventListener("mouseleave", off);
+// days of daily counts crowd into the last few). Level with the plot, the white beside it, out to the
+// card's edges, stands for those ends: the pointer over the y-axis or the card's left padding reads out
+// the first snapshot, past the plot's right edge the last. uPlot only follows the pointer over the plot
+// itself, so this moves its cursor by hand, synced to the other charts like a hover is. One listener for
+// the page, since a redraw replaces the charts; it finds the chart by the card the pointer is in.
+let edgeChart = null;   // the chart whose cursor this put on an end
+function edgeHover(e) {
+  const card = e.target.closest?.(".card");
+  const c = card && charts.find(({ target }) => card.contains(target));
+  if (c && c.u.over.contains(e.target)) { edgeChart = null; return; }   // uPlot's own ground
+  let hit = null, left, top;
+  if (c) {
+    const r = c.u.over.getBoundingClientRect(), xs = c.u.data[0];
+    if (e.clientY >= r.top && e.clientY < r.bottom && (e.clientX < r.left || e.clientX >= r.right)) {
+      hit = c.u;
+      left = hit.valToPos(e.clientX < r.left ? xs[0] : last(xs), "x");
+      top = e.clientY - r.top;
+    }
+  }
+  if (edgeChart && edgeChart !== hit && charts.some(({ u }) => u === edgeChart))
+    edgeChart.setCursor({ left: -10, top: -10 }, true, true);
+  edgeChart = hit;
+  if (hit) hit.setCursor({ left, top }, true, true);
 }
+document.addEventListener("mousemove", edgeHover);
+document.documentElement.addEventListener("mouseleave", () => edgeHover({ target: document.body }));
 
 // A row's trend: an inline SVG line over time (x by date, not index, since monthly history runs into
 // daily counts), scaled to its own min and max because the Open column carries the size. Nulls break

@@ -2062,7 +2062,9 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
 
 ## Chart ends hoverable from the gutters (2026-11-16, 11:25; owner: "hard to hover first and last point")
 
-- Done in `docs/app.js` (`edgeHover`, and the `setCursor` hook): level with the plot, the y-axis gutter
-  reads out the first snapshot and the right margin the last, synced to the other charts. Fixed with it: the
-  hover rings never showed when the pointer arrived on the last snapshot from idle. DESIGN.md "The chart's
-  ends from its gutters". Checked by `.scratch/edge-hover/probe.py` (serve `docs/` on 8766), 13 of 13 ok.
+- Done in `docs/app.js` (`edgeHover`, and the `setCursor` hook): level with the plot, the white beside it
+  out to the card's edges reads out the first snapshot on the left and the last on the right, synced to the
+  other charts, pinned ones too. Fixed with it: the hover rings never showed when the pointer arrived on the
+  last snapshot from idle. DESIGN.md "The chart's ends from its gutters". Checked by
+  `.scratch/edge-hover/probe.py` (serve `docs/` on 8766; 17 of 17 ok) and `probe2.py`, `tapdist.py`
+  (phone taps work 10px or more outside the plot).

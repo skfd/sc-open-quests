@@ -299,8 +299,11 @@ Known gaps:
 - Both files are optional; without them the site falls back to class names and hides the releases toggle.
 - **The chart's ends from its gutters (2026-11-16).** The first and last snapshots sit on the plot's
   edges, and the latest days of daily counts share the last few pixels, so they were hard to hover. Level
-  with the plot, the y-axis gutter reads out the first snapshot and the margin past the right edge the
-  last, synced to the other charts like any hover; above or below the plot stays off. The idle legend's
+  with the plot, the white beside it out to the card's edges (the y-axis and the card's padding on the
+  left, the margin and padding on the right) reads out the first and the last snapshot, synced to the
+  other charts like any hover; above or below the plot stays off. One document listener, finding the
+  chart by its card, since a redraw replaces the charts. On a phone a tap does it 10px or more outside the
+  plot; nearer, the browser's tap adjustment puts the tap on the plot itself. The idle legend's
   hold on the last index also kept uPlot from drawing the hover rings when the pointer arrived there;
   the cursor hook now clears it first.
 
