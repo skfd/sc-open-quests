@@ -206,15 +206,13 @@ class AreaPass(
         var refEnd = IntArray(256); var tagEnd = IntArray(256)
         var refs = LongArray(2048); var refCount = 0
         val tags = TagChunk(dict)
-        /** [places]: the tags [t] as the block gives them (a way's keys and values, places in the block's string
-         *  table), when they are the same tags; null when a tag was left out or a key came twice */
-        fun add(id: Long, version: Int, timestamp: Long, set: Int, t: Map<String, String>, places: TagPlaces? = null) {
+        fun add(id: Long, version: Int, timestamp: Long, set: Int, t: Map<String, String>) {
             if (n == ids.size) {
                 val m = n * 2
                 ids = ids.copyOf(m); versions = versions.copyOf(m); timestamps = timestamps.copyOf(m); cities = cities.copyOf(m)
                 refEnd = refEnd.copyOf(m); tagEnd = tagEnd.copyOf(m)
             }
-            if (places != null) tags.addPlaces(places.strings, places.keys!!, places.vals!!) else tags.add(t)
+            tags.add(t)
             ids[n] = id; versions[n] = version; timestamps[n] = timestamp; cities[n] = set
             refEnd[n] = refCount; tagEnd[n] = tags.n
             n++
@@ -570,15 +568,12 @@ class AreaPass(
 
     /** A way of some city's map data ([set] from [citySetOf], not 0), from the main pass's read of its block:
      *  kept with all its nodes, each of which then plays a part ([at]: its place in [nodes], or -1). */
-    fun collectWay(
-        out: WayChunk, id: Long, version: Int, timestamp: Long, set: Int, refs: LongArray, at: IntArray, n: Int,
-        tags: Map<String, String>, places: TagPlaces? = null,
-    ) {
+    fun collectWay(out: WayChunk, id: Long, version: Int, timestamp: Long, set: Int, refs: LongArray, at: IntArray, n: Int, tags: Map<String, String>) {
         for (i in 0 until n) {
             out.ref(refs[i])
             if (at[i] >= 0) markNeeded(at[i])
         }
-        out.add(id, version, timestamp, set, tags, places)
+        out.add(id, version, timestamp, set, tags)
     }
 
     private fun collectRelations(b: Osmformat.PrimitiveBlock): List<RelRec> {
