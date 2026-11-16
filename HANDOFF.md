@@ -1777,8 +1777,9 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   `.scratch/batch-speed/` also holds `e-*`, `g-*`, `r5-*`, `eng-types`, `eng-pairs` (this round's build): all can go.
 - **Batch engine speed-up, sixth round: merged into main (11-15, 17:20 to 19:35; owner: "fifth round of
   speedup", already merged, so the next).** DESIGN.md, "Batch engine speed-up, sixth round". **Four changes to
-  how a cell's map data is put together: the cells' phase 12 to 17% shorter on f0, a whole run 6 to 9.5% (80.0 s
-  to 72.4 s in three pairs on a calm machine, 8% less CPU).** A bit per node for "tagged"; a cell's node order
+  how a cell's map data is put together: on f0 the cells' phase 12% shorter and a whole run 6% (87.4 s to 81.9 s,
+  4.5% less CPU; three interleaved rounds).** The build that still had the five main-pass changes showed 9.5%
+  on a calmer machine (80.0 s to 72.4 s) and was equal to the four alone side by side. A bit per node for "tagged"; a cell's node order
   from a bit set instead of two sorts (`firstSeen`); a way's node found at the place after the one before
   (`NodeStore.indexOfAfter`); a cell's ways and node ids put in place by the threads that make them. New
   switch `-Dopenquests.assembleTrace=true` (a cell's map data, seconds per step). **Five more changes, to the

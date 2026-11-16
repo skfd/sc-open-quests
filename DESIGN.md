@@ -4065,11 +4065,13 @@ makes two objects a call; a patch like `pairs` or a cache of the two ends. (3) `
 iterating a `TagMap`'s entries: give `TagMap` a walk without entry objects. (4) `groupByNodeIds` (4% of Java
 samples). Each of 2 to 4 is 2 to 3% of the bytes.
 
-## Batch engine speed-up, sixth round: a cell's map data, about 6 to 9% off a run (2026-11-15, 17:20 to 19:35; owner: "fifth round of speedup", which was already merged, so this is the next)
+## Batch engine speed-up, sixth round: a cell's map data, about 6% off a run (2026-11-15, 17:20 to 19:35; owner: "fifth round of speedup", which was already merged, so this is the next)
 
-**Built and merged: four changes to how a cell's map data is put together, every snapshot equal. On f0 the
-cells' phase is 12 to 17% shorter and a whole run 6 to 9% (80.0 s to 72.4 s in three pairs on a calm machine).
-Five more changes, all in the main pass, were built, shown exact, measured, and taken out again: nothing net.**
+**Built and merged: four changes to how a cell's map data is put together, every snapshot equal. On f0, in
+three interleaved rounds, the cells' phase is 12% shorter (50.2 s to 44.4 s) and a whole run 6% (87.4 s to
+81.9 s, 4.5% less CPU). Five more changes, all in the main pass, were built, shown exact, measured, and taken
+out again: nothing net.** The build that still had those five showed 17% and 9.5% (80.0 s to 72.4 s) in three
+pairs on a calmer machine, and no difference from the four alone when the two ran side by side.
 
 **Read first, from what was on disk** (the fifth round's profile `r5.jfr`, the runs `g-*`, a new reader
 `jfrtree.py`: of the samples under a function, the share of each callee):
@@ -4141,9 +4143,10 @@ nine changes, and the four that stay:
 | the cells' CPU | 922 s | 812 s | 846 s |
 | the main pass's CPU (nodes and ways) | 425 s | 438 s | 435 s |
 
-- **The cells: 17% less wall in the clean pairs (46.3 to 38.5 s), 12% in the second batch, less in every one
-  of the eight comparisons.** A whole run: 9.5% less wall and 8% less CPU in the clean pairs, 6% and 4.5% in the
-  second batch for the four that stay.
+- **The cells: 12% less wall for the four that stay (second batch), less in each of its three rounds; 17% for
+  all nine in the clean pairs (46.3 to 38.5 s), less in each of the five.** A whole run: 6% less wall and 4.5%
+  less CPU for the four that stay; 9.5% and 8% for all nine in the clean pairs. The two builds side by side
+  (second batch): 81.9 s and 81.4 s.
 - **The main pass: nothing.** In the second batch its CPU is 438 s with the five changes, 435 s without, and
   425 s in the fifth round's engine; in the first batch's clean pairs 372 s with them against 359 s. So they
   went, by this project's rule for exact changes that show nothing net.
@@ -4159,7 +4162,8 @@ and Lisboa (25 map data runs, snapshot equal to the fifth round's); `matchCache=
 on main, none failing, SnapshotReproductionTest among them (TorontoRegressionTest skips, its extract pruned).
 New tests: `FirstSeenTest` (the bit set and the sort against a plain set, both sides of the line between
 them), and two more in `NodeStoreTest` (every node asked after right and wrong places; a tagged node's tags and
-every other node's none). With the pieces broken on purpose, all at once, the tests of each failed.
+every other node's none). With four pieces broken on purpose, all at
+once, on the build with all nine changes, five of its six new or changed tests failed (not rerun one by one).
 
 **What it does not show.** The oracle and London under `verifyFast`, as in the rounds before. A world run: f0
 is one file of the Germany rehearsal.
