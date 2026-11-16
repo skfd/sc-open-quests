@@ -2053,7 +2053,9 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   19 model tests pass; `PREVIEW_DOCS=C:/tmp/hoods-site node ios/test/preview.js ... "Toronto/Parkdale"`
   renders 1,685 open, -5 since 10-27, equal to the 11-14 snapshot's default-on sum. `tools/check.js` fails
   only on "published apps page is current" until `node tools/apps-page.js ../sc-open-quests/docs/apps`.
-- **Waiting on the owner, in this order:** (1) merge `hood-series` into main (`--ff-only`), so the next
-  daily run publishes the files; (2) `node tools/apps-page.js ../sc-open-quests/docs/apps` in the widget
-  repo, which publishes the new script with the same run; (3) download `open-quests.js` again on the phone
-  (the phone keeps its copy: the old script answers `Toronto/Parkdale` with "No city called ...").
+- **The owner's answers (11-16, 11:10):** merge and write the apps page; publish the last 35 days.
+  Done: `hood-series` fast-forwarded into main (008748ea), worktree and branch removed; apps page written
+  (6f3a8635), widget `tools/check.js --no-gradle` all ok. The 12:15 run publishes both (its `history`
+  writes the 4,214 files). Left for the owner: download `open-quests.js` again on the phone (the phone
+  keeps its copy: the old script answers `Toronto/Parkdale` with "No city called ..."). Widget repo commits
+  (0701ac0, 370ffe0) are on its main, not pushed.
