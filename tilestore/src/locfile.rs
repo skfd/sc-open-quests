@@ -1,5 +1,5 @@
 //! The node places by id in osmium's dense_file_array layout, the planet update's node store (DESIGN.md, "The
-//! planet's first day"): at byte 8 * id the longitude, then the latitude, in 1e-7 degrees as int32 little-endian;
+//! planet store's first day"): at byte 8 * id the longitude, then the latitude, in 1e-7 degrees as int32 little-endian;
 //! both 2^31-1 where there is no node. The world stream's planet.loc has this layout (stream.py DenseLocations
 //! keeps it with pyosmium), and `update --before-loc` reads it, so one file can serve both.
 //!
@@ -126,7 +126,6 @@ pub fn build(pbf: &Path, at: Option<i64>, at_text: Option<&str>, out: &Path) {
     file.sync_all().unwrap();
     let bytes = file.metadata().unwrap().len();
     let held = at_text.map_or_else(|| format!("snapshot {}", pbf.file_name().unwrap().to_string_lossy()), str::to_string);
-    fs::write(state_path(out), &held).unwrap();
     log(&format!(
         "loc build: {nodes} nodes, highest id {}, {:.2} GiB, {} skipped (ids not increasing; history reader: {} not increasing, {} backwards) in {:.1} s ({:.1} s the nodes); holds {held}; {:.1} GiB free after",
         next - 1,
@@ -138,7 +137,9 @@ pub fn build(pbf: &Path, at: Option<i64>, at_text: Option<&str>, out: &Path) {
         t1.elapsed().as_secs_f64(),
         free_bytes(dir).unwrap_or(0) as f64 / (1u64 << 30) as f64
     ));
+    // the state last: a file without one is not done (a run that stopped here is built again)
     assert!(skipped == 0 && st.not_increasing == 0, "nodes out of id order: the file may hold a wrong version");
+    fs::write(state_path(out), &held).unwrap();
 }
 
 pub fn advance(loc: &Path, diff: &Path, at_text: &str) {
