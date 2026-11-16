@@ -2012,7 +2012,7 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
       its file to 11-08 in the same run, and the 11-02 store needs it at 11-02.
     - the disk call above
     - the size of the carried copies on a planet day (not measured)
-- **The planet store's first day: running since 11-16 10:41 (owner: "keep building whatever needs to be built").**
+- **The planet store's first day: done, exact (11-16, 10:41-11:16; owner: "keep building whatever needs to be built").** DESIGN.md, "The planet store's first day". Node file at 11-02 in 17 min, equal to the 11-02 clip; the update by diff 5165 13.2 min, private memory at most 20.1 GiB, 195,294 tiles, pack 8.03 GB; node file moved to 11-03 equal to the 11-03 clip; every tile difference against the 11-03 clip explained by the four ways osmium's extract drops; generation 0 against that clip differs in 1,482 tiles (the control). About 9.2 GB a day kept. 7.45 GiB of the gen-0 pack is dead after the day, 4.51 GiB of it in whole 64 KiB chunks. What was written while it ran:
   Built first (9f65401e): `tilestore loc build|advance|check` (`tilestore/src/locfile.rs`), the node file in
   osmium's dense_file_array layout (the layout `update --before-loc` and the world stream's `planet.loc` share),
   built from a history file at a date, moved forward by a day's diff (refuses a diff not after what

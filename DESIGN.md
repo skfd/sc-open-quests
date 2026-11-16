@@ -5043,3 +5043,47 @@ obstacle, disk, is the owner's call. Each piece has its own commit.
   call.
 - **The only oracle is the 11-03 clip** (`subcmp.py` inside its polygon, pinned), and only for a first day from
   11-02.
+
+### The planet store's first day: 13 minutes, 20 GiB, exact against the clip of the day after (11-16, 10:41-11:16; owner: "keep building whatever needs to be built")
+
+Built first: `tilestore loc build|advance|check` (`tilestore/src/locfile.rs`, 9f65401e, 1c136890), the node places
+by id in osmium's dense_file_array layout, the layout `update --before-loc` reads and the world stream's
+`planet.loc` has. `build` writes every node at a date from a history file (or a snapshot) in id order, gaps as
+empty places, never sparse; `advance` writes a day's last version of each node in place (a deleted one emptied) and
+refuses a diff not after the instant in `F.loc.state`; `check` holds every node of a snapshot against the file.
+Test (`tests/test_tilestore_update.py`): equal to pyosmium's dense file of the synthetic day's before and after,
+up to the empty tail pyosmium grows its file by; `check` fails the advanced file against the day before; the same
+diff twice is refused and leaves the file untouched. `update` now refuses to start under the 40 GiB floor.
+
+The run: `.scratch/planet-day/run.sh` (log `logs/planet-day.log`, memory every 10 s in `logs/planet-day-mem.log`
+from `mem.ps1`), binary 9f65401e, nothing else of ours running.
+
+| step | time | result |
+|---|---|---|
+| `loc build`, history-261102 at 11-02 | 1,037.9 s (300 s the blob index) | 10,975,350,797 nodes, highest id 14,339,779,110, 106.84 GiB, none out of order |
+| `loc check` against `europe-2026-11-02` | 20.5 s | 127,715,680 nodes, 0 differ |
+| `update`, diff 5165, `--world --group-mib 512`, no pruning | 791.2 s | 16 groups; 195,294 tiles reached, 194,440 written (6,333 new, 680 dropped), pack 8.03 GB; relation store 20,207 blobs, 131 MB |
+| `loc advance` to 11-03 | 17.4 s | 3,592,575 nodes: 2,257,300 new, 723,284 moved, 561,299 emptied |
+| `loc check` against `europe-2026-11-03` | 27.1 s | 127,743,794 nodes, 0 differ |
+
+- **Memory:** the update's private bytes at most 20.1 GiB (the carried copies: 429,476 ways, 9,100 relations,
+  6.53M nodes, and 274,188 member ways of changed relations); commit headroom never under 43 GiB. The update's
+  seconds: diff 11, finding 348, reach 41, rule 238, writing 153.
+- **Against the lower bound** (`reach-5165.json`: 180,583 tiles, 7.71 GB): above it, as it must be; the old homes
+  of changed nodes, the parent ways and the changed ways' new tiles are what the bound left out.
+- **Exactness:** `subcmp.py --gp 1` of the store against a cut of `europe-2026-11-03` (`clip-1103`, 58,386 tiles):
+  at 2 km inside the polygon 13,968 of 14,005 tiles equal, 32 differ, 5 only in the planet; at 0.5 km 16,774 of
+  16,832, 50 and 8. **Every one is explained** (`why.py`, the planet's tile less the ways the clip lacks equals the
+  clip's) **by the same four ways as on 11-02**, ways with every node outside the polygon that osmium's extract
+  drops. **Negative control:** generation 0 against the same clip differs in 1,482 tiles and 4 only in the clip at
+  2 km: the day changed about 1,490 interior tiles, and generation 1 has all of them right.
+- **Disk:** a day writes the pack (8.03 GB), a new tile index (0.77 GB), relation index (0.30 GB), relation blobs
+  (0.13 GB) and a second copy of the pair indexes (22.8 GB, gone with `--prune-pairs`): about 9.2 GB a day kept,
+  8.2 GB if older generations' indexes are let go.
+- **Dead space after one day:** of pack-0000's 232.55 GiB, 188,787 tiles and 7.45 GiB (3.20%) are superseded.
+  4.51 GiB of that lies in whole 64 KiB chunks no live tile touches (0.49 GiB in whole 1 MiB chunks), so punching
+  holes in the gen-0 pack (sparse file, zeroed ranges) would give back about 60% of its dead bytes without a
+  rewrite. Daily packs, small, can be compacted by copying their live tiles forward. Day 2 measures the overlap.
+
+Left on disk: `.scratch/planet-day/planet.loc` (106.9 GiB, at 11-03), `clip-1103` (1.9 GiB), the store with
+generations 0 and 1 and both generations' pair indexes (gen 0's kept so the day can be redone from 0).
