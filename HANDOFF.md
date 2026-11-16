@@ -1927,3 +1927,10 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   (DESIGN.md, the last paragraph). The spill's stop was seen (`TILESTORE_TEST_FLOOR_GIB`), the bucket phase's was
   not. The clip and Germany equal their oracles after it. So a planet cut that runs out of room stops with a
   message and 40 GiB left, it does not fill the disk. **Next:** unchanged, the planet cut on the 2 TB drive.
+- **Stale files deleted from `~/Code/.osm-data` (11-16, owner: "all three"), C: 285 GB free to 308 GB.** The
+  changesets dump of 10-26 (8.3 GB; `rank_sc_cities.py` keeps its scan in `.scratch/rank/`, a rerun fetches a
+  newer weekly dump), skyditor's 22 European extracts of 10-27 (7.5 GB; its squares are cut in
+  `skyditor/research/landuse-edges/work/`), and 11 regional history clips of the retired planet 261005 (about
+  7 GB): the nine provinces, Hamburg, Bremen. **A recount at a repin now re-clips such a region from the current
+  planet** (`backfill_history.py`, about an hour each), or reads the `canada-germany` clip's history once the
+  regions switch to it. `berlin-history` is kept (the tile store's checks use it).
