@@ -297,8 +297,16 @@ request"). Agreed before the work was split, so the builders, the engine and the
   have no `partsAged` entry.
 - **Published part names**: `docs/data/parts/<city>.json`: `{ "schema": 1, "city", "parts": [ { "id",
   "name", "en", "subtype", "bbox" } ] }`, written by `run.py history` from the registry.
-- No monthly history for parts yet: the newest snapshot only, until a backfill recounts with parts.
-  The daily archive (`data/archive/`) holds parts since 2026-10-28.
+- **A part's series** (since 2026-11-16): `docs/data/history/<city>/<placeId>.json`, written by `run.py
+  history` from the archive for every part in the registry that has a count, in a city series' shape so
+  the same code reads both: `{ "city", "part": "<placeId>", "name", "en", "subtype", "dates": [...],
+  "quests": { "<Quest>": { "open": [...], "agedOnly": [...] } } }`. Dates are the city's snapshots with
+  `parts`, from the first that has the part (2026-10-27 for every part there was then). Snapshots leave
+  zeros out, so here a quest the part lacks is `0` when the city counted that quest that day and `null`
+  when it did not; `agedOnly` is `null` on a date without `partsAged`. Only quests with something open in
+  the part on some date are listed. A part or city that leaves the registry loses its file.
+- No monthly history for parts yet: the daily series starts 2026-10-27, until a backfill recounts the
+  monthly snapshots with parts.
 
 - **Countries are StreetComplete's (since 2026-11-11, branch `countries`).** A country in `index.json` is
   one SC's boundaries name somewhere (DESIGN.md, "Countries in the place index: built"), never an Overture

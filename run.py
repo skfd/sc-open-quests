@@ -670,6 +670,69 @@ def build_history(snapshots: list[dict], city_config: list[dict], disabled: set[
             "compare": {q: {"quest": q, "open": dict(sorted(v.items()))} for q, v in sorted(compare.items())}}
 
 
+def build_part_history(snapshots: list[dict], registries: dict[str, dict]) -> dict[str, dict[str, dict]]:
+    """Each part's series, {cityId: {partId: series}}, in a city series' shape (dates, quests with open
+    and agedOnly per date), for the parts in registries ({cityId: registry}, config/parts).
+
+    A part's dates are the city's snapshots that carry parts, from the first in which the part has a
+    count; before that it was not counted, and has no entry for those dates. Snapshots leave zero
+    counts out, so on its dates a quest the part lacks is 0 when the city counted that quest that day,
+    and null when it did not (not counted under that SC version). agedOnly is null on a date whose
+    snapshot has no partsAged, and where the city's own agedOnly is null. Only quests with something
+    open in the part on some date are listed."""
+    out: dict[str, dict[str, dict]] = {}
+    for cid, reg in registries.items():
+        rows = [c for s in snapshots if (c := s["cities"].get(cid)) is not None and "parts" in c]
+        dates = [s["asOfDate"] for s in snapshots if "parts" in s["cities"].get(cid, {})]
+        series = {}
+        for part in reg["parts"]:
+            pid = part["id"]
+            first = next((i for i, c in enumerate(rows) if pid in c["parts"]), None)
+            if first is None:
+                continue
+            mine = rows[first:]
+            names = sorted({q for c in mine for q, n in c["parts"].get(pid, {}).items() if n})
+
+            def value(c: dict, key: str, field: str, q: str):
+                if key not in c or (c["quests"].get(q) or {}).get(field) is None:
+                    return None
+                return c[key].get(pid, {}).get(q, 0)
+            series[pid] = {
+                "city": cid,
+                "part": pid,
+                "name": part["name"],
+                "en": part.get("en"),
+                "subtype": part.get("subtype"),
+                "dates": dates[first:],
+                "quests": {q: {"open": [value(c, "parts", "open", q) for c in mine],
+                               "agedOnly": [value(c, "partsAged", "agedOnly", q) for c in mine]}
+                           for q in names},
+            }
+        out[cid] = series
+    return out
+
+
+def write_part_history(data_dir: Path, snapshots: list[dict], parts_dir: Path) -> int:
+    """data_dir/history/<cityId>/<partId>.json for every part in the registry that has a count
+    (build_part_history); a part or city no longer there loses its file. Returns the number of files
+    changed."""
+    registries = {p.stem: read_json(p) for p in sorted(parts_dir.glob("*.json"))}
+    out = build_part_history(snapshots, registries)
+    changed = 0
+    root = data_dir / "history"
+    for cid, parts in out.items():
+        for pid, series in parts.items():
+            changed += write_json(root / cid / f"{pid}.json", series, compact=True)
+    for stale in list(root.glob("*/*.json")):
+        if stale.stem not in out.get(stale.parent.name, {}):
+            stale.unlink()
+            changed += 1
+    for d in [d for d in root.glob("*") if d.is_dir()]:
+        if not any(d.iterdir()):
+            d.rmdir()
+    return changed
+
+
 def migrate_archive(data_dir: Path = DATA_DIR, archive: Path = ARCHIVE_DIR) -> int:
     """Move the snapshots and per-region quests.json under data_dir/<region>/ into the archive. Until
     2026-10-24 every snapshot was published; docs/data now keeps each region's newest only (see
@@ -859,6 +922,8 @@ def history(data_dir: Path = DATA_DIR, cities_config: Path = CITIES_CONFIG, arch
             changed += 1
     changed += write_json(data_dir / "cities.json", out["cities"], compact=True)
     changed += write_json(data_dir / "trends.json", out["trends"], compact=True)
+    if parts_dir is not None:
+        changed += write_part_history(data_dir, snapshots, parts_dir)
     if separate:
         changed += publish_newest(data_dir, archive)
     log(f"history: {len(out['history'])} cities over {len(snapshots)} snapshot(s), {changed} file(s) changed")
