@@ -1969,3 +1969,26 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   act: the Python `update` on `store-rs`, then `storecmp.py --ga 1 --gb 1`), so this store can be brought to a
   current day; or the engine's count on a planet read of t2n's rectangles against the engine on
   `europe-2026-11-02.osm.pbf` itself (re-pinned for it; `.scratch/tiles/ref/` is the 11-12/11-13 recount, not 11-02).
+- **The day's update in Rust: equal to the Python update on two days, 15 times faster (11-16, 08:05-08:40; owner:
+  "rebuild daily update").** DESIGN.md, "The day's update in Rust".
+  - **Command:** `tilestore/target/release/tilestore.exe update --store S --diff N.osc.gz --before D-1.osm.pbf --day D
+    --polygon C:/Users/kk/Code/.osm-data/europe/polygon.geojson`
+    (`tilestore/src/update.rs`, `osc.rs`; commit d8fcc8f4).
+  - **Result:** on a copy of the Rust cut of 11-12 (`.scratch/tiles/store-rsu`), diffs 5175 and 5176 give
+    generations equal to the Python store's 1 and 2 (storecmp: every tile, relation blob and pair). Times: 42.5 s and
+    38.5 s, against 623 s and 571 s; peak 10.3-10.7 GiB.
+  - **Checks:** a negative control fails as it should. `tests/test_tilestore_update.py` sends the synthetic day
+    through the binary too.
+  - **Not the planet: a planet day is at least 180,583 tiles and 7.71 GB of payload** (lower bound from diff 5165,
+    `.scratch/planet-cut/reach-5165.json`), against the clip's 2,595 tiles. Four things stand in the way, designed
+    in outline only:
+    - a node store kept and moved forward daily: about 115 GB, or about 57 GB as tile keys
+    - the rebuild in groups of tiles: a single working set would be about 80 GiB on an 87.6 GB machine
+    - pair indexes merged in a stream, not rewritten: 22.3 GB a day
+    - disk: about 8 GB a day of new pack plus compaction. Fourteen days of catch-up does not fit on C: before 12-07.
+  - **Pinned:** `europe-2026-11-03.osm.pbf`, the oracle for a first planet update (diff 5165); unpin when done.
+    Diffs 5165-5176 are hard-linked in `.scratch/planet/diffs-keep`.
+  - **Left on disk:** `.scratch/tiles/store-rsu` (3.3 GB, can go).
+  - **Owner's call, open:** build the planet update (the four items above), or cut the 12-07 history file anew and
+    update from there. That waits on the disk question either way: the store and `planet.loc` cannot both stay
+    beside the 12-07 job.
