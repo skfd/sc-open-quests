@@ -45,6 +45,16 @@ fn pi64(o: &mut Vec<u8>, v: i64) {
     o.extend_from_slice(&v.to_le_bytes());
 }
 
+/// a signed number as a varint: zigzag, seven bits a byte, low first
+fn pvar(o: &mut Vec<u8>, v: i64) {
+    let mut u = ((v << 1) ^ (v >> 63)) as u64;
+    while u >= 0x80 {
+        o.push(u as u8 | 0x80);
+        u >>= 7;
+    }
+    o.push(u as u8);
+}
+
 struct Cur<'a> {
     b: &'a [u8],
     p: usize,
@@ -68,6 +78,18 @@ impl<'a> Cur<'a> {
     fn i64(&mut self) -> i64 {
         self.p += 8;
         i64::from_le_bytes(self.b[self.p - 8..self.p].try_into().unwrap())
+    }
+    fn var(&mut self) -> i64 {
+        let (mut u, mut sh) = (0u64, 0);
+        loop {
+            let b = self.u8();
+            u |= ((b & 0x7f) as u64) << sh;
+            if b < 0x80 {
+                break;
+            }
+            sh += 7;
+        }
+        (u >> 1) as i64 ^ -((u & 1) as i64)
     }
     fn bytes(&mut self, n: usize) -> &'a [u8] {
         self.p += n;
@@ -118,7 +140,7 @@ struct Spill {
     geo: Geo,
     bufs: HashMap<u32, Vec<u8>>,
     files: BTreeSet<u32>,
-    /// per file, its records' bytes before compression
+    /// per file, its records' bytes before compression and before the ways' refs were coded: the cut budget's unit
     sizes: HashMap<u32, u64>,
     /// bytes waiting in `bufs`
     held: usize,
@@ -176,7 +198,13 @@ impl Spill {
     }
 
     fn add(&mut self, kind: u8, bucket: u32, body: &[u8]) {
+        self.add_as(kind, bucket, body, body.len());
+    }
+
+    /// `units`: what the body counts for in its file's size (a way: its bytes before its refs were coded)
+    fn add_as(&mut self, kind: u8, bucket: u32, body: &[u8], units: usize) {
         let file = self.geo.file(bucket);
+        *self.sizes.entry(file).or_default() += 9 + units as u64;
         let b = self.bufs.entry(file).or_default();
         b.push(kind);
         p32(b, bucket);
@@ -212,7 +240,6 @@ impl Spill {
         self.flushes += 1;
         self.raw += b.len() as u64;
         self.files.insert(file);
-        *self.sizes.entry(file).or_default() += b.len() as u64;
         self.held -= b.len();
         // a worker that died (a write failed) has closed its end: the run stops here
         self.to[file as usize % Self::WORKERS].send((file, b)).expect("a spill worker stopped: its write failed");
@@ -468,14 +495,60 @@ struct WayRec<'a> {
     tags: &'a [u8],
 }
 
+/// a way's record: id, version, timestamp, the count of refs; the refs, their latitudes and their longitudes (a
+/// ref with no node: latitude ABSENT, longitude 0), each run as differences in varints; the tags. `pl` is per ref.
+fn way_body(o: &mut Vec<u8>, id: i64, ver: i32, ts: i64, refs: &[i64], pl: &[Option<(i32, i32)>], tags: &[u8]) {
+    pi64(o, id);
+    pi32(o, ver);
+    pi64(o, ts);
+    p32(o, refs.len() as u32);
+    let mut prev = 0i64;
+    for &r in refs {
+        pvar(o, r.wrapping_sub(prev));
+        prev = r;
+    }
+    prev = 0;
+    for p in pl {
+        let lat = p.map_or(ABSENT, |p| p.0) as i64;
+        pvar(o, lat - prev);
+        prev = lat;
+    }
+    prev = 0;
+    for p in pl {
+        let lon = p.map_or(0, |p| p.1) as i64;
+        pvar(o, lon - prev);
+        prev = lon;
+    }
+    p32(o, tags.len() as u32);
+    o.extend_from_slice(tags);
+}
+
+/// what a way's record took before its refs were coded (16 bytes a ref): the cut budget and the spill files'
+/// sizes are still counted in these bytes, which is what the bucket phase's memory was measured against
+fn way_units(n_refs: usize, tags: usize) -> usize {
+    28 + 16 * n_refs + tags
+}
+
 fn way_rec(body: &[u8]) -> WayRec<'_> {
     let mut c = Cur::new(body);
     let (id, ver, ts, n) = (c.i64(), c.i32(), c.i64(), c.u32() as usize);
+    // the refs, then their latitudes, then their longitudes: each the difference from the one before, as a varint
     let mut refs = Vec::with_capacity(n);
-    let mut pl = Vec::with_capacity(n);
+    let mut prev = 0i64;
     for _ in 0..n {
-        refs.push(c.i64());
-        pl.push((c.i32(), c.i32()));
+        prev = prev.wrapping_add(c.var());
+        refs.push(prev);
+    }
+    let mut pl = vec![(0i32, 0i32); n];
+    prev = 0;
+    for p in pl.iter_mut() {
+        prev += c.var();
+        p.0 = prev as i32;
+    }
+    prev = 0;
+    for p in pl.iter_mut() {
+        prev += c.var();
+        p.1 = prev as i32;
     }
     let tl = c.u32() as usize;
     WayRec { id, ver, ts, refs, pl, tags: c.bytes(tl) }
@@ -581,8 +654,10 @@ struct NodeOut {
 /// a block of ways, mapped
 struct WayOut {
     bodies: Vec<u8>,
-    /// (bucket, body start, body end)
-    list: Vec<(u32, u32, u32)>,
+    /// (bucket, body start, body end, the record's bytes before its refs were coded)
+    list: Vec<(u32, u32, u32, u32)>,
+    /// ways read back from their records and found equal (the self-check)
+    checked: u64,
     wt: Vec<(i64, u32)>,
     needs: Vec<(i64, u32)>,
     /// member ways of kept relations: (id, body start, body end, where its keys start in `keys`)
@@ -774,12 +849,15 @@ pub fn cut(pbf: &Path, out: &Path, day: &str, z: u32, bz: u32, fz: u32, budget: 
         (Vec::new(), Vec::new(), vec![0], Vec::new());
     let mut member_at = 0u64;
     let (mut n_ways, mut n_refs, mut last_way) = (0u64, 0u64, i64::MIN);
+    // TILESTORE_TEST_WAY_CODING: every way is read back from its record and compared with what went in
+    let self_check = std::env::var_os("TILESTORE_TEST_WAY_CODING").is_some();
+    let mut n_checked = 0u64;
     seen(blobs.each_at(
         blobs.first_way,
         (blobs.first_rel + 1).min(nb),
         at,
         |p| {
-            let mut o = WayOut { bodies: Vec::new(), list: Vec::new(), wt: Vec::new(), needs: Vec::new(), members: Vec::new(), keys: Vec::new(), refs: 0 };
+            let mut o = WayOut { bodies: Vec::new(), list: Vec::new(), checked: 0, wt: Vec::new(), needs: Vec::new(), members: Vec::new(), keys: Vec::new(), refs: 0 };
             let mut pl: Vec<Option<(i32, i32)>> = Vec::new();
             let mut keys: Vec<u32> = Vec::new();
             let mut buckets: Vec<u32> = Vec::new();
@@ -795,25 +873,26 @@ pub fn cut(pbf: &Path, out: &Path, day: &str, z: u32, bz: u32, fz: u32, budget: 
                 o.refs += refs.len() as u64;
                 o.wt.extend(keys.iter().map(|&k| (p.wid[w], k)));
                 let a = o.bodies.len() as u32;
-                pi64(&mut o.bodies, p.wid[w]);
-                pi32(&mut o.bodies, p.w_ver[w]);
-                pi64(&mut o.bodies, p.w_ts[w]);
-                p32(&mut o.bodies, refs.len() as u32);
-                for (i, &r) in refs.iter().enumerate() {
-                    let (lat, lon) = pl[i].unwrap_or((ABSENT, 0));
-                    pi64(&mut o.bodies, r);
-                    pi32(&mut o.bodies, lat);
-                    pi32(&mut o.bodies, lon);
-                }
-                p32(&mut o.bodies, tags.len() as u32);
-                o.bodies.extend_from_slice(tags);
+                way_body(&mut o.bodies, p.wid[w], p.w_ver[w], p.w_ts[w], refs, &pl, tags);
                 let b = o.bodies.len() as u32;
+                if self_check {
+                    let r = way_rec(&o.bodies[a as usize..b as usize]);
+                    let same = r.id == p.wid[w]
+                        && r.ver == p.w_ver[w]
+                        && r.ts == p.w_ts[w]
+                        && r.refs == refs
+                        && r.tags == tags
+                        && r.pl.iter().zip(&pl).all(|(x, y)| *x == y.unwrap_or((ABSENT, 0)));
+                    assert!(same && r.pl.len() == pl.len(), "way {} does not come back from its record as it went in", p.wid[w]);
+                    o.checked += 1;
+                }
+                let units = way_units(refs.len(), tags.len()) as u32;
                 buckets.clear();
                 buckets.extend(keys.iter().map(|&k| geo.bucket(k)));
                 buckets.sort_unstable();
                 buckets.dedup();
                 for &bk in &buckets {
-                    o.list.push((bk, a, b));
+                    o.list.push((bk, a, b, units));
                 }
                 // a tagged node of this way at home in another bucket: that bucket's tiles give it its tags too
                 for (i, &r) in refs.iter().enumerate() {
@@ -837,9 +916,10 @@ pub fn cut(pbf: &Path, out: &Path, day: &str, z: u32, bz: u32, fz: u32, budget: 
             o
         },
         |o| {
-            for &(bucket, a, b) in &o.list {
-                spill.add(KIND_WAY, bucket, &o.bodies[a as usize..b as usize]);
+            for &(bucket, a, b, units) in &o.list {
+                spill.add_as(KIND_WAY, bucket, &o.bodies[a as usize..b as usize], units as usize);
             }
+            n_checked += o.checked;
             for &(id, k) in &o.wt {
                 assert!(id >= last_way, "way ids are not increasing: the file is not sorted");
                 if id != last_way {
@@ -873,6 +953,9 @@ pub fn cut(pbf: &Path, out: &Path, day: &str, z: u32, bz: u32, fz: u32, budget: 
         needs.len(),
         mw_id.len()
     ));
+    if self_check {
+        log(&format!("self-check: {n_checked} ways read back from their records, all as they went in"));
+    }
     places.done();
     lap("pass2Ways", &mut t, &mut phases);
 

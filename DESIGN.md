@@ -4732,3 +4732,51 @@ held the files is not known; cutting the file first makes it not matter.
 
 **Next, as written before the restart (its first item is done):** show the cut-to-nothing delete frees the space (Berlin, 23 GB, watch free space
 before and after); then the spill's appends and coding. The planet cut itself waits on the 2 TB drive.
+
+### The spill off the pass's thread, and its ways' refs coded (11-15 23:40 to 11-16 00:15; owner: work through the night)
+
+Two changes to `tilestore/src/stream.rs`, each run against the oracles on its own (`.scratch/history/spill.sh`: the
+clip at bucket zoom 8 and 12 against `store-rs`, Germany against `store-rs-germany`, the places in memory;
+`storecmp.py`, 0 different in every run). The baseline was taken the same night on the unchanged program, after the
+restart, the inputs read once first; the machine was otherwise idle. One run each.
+
+**1. Six workers compress and append the spill.** The pass's thread only fills the buffers; a full one is handed
+to a worker over a bounded queue (8 buffers a worker), which compresses it and appends it as one write. A file
+always goes to the same worker, so its frames are whole and in order. A worker whose write fails stops the run.
+
+**2. A way's refs are coded.** The record keeps its head (id, version, timestamp, count); then the refs, their
+latitudes and their longitudes, each run as differences in zigzag varints (a ref with no node: the old marker, in
+the same run); then the tags. It was 16 bytes a ref. Node and relation records are unchanged. With
+`TILESTORE_TEST_WAY_CODING` set every way is read back from its record in pass 2 and compared: 21,380,964 ways on
+the clip (both zooms) and 71,518,636 on Germany, all as they went in.
+
+| input | | pass 2 | whole cut | spill written | bytes a ref | appends |
+|---|---|---|---|---|---|---|
+| clip, bucket z8 | before | 21.3 s | 59.2 s | 1.99 GiB | 12.69 | 1,771 |
+| | workers | 8.6 s | 41.7 s | 1.99 GiB | 12.69 | 1,771 |
+| | workers, refs coded | 7.7 s | 42.4 s | 1.65 GiB | 10.53 | 1,407 |
+| clip, bucket z12 | before | 31.8 s | 79.5 s | 2.08 GiB | 13.30 | 23,725 |
+| | workers | 17.4 s | 59.6 s | 2.08 GiB | 13.30 | 23,725 |
+| | workers, refs coded | 15.1 s | 59.4 s | 1.73 GiB | 11.07 | 19,941 |
+| Germany | before | 73.8 s | 175.5 s | 6.71 GiB | 11.96 | 4,856 |
+| | workers | 31.7 s | 129.9 s | 6.71 GiB | 11.96 | 4,856 |
+| | workers, refs coded | 27.3 s | 121.9 s | 5.49 GiB | 9.79 | 3,526 |
+
+- **Pass 2 is less than half as long** (Germany 73.8 s to 27.3 s). The workers together still work 54 to 85 s on
+  Germany; the pass waits for them 0.2 to 1.4 s at bucket zoom 8. At zoom 12 it waits 12 to 15 s: when the 1 GiB
+  cap sends every buffer out at once (3 or 4 times), thousands of small buffers queue up.
+- **The spill is 17 to 18 % smaller, not half.** Refs were only half of it before compression. Germany, before
+  compression: 18.42 GiB, of which way records 15.77 (the refs 9.03, at 16 bytes each of 606.0M spilled), node
+  records 2.52, relation records 0.12. Coded, the way records are 10.59 GiB, so the refs are 3.85 GiB, 6.8 bytes
+  each, and the whole 13.23 GiB. What is left is mostly tags and record heads, which this does not touch.
+- **For the planet: about 137 GB of spill instead of about 167 GB,** if it shrinks as Germany's did (13.08 billion
+  refs at 9.79 bytes would be 128 GB; neither is measured).
+- **The cut budget still counts the old bytes.** A file's size is its records' bytes as they were before the
+  coding (`way_units`), so `--cut-gib 2` cuts the same ways at once as before and the bucket phase's memory is
+  where it was: Germany 7.40 GiB (7.81 before), the clip 7.07 and 5.21 (7.26 and 4.87). The log's "GiB raw" is
+  the real bytes.
+
+**Not done:** the tags and heads in the spill (most of what is left; a higher zstd level on the workers is the
+cheap thing to try); the passes' own single thread (the records are still handed to the spill one by one); the
+antimeridian's whole-row way. **Next:** the planet cut needs only disk (node file 115 GB, spill about 137 GB,
+store 97-136 GB with its indexes), so it waits on the 2 TB drive.

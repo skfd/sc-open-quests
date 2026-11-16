@@ -1904,3 +1904,13 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   (z8, z12) and Germany. `.scratch/history/nodes.sh`, `trim.sh` and their `.out` files; **do not rerun `nodes.sh`
   as it is** (its last line is the Germany run). **Next:** the delete's test above, then the spill's appends and
   coding; the planet cut waits on the 2 TB drive.
+- **Built 11-15 23:40 to 11-16 00:15 (owner: this project may work through the night):** the spill's appends and
+  coding, DESIGN.md "The spill off the pass's thread, and its ways' refs coded". Six workers compress and append
+  the spill (Germany's pass 2 73.8 s to 27.3 s, the cut 175.5 s to 121.9 s); a way's refs and places are varint
+  differences (Germany's spill 6.71 GiB to 5.49 GiB, 9.79 bytes a ref; the planet's about 137 GB by that ratio,
+  not measured). Equal to the oracles after each change, on the clip (z8, z12) and Germany, and every way read
+  back from its record equal (`TILESTORE_TEST_WAY_CODING=1`). The cut budget still counts the uncoded bytes, so
+  the bucket phase's memory is unchanged. Rerun: `bash .scratch/history/spill.sh NAME [warm]` (about 6 minutes;
+  the places in memory, no node file). **Next:** nothing here is blocked but the planet cut, which waits on the
+  2 TB drive. Open if wanted before it: the spill's tags (a higher zstd level on the workers is the cheap try),
+  Germany through a node file that is not sparse.
