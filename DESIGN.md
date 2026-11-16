@@ -4738,7 +4738,7 @@ before and after); then the spill's appends and coding. The planet cut itself wa
 Two changes to `tilestore/src/stream.rs`, each run against the oracles on its own (`.scratch/history/spill.sh`: the
 clip at bucket zoom 8 and 12 against `store-rs`, Germany against `store-rs-germany`, the places in memory;
 `storecmp.py`, 0 different in every run). The baseline was taken the same night on the unchanged program, after the
-restart, the inputs read once first; the machine was otherwise idle. One run each.
+restart, the inputs read once first; what else the machine was doing was not looked at. One run each.
 
 **1. Six workers compress and append the spill.** The pass's thread only fills the buffers; a full one is handed
 to a worker over a bounded queue (8 buffers a worker), which compresses it and appends it as one write. A file
@@ -4773,8 +4773,9 @@ the clip (both zooms) and 71,518,636 on Germany, all as they went in.
   refs at 9.79 bytes would be 128 GB; neither is measured).
 - **The cut budget still counts the old bytes.** A file's size is its records' bytes as they were before the
   coding (`way_units`), so `--cut-gib 2` cuts the same ways at once as before and the bucket phase's memory is
-  where it was: Germany 7.40 GiB (7.81 before), the clip 7.07 and 5.21 (7.26 and 4.87). The log's "GiB raw" is
-  the real bytes.
+  where it was: Germany 7.40 GiB (7.81 before), the clip 7.07 and 5.21 (7.26 and 4.87). The log's "GiB raw" and
+  `spillRawBytes` in `meta.json` are the real bytes; `largestSpillFileRawBytes`, `largestCutGroupRawBytes`,
+  `cutBudgetBytes` and the `buckets:` line are the old ones.
 
 **Not done:** the tags and heads in the spill (most of what is left; a higher zstd level on the workers is the
 cheap thing to try); the passes' own single thread (the records are still handed to the spill one by one); the

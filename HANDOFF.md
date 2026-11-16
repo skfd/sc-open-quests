@@ -1874,7 +1874,7 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   the file to length 0 first, run once: free space 291.5 GB before, 291.0 GB after the program deleted its file,
   291.0 GB 20 s later, and `ptime`'s counts as wanted. Before the change the same run left 20.4 GB taken. What in
   Windows held the deleted files was never found. Still true: never run a country through `--nodes --sparse`.
-  **Next:** the spill's appends and coding; the planet cut waits on the 2 TB drive. What follows is the incident
+  **Next:** see the last entry (the spill's appends and coding are done). What follows is the incident
   as it was written while open.
 - **WAS OPEN, the owner's: C: has about 43 GB free, not 258 GB (11-15, 21:45).** DESIGN.md, "The node file inside the
   cut, two tables trimmed, and a disk incident". Two things happened. (1) At about 21:13 `scut --nodes --sparse`
@@ -1902,8 +1902,8 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   bucket zoom 8 and 12; Germany not run to the end. The needs now come from one read of the tagged-node file (no
   index, about 7 GB less at planet size) and unkept relations are let go as read: equal to the oracles on the clip
   (z8, z12) and Germany. `.scratch/history/nodes.sh`, `trim.sh` and their `.out` files; **do not rerun `nodes.sh`
-  as it is** (its last line is the Germany run). **Next:** the delete's test above, then the spill's appends and
-  coding; the planet cut waits on the 2 TB drive.
+  as it is** (its last line is the Germany run). **Next (both done since):** the delete's test above, then the spill's appends and
+  coding; see the entry below.
 - **Built 11-15 23:40 to 11-16 00:15 (owner: this project may work through the night):** the spill's appends and
   coding, DESIGN.md "The spill off the pass's thread, and its ways' refs coded". Six workers compress and append
   the spill (Germany's pass 2 73.8 s to 27.3 s, the cut 175.5 s to 121.9 s); a way's refs and places are varint
