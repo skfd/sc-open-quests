@@ -15,12 +15,13 @@
 //!   tilestore ptime --pbf X.os[mh].pbf [--at T] --nodes F.loc [--z 14] [--sparse] [--keep]
 //!       the planet cut's passes 1 and 2 timed, the node places in a file by id (ptime.rs)
 //!   tilestore update --store S --diff N.osc.gz (--before D-1.osm.pbf | --before-loc planet.loc) --day 2026-11-13
-//!       [--polygon P.geojson | --world] [--prune-pairs]
+//!       [--polygon P.geojson | --world] [--prune-pairs] [--group-z G]
 //!       a day's diff into a new generation of the store (update.rs, tilestore.py update step for step); the node
 //!       places before the day from the clip's PBF of the day before, or from a node file by id in osmium's
 //!       dense_file_array layout (the world stream's planet.loc); the polygon is the clip's, the store's region;
 //!       --world: a store of the whole world, every tile in its region; --prune-pairs: the generation before's
-//!       way and relation pair indexes deleted once this one's are written (the planet's way pairs are 22 GB)
+//!       way and relation pair indexes deleted once this one's are written (the planet's way pairs are 22 GB);
+//!       --group-z G: the reached tiles rebuilt a cell of zoom G at a time, not in one working set
 //!   tilestore read --store S [--gen -1] --cities C.json [--base DIR] [--ring 300] --out Y.osm.pbf [--stamp T]
 
 mod clip;
@@ -101,6 +102,7 @@ fn main() {
             before_loc: arg(&args, "--before-loc").is_some(),
             world: args.iter().any(|x| x == "--world"),
             prune_pairs: args.iter().any(|x| x == "--prune-pairs"),
+            group_z: arg(&args, "--group-z").map(|s| s.parse().unwrap()),
             day: arg(&args, "--day").expect("--day"),
             polygon: arg(&args, "--polygon").map(PathBuf::from),
         }),

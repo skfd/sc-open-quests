@@ -141,6 +141,9 @@ class UpdateTest(unittest.TestCase):
             poly.write_text('{"features": [{"geometry": {"type": "Polygon", "coordinates": '
                             '[[[-0.2, 51.45], [0.0, 51.45], [0.0, 51.6], [-0.2, 51.6], [-0.2, 51.45]]]}}]}')
 
+            from compression import zstd as _z
+            zstd_d = _z.decompress
+
             def run(*a):
                 subprocess.run([str(exe), *map(str, a)], check=True, capture_output=True)
 
@@ -161,6 +164,19 @@ class UpdateTest(unittest.TestCase):
                 "--day", "after", "--world")
             r = S.compare_stores(d / "w-before", d / "r-after", ga=1, gb=0)
             self.assertEqual((r["differ"], r["onlyA"], r["onlyB"]), (0, 0, 0), ("world", r))
+            # in groups, one tile each: every tile's working set is its own old payload and the carried copies
+            run("cut", "--pbf", d / "before.osm.pbf", "--out", d / "g-before", "--day", "before")
+            run("update", "--store", d / "g-before", "--diff", d / "day.osc", "--before", d / "before.osm.pbf",
+                "--day", "after", "--polygon", poly, "--group-z", "14")
+            r = S.compare_stores(d / "g-before", d / "r-after", ga=1, gb=0)
+            self.assertEqual((r["differ"], r["onlyA"], r["onlyB"]), (0, 0, 0), ("grouped", r))
+            sg, sr = S.Store(d / "g-before", 1), S.Store(d / "r-before", 1)
+            self.assertEqual(sg.ridx["key"].tolist(), sr.ridx["key"].tolist())
+            for rid in sr.ridx["key"].tolist():
+                self.assertEqual(zstd_d(sg.relation(rid)), zstd_d(sr.relation(rid)), ("grouped", rid))
+            for f in ("wtiles", "rtiles"):
+                self.assertTrue(np.array_equal(np.load(d / "g-before" / f"{f}-0001.npy"),
+                                               np.load(d / "r-before" / f"{f}-0001.npy")), ("grouped", f))
             for f in ("wtiles", "rtiles", "relidx"):
                 a, b = np.load(d / "w-before" / f"{f}-0001.npy"), np.load(d / "r-before" / f"{f}-0001.npy")
                 self.assertTrue(np.array_equal(a if f != "relidx" else a["key"], b if f != "relidx" else b["key"]), f)

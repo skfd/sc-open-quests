@@ -17,7 +17,7 @@ use crate::tiles::{frac_deg, frac_xy, key_of};
 use crate::{log, npy, osc, pairs, tiles};
 use osmpbf::{BlobDecode, BlobReader};
 use rayon::prelude::*;
-use std::collections::{BTreeSet, HashMap};
+use std::collections::{BTreeSet, HashMap, HashSet};
 use std::fs::{self, File};
 use std::io::{BufWriter, Write};
 use std::path::{Path, PathBuf};
@@ -36,6 +36,9 @@ pub struct Args {
     pub world: bool,
     /// delete the generation before's pair indexes once this one is written (the next update reads only the newest)
     pub prune_pairs: bool,
+    /// rebuild the reached tiles in groups, one per cell of this zoom, not in one working set (a planet day's would
+    /// not fit in memory)
+    pub group_z: Option<u32>,
     pub day: String,
     /// the clip's polygon: the store's region (the planet diff's changes elsewhere stay out)
     pub polygon: Option<PathBuf>,
@@ -194,81 +197,204 @@ impl Decoded {
     }
 }
 
-/// what the working set is made of, besides the decoded tiles and relation blobs
+/// what the working set is made of, besides the copies out of tiles and blobs
 struct Ctx<'a> {
     z: u32,
     diff: &'a osc::Diff,
     bt: &'a NodeTable,
     /// changed nodes inside the region, sorted
     cn: Vec<i64>,
-    /// changed ways reaching the region, sorted
-    cw: Vec<i64>,
     /// nodes the new versions need: the changed ways' refs and the changed relations' member nodes, sorted
     needed: Vec<i64>,
+    /// the diff's share of every working set: its visible nodes among cn and needed, its visible ways among cw, and
+    /// every visible relation
+    dsub: Part,
 }
 
-/// tilestore.py update's working(): the copies of every object in the decoded tiles and blobs (one per id, a tagged
-/// node's copy first), the places of needed nodes no tile held, and the diff over them
-fn working(ctx: &Ctx, dec: &Decoded, blobs: &[Part]) -> Clip {
+fn push_node(dst: &mut Part, p: &Part, i: usize) {
+    dst.nid.push(p.nid[i]);
+    dst.lat.push(p.lat[i]);
+    dst.lon.push(p.lon[i]);
+    let t = p.tag_of[i];
+    if t < 0 {
+        dst.tag_of.push(-1);
+    } else {
+        let t = t as usize;
+        dst.tag_of.push(dst.tver.len() as i32);
+        dst.tver.push(p.tver[t]);
+        dst.tts.push(p.tts[t]);
+        dst.ntb.extend_from_slice(&p.ntb[p.n_toff[t]..p.n_toff[t + 1]]);
+        dst.n_toff.push(dst.ntb.len());
+    }
+}
+
+fn push_way(dst: &mut Part, p: &Part, i: usize) {
+    dst.wid.push(p.wid[i]);
+    dst.wver.push(p.wver[i]);
+    dst.wts.push(p.wts[i]);
+    dst.wrefs.extend_from_slice(&p.wrefs[p.w_roff[i]..p.w_roff[i + 1]]);
+    dst.w_roff.push(dst.wrefs.len());
+    dst.wtb.extend_from_slice(&p.wtb[p.w_toff[i]..p.w_toff[i + 1]]);
+    dst.w_toff.push(dst.wtb.len());
+}
+
+fn push_rel(dst: &mut Part, p: &Part, i: usize) {
+    dst.rid.push(p.rid[i]);
+    dst.rver.push(p.rver[i]);
+    dst.rts.push(p.rts[i]);
+    for m in p.r_moff[i]..p.r_moff[i + 1] {
+        dst.rmt.push(p.rmt[m]);
+        dst.rmref.push(p.rmref[m]);
+        dst.rrl.push(p.rrl[m]);
+        dst.rroles.extend_from_slice(&p.rroles[p.r_rloff[m]..p.r_rloff[m + 1]]);
+        dst.r_rloff.push(dst.rroles.len());
+    }
+    dst.r_moff.push(dst.rmt.len());
+    dst.rtb.extend_from_slice(&p.rtb[p.r_toff[i]..p.r_toff[i + 1]]);
+    dst.r_toff.push(dst.rtb.len());
+}
+
+/// the diff's share of every working set (see Ctx::dsub)
+fn diff_share(d: &osc::Diff, cn: &[i64], cw: &[i64], needed: &[i64]) -> Part {
+    let p = &d.part;
+    let mut s = Part::empty();
+    for i in 0..p.nid.len() {
+        if has(cn, p.nid[i]) || has(needed, p.nid[i]) {
+            push_node(&mut s, p, i);
+        }
+    }
+    for i in 0..p.wid.len() {
+        if has(cw, p.wid[i]) {
+            push_way(&mut s, p, i);
+        }
+    }
+    for i in 0..p.rid.len() {
+        push_rel(&mut s, p, i);
+    }
+    s
+}
+
+/// copies taken out of tiles as they pass, one per id (and a node's tagged copy after an untagged one)
+struct Capture {
+    part: Part,
+    nodes: HashSet<i64>,
+    tagged: HashSet<i64>,
+    ways: HashSet<i64>,
+    rels: HashSet<i64>,
+}
+
+impl Capture {
+    fn new() -> Capture {
+        Capture { part: Part::empty(), nodes: HashSet::new(), tagged: HashSet::new(), ways: HashSet::new(), rels: HashSet::new() }
+    }
+
+    fn node(&mut self, p: &Part, i: usize) {
+        let id = p.nid[i];
+        let fresh = if p.tag_of[i] >= 0 { self.tagged.insert(id) } else { !self.tagged.contains(&id) && self.nodes.insert(id) };
+        if fresh {
+            push_node(&mut self.part, p, i);
+        }
+    }
+
+    /// a way and the copies of its nodes the tile holds (a tile holds every node of its ways)
+    fn way(&mut self, p: &Part, w: usize) {
+        if self.ways.insert(p.wid[w]) {
+            push_way(&mut self.part, p, w);
+            for &r in &p.wrefs[p.w_roff[w]..p.w_roff[w + 1]] {
+                if let Ok(j) = p.nid.binary_search(&r) {
+                    self.node(p, j);
+                }
+            }
+        }
+    }
+
+    fn rel(&mut self, p: &Part, r: usize) {
+        if self.rels.insert(p.rid[r]) {
+            push_rel(&mut self.part, p, r);
+        }
+    }
+}
+
+/// these tiles decoded a batch at a time and handed over in order, none kept
+fn each_tile(st: &Store, keys: &[u32], mut f: impl FnMut(u32, &Part)) -> usize {
+    let mut n = 0;
+    for chunk in keys.chunks(2048) {
+        let rows: Vec<Row> = chunk.iter().filter_map(|&k| st.row(k)).collect();
+        let bufs = payloads(&st.dir, "pack", &rows);
+        let parts: Vec<Part> = bufs.par_iter().map(|b| Part::tile(b)).collect();
+        for (r, p) in rows.iter().zip(&parts) {
+            f(r.0 as u32, p);
+        }
+        n += rows.len();
+    }
+    n
+}
+
+/// the needed nodes no copy holds (an untagged node no way held): a place from the store before
+fn orphans(ctx: &Ctx, srcs: &[&Part]) -> Part {
+    let mut held: Vec<i64> = srcs.iter().flat_map(|p| p.nid.iter().copied()).collect();
+    held.par_sort_unstable();
+    held.dedup();
+    let mut o = Part::empty();
+    for &id in &ctx.needed {
+        if !has(&held, id) {
+            if let Some((lat, lon)) = ctx.bt.get(id) {
+                o.nid.push(id);
+                o.lat.push(lat);
+                o.lon.push(lon);
+                o.tag_of.push(-1);
+            }
+        }
+    }
+    o
+}
+
+/// tilestore.py update's working(): the copies of every object in these sources (one per id, a tagged node's copy
+/// first; the prototype's needed nodes no tile held come in as a source of their own, see orphans), less what the
+/// diff touches, and the diff's share over them
+fn working(ctx: &Ctx, srcs: &[&Part]) -> Clip {
     let d = &ctx.diff;
-    let mut orphan = Part::empty();
-    let srcs0: Vec<&Part> = dec.parts().chain(blobs.iter()).collect();
-    let ntile = dec.parts().count();
+    let ds = &ctx.dsub;
+    let sd = srcs.len() as u32;
+    let src = |s: u32| if s == sd { ds } else { srcs[s as usize] };
     // nodes: (id, untagged, source, row), the first copy of each id with a tagged one first
     let mut cand: Vec<(i64, bool, u32, u32)> = Vec::new();
-    for (s, p) in srcs0.iter().enumerate() {
+    for (s, p) in srcs.iter().enumerate() {
         cand.extend(p.nid.iter().enumerate().map(|(i, &id)| (id, p.tag_of[i] < 0, s as u32, i as u32)));
     }
     cand.par_sort_unstable();
     cand.dedup_by_key(|c| c.0);
-    // the needed nodes no copy holds (an untagged node no way held): a place from the store before
-    for &id in &ctx.needed {
-        if cand.binary_search_by_key(&id, |c| c.0).is_err() {
-            if let Some((lat, lon)) = ctx.bt.get(id) {
-                orphan.nid.push(id);
-                orphan.lat.push(lat);
-                orphan.lon.push(lon);
-                orphan.tag_of.push(-1);
-            }
-        }
-    }
-    let so = srcs0.len() as u32;
-    let sd = so + 1;
-    let srcs: Vec<&Part> = srcs0.iter().copied().chain([&orphan, &d.part]).collect();
-    let mut nodes: Vec<(i64, u32, u32)> =
-        cand.iter().filter(|c| !has(&d.n_all, c.0)).map(|c| (c.0, c.2, c.3)).collect();
-    nodes.extend(orphan.nid.iter().enumerate().filter(|(_, &id)| !has(&d.n_all, id)).map(|(i, &id)| (id, so, i as u32)));
-    nodes.extend(
-        d.part.nid.iter().enumerate().filter(|(_, &id)| has(&ctx.cn, id) || has(&ctx.needed, id)).map(|(i, &id)| (id, sd, i as u32)),
-    );
+    let mut nodes: Vec<(i64, u32, u32)> = cand.iter().filter(|c| !has(&d.n_all, c.0)).map(|c| (c.0, c.2, c.3)).collect();
+    drop(cand);
+    nodes.extend(ds.nid.iter().enumerate().map(|(i, &id)| (id, sd, i as u32)));
     nodes.par_sort_unstable();
     assert!(nodes.windows(2).all(|w| w[0].0 < w[1].0), "a node twice in the working set");
     // ways: the first copy of each id, the changed ones from the diff
     let mut wc: Vec<(i64, u32, u32)> = Vec::new();
-    for (s, p) in srcs0.iter().enumerate() {
+    for (s, p) in srcs.iter().enumerate() {
         wc.extend(p.wid.iter().enumerate().map(|(i, &id)| (id, s as u32, i as u32)));
     }
     wc.par_sort_unstable();
     wc.dedup_by_key(|c| c.0);
     wc.retain(|c| !has(&d.w_all, c.0));
-    wc.extend(d.part.wid.iter().enumerate().filter(|(_, &id)| has(&ctx.cw, id)).map(|(i, &id)| (id, sd, i as u32)));
+    wc.extend(ds.wid.iter().enumerate().map(|(i, &id)| (id, sd, i as u32)));
     wc.par_sort_unstable();
     assert!(wc.windows(2).all(|w| w[0].0 < w[1].0), "a way twice in the working set");
     // relations: the tiles' (blobs hold none), every visible one of the diff
     let mut rc: Vec<(i64, u32, u32)> = Vec::new();
-    for (s, p) in srcs0.iter().enumerate().take(ntile) {
+    for (s, p) in srcs.iter().enumerate() {
         rc.extend(p.rid.iter().enumerate().map(|(i, &id)| (id, s as u32, i as u32)));
     }
     rc.par_sort_unstable();
     rc.dedup_by_key(|c| c.0);
     rc.retain(|c| !has(&d.r_all, c.0));
-    rc.extend(d.part.rid.iter().enumerate().map(|(i, &id)| (id, sd, i as u32)));
+    rc.extend(ds.rid.iter().enumerate().map(|(i, &id)| (id, sd, i as u32)));
     rc.par_sort_unstable();
     assert!(rc.windows(2).all(|w| w[0].0 < w[1].0), "a relation twice in the working set");
 
     let mut c = Clip::new();
     for &(id, s, i) in &nodes {
-        let (p, i) = (srcs[s as usize], i as usize);
+        let (p, i) = (src(s), i as usize);
         c.nid.push(id);
         c.lat7.push(p.lat[i]);
         c.lon7.push(p.lon[i]);
@@ -283,7 +409,7 @@ fn working(ctx: &Ctx, dec: &Decoded, blobs: &[Part]) -> Clip {
         }
     }
     for &(id, s, i) in &wc {
-        let (p, i) = (srcs[s as usize], i as usize);
+        let (p, i) = (src(s), i as usize);
         c.wid.push(id);
         c.w_ver.push(p.wver[i]);
         c.w_ts.push(p.wts[i]);
@@ -293,7 +419,7 @@ fn working(ctx: &Ctx, dec: &Decoded, blobs: &[Part]) -> Clip {
         c.w_toff.push(c.w_tags.len() as u64);
     }
     for &(id, s, i) in &rc {
-        let (p, i) = (srcs[s as usize], i as usize);
+        let (p, i) = (src(s), i as usize);
         c.rid.push(id);
         c.r_ver.push(p.rver[i]);
         c.r_ts.push(p.rts[i]);
@@ -311,6 +437,81 @@ fn working(ctx: &Ctx, dec: &Decoded, blobs: &[Part]) -> Clip {
     c.keep_relations();
     c.place(ctx.z);
     c
+}
+
+/// a kept relation's blob for the relation store: its member ways in the working set, whole, and their nodes' places
+fn rel_blob(m: &Clip, r: usize) -> Vec<u8> {
+    let mut wi: Vec<u32> = Vec::new();
+    for j in m.roffs[r] as usize..m.roffs[r + 1] as usize {
+        if m.mtype[j] == 1 {
+            if let Ok(w) = m.wid.binary_search(&m.mref[j]) {
+                wi.push(w as u32);
+            }
+        }
+    }
+    wi.sort_unstable();
+    wi.dedup();
+    let mut u: Vec<u32> = Vec::new();
+    for &w in &wi {
+        let w = w as usize;
+        u.extend(m.wrefs[m.woffs[w] as usize..m.woffs[w + 1] as usize].iter().filter(|&&x| x != NONE));
+    }
+    u.sort_unstable();
+    u.dedup();
+    let mut cols: Vec<Col> = Vec::with_capacity(10);
+    m.way_cols(&wi, &mut cols);
+    m.place_cols(&u, &mut cols);
+    pack_cols(&cols)
+}
+
+/// the new generation's pack: reached tiles written when they changed
+struct TileWriter {
+    f: BufWriter<File>,
+    gen: i64,
+    off: i64,
+    entries: Vec<Row>,
+    unchanged: Vec<u32>,
+    changed: BTreeSet<u32>,
+}
+
+impl TileWriter {
+    /// these tiles (sorted) rebuilt by `payload`: an empty one is dropped, one equal to its old payload keeps its entry
+    fn put(&mut self, st: &Store, keys: &[u32], payload: impl Fn(u32) -> (Vec<u8>, [usize; 3]) + Sync) {
+        for chunk in keys.chunks(1024) {
+            let olds: Vec<Option<Row>> = chunk.iter().map(|&k| st.row(k)).collect();
+            let have: Vec<Row> = olds.iter().flatten().copied().collect();
+            let mut obufs = payloads(&st.dir, "pack", &have).into_iter();
+            let obufs: Vec<Option<Vec<u8>>> = olds.iter().map(|o| o.map(|_| obufs.next().unwrap())).collect();
+            let res: Vec<Option<(Vec<u8>, bool)>> = chunk
+                .par_iter()
+                .zip(obufs.par_iter())
+                .map(|(&k, old)| {
+                    let (buf, counts) = payload(k);
+                    if counts == [0, 0, 0] {
+                        return None;
+                    }
+                    let same = old.as_ref().is_some_and(|o| {
+                        zstd::stream::decode_all(&o[..]).unwrap() == zstd::stream::decode_all(&buf[..]).unwrap()
+                    });
+                    Some((buf, same))
+                })
+                .collect();
+            for (&k, r) in chunk.iter().zip(res) {
+                match r {
+                    None => {
+                        self.changed.insert(k); // the tile is empty now
+                    }
+                    Some((_, true)) => self.unchanged.push(k), // reached, but the same: the old entry stays
+                    Some((buf, false)) => {
+                        self.changed.insert(k);
+                        self.f.write_all(&buf).unwrap();
+                        self.entries.push((k as i64, self.gen as i32, self.off, buf.len() as i32));
+                        self.off += buf.len() as i64;
+                    }
+                }
+            }
+        }
+    }
 }
 
 /// the tile keys under a box in degrees (tiles.py box_tiles)
@@ -387,6 +588,8 @@ pub fn update(a: &Args) {
     let st = Store::open(&a.store);
     let (z, g) = (st.z, st.gen);
     let ng = g + 1;
+    let gz = a.group_z;
+    assert!(gz.is_none_or(|x| x <= z), "a group is no finer than a tile");
     let wtm = npy::PairMap::open(&pair_path(&st.dir, "wtiles", g));
     let rtm = npy::PairMap::open(&pair_path(&st.dir, "rtiles", g));
     let (wt, rt) = (wtm.rows(), rtm.rows());
@@ -405,7 +608,9 @@ pub fn update(a: &Args) {
     // node places after the day: the diff's (none for a deleted node), else the store before
     let after_pos = |id: i64| if has(&d.n_all, id) { dn_get(id) } else { bt.get(id) };
     let k7 = |p: Option<(i32, i32)>| p.map(|(la, lo)| key7(la, lo, z));
+    // the single working set keeps every tile it decodes; the grouped update keeps copies out of them (Capture)
     let mut dec = Decoded { order: Vec::new(), map: HashMap::new() };
+    let mut decoded_n = 0usize;
 
     // changed nodes: old and new home tiles, inside the store's region
     let mut cn = Vec::new();
@@ -420,17 +625,24 @@ pub fn update(a: &Args) {
         }
     }
     // ways holding a changed node: in the node's old home tile
-    let homes: BTreeSet<u32> = okey.iter().flatten().copied().collect();
-    dec.add(&st, homes.iter().copied());
+    let homes: Vec<u32> = okey.iter().flatten().copied().collect::<BTreeSet<u32>>().into_iter().collect();
     let mut parents: BTreeSet<i64> = BTreeSet::new();
-    for k in &homes {
-        if let Some(p) = &dec.map[k] {
-            for w in 0..p.wid.len() {
-                if p.wrefs[p.w_roff[w]..p.w_roff[w + 1]].iter().any(|&r| has(&cn, r)) {
-                    parents.insert(p.wid[w]);
-                }
+    let find_parents = |p: &Part, parents: &mut BTreeSet<i64>| {
+        for w in 0..p.wid.len() {
+            if p.wrefs[p.w_roff[w]..p.w_roff[w + 1]].iter().any(|&r| has(&cn, r)) {
+                parents.insert(p.wid[w]);
             }
         }
+    };
+    if gz.is_none() {
+        dec.add(&st, homes.iter().copied());
+        for k in &homes {
+            if let Some(p) = &dec.map[k] {
+                find_parents(p, &mut parents);
+            }
+        }
+    } else {
+        decoded_n += each_tile(&st, &homes, |_, p| find_parents(p, &mut parents));
     }
     // changed ways reaching the region: old tiles from the index, new ones from their refs' places after the day
     let mut cw: Vec<i64> = d.w_all.iter().copied().filter(|&id| !pairs_of(wt, id).is_empty()).collect();
@@ -449,7 +661,7 @@ pub fn update(a: &Args) {
     // one old tile of each (it holds the old version, its nodes, and every relation it is a member of), and the old
     // home tiles of the nodes of the new versions (their tagged attributes)
     let old_w: Vec<&[[i64; 2]]> = moved.iter().map(|&id| pairs_of(wt, id)).collect();
-    dec.add(&st, old_w.iter().filter(|s| !s.is_empty()).map(|s| s.iter().map(|p| p[1] as u32).min().unwrap()));
+    let old_mins: Vec<u32> = old_w.iter().filter(|s| !s.is_empty()).map(|s| s.iter().map(|p| p[1] as u32).min().unwrap()).collect();
     let mut new_refs: Vec<i64> = Vec::new();
     for w in 0..dp.wid.len() {
         if has(&cw, dp.wid[w]) {
@@ -464,14 +676,73 @@ pub fn update(a: &Args) {
     rel_nodes.dedup();
     rel_nodes.retain(|&id| in_region(k7(after_pos(id))));
     let needed = sorted_union(&new_refs, &rel_nodes);
-    let before_keys: BTreeSet<u32> = new_refs.iter().filter_map(|&id| k7(bt.get(id))).collect();
-    dec.add(&st, before_keys);
-    let t_find = t1.elapsed().as_secs_f64();
+    let before_keys: Vec<u32> = new_refs.iter().filter_map(|&id| k7(bt.get(id))).collect::<BTreeSet<u32>>().into_iter().collect();
+    let dsub = diff_share(d, &cn, &cw, &needed);
+    let ctx = Ctx { z, diff: d, bt: &bt, cn, needed, dsub };
 
-    // the working set so far, to find the new tiles of the moved ways and the relations they reach
+    // the working set so far, to find the new tiles of the moved ways and the relations they reach. Grouped: copies of
+    // what that working set would hold and the day can need: the moved ways (with their nodes), the relations they or
+    // a changed node reach, the needed nodes, and the changed relations' member ways that did not move (whether the
+    // working set holds them decides the relation store's blobs)
+    let mut carry = Capture::new();
+    let mut needtab = Capture::new();
+    let mut capc = Capture::new();
+    let mut dr_ways: Vec<i64> = (0..dp.rmt.len()).filter(|&m| dp.rmt[m] == 1).map(|m| dp.rmref[m]).filter(|w| !has(&moved, *w)).collect();
+    dr_ways.sort_unstable();
+    dr_ways.dedup();
+    let hit = |p: &Part, r: usize| {
+        (p.r_moff[r]..p.r_moff[r + 1]).any(|m| (p.rmt[m] == 1 && has(&moved, p.rmref[m])) || (p.rmt[m] == 0 && has(&ctx.cn, p.rmref[m])))
+    };
+    let grab_dr_ways = |p: &Part, capc: &mut Capture| {
+        for w in 0..p.wid.len() {
+            if has(&dr_ways, p.wid[w]) {
+                capc.way(p, w);
+            }
+        }
+    };
+    let orph;
+    let m1 = if gz.is_none() {
+        dec.add(&st, old_mins.iter().copied());
+        dec.add(&st, before_keys.iter().copied());
+        let mut srcs: Vec<&Part> = dec.parts().collect();
+        orph = orphans(&ctx, &srcs);
+        srcs.push(&orph);
+        working(&ctx, &srcs)
+    } else {
+        let mut seen: HashSet<u32> = HashSet::new();
+        let ta: Vec<u32> = homes.iter().chain(&old_mins).chain(&before_keys).copied().filter(|&k| seen.insert(k)).collect();
+        decoded_n += each_tile(&st, &ta, |_, p| {
+            for w in 0..p.wid.len() {
+                if has(&moved, p.wid[w]) {
+                    carry.way(p, w);
+                }
+            }
+            grab_dr_ways(p, &mut capc);
+            for i in 0..p.nid.len() {
+                if has(&ctx.needed, p.nid[i]) {
+                    needtab.node(p, i);
+                }
+            }
+            for r in 0..p.rid.len() {
+                if !has(&d.r_all, p.rid[r]) && hit(p, r) {
+                    carry.rel(p, r);
+                }
+            }
+        });
+        // every needed node those tiles hold is in needtab, so these are the prototype's orphans of this working set
+        orph = orphans(&ctx, &[&needtab.part]);
+        log(&format!(
+            "carried: {} ways, {} relations, {} nodes; {} needed nodes held, {} from the store before",
+            carry.part.wid.len(),
+            carry.part.rid.len(),
+            carry.part.nid.len(),
+            needtab.part.nid.len(),
+            orph.nid.len()
+        ));
+        working(&ctx, &[&carry.part, &needtab.part, &orph])
+    };
+    let t_find = t1.elapsed().as_secs_f64();
     let t2 = Instant::now();
-    let ctx = Ctx { z, diff: d, bt: &bt, cn, cw, needed };
-    let m1 = working(&ctx, &dec, &[]);
     let (wt_off, wt_key) = tiles::way_tiles(&m1, z);
     let new_w: HashMap<i64, &[u32]> = moved
         .iter()
@@ -558,65 +829,101 @@ pub fn update(a: &Args) {
         .into_iter()
         .filter(|&k| in_region(Some(k)))
         .collect();
-    dec.add(&st, reach.iter().copied());
     // the relation store's old blobs of the relations reached: their far member ways
     let rrows: Vec<Row> = ar.iter().filter_map(|&rid| find(&st.ridx, rid)).collect();
     let blobs: Vec<Part> = payloads(&st.dir, "rel", &rrows).par_iter().map(|b| Part::relation_blob(b)).collect();
     let t_reach = t2.elapsed().as_secs_f64();
-    drop(m1);
 
+    // rebuild the reached tiles into the new generation
     let t3 = Instant::now();
-    let m = working(&ctx, &dec, &blobs);
-    let p = pairs::build(&m, z);
-    log(&format!("tile pairs: {} node, {} way, {} relation copies", p.node.len(), p.way.len(), p.rel.len()));
-    let t_rule = t3.elapsed().as_secs_f64();
-
-    // write the reached tiles into the new generation
-    let t4 = Instant::now();
     let dir = &st.dir;
-    let mut new_entries: Vec<Row> = Vec::new();
-    let mut unchanged: Vec<u32> = Vec::new();
-    let mut changed: BTreeSet<u32> = BTreeSet::new();
-    let mut off: i64 = 0;
-    {
-        let mut f = BufWriter::with_capacity(1 << 22, File::create(dir.join(format!("pack-{ng:04}.bin"))).unwrap());
-        for chunk in reach.chunks(1024) {
-            let olds: Vec<Option<Row>> = chunk.iter().map(|&k| st.row(k)).collect();
-            let have: Vec<Row> = olds.iter().flatten().copied().collect();
-            let mut obufs = payloads(dir, "pack", &have).into_iter();
-            let obufs: Vec<Option<Vec<u8>>> = olds.iter().map(|o| o.map(|_| obufs.next().unwrap())).collect();
-            // per tile: None (empty now), or the payload and whether it equals the old one
-            let res: Vec<Option<(Vec<u8>, bool)>> = chunk
-                .par_iter()
-                .zip(obufs.par_iter())
-                .map(|(&k, old)| {
-                    let (buf, counts) = p.payload(&m, k);
-                    if counts == [0, 0, 0] {
-                        return None;
-                    }
-                    let same = old.as_ref().is_some_and(|o| {
-                        zstd::stream::decode_all(&o[..]).unwrap() == zstd::stream::decode_all(&buf[..]).unwrap()
-                    });
-                    Some((buf, same))
-                })
-                .collect();
-            for (&k, r) in chunk.iter().zip(res) {
-                match r {
-                    None => {
-                        changed.insert(k); // the tile is empty now
-                    }
-                    Some((_, true)) => unchanged.push(k), // reached, but the same: the old entry stays
-                    Some((buf, false)) => {
-                        changed.insert(k);
-                        f.write_all(&buf).unwrap();
-                        new_entries.push((k as i64, ng as i32, off, buf.len() as i32));
-                        off += buf.len() as i64;
-                    }
+    let mut tw = TileWriter {
+        f: BufWriter::with_capacity(1 << 22, File::create(dir.join(format!("pack-{ng:04}.bin"))).unwrap()),
+        gen: ng,
+        off: 0,
+        entries: Vec::new(),
+        unchanged: Vec::new(),
+        changed: BTreeSet::new(),
+    };
+    let mut wadd: Vec<[i64; 2]> = Vec::new();
+    let mut radd: Vec<[i64; 2]> = Vec::new();
+    // per reached relation the app keeps, its new blob; and the ids of those
+    let rel_out: Vec<(i64, Vec<u8>)>;
+    let mut groups = 1usize;
+    if gz.is_none() {
+        drop(m1);
+        dec.add(&st, reach.iter().copied());
+        let mut srcs: Vec<&Part> = dec.parts().chain(blobs.iter()).collect();
+        let o = orphans(&ctx, &srcs);
+        srcs.push(&o);
+        let m = working(&ctx, &srcs);
+        let p = pairs::build(&m, z);
+        log(&format!("tile pairs: {} node, {} way, {} relation copies", p.node.len(), p.way.len(), p.rel.len()));
+        tw.put(&st, &reach, |k| p.payload(&m, k));
+        for &id in &moved {
+            if let Ok(r) = m.wid.binary_search(&id) {
+                wadd.extend(p.wt_key[p.wt_off[r] as usize..p.wt_off[r + 1] as usize].iter().map(|&k| [id, k as i64]));
+            }
+        }
+        for &rid in &ar {
+            if let Ok(r) = m.rid.binary_search(&rid) {
+                radd.extend(p.rel_keys[r].iter().filter(|k| reach.binary_search(k).is_ok()).map(|&k| [rid, k as i64]));
+            }
+        }
+        let kept: Vec<usize> = ar.iter().filter_map(|&rid| m.rid.binary_search(&rid).ok()).filter(|&r| m.r_kept[r]).collect();
+        rel_out = kept.par_iter().map(|&r| (m.rid[r], rel_blob(&m, r))).collect();
+        decoded_n = dec.order.len();
+    } else {
+        // in groups of the reached tiles under one cell of zoom gz: each group's working set is its own old tiles and
+        // the carried copies; it holds every object that lands in the group's tiles, whole (DESIGN.md)
+        let gz = gz.unwrap();
+        let (sh, mask) = (z - gz, (1u32 << z) - 1);
+        let cell = |k: u32| ((k >> z) >> sh) << gz | ((k & mask) >> sh);
+        let mut by_cell: Vec<(u32, u32)> = reach.iter().map(|&k| (cell(k), k)).collect();
+        by_cell.sort_unstable();
+        let mut i = 0;
+        groups = 0;
+        while i < by_cell.len() {
+            let c = by_cell[i].0;
+            let j = i + by_cell[i..].partition_point(|x| x.0 == c);
+            let keys: Vec<u32> = by_cell[i..j].iter().map(|x| x.1).collect();
+            i = j;
+            groups += 1;
+            let rows: Vec<Row> = keys.iter().filter_map(|&k| st.row(k)).collect();
+            let parts: Vec<Part> = payloads(dir, "pack", &rows).par_iter().map(|b| Part::tile(b)).collect();
+            decoded_n += parts.len();
+            for p in &parts {
+                grab_dr_ways(p, &mut capc);
+            }
+            let srcs: Vec<&Part> = parts.iter().chain([&carry.part, &needtab.part, &orph]).collect();
+            let m = working(&ctx, &srcs);
+            let p = pairs::build(&m, z);
+            tw.put(&st, &keys, |k| p.payload(&m, k));
+            for &rid in &ar {
+                if let Ok(r) = m.rid.binary_search(&rid) {
+                    radd.extend(p.rel_keys[r].iter().filter(|k| keys.binary_search(k).is_ok()).map(|&k| [rid, k as i64]));
                 }
             }
         }
-        f.flush().unwrap();
+        for &id in &moved {
+            if let Ok(r) = m1.wid.binary_search(&id) {
+                wadd.extend(wt_key[wt_off[r] as usize..wt_off[r + 1] as usize].iter().map(|&k| [id, k as i64]));
+            }
+        }
+        // the relation store: the reached relations from their old blobs and the carried copies
+        let mut srcs: Vec<&Part> = blobs.iter().collect();
+        srcs.extend([&carry.part, &capc.part, &needtab.part, &orph]);
+        let mc = working(&ctx, &srcs);
+        let kept: Vec<usize> = ar.iter().filter_map(|&rid| mc.rid.binary_search(&rid).ok()).filter(|&r| mc.r_kept[r]).collect();
+        rel_out = kept.par_iter().map(|&r| (mc.rid[r], rel_blob(&mc, r))).collect();
+        log(&format!("{groups} groups at zoom {gz}; {} member ways of changed relations carried for the relation store", capc.part.wid.len()));
     }
+    tw.f.flush().unwrap();
+    let t_rule = t3.elapsed().as_secs_f64();
+
+    let t4 = Instant::now();
+    let TileWriter { entries: new_entries, mut unchanged, changed, off, .. } = tw;
+    unchanged.sort_unstable(); // grouped, the tiles come a cell at a time
     let replaced: BTreeSet<u32> = reach.iter().copied().filter(|k| unchanged.binary_search(k).is_err()).collect();
     let mut idx: Vec<Row> = st.idx.iter().copied().filter(|r| !replaced.contains(&(r.0 as u32))).collect();
     idx.extend_from_slice(&new_entries);
@@ -624,62 +931,24 @@ pub fn update(a: &Args) {
     npy::save_idx(&dir.join(format!("idx-{ng:04}.npy")), &idx);
     // the way and relation tile indexes
     let gone_w = sorted_union(&moved, &d.w_all);
-    let mut add: Vec<[i64; 2]> = Vec::new();
-    for &id in &moved {
-        if let Ok(r) = m.wid.binary_search(&id) {
-            add.extend(p.wt_key[p.wt_off[r] as usize..p.wt_off[r + 1] as usize].iter().map(|&k| [id, k as i64]));
-        }
-    }
-    add.sort_unstable();
-    npy::merge_pairs(&pair_path(dir, "wtiles", ng), wt, |q| !has(&gone_w, q[0]), &add);
+    wadd.sort_unstable();
+    npy::merge_pairs(&pair_path(dir, "wtiles", ng), wt, |q| !has(&gone_w, q[0]), &wadd);
     // a reached relation's tiles: the working set's inside the day's reach, the old ones outside it (a far member node
     // or way is not in the working set, and a tile not reached did not change)
-    let ar_rows: Vec<usize> = ar.iter().filter_map(|&rid| m.rid.binary_search(&rid).ok()).collect();
-    let kept_ar: Vec<i64> = ar_rows.iter().filter(|&&r| m.r_kept[r]).map(|&r| m.rid[r]).collect();
+    let kept_ar: Vec<i64> = rel_out.iter().map(|r| r.0).collect();
     let gone_r = sorted_union(&ar, &d.r_all);
-    let mut add: Vec<[i64; 2]> = Vec::new();
-    for &r in &ar_rows {
-        add.extend(p.rel_keys[r].iter().filter(|k| reach.binary_search(k).is_ok()).map(|&k| [m.rid[r], k as i64]));
-    }
-    add.sort_unstable();
+    radd.sort_unstable();
     npy::merge_pairs(&pair_path(dir, "rtiles", ng), rt, |q| {
         !has(&gone_r, q[0]) || (has(&kept_ar, q[0]) && reach.binary_search(&(q[1] as u32)).is_err())
-    }, &add);
-    // the relation store: the reached relations' blobs again, from the working set
+    }, &radd);
+    // the relation store: the reached relations' blobs again
     let mut rentries: Vec<Row> = Vec::new();
     let mut roff: i64 = 0;
     {
         let mut f = BufWriter::with_capacity(1 << 22, File::create(dir.join(format!("rel-{ng:04}.bin"))).unwrap());
-        let kept_rows: Vec<usize> = ar_rows.iter().copied().filter(|&r| m.r_kept[r]).collect();
-        let bufs: Vec<Vec<u8>> = kept_rows
-            .par_iter()
-            .map(|&r| {
-                let mut wi: Vec<u32> = Vec::new();
-                for j in m.roffs[r] as usize..m.roffs[r + 1] as usize {
-                    if m.mtype[j] == 1 {
-                        if let Ok(w) = m.wid.binary_search(&m.mref[j]) {
-                            wi.push(w as u32);
-                        }
-                    }
-                }
-                wi.sort_unstable();
-                wi.dedup();
-                let mut u: Vec<u32> = Vec::new();
-                for &w in &wi {
-                    let w = w as usize;
-                    u.extend(m.wrefs[m.woffs[w] as usize..m.woffs[w + 1] as usize].iter().filter(|&&x| x != NONE));
-                }
-                u.sort_unstable();
-                u.dedup();
-                let mut cols: Vec<Col> = Vec::with_capacity(10);
-                m.way_cols(&wi, &mut cols);
-                m.place_cols(&u, &mut cols);
-                pack_cols(&cols)
-            })
-            .collect();
-        for (&r, b) in kept_rows.iter().zip(&bufs) {
+        for (rid, b) in &rel_out {
             f.write_all(b).unwrap();
-            rentries.push((m.rid[r], ng as i32, roff, b.len() as i32));
+            rentries.push((*rid, ng as i32, roff, b.len() as i32));
             roff += b.len() as i64;
         }
         f.flush().unwrap();
@@ -709,8 +978,9 @@ pub fn update(a: &Args) {
         "tilesUnchanged": unchanged.len(), "gen": ng, "day": a.day, "diff": a.diff.to_string_lossy(),
         "by": "tilestore update (Rust)", "before": a.before.to_string_lossy(),
         "polygon": a.polygon.as_ref().map(|p| p.to_string_lossy().into_owned()), "world": a.world, "prunePairs": a.prune_pairs,
+        "groupZ": a.group_z, "groups": groups,
         "tilesReached": reach.len(), "tilesWritten": new_entries.len(), "tilesNew": tiles_new, "tilesDropped": tiles_dropped,
-        "bytes": off, "relBytes": roff, "relBlobs": rentries.len(), "tilesDecoded": dec.order.len(),
+        "bytes": off, "relBytes": roff, "relBlobs": rentries.len(), "tilesDecoded": decoded_n,
         "secondsDiff": r1(t_diff), "secondsFind": r1(t_find), "secondsReach": r1(t_reach), "secondsRule": r1(t_rule),
         "secondsWrite": r1(t_write), "seconds": r1(t0.elapsed().as_secs_f64()),
     });
