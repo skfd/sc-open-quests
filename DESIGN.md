@@ -4596,3 +4596,66 @@ held against until a planet store exists (unknown 5).
 **Next:** the spill-file memory fix (spill files per z7 or z8 cell, or fewer buckets at once, with the working set
 now logged per phase by `ptime::memory`), then the spill's coding and the passes' single threads; the whole cut
 still waits on disk (node file 115 GB, spill about 167 GB, store 97-136 GB with its indexes).
+
+### The bucket phase in bounded memory (11-15, 19:10-20:00; owner: "go on")
+
+Germany's 33.4 GiB peak had a likely cause, not a measured one. Now measured, then fixed (`tilestore/src/stream.rs`).
+
+**The cause, measured.** `scut` logs the working set and private bytes after every phase (`ptime::memory`), and
+samples the working set every 50 ms through the bucket phase (the process's own peak cannot be reset, and the
+passes may have set it). Germany, the old arrangement (`--file-z 6 --cut-gib 0`: a spill file a z6 cell, one file at
+a time, its buckets side by side): **11.3 GiB at most through the passes, 31.3 GiB in the bucket phase**, the
+largest spill file 9.07 GiB of records. So the peak was the densest z6 cell, as supposed.
+
+**The fix, three parts.**
+- **A spill file a bucket** (`--file-z`, default the bucket zoom; it was two zooms coarser). Germany: 167 files
+  instead of 22; the clip at bucket zoom 12: 8,561 files.
+- **The spill's buffers are capped together** at 1 GiB (each still goes out at 4 MiB): with a file a bucket there
+  are thousands of buffers, and without the cap their sum is not bounded. Past the cap every buffer is written.
+- **Spill files are cut in groups under a budget** (`--cut-gib`, default 2: GiB of records, before compression):
+  as many files as fit, one at least, cut side by side; their tiles written in order; then the next group.
+Before the phase, what the passes held is dropped (the relations, the member and tagged-node tables), not only the
+node places.
+
+**Exact: every run below equals its oracle** (`storecmp.py`: tiles, relation blobs, both pair indexes; Germany
+against `store-rs-germany`, 190,006 tiles and 628,034 blobs; the clip against `store-rs`, 59,026 and 438,232). Each
+setting was run twice (once before the sampler was added), eleven runs in all, 0 different in each.
+
+**Memory and time, the second set of runs, the machine otherwise idle (pass 2 took 61-62 s in all four Germany
+runs):**
+| input | spill files | budget | groups | largest group, records | working set in the bucket phase | bucket phase | whole cut | process peak |
+|---|---|---|---|---|---|---|---|---|
+| Germany | z6 cells (old) | one file | 22 | 9.07 GiB | **31.3 GiB** | 76.5 s | 175.6 s | 31.3 GiB |
+| Germany | a bucket | 2 GiB | 11 | 1.98 GiB | **7.8 GiB** | 62.7 s | 161.0 s | 11.4 GiB |
+| Germany | a bucket | 0.5 GiB | 37 | 1.17 GiB | 6.7 GiB | 93.9 s | 192.0 s | 11.4 GiB |
+| Germany | a bucket | 8 GiB | 3 | 7.60 GiB | 25.7 GiB | 48.2 s | 146.3 s | 25.7 GiB |
+| clip, bucket z8 | a bucket | 2 GiB | 4 | 1.95 GiB | 7.6 GiB | 14.2 s | 54.3 s | 7.6 GiB |
+| clip, bucket z12 | a bucket | 2 GiB | 4 | 2.00 GiB | 5.4 GiB | 18.8 s | 82.1 s | 7.8 GiB |
+
+- **The bucket phase's memory now follows the budget, not the file:** about 3 to 3.5 GiB of working set for each
+  GiB of records cut at once (31.3 for 9.07, 25.7 for 7.60, 7.8 for 1.98). One run per setting with the sampler.
+- **Its floor is the largest single bucket.** At a 0.5 GiB budget the largest group is still 1.17 GiB: Germany's
+  densest z8 bucket alone, which no budget splits. The planet's densest z8 bucket is not known; if it is too large,
+  a finer bucket zoom is the lever (the clip is exact at z12).
+- **Germany's process peak is now the passes', 11.4 GiB,** of which about 7 GiB is the node places held in memory
+  here. The planet keeps those in the file by id (`ptime`), so this figure does not carry over either way.
+- **Time is not worse at the default:** the bucket phase 62.7 s against 76.5 s, the cut 161.0 s against 175.6 s. A
+  smaller budget costs time (93.9 s at 0.5 GiB), a larger one buys a little (48.2 s at 8 GiB) for 18 GiB more.
+- The spill is slightly smaller with a file a bucket on Germany (6.71 GiB, 11.96 bytes a ref, against 6.89 and
+  12.28) and slightly larger on the clip at z12 (13.30 bytes a ref against 12.79): frames are smaller.
+
+**The earlier figures, for the record:** 33.4 GiB and 629.5 s for Germany were before `mimalloc`; the old
+arrangement with it is 31.3 GiB and 175.6 s, so most of the time lost then was the allocator, not the cut.
+
+**Still in memory through the passes, and not bounded for the planet** (designed as "memory to trim", unchanged):
+the relations of pass 0, all of them, kept or not; the tagged-node index, 20 bytes a tagged node in a 24-byte
+tuple, so about 7 GB for the planet's 298.9 million; the tagged bit (1.8 GB at 14.34 billion ids); the member
+ways' positions and tiles. Germany holds 12.7 GiB of private bytes after pass 2 with the places in memory; what the
+planet holds with the places in a file has not been run.
+
+**Not done:** the passes joined to the node file (`scut` still keeps places in memory; `ptime` has the file but no
+spill); the spill written on one thread; the spill's coding (12-13 bytes a ref); the antimeridian's whole-row way.
+
+**Next:** `scut` with the node file by id (`--nodes F.loc`), held against today's `scut` on the clip and Germany
+through a sparse file; then the tagged-node index and the relations trimmed. After that the planet cut needs only
+disk: node file 115 GB, spill about 167 GB as coded, store 97-136 GB with its indexes.

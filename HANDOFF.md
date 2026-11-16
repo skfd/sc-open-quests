@@ -1843,6 +1843,24 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   degrees apart (one way has a whole row of 16,384 tiles, not looked up); refs are 13.08 billion, so the spill as
   coded is about 167 GB; node ids reach 14.34 billion. **The node file is deleted** (C: 259 GB free). Checked
   below planet size only: Berlin through a sparse node file gives `scut --at`'s nodes, ways, refs and pairs.
-  **Next: the spill-file memory fix** (Germany's 33.4 GiB; `ptime::memory` logs working set and private bytes),
+  **Next: the spill-file memory fix** (done, the next entry),
   then the spill's coding and the single-threaded spilling. The whole cut waits on disk: node file 115 GB, spill
   about 167 GB, store 97-136 GB. The update in Rust is independent.
+- **The streaming cut's bucket phase in bounded memory: done, exact (11-15, 19:10-20:00; owner: "go on").**
+  DESIGN.md, "The bucket phase in bounded memory". Measured first: Germany's peak was the bucket phase, 31.3 GiB
+  (the passes 11.3 GiB), the densest z6 spill file read whole. Now **a spill file a bucket** (`--file-z`, default
+  the bucket zoom), the spill buffers capped at 1 GiB together, and **spill files cut in groups under a budget**
+  (`--cut-gib`, default 2 GiB of records). Germany's bucket phase: **7.8 GiB instead of 31.3**, 62.7 s instead of
+  76.5 s; about 3 to 3.5 GiB of working set per GiB of records cut at once; the floor is the largest single bucket
+  (Germany's z8: 1.17 GiB of records; the planet's is not known, a finer `--bucket-z` is the lever). **Equal to the
+  oracles in all eleven runs** (Germany against `.scratch/tiles/store-rs-germany`, the clip at bucket zoom 8 and 12
+  against `store-rs`; `--file-z 6 --cut-gib 0` is the old arrangement). `scut` logs working set and private bytes
+  per phase and samples the bucket phase. Germany's process peak is now the passes' 11.4 GiB, mostly the node
+  places in memory, which the planet keeps in a file. `.scratch/history/mem.sh` reruns the six settings (about 20
+  minutes; results `mem.out`, `mem2.out`, logs `g2-*.log`, `c2-*.log`, `storecmp-*.json` there); the test stores
+  are deleted, the two oracles kept (12 GB, can go once `scut` with the node file is proven).
+  **Still unbounded for the planet, in the passes:** all relations in memory, the tagged-node index (about 7 GB for
+  298.9M tagged nodes), the member ways' tables. **Next: `scut --nodes F.loc`**, the node file by id inside the cut
+  (today only `ptime` has it), held against `scut` on the clip and Germany through a sparse file; then trim those
+  tables. Then the planet cut needs only disk (node file 115 GB, spill about 167 GB, store 97-136 GB). The update
+  in Rust is independent.
