@@ -4829,7 +4829,7 @@ Room made first (the scratch cleared, C: 544 GB free), so it ran on C: without t
 `.scratch/planet-cut/run.sh` (hidden, log `logs/planet-cut.log`): `scut --pbf history-261102.osh.pbf --at
 2026-11-02T00:00:00Z --day 2026-11-02 --nodes planet.loc --out store`, defaults (z14 tiles, bucket z8, 2 GiB
 budget), the node file not sparse, binary main at 4b1003b4 copied out of `target/` and smoke-tested first (Germany
-through a node file, equal to `store-rs-germany`). Alone on the machine throughout. One run.
+through a node file, equal to `store-rs-germany`). Nothing else of ours ran but two `du`/`find` size scans of the store in the bucket phase. One run.
 
 | step | time | what it did |
 |---|---|---|
@@ -4849,16 +4849,17 @@ through a node file, equal to `store-rs-germany`). Alone on the machine througho
 - **The spill:** 28,329 files, 211.80 GiB of records, **90.16 GiB written, 7.40 bytes a ref** (Germany 9.79; the
   guess was 137 GB). 1,108,345 appends; every buffer was full at once 148 times, and **the pass waited 807 s for the
   six workers**, a third of pass 2: more workers, or a coarser `--file-z`, is the lever if the cut must be faster.
-- **The store is larger than designed: 268 GB on disk.** The pack 232.55 GiB, the relation store 12.6 GiB, the
+- **The store is larger than designed: 268 GiB on disk (about 288 GB).** The pack 232.55 GiB, the relation store 12.6 GiB, the
   way-tiles index 20.8 GiB, the rest about 1.6 GiB. The design's 97-136 GB for the tiles (1.14 to 1.60 times the
   PBF) was low: the planet's pack is about 2.7 times its 85 GB PBF, against Germany's 1.60 and the clip's 1.14, from
   long ways copied into every tile they cross outside cities. "Smaller tiles" would not shrink this; fewer copies
   of a long way would.
 - **Memory:** private bytes at most 11.6 GiB (pass 2); the working set reached 69.9 GiB in pass 2, the mapped node
   file's pages; the bucket phase at most 22.3 GiB (the planet's densest bucket fits the default budget).
-- **Disk:** 544 GB free at the start, **the lowest reading 249.9 GB** (every 5 minutes, at 03:27, near the bucket
-  phase's end): about 294 GB at the peak, inside the design's 290-310. 283 GB free at the end with the store; the
-  node file and `work` were deleted by the program and their space came back.
+- **Disk** (`df -BM`, MiB): 544,259 free at the start (531.5 GiB), **the lowest reading 249,948 (244.1 GiB)**, every
+  5 minutes, at 03:27 near the bucket phase's end: about 287 GiB (309 GB) at the peak, inside the design's 290-310 GB.
+  276.8 GiB free at the end with the store; the node file and `work` were deleted by the program and their space
+  came back.
 
 **Exactness at planet size (the design's item 5): the planet store agrees with the clip of the same instant
 wherever the clip is whole.** `tools/stream/tilecheck/subcmp.py --clip S1 --planet S2 --poly P [--inset-km 2]`
@@ -4871,17 +4872,20 @@ unpinned after), cut by the same binary (`cut`, 58,314 tiles, 25.7 s), `.scratch
 | 2 km | 14,001 | 13,964 | 32 | 5 | 0 |
 | 0.5 km | 16,828 | 16,770 | 50 | 8 | 0 |
 
-**Every difference is a way the planet has and the clip lacks**, and nothing else (no node, way or relation of the
-clip is missing from the planet): way 153021227 (3 nodes, from Kent to Surrey, across London's box), 1091714367
-(8 nodes, along the Kattegat coast, across Göteborg's box) and 172152780 (3 nodes, the same). **Every node of each
-lies outside the clip's polygon**, so `osmium extract` leaves them out while their segments cross the clip's tiles:
+**Every difference is a way the planet has and the clip lacks, and nothing else:** for all 58 tiles (0.5 km; the
+37 at 2 km among them), the planet's tile with those ways and the nodes only they bring taken out equals the clip's,
+node, way and relation, version, tags and refs (`.scratch/planet-cut/why3.py`; on the 11-12 clip against 11-02 it
+explains 4 of 5,964). Four ways: 153021227 (3 nodes, from Kent to Surrey, across London's box), 1091714367 (8
+nodes, along the Kattegat coast, across Göteborg's box), 172152780 (3 nodes, the same) and 1117929203 (6 nodes).
+**Every node of each lies outside the clip's polygon**, so `osmium extract` leaves them out while their segments cross the clip's tiles:
 the case "Why not the world files of the monthly count" names. There the planet store is right and the clip is not.
 The comparison itself: the clip against itself equal (13,996 tiles), the 11-12 clip against 11-02 not (5,960 differ).
 Not compared: the relation store's blobs and the pair indexes (a clip's relations are cut at its edge). **Read:**
-`tilestore read` of t2n's 331 tiles from the planet store, 3.17 s cold (2.38 s finding the tiles in a 232 GiB pack;
-the clip's store 1.07 s); tile bytes within 101 bytes of the clip's, and about 300,000 more nodes and 10,000 more
-ways from the relation store, whose relations carry their member ways whole.
+`tilestore read` of t2n's 331 tiles from the planet store, 3.17 s, one run, after the comparisons had read many
+of the same tiles (2.38 s of it finding the tiles, not explained; the clip's store 1.07 s); tile bytes within 101
+bytes of the clip's, and about 300,000 more nodes and 10,000 more ways, likely from the relation store (11.6 MB of
+relation blobs against 9.0 MB: a planet relation carries its member ways whole), not shown object by object.
 
 **Not done:** the update in Rust (a current store is this cut plus every day since, or a cut of the 12-07 file);
 the engine's count on a read of the planet store; the antimeridian's whole-row way in this store. Left on disk:
-`.scratch/planet-cut/store` (268 GB), `clip-1102` (1.9 GiB), `subcmp-*.json`, `read-*.osm.pbf`, `why*.py`.
+`.scratch/planet-cut/store` (268 GiB), `clip-1102` (1.9 GiB), `subcmp-*.json`, `read-*.osm.pbf`, `why*.py`.

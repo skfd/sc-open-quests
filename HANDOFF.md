@@ -1957,13 +1957,15 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   large writes on C:.) If it stops with exit 101, remove `planet.loc` and `store/work` by hand. The oracle for
   its exactness, `europe-2026-11-02.osm.pbf` (sequence 5164, the same instant), is pinned in `europe/pins.json`.
 - **The planet cut ran to the end and agrees with the clip of the same instant (11-16, 01:47-03:30; owner: "Yes,
-  run the cut").** DESIGN.md, "The planet cut, run". 6,135.7 s; 32,110,824 tiles; **the store is 268 GB on disk**
+  run the cut").** DESIGN.md, "The planet cut, run". 6,135.7 s; 32,110,824 tiles; **the store is 268 GiB on disk**
   (pack 232.55 GiB, about 2.7 times the planet's PBF, against the design's 97-136 GB), `.scratch/planet-cut/store`.
-  Spill 90.16 GiB (7.40 bytes a ref); lowest free reading 249.9 GB (about 294 GB at the peak); private memory at
-  most 11.6 GiB. **Exactness:** inside the 11-02 europe clip (2 km in), 13,964 of 14,001 tiles equal; the 37 others
-  hold three ways the planet has and the clip lacks, each with every node outside the clip's polygon (osmium's
-  extract drops them; the planet is right). `tools/stream/tilecheck/subcmp.py`. A read of t2n's 331 tiles from it:
-  3.17 s cold. **C: 274 GB free now**, the 12-07 job needs about 170 GB. **Next, proposed:** the update in Rust
-  (first act: the Python `update` on `store-rs`, then `storecmp.py --ga 1 --gb 1`), so this store can be brought to
-  a current day; or the engine's count on a planet read of t2n's rectangles against `.scratch/tiles/ref/`. Open for
-  the owner: whether the 268 GB store stays on C: until the 12-07 cut replaces it.
+  Spill 90.16 GiB (7.40 bytes a ref); about 287 GiB at the peak; private memory at most 11.6 GiB. **Exactness:**
+  inside the 11-02 europe clip (2 km in), 13,964 of 14,001 tiles equal; every one of the other tiles (58 at 0.5 km)
+  equals the clip's once four ways the clip lacks are taken out, ways whose nodes all lie outside the clip's polygon
+  (osmium's extract drops them; the planet is right). `tools/stream/tilecheck/subcmp.py`,
+  `.scratch/planet-cut/why3.py`. **C: 274 GiB free now.** Beside the store, the world stream's rebuild (about 107
+  GiB node store plus about 48 GB of rows) and the 12-07 job (about 170 GB) no longer both fit: before 12-07 07:30
+  either `planet.loc` goes again or this store does (owner's call). **Next, proposed:** the update in Rust (first
+  act: the Python `update` on `store-rs`, then `storecmp.py --ga 1 --gb 1`), so this store can be brought to a
+  current day; or the engine's count on a planet read of t2n's rectangles against the engine on
+  `europe-2026-11-02.osm.pbf` itself (re-pinned for it; `.scratch/tiles/ref/` is the 11-12/11-13 recount, not 11-02).

@@ -90,6 +90,9 @@ def main():
             ca, cp = TS.unpack_cols(a), TS.unpack_cols(p)
             cols = [n for n, (u, v) in enumerate(zip(ca, cp)) if len(u) != len(v) or (u != v).any()]
             res["examples"].append({"key": k, "x": k >> T.Z, "y": k & ((1 << T.Z) - 1), "differingColumns": cols})
+    res["onlyKeys"] = inner[in_c != in_p].tolist()
+    res["differKeys"] = [k for k in inner[in_c & in_p].tolist()
+                         if zstd.decompress(payload(sc, ic, k)) != zstd.decompress(payload(sp, ip, k))]
     res["equal"] = not (res["differ"] or res["onlyClip"] or res["onlyPlanet"])
     print(json.dumps(res, indent=1))
     sys.exit(0 if res["equal"] else 1)
