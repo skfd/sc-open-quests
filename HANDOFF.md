@@ -1869,7 +1869,14 @@ only; (4) the flip itself is the owner's: register `kk-SCOpenQuests-flip` or run
   (today only `ptime` has it), held against `scut` on the clip and Germany through a sparse file; then trim those
   tables. Then the planet cut needs only disk (node file 115 GB, spill about 167 GB, store 97-136 GB). The update
   in Rust is independent.
-- **OPEN, the owner's: C: has about 43 GB free, not 258 GB (11-15, 21:45).** DESIGN.md, "The node file inside the
+- **CLOSED 11-15, 23:20: the space is back and the delete is fixed.** The owner restarted at 23:14; C: had 283 GB
+  free after it (the files in `$Extend\$Deleted` went with the restart). The Berlin test of the delete that cuts
+  the file to length 0 first, run once: free space 291.5 GB before, 291.0 GB after the program deleted its file,
+  291.0 GB 20 s later, and `ptime`'s counts as wanted. Before the change the same run left 20.4 GB taken. What in
+  Windows held the deleted files was never found. Still true: never run a country through `--nodes --sparse`.
+  **Next:** the spill's appends and coding; the planet cut waits on the 2 TB drive. What follows is the incident
+  as it was written while open.
+- **WAS OPEN, the owner's: C: has about 43 GB free, not 258 GB (11-15, 21:45).** DESIGN.md, "The node file inside the
   cut, two tables trimmed, and a disk incident". Two things happened. (1) At about 21:13 `scut --nodes --sparse`
   on Germany filled the disk (2.0 GB free) and died; its file was deleted by hand at 21:14:37. A region's sparse
   node file is large (Berlin 22.9 GB, Germany more than 250 GB); **never run a country through `--nodes

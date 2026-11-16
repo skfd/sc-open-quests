@@ -4724,5 +4724,11 @@ took 155.8 s and 183.3 s against 6-9 s in memory, pass 2 49.3 s and 64.2 s again
    40 GiB floor instead. Finding or freeing the space needs an elevated prompt (`vssadmin list shadowstorage`,
    `fsutil volume diskfree C:`, `chkdsk C:` read-only) or a restart, which are the owner's.
 
-**Next, once the disk is back:** show the cut-to-nothing delete frees the space (Berlin, 23 GB, watch free space
+**Closed 11-15, 23:20.** The held files were in `C:\$Extend\$Deleted` (176.4 GiB on disk, the owner's WinDirStat):
+deleted by name and still referenced by Windows, no process of ours left. A restart released them (283 GB free
+after it). **The cut-to-nothing delete is shown to work,** one run on Berlin: 291.5 GB free before, 291.0 GB after
+the program deleted its 22.9 GB file, 291.0 GB 20 s later; the same run left 20.4 GB taken before the change. What
+held the files is not known; cutting the file first makes it not matter.
+
+**Next, as written before the restart (its first item is done):** show the cut-to-nothing delete frees the space (Berlin, 23 GB, watch free space
 before and after); then the spill's appends and coding. The planet cut itself waits on the 2 TB drive.
