@@ -614,6 +614,31 @@ AREA_CITIES = int(os.environ.get("WORLD_CELLS_AREA_CITIES", "2"))
 GC_OPTS = "-XX:MaxGCPauseMillis=5000"
 
 
+def partcache(out: Path) -> None:
+    """DIR/parts.cache from every DIR/files/<f>/parts registry: each outline once, as raw doubles, so an engine run
+    reads it instead of opening and parsing its GeoJSON (Europe rehearsal f0, 62,513 outlines: 34 s to 2.2 s). Beside
+    it, parts.cache.json stamps the world's places.json: runs use the cache only while that matches
+    (placesets.parts_cache), since the engine trusts its entries without checking each outline's file."""
+    sys.path.insert(0, str(ROOT / "tools" / "stream"))
+    import placesets
+    t = time.time()
+    stamp = placesets.places_stamp(out)
+    cache = out / placesets.PARTS_CACHE
+    r = subprocess.run([str(run.ENGINE_BAT), "partcache", "--parts", rel(out / "files"), "--out", rel(cache)],
+                       cwd=ROOT, env=run.engine_env(None))
+    if r.returncode:
+        raise SystemExit(f"partcache failed ({r.returncode})")
+    write_json(cache.with_name(cache.name + ".json"), {"stamp": stamp, "built": time.strftime("%Y-%m-%dT%H:%M:%S")})
+    print(f"partcache: {cache.stat().st_size / 1e6:.0f} MB in {time.time() - t:.0f} s")
+
+
+def parts_cache_args(out: Path) -> list[str]:
+    sys.path.insert(0, str(ROOT / "tools" / "stream"))
+    import placesets
+    c = placesets.parts_cache(out)
+    return ["--parts-cache", rel(c)] if c else []
+
+
 def engine(args: list[str], tz: str, heap_gb: int, log: Path, commit_all: bool = False) -> tuple[int, float]:
     env = run.engine_env(tz)  # no heap=True: the -Xmx below is what two engines at once can each have
     opts = f" -Xmx{heap_gb}g -XX:ErrorFile={log.parent / 'hs_err_%p.log'} -Dopenquests.areaCities={AREA_CITIES} {GC_OPTS}"
@@ -644,6 +669,7 @@ def count(out: Path, engines: int, heap_gb: int, delete_cut: bool = False, dump_
         log = d / "log.txt"
         code, secs = engine(["count", "--pbf", str(pbf), "--quests", rel(quests), "--cities", rel(d / "cities.json"),
                              "--out", rel(d / out_name), "--notes", rel(notes_for(out, f["id"])), "--parts", rel(d / "parts"),
+                             *parts_cache_args(out),
                              *(["--dump-matches", rel(d / "matches.tsv"), "--dump-ids", rel(dump_ids)] if dump_ids else []),
                              *(["--dump-state", rel(d / "state.bin")] if state else [])],
                             p["timeZone"], heap_gb, log, commit_all=gated)
@@ -843,6 +869,7 @@ def main(argv=None) -> None:
     a = sub.add_parser("storecut"); a.add_argument("--store", type=Path, default=ROOT / ".scratch/planet-cut/store")
     a.add_argument("--out", type=Path, required=True); a.add_argument("--only", help="comma-separated file ids")
     a.add_argument("--at", help="the day the store must be at")
+    a = sub.add_parser("partcache"); a.add_argument("--out", type=Path, required=True)
     a = sub.add_parser("notes"); a.add_argument("--out", type=Path, required=True)
     a = sub.add_parser("count"); a.add_argument("--out", type=Path, required=True)
     # one engine with two cells under way fills the CPU: two engines side by side took 223 s for two files against
@@ -868,6 +895,8 @@ def main(argv=None) -> None:
         cut(o.pbf, o.out, o.keep_regions)
     elif o.cmd == "storecut":
         storecut(o.store, o.out, o.only.split(",") if o.only else None, o.at)
+    elif o.cmd == "partcache":
+        partcache(o.out)
     elif o.cmd == "notes":
         notes(o.out)
     elif o.cmd == "count":

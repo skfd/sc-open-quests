@@ -83,7 +83,11 @@ class Polygon(
         /** Reads a GeoJSON Feature or bare geometry of type Polygon or MultiPolygon (`[lon, lat]`
          *  positions, as `osmium export` writes them; tools/add_parts.py). Every ring, outer or inner,
          *  becomes loose segments. */
-        fun fromGeoJson(file: File): Polygon {
+        fun fromGeoJson(file: File): Polygon = fromRings(geoJsonRings(file))
+
+        /** The rings of a GeoJSON Polygon or MultiPolygon file, outer and inner alike, in the file's order, each as
+         *  lat, lon pairs with its closing point (what [fromRings] takes and PartsCache stores). */
+        fun geoJsonRings(file: File): List<DoubleArray> {
             val root = Json.parseToJsonElement(file.readText()).jsonObject
             val geometry = root["geometry"]?.jsonObject ?: root
             val coordinates = geometry["coordinates"]!!.jsonArray
@@ -92,16 +96,35 @@ class Polygon(
                 "MultiPolygon" -> coordinates.map { it.jsonArray }
                 else -> error("${file.path}: geometry $type, not a Polygon or MultiPolygon")
             }
-            val segs = ArrayList<Double>()
+            val rings = ArrayList<DoubleArray>()
             for (polygon in polygons) for (ring in polygon) {
-                val pts = ring.jsonArray.map { val p = it.jsonArray; p[1].jsonPrimitive.double to p[0].jsonPrimitive.double }
-                require(pts.size >= 4 && pts.first() == pts.last()) { "${file.path}: a ring that is not closed" }
-                for (i in 0 until pts.size - 1) {
-                    segs += pts[i].first; segs += pts[i].second; segs += pts[i + 1].first; segs += pts[i + 1].second
+                val pts = ring.jsonArray
+                val r = DoubleArray(2 * pts.size)
+                for ((i, p) in pts.withIndex()) {
+                    val c = p.jsonArray
+                    r[2 * i] = c[1].jsonPrimitive.double
+                    r[2 * i + 1] = c[0].jsonPrimitive.double
                 }
+                val n = r.size
+                // closed as a Pair of boxed Doubles compares: Double.equals, by bits
+                require(pts.size >= 4 && r[0].toBits() == r[n - 2].toBits() && r[1].toBits() == r[n - 1].toBits()) {
+                    "${file.path}: a ring that is not closed"
+                }
+                rings += r
             }
-            require(segs.isNotEmpty()) { "${file.path}: no rings" }
-            return Polygon(segs.toDoubleArray(), bandCount = (segs.size / 16).coerceIn(1, 4096))
+            require(rings.isNotEmpty()) { "${file.path}: no rings" }
+            return rings
+        }
+
+        /** A polygon of loose segments from closed rings (lat, lon pairs): each ring's consecutive points as one
+         *  segment, rings in order, the band count of a part outline. */
+        fun fromRings(rings: List<DoubleArray>): Polygon {
+            val segs = DoubleArray(4 * rings.sumOf { it.size / 2 - 1 })
+            var k = 0
+            for (r in rings) for (i in 0 until r.size / 2 - 1) {
+                segs[k++] = r[2 * i]; segs[k++] = r[2 * i + 1]; segs[k++] = r[2 * i + 2]; segs[k++] = r[2 * i + 3]
+            }
+            return Polygon(segs, bandCount = (segs.size / 16).coerceIn(1, 4096))
         }
     }
 }

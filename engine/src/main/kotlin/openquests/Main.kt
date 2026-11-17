@@ -38,7 +38,12 @@ the snapshot); --resurvey-multiplier sets the default the run counts at instead 
 --dump-state: every match and every quest waiting for its date, 24-byte records (StateDump.kt) plus <file>.json.
 --grid writes <dir>/<asOfDate>.json.gz: counted quests per z14 tile, for heatmaps.
 --parts: the parts registries (config/parts); a city with <dir>/<cityId>.json gets the open quests of
-each of its parts in the snapshot, counted from the city's own quests by position. Nothing else changes."""
+each of its parts in the snapshot, counted from the city's own quests by position. Nothing else changes.
+--parts-cache: outlines read from a cache built by `partcache` (PartsCache.kt) instead of their GeoJSON files; the
+same answers, an outline the cache lacks or whose file changed is parsed as without it.
+
+usage: sc-open-quests-engine partcache --parts <dir>[,<dir>...] --out <file>
+Every outline named by the registries in those dirs (paths relative to the working directory), once, into <file>."""
 
 class CountOptions(
     val pbf: File,
@@ -58,6 +63,7 @@ class CountOptions(
     val grid: File? = null,
     val resurveyMultiplier: Float = 1f,
     val parts: File? = null,
+    val partsCache: File? = null,
     val baseDir: File = File("."),
 )
 
@@ -68,6 +74,12 @@ fun main(args: Array<String>) {
         if (args.isEmpty() || args[0] in setOf("-h", "--help", "help")) { println(USAGE); return }
         if (args[0] == "nodegrid") { nodeGrid(args.drop(1)); return }
         if (args[0] == "regionids") { regionIds(args.drop(1)); return }
+        if (args[0] == "partcache") {
+            val m = args.drop(1).chunked(2).associate { (k, v) -> k to v }
+            require(m.keys == setOf("--parts", "--out")) { "partcache takes --parts and --out\n$USAGE" }
+            PartsCache.build(m.getValue("--parts").split(',').map(::File), File("."), File(m.getValue("--out")))
+            return
+        }
         require(args[0] == "count") { "unknown command ${args[0]}\n$USAGE" }
         val opts = parseArgs(args.drop(1))
         count(opts)
@@ -90,7 +102,7 @@ fun parseArgs(args: List<String>): CountOptions {
         m[k.removePrefix("--")] = args[i + 1]
         i += 2
     }
-    val known = setOf("pbf", "quests", "cities", "out", "source-meta", "today", "dump-matches", "dump-state", "dump-quests", "dump-ids", "dump-elements", "dump-city", "area-unit", "notes", "grid", "resurvey-multiplier", "parts")
+    val known = setOf("pbf", "quests", "cities", "out", "source-meta", "today", "dump-matches", "dump-state", "dump-quests", "dump-ids", "dump-elements", "dump-city", "area-unit", "notes", "grid", "resurvey-multiplier", "parts", "parts-cache")
     require(m.keys.all { it in known }) { "unknown option(s) ${m.keys - known}\n$USAGE" }
     fun req(k: String) = File(m[k] ?: throw IllegalArgumentException("--$k is required\n$USAGE"))
     return CountOptions(
@@ -113,6 +125,7 @@ fun parseArgs(args: List<String>): CountOptions {
             require(it in setOf(0.5f, 1f, 2f)) { "--resurvey-multiplier: the app offers 0.5, 1 and 2" }
         } ?: 1f,
         parts = m["parts"]?.let(::File),
+        partsCache = m["parts-cache"]?.let(::File),
     ).also { require((it.dumpElements == null) == (it.dumpCity == null)) { "--dump-elements and --dump-city go together" } }
 }
 
@@ -139,8 +152,18 @@ fun count(opts: CountOptions): CountResult {
         "the JVM runs in locale $language; start it with -Duser.language=en -Duser.country=CA (feature presets are bundled for ${ScFeatures.LANGUAGE})"
     }
 
-    val parts = opts.parts?.let { loadParts(it, cities, opts.baseDir) }.orEmpty()
+    val tParts = System.nanoTime()
+    val cache = if (opts.parts != null) opts.partsCache?.let { PartsCache.Reader(it, opts.baseDir) } else null
+    val parts = cache.use { c -> opts.parts?.let { loadParts(it, cities, opts.baseDir, c) }.orEmpty() }
+    val tEngine = System.nanoTime()
     val engine = Engine(registry, cities, parts)
+    log("startup: registry and cities %.1f s, parts %.1f s%s, engine and its indexes %.1f s".format(
+        (tParts - tStart) / 1e9, (tEngine - tParts) / 1e9,
+        cache?.let { c ->
+            " (${c.fromCache} outlines from ${c.file.name}, ${c.parsed} parsed; lookup %.1f s, read %.1f s, decode %.1f s, polygons %.1f s)"
+                .format(c.nanos[0] / 1e9, c.nanos[1] / 1e9, c.nanos[2] / 1e9, c.nanos[3] / 1e9)
+        } ?: "",
+        (System.nanoTime() - tEngine) / 1e9))
     if (opts.grid != null) engine.grid = TileGrid()
     engine.dumpQuests = opts.dumpQuests
     opts.dumpIds?.let { engine.dumpIds = readDumpIds(it) }

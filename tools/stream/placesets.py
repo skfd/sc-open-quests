@@ -85,3 +85,31 @@ def ingest(dump: Path, sets: PlaceSets) -> np.ndarray:
         assert len(local) == len(rows), f"{pf}: {len(local)} place sets for {len(rows)} records"
         out["place"] = sets.remap(json.loads(pj.read_text(encoding="utf-8")))[local]
     return out
+
+
+PARTS_CACHE = "parts.cache"
+
+
+def places_stamp(w: Path) -> dict | None:
+    """what a world's part outlines come from: its places.json (world_cells.py places writes the outlines with it)"""
+    p = Path(w) / "places.json"
+    if not p.exists():
+        return None
+    st = p.stat()
+    return {"places": p.name, "size": st.st_size, "mtimeNs": st.st_mtime_ns}
+
+
+def parts_cache(w: Path) -> Path | None:
+    """W/parts.cache if it is current: built (world_cells.py partcache) since the world's places.json last changed,
+    so the engine may trust its entries without checking every outline's file (on Windows 14.1 s of a 17.6 s load
+    of 62,513 outlines). None, with a line on stderr, when missing or stale: runs then parse each outline's GeoJSON."""
+    import sys
+    c = Path(w) / PARTS_CACHE
+    side = c.with_name(c.name + ".json")
+    if not c.exists():
+        return None
+    if not side.exists() or json.loads(side.read_text(encoding="utf-8")).get("stamp") != places_stamp(w):
+        print(f"{c} is older than {Path(w) / 'places.json'}: not used (rebuild: world_cells.py partcache --out {w})",
+              file=sys.stderr)
+        return None
+    return c

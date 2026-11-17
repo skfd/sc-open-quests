@@ -327,7 +327,8 @@ def empty_pbf(path: Path, clock: str) -> Path:
 
 
 def note_quests(cities: Path, clip: Path, clock: str, out: Path, parts: Path | None = None,
-                engine: Path | None = None, heap_gb: int = 4, zone: str = "UTC", base: Path = ROOT) -> dict:
+                engine: Path | None = None, heap_gb: int = 4, zone: str = "UTC", base: Path = ROOT,
+                parts_cache: Path | None = None) -> dict:
     """the note quests at the clock, counted by the engine over no elements: per city the note quests at the app's
     default ("showAllNotes": false) and with "show all notes", and per part. Returns
     {"cities": {id: {"quests": n, "allNotes": n}}, "parts": {part id: n}} from the run's snapshot."""
@@ -339,6 +340,8 @@ def note_quests(cities: Path, clip: Path, clock: str, out: Path, parts: Path | N
             "--out", str((out / "out").resolve()), "--notes", str(Path(clip).resolve()), "--today", clock]
     if parts:
         args += ["--parts", str(Path(parts).resolve())]
+        if parts_cache and Path(parts_cache).exists():  # the outlines read from one file (engine PartsCache.kt)
+            args += ["--parts-cache", str(Path(parts_cache).resolve())]
     import os
     env = dict(os.environ, JAVA_HOME=os.environ.get("JAVA_HOME", r"C:\Program Files\Android\Android Studio\jbr"),
                JAVA_OPTS=f"-Duser.timezone={zone} -Duser.language=en -Duser.country=CA -Xmx{heap_gb}g"
