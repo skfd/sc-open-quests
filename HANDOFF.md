@@ -2375,6 +2375,18 @@ checked against a full count. Until then the world's published numbers can only 
     held into main's `.scratch` (`overture`, `planet`, `world-places`) so the removal could not follow them; main's
     folders checked intact (128 world files). **Agents' worktrees can hold junctions into main's data: unlink them
     before `git worktree remove`.** C: 216 GB free. P3's worktree (28.6 GB, no links) stays for the three traces.
+  - **Blocker 4, tier 2 per plan file (18:00-, Claude):** `world_day.rect_groups`/`rect_rows` (committed 9519f4d2):
+    the rectangle cities split per plan file (cut further past `WORLD_T2_GROUP_KM2`), each group read from the store
+    on its own, `WORLD_T2_WORKERS` engines at a time, ingested in group order. **Exact** on the rehearsal's 11-13
+    (generation 4): 16 groups = one run, 5,668,905 rows, 0 different (`.scratch/rectgroups/exact.py`). Planet sizing
+    (`size.py`, 5172-rule): 127 files, padded map data 289,864 km2 (2.85x the rectangles' area), f116 (north Norway,
+    10,286 rectangles) 28,507 km2, median file 1,603. **Planet parts cache built:** `.scratch/planet/world-places/
+    parts.cache`, 1,069,679 outlines, 5.8 GB, 870 s. **Measuring:** `.scratch/rectgroups/measure.py f116` (log
+    `.scratch/rectgroups/planet.log`, results `planet/results.json`), from the planet store's generation 15 under a
+    HOLD; a HOLD left by a dead run says "blocker 4 measurement": remove it by hand.
+  - **Step 2's history file (owner, 18:20): add a download to osm-extracts** (`fetch planet-history` cannot start
+    without a file; the newest weekly dump is `history-261109.osm.pbf`, about 155 GB). Then delete the store, cut at
+    11-01T00Z. Disk: 216 GB free now; the store is 292 GB, `.scratch/planet-day` 115 GB.
 
 ## The place page: merged (2026-11-16, evening; owner: "pick from handoff ui work", then "merge it now")
 
