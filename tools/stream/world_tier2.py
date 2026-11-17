@@ -22,6 +22,16 @@ CELL / 2 m, as tier2's Cover.segment; a segment of over 100,000 steps or across 
 
   python tools/stream/world_tier2.py time --diff N.osc.gz --plan W/plan.json --world W --nodes planet.loc --work DIR
       the cover of one planet day timed stage by stage (the node file read only), rectangles and km2 counted
+  python tools/stream/world_tier2.py rects --plan W/plan.json --world W --work DIR
+      the stages after the cover again, from DIR/codes.npy
+
+Measured (2026-11-16, night): planet day 5172 marks 10.0M cells (about 25,000 km2) and gives 52,128 rectangles,
+217,299 km2 (median 0.19 km2, 99th percentile 50 km2, largest 1,207): padding by a cell and merge_rects' 300 m ring
+make the rest. About 12 minutes: read the diff 188 s, old rows 74 s, cover 150 s, rectangles 112 s (22 processes),
+the engine's files 190 s. Against tier2.cover on diff 5175 in europe-west's three cities, same inputs: with boxes
+uncapped (cut to the cities, as tier2 fills them) every one of tier2's 103,785 marked cells is inside a rectangle;
+with the 25 km2 cap, 71,730 are not: on that day most of tier2's ground came from boxes over 25 km2 (742 of them,
+the largest 287,196 km2). The cap is a decision, not a detail (DESIGN, "Release 1: the world day", step 3).
 """
 from __future__ import annotations
 
