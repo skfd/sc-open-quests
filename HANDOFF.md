@@ -2183,3 +2183,10 @@ wording and tab structure as a first draft open to change, not as decided design
   bigger than the total), the class name moved off each row, the shorter phone header, relative dates elsewhere.
   Compare's table scrolls sideways on a phone (it did before too). The 90-day chart's y axis starts at 0, so a
   city's month barely moves the line; worth revisiting if the change should be visible.
+- **Repin rule: forward from the release date (11-16, evening; owner: "forward from release day agreed").** REPIN.md
+  step 6: at a repin each region's snapshots from the release's publish date on are recounted
+  (`backfill_history.py recount --region R --since DATE`, then `merge`), from the extracts the store keeps 14 days;
+  nothing older changes, so the release shows as a step on its date. The repin issue now says "within 14 days".
+  A full recount from history is the on-demand exception (a history download first). Found and fixed on the way:
+  `backfill_history.py`'s count did not pass the parts registry, so a merged recount would have dropped every
+  snapshot's parts; now it does (Bremen 11-14 and 11-15 recounted equal to the published, parts included).
