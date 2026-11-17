@@ -88,6 +88,8 @@ def main():
                 print(f"way {w}: no such way in the clip, the store gives {len(r)} refs (how {how[i]})")
             continue
         if how[i] == 0:
+            if a.rels_only:  # the relation store keeps member ways of the relations the tile rule keeps only
+                continue
             bad += 1
             print(f"way {w}: absent in the store")
             continue
