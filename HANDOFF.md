@@ -2317,6 +2317,24 @@ checked against a full count. Until then the world's published numbers can only 
     branch never sees a hiking route in the app either; they read hiking paths (ways with `sac_scale`) only. E's
     "`route=hiking` is a gap" is not one: the cover's marking of hiking routes only adds area and can be dropped;
     the planet store's daily run must call `DayContext.before` before its update and `after` before `compact`.
+  - **G merged (11:10): the world day runs end to end** (`tools/stream/world_day.py`: `prepare` before the store's
+    update, `finish` after it and before `compact`; `world_europe_r1.py` the rehearsal driver; `tests/test_world_day.py`;
+    engine: a rectangle city's place index clipped to the city, which fixed an out-of-memory at 28,703 rectangles;
+    111 engine tests pass; installed). DESIGN.md, "The world day, rehearsed on the Europe clip".
+    **Rehearsal on the Europe clip (16 files, 57 cells, 50.3M rows):** day 0 exact (0 of 36.8M groups, 0 of 631,304
+    place counts). Days 11-10..11-13 against whole counts: at the default setting 15, 45, 66, 83 groups differ; the
+    32 cities' own counts 1, 3, 7, 7 of 5,306 differ, each by 1 (Praha AddMaxHeight by 2). The rest is the 0.5 and 2
+    settings (settled matches and area quests not dated there) and the clip's edge (the store keeps edge ways the
+    clip drops), not the stream. 20-23 min a day here. **11-14 is pending:** its run was killed at a 2-hour limit
+    before writing; restarted detached, it waits until 14:16 and writes `days/2026-11-14/check.json` in the worktree
+    `.claude/worktrees/agent-abc2aa4490dae9ca7/.scratch/r1/eu/` (keep that worktree until it lands).
+    **What still blocks the planet, in order:** (1) every engine run loads its place outlines (120 s of a notes run
+    is loading, 0.2 s counting): a resident engine with places loaded, or note quests as rows; (2) hidden flags over
+    every row in Python (170 s for 50M rows): by note position, or files in parallel; (3) two cover gaps, a relation's
+    quest point when a member way changed (AddRoofShape on building multipolygons) and roads crossing a rectangle by
+    their segments (AddMaxHeight under a changed bridge): add the elements whose geometry meets the marked cells, from
+    the store; (4) 128,544 planet rectangles per date: group per plan file and measure; (5) the 0.5 and 2 settings:
+    the owner's call (date everything at all three settings in the engine, or publish the default only).
 
 ## The place page: merged (2026-11-16, evening; owner: "pick from handoff ui work", then "merge it now")
 
