@@ -10,10 +10,14 @@ const nfShort = new Intl.NumberFormat("en-CA", { notation: "compact", maximumSig
 const HOME_CITY = "guelph";                 // the first visit's city
 const RECENT_KEY = "sc-open-quests-cities"; // localStorage: the reader's cities, the last first
 const MAX_RECENT = 5;
+const RECENT_DAYS = 90;                     // the place chart opens on this many days; "All" shows every snapshot
+const WEEKS4 = 28;                          // the place's 4-week change, in days
 
 const state = {
-  view: "city",
+  view: "city",                     // "city" is the place page: a counted city, or one of its parts
   city: "",                         // from the link, else the last city seen, else HOME_CITY
+  part: "",                         // the part of the city (its place id) the page shows, "" = the city itself
+  range: "recent",                  // the place chart's time: "recent" (RECENT_DAYS) or "all"
   filter: "",
   selected: new Set(),              // quest names counted in the summary chart and tiles
   pinned: [],                       // quest names charted on their own, as small multiples
@@ -27,7 +31,8 @@ const state = {
   placeScope: "",                   // the country the place search looks inside ("" = names in the index)
   mapAt: "",                        // map view: "zoom/lat/lon" once the reader has moved it, "" = every city in view
 };
-let cities, quests, questByName, hist;   // loaded data
+let cities, quests, questByName;            // loaded data
+let hist = null;                            // the place page's series, the city's or a part's (seriesFor)
 let urlSelection = null;                    // the selection as read from the URL, resolved once quests.json is in
 let icons = {};                             // quest name -> {icon, title}, from icons/index.json
 let releases = [];                          // [{ts, version}], stable SC releases, oldest first
@@ -101,6 +106,8 @@ function readURL() {
   const get = (k) => p.get(k) ?? h.get(k);
   if (get("view")) state.view = { compare: "compare", places: "places", map: "map" }[get("view")] || "city";
   if (get("city")) state.city = get("city");
+  if (p.get("part")) state.part = p.get("part");
+  state.range = p.get("range") === "all" ? "all" : "recent";
   state.pinned = names(p.get("pin") ?? h.get("q")).slice(0, MAX_PINNED);
   if (get("cq") != null) state.compareQuest = get("cq");
   state.releases = get("rel") !== "0";
@@ -135,7 +142,9 @@ function selectionParams() {
 }
 
 // The query string of a view; s is the state, or a copy of it with another place in it (place links).
-// A place link names the place and its region file only; the city is left out, so the link stays short.
+// A counted place is ?city=, with &part= for a part of it; any other place names itself and its region
+// file only (?place=&in=), so the link stays short. A ?place= link to a counted place is rewritten to
+// ?city= once the page has found it.
 function queryString(s = state) {
   const p = new URLSearchParams();
   const data = new URLSearchParams(location.search).get("data");
@@ -145,7 +154,9 @@ function queryString(s = state) {
     if (s.placeIn) p.set("in", s.placeIn);
   } else if (s.view !== "city") p.set("view", s.view);
   if (s.view !== "places") p.set("city", s.city);
+  if (s.view === "city" && s.part) p.set("part", s.part);
   if (s.view === "map" && s.mapAt) p.set("at", s.mapAt);
+  if (s.range === "all") p.set("range", "all");
   const sel = selectionParams();
   if (sel.base !== "app") p.set("base", sel.base);
   if (sel.on.length) p.set("on", sel.on.join(","));
@@ -234,15 +245,110 @@ function selectedQuestsAt(h, i) {
     .filter(([name, s]) => s.open[i] != null && selected(name)).map(([name]) => name));
 }
 
-// Change in the total from date i-1 to i, over the quests counted on both dates only.
-function likeForLikeDelta(h, i) {
-  let d = 0, any = false;
+// Change in the total from date j to i, over the selected quests counted on both dates only: the open
+// count, and the part of it that aged (null where a date has no aged split). Null when no quest is on both.
+function likeForLike(h, j, i) {
+  let open = 0, aged = 0, any = false, agedKnown = true;
   for (const [name, s] of Object.entries(h.quests)) {
-    if (!selected(name) || s.open[i] == null || s.open[i - 1] == null) continue;
-    d += s.open[i] - s.open[i - 1];
+    if (!selected(name) || s.open[i] == null || s.open[j] == null) continue;
+    open += s.open[i] - s.open[j];
+    if (s.agedOnly[i] == null || s.agedOnly[j] == null) agedKnown = false;
+    else aged += s.agedOnly[i] - s.agedOnly[j];
     any = true;
   }
-  return any ? d : null;
+  return any ? { open, aged: agedKnown ? aged : null } : null;
+}
+const likeForLikeDelta = (h, i) => likeForLike(h, i - 1, i)?.open ?? null;
+
+const daysBetween = (a, b) => Math.round((dayTs(b) - dayTs(a)) / 86400);
+const shortDate = (d) => new Date(dayTs(d) * 1e3).toLocaleDateString("en-CA", { month: "short", day: "numeric", timeZone: "UTC" });
+const monthYear = (d) => new Date(dayTs(d) * 1e3).toLocaleDateString("en-CA", { month: "short", year: "numeric", timeZone: "UTC" });
+function addDays(d, n) { return new Date((dayTs(d) + n * 86400) * 1e3).toISOString().slice(0, 10); }
+
+// The series from date `from` on: every array cut alike, so the chart, its sparklines, legend and breaks
+// agree on what is shown.
+function sliceSeries(h, from) {
+  const k = h.dates.findIndex((d) => d >= from);
+  if (k <= 0) return h;
+  const cut = (a) => (Array.isArray(a) ? a.slice(k) : a);
+  return { ...h, dates: h.dates.slice(k), meta: h.meta.slice(k),
+           quests: Object.fromEntries(Object.entries(h.quests).map(([q, s]) => [q, { open: cut(s.open), agedOnly: cut(s.agedOnly) }])) };
+}
+
+// Does the series reach back further than the recent window? Only then is there a choice of range.
+const longerThanRecent = (h) => h.dates.length > 1 && daysBetween(h.dates[0], last(h.dates)) > RECENT_DAYS;
+const shownSeries = (h) => (state.range === "all" || !longerThanRecent(h) ? h : sliceSeries(h, addDays(last(h.dates), -RECENT_DAYS)));
+
+// A city's series, once a page: history/<city>.json.
+const cityHistCache = new Map();
+function cityHistory(id) {
+  if (!cityHistCache.has(id)) {
+    const p = getJSON(`history/${id}.json`);
+    p.catch(() => cityHistCache.delete(id));
+    cityHistCache.set(id, p);
+  }
+  return cityHistCache.get(id);
+}
+
+// A part's series (DATA-FORMAT.md, "A part's series") in the shape of its city's: the city's meta on the
+// same dates, so version breaks show here too, and every quest the city has, a quest the part file leaves
+// out (nothing ever open in the part) 0 wherever the city counted it and null where it did not. Null
+// when the part has no published series yet.
+async function partHistory(cityId, pid) {
+  const [city, part] = await Promise.all([cityHistory(cityId),
+    optionalJSON(`${DATA}/history/${encodeURIComponent(cityId)}/${encodeURIComponent(pid)}.json`)]);
+  if (!part || !part.dates || !part.dates.length) return null;
+  const at = new Map(city.dates.map((d, i) => [d, i]));
+  const idx = part.dates.map((d) => at.get(d));
+  const quests = {};
+  for (const [q, cs] of Object.entries(city.quests)) {
+    quests[q] = part.quests[q] || {
+      open: idx.map((i) => (i == null || cs.open[i] == null ? null : 0)),
+      agedOnly: idx.map((i) => (i == null || cs.agedOnly[i] == null ? null : 0)),
+    };
+  }
+  for (const [q, s] of Object.entries(part.quests)) quests[q] ||= s;
+  return { city: cityId, part: pid, name: part.en || part.name, subtype: part.subtype, in: part.in || null,
+           cityName: city.name, dates: part.dates, meta: idx.map((i) => (i == null ? {} : city.meta[i])), quests };
+}
+
+// The page's series: the city's, or the part's.
+async function seriesFor(cityId, pid) {
+  if (!pid) return cityHistory(cityId);
+  return partHistory(cityId, pid);
+}
+
+// Steps worth a note on the chart: one quest type moving by more than a tenth of the total (and at least
+// STEP_MIN) between two counts. Imports and bulk edits do this; players solving quests rarely do. A run of
+// such steps in the same quest and direction, a count apart, is one note. The largest few, oldest first.
+// What a step is said to be comes from KNOWN_STEPS only; a found step states its size and quest.
+const STEP_MIN = 500, STEP_SHARE = 0.1, STEP_NOTES = 4;
+const KNOWN_STEPS = {
+  // confirmed by the owner (HANDOFF, "Deeper history"); the 2019 rise in Toronto is not confirmed
+  toronto: [{ quest: "AddHousenumber", date: "2026-06-01", text: "an address import into OpenStreetMap" }],
+};
+function steps(h, tot) {
+  const found = [];
+  for (const [name, s] of Object.entries(h.quests)) {
+    if (!selected(name)) continue;
+    for (let i = 1; i < h.dates.length; i++) {
+      if (s.open[i] == null || s.open[i - 1] == null || !offeredOn(name, h.dates[i - 1])) continue;
+      const d = s.open[i] - s.open[i - 1];
+      if (Math.abs(d) < STEP_MIN || Math.abs(d) < STEP_SHARE * (tot.open[i - 1] || 0)) continue;
+      const prev = found.find((f) => f.name === name && f.j === i - 1 && Math.sign(f.d) === Math.sign(d));
+      if (prev) { prev.j = i; prev.d += d; } else found.push({ name, i0: i - 1, i, j: i, d });
+    }
+  }
+  const known = h.part ? [] : KNOWN_STEPS[h.city] || [];
+  return found.sort((a, b) => Math.abs(b.d) - Math.abs(a.d)).slice(0, STEP_NOTES).sort((a, b) => a.i - b.i)
+    .map((f) => ({ ...f, from: h.dates[f.i0], to: h.dates[f.j],
+                   known: known.find((k) => k.quest === f.name && k.date > h.dates[f.i0] && k.date <= h.dates[f.j]) }));
+}
+const stepShort = (f) => `${f.d > 0 ? "+" : "−"}${nfShort.format(Math.abs(f.d))}`;
+function stepText(f) {
+  const span = f.j - f.i0 > 1 ? `from ${monthYear(f.from)} to ${monthYear(f.to)}` : `between ${f.from} and ${f.to}`;
+  return `◆ ${signed(f.d)} ${humanize(f.name).replace(/^Add /, "").toLowerCase()} quests ${span}` +
+    (f.known ? `: ${f.known.text}.` : ".");
 }
 
 // Indices where the SC version, resurvey multiplier, area unit or notes modelling differs from the previous date. With
@@ -250,8 +356,8 @@ function likeForLikeDelta(h, i) {
 // time, e.g. a newly ported custom quest), which moves a total but not a single quest's line.
 function breaks(h, { questSet = false } = {}) {
   const out = [];
-  for (let i = 1; i < h.meta.length; i++) {
-    const a = h.meta[i - 1], b = h.meta[i];
+  for (let i = 1; i < h.dates.length; i++) {
+    const a = h.meta[i - 1] || {}, b = h.meta[i] || {};
     const what = [], short = [];
     if (questSet) {
       const before = selectedQuestsAt(h, i - 1), now = selectedQuestsAt(h, i);
@@ -340,7 +446,7 @@ function releaseLayer(xs, { note = null, idle = true } = {}) {
   };
 }
 
-function lineChart(target, h, series, { height = 260, showAged = true, questSetBreaks = false, note = null, noteIdle = true } = {}) {
+function lineChart(target, h, series, { height = 260, showAged = true, questSetBreaks = false, note = null, noteIdle = true, marks = [] } = {}) {
   const xs = h.dates.map(dayTs);
   const mapping = series.open.map((v, i) => (v == null ? null : v - (series.aged[i] || 0)));
   const brk = breaks(h, { questSet: questSetBreaks });
@@ -399,6 +505,24 @@ function lineChart(target, h, series, { height = 260, showAged = true, questSetB
       }],
       draw: [(u) => {
         rel.draw(u);
+        if (marks.length) {   // steps: a faint band over the counts they span, the size at its top
+          const ctx = u.ctx, { left, top, width, height: ph } = u.bbox, dpr = devicePixelRatio;
+          ctx.save();
+          ctx.font = `${11 * dpr}px Roboto, system-ui, sans-serif`;
+          ctx.textBaseline = "alphabetic";
+          for (const f of marks) {
+            const x0 = Math.round(u.valToPos(xs[f.i0], "x", true)), x1 = Math.max(x0 + 2 * dpr, Math.round(u.valToPos(xs[f.j], "x", true)));
+            ctx.globalAlpha = 0.12;
+            ctx.fillStyle = css("--series-2");
+            ctx.fillRect(x0, top, x1 - x0, ph);
+            ctx.globalAlpha = 1;
+            ctx.fillStyle = css("--ink-2");
+            const label = "◆ " + stepShort(f), w = ctx.measureText(label).width;
+            ctx.textAlign = "left";
+            ctx.fillText(label, x1 + 3 * dpr + w <= left + width ? x1 + 3 * dpr : x0 - 3 * dpr - w, top + 24 * dpr);
+          }
+          ctx.restore();
+        }
         if (!brk.length) return;
         const ctx = u.ctx, { top, height: ph } = u.bbox, dpr = devicePixelRatio;
         const y0 = top;
@@ -509,40 +633,71 @@ function tile(label, value, extra, hero = false) {
     el("div", { class: "label" }, label), el("div", { class: "value" }, value), extra);
 }
 
+// The net change in words: edits, aging and new map data together, since the site cannot count solves.
+function changeWords(d, from, to) {
+  const when = daysBetween(from, to) === 1 ? "yesterday" : `on ${shortDate(from)}`;
+  return d === 0 ? `The same as ${when}` : `${nf.format(Math.abs(d))} ${d < 0 ? "fewer" : "more"} than ${when}`;
+}
+
 function renderTiles(h, tot) {
   const n = h.dates.length, i = n - 1;
   const open = tot.open[i], aged = tot.aged[i] || 0;
   const change = n > 1 ? likeForLikeDelta(h, i) : null;
   const sameSet = n > 1 && !breaks(h, { questSet: true }).some((b) => b.i === i && /types/.test(b.short));
-  const km = last(h.denominators.highwayKm);
-  const area = h.denominators.landAreaKm2;
   const delta = change != null && open != null
-    ? el("div", { class: "delta" }, `${signed(change)} since ${h.dates[i - 1]}${sameSet ? "" : ", same quest types"}`)
-    : el("div", { class: "note" }, "First snapshot, no change yet");
+    ? el("div", { class: "delta" + (change < 0 ? " down" : change > 0 ? " up" : "") }, changeWords(change, h.dates[i - 1], h.dates[i]) +
+      (sameSet ? "" : ", over the same quest types"))
+    : el("div", { class: "note" }, "First count, no change yet");
+  // 4 weeks back, or the first count when the series is younger (a part's starts 2026-10-27)
+  let j = -1;
+  for (let k = 0; k < i; k++) if (h.dates[k] <= addDays(h.dates[i], -WEEKS4)) j = k;
+  const young = j < 0;
+  if (young) j = 0;
+  const w = n > 1 ? likeForLike(h, j, i) : null;
+  const key = (v) => el("span", { class: "key", style: `background:${css(v)}` });
+  const weeks = w
+    ? tile(young ? `Since ${shortDate(h.dates[j])}` : "Last 4 weeks", signed(w.open),
+        el("div", { class: "note" }, w.aged == null ? "net change, aged split not counted then"
+          : [key("--series-1"), `mapping ${signed(w.open - w.aged)} `, key("--series-2"), `resurvey ${signed(w.aged)}`]))
+    : tile("Last 4 weeks", "—", el("div", { class: "note" }, "one count so far"));
+  let top = null;
+  for (const [name, s] of Object.entries(h.quests))
+    if (selected(name) && offeredOn(name, h.dates[i]) && s.open[i] && (!top || s.open[i] > top.open)) top = { name, open: s.open[i] };
   $("#tiles").replaceChildren(
     tile("Open quests", open == null ? "—" : nf.format(open), delta, true),
     tile("Need mapping", open == null ? "—" : nf.format(open - aged),
-      el("div", { class: "note" }, el("span", { class: "key", style: `background:${css("--series-1")}` }), "tags still missing")),
+      el("div", { class: "note" }, key("--series-1"), "tags still missing")),
     tile("Aged, need resurvey", nf.format(aged),
-      el("div", { class: "note" }, el("span", { class: "key", style: `background:${css("--series-2")}` }),
-        open ? `${Math.round((100 * aged) / open)}% of open` : "")),
-    tile("Per km² of land", ratio(open, area), el("div", { class: "note" }, area ? `${nf1.format(area)} km²` : "area unknown")),
-    tile("Per km of road", ratio(open, km), el("div", { class: "note" }, km ? `${nf.format(Math.round(km))} km of highway` : "road length not yet counted")),
+      el("div", { class: "note" }, key("--series-2"), open ? `${Math.round((100 * aged) / open)}% of open` : "")),
+    weeks,
+    top ? tile("Most open", nf.format(top.open), el("div", { class: "note top-quest" }, questIcon(top.name, "q-icon sm"), questTitle(top.name)))
+        : tile("Most open", "—", el("div", { class: "note" }, "nothing open")),
   );
 }
 
-function renderCityCharts(h) {
+function renderCityCharts(full) {
   for (const { u } of charts) u.destroy();
   charts.length = 0;
+  renderTiles(full, totalSeries(full));
+  const h = shownSeries(full);
   const tot = totalSeries(h);
-  renderTiles(h, tot);
-  const name = h.name;
-  $("#chart-title").textContent = `Open quests over time in ${name}`;
+  const marks = steps(h, tot);
+  const long = longerThanRecent(full);
+  $("#chart-title").textContent = `Open quests over time in ${full.name}`;
+  $("#range").hidden = !long;
+  for (const b of document.querySelectorAll("#range button")) {
+    b.setAttribute("aria-pressed", String(b.dataset.range === state.range));
+    if (b.dataset.range === "all") b.textContent = `All since ${full.dates[0].slice(0, 4)}`;
+  }
   $("#chart-sub").textContent = `Counting ${selectionText()}. ` +
-    (h.dates.length === 1 ? "One snapshot so far; the line starts here." : `${h.dates.length} snapshots since ${h.dates[0]}.`) +
+    (h.dates.length === 1 ? "One count so far; the line starts here." :
+      h !== full ? `The last ${RECENT_DAYS} days, ${h.dates.length} counts.` :
+      `${h.dates.length} counts since ${h.dates[0]}` + (full.part && !long ? "; neighbourhoods are counted daily from 2026-10-27." : ".")) +
     (state.asThen ? " Each quest counts from the release that first offered it, by today's rules. Quests since removed from the app are not in these counts." : "");
-  lineChart($("#chart-total"), h, tot, { height: 300, questSetBreaks: true, note: $("#release-note") });
-  $("#breaks").replaceChildren(...breaks(h, { questSet: true }).map((b) => el("li", {}, `│ ${b.date}: ${b.label}. Totals on either side are not directly comparable.`)));
+  lineChart($("#chart-total"), h, tot, { height: 300, questSetBreaks: true, note: $("#release-note"), marks });
+  $("#breaks").replaceChildren(...breaks(h, { questSet: true }).map((b) => el("li", {}, `│ ${b.date}: ${b.label}. Totals on either side are not directly comparable.`)),
+    ...marks.map((f) => el("li", {}, stepText(f))),
+    ...(marks.some((f) => !f.known) ? [el("li", {}, "◆ marks one quest type moving by a tenth of the total or more between two counts.")] : []));
   $("#arrivals").replaceChildren(...(state.asThen ? arrivals(h) : []).map((a) => el("li", {}, arrivalText(a))));
 
   const box = $("#multiples");
@@ -556,7 +711,7 @@ function renderCityCharts(h) {
         el("button", { type: "button", title: "Unpin", "aria-label": `Unpin ${questTitle(qn)}`,
                        onclick: () => togglePin(qn) }, "×")),
       el("p", { class: "sub" }, s ? (q && q.usesAge ? "Mapping and aged series." : "This quest has no resurvey age, so nothing ages into it.")
-                                  : "Not counted in this city."),
+                                  : "Not counted here."),
       target, s ? note : null);
     box.append(card);
     if (s) lineChart(target, h, s, { height: 190, showAged: !!(q && q.usesAge), note, noteIdle: false });
@@ -652,15 +807,33 @@ function renderQuestTable(h) {
   head.indeterminate = on > 0 && on < tickable.length;
   head.disabled = !tickable.length;
 
+  // Counted quests with nothing open fold into one line under the open ones: the place's good news.
+  const done = rows.filter((r) => r.counted && r.open === 0);
+  const rest = rows.filter((r) => !(r.counted && r.open === 0));
+  const at = rest.findIndex((r) => !r.counted);
   const out = [];
-  for (const [i, r] of rows.entries()) {
-    if (r.group && r.group !== (rows[i - 1] && rows[i - 1].group)) {
-      const n = rows.filter((x) => x.group === r.group).length;
+  for (const [i, r] of rest.entries()) {
+    if (i === at && done.length) out.push(...doneRows(h, done));   // above the uncounted groups
+    if (r.group && r.group !== (rest[i - 1] && rest[i - 1].group)) {
+      const n = rest.filter((x) => x.group === r.group).length;
       out.push(el("tr", { class: "group-head" }, el("th", { colspan: 7, scope: "rowgroup" }, `${GROUPS[r.group].head(h)} · ${n}`)));
     }
     out.push(questRow(h, r));
   }
+  if (at < 0 && done.length) out.push(...doneRows(h, done));
   $("#quest-table tbody").replaceChildren(...out);
+}
+
+let showDone = false;   // the "done here" line opened
+function doneRows(h, done) {
+  const n = done.length;
+  const head = el("tr", { class: "done-head" }, el("td", { colspan: 7 },
+    el("button", { type: "button", class: "done-toggle", "aria-expanded": String(showDone),
+                   onclick: () => { showDone = !showDone; renderQuestTable(shownSeries(hist)); } },
+      el("span", { class: "done-mark", "aria-hidden": "true" }, "✓"),
+      `${nf.format(n)} quest type${n > 1 ? "s" : ""} done here`,
+      el("span", { class: "done-more" }, showDone ? "hide" : "show"))));
+  return [head, ...(showDone ? done.map((r) => questRow(h, r)) : [])];
 }
 
 function questRow(h, r) {
@@ -685,7 +858,7 @@ function questRow(h, r) {
       el("td", { class: "c-trend" }, r.counted ? sparkline(h.dates, h.quests[r.q.name].open, name) : null),
       el("td", { class: "num" }, r.open == null ? "—" : nf.format(r.open)),
       el("td", { class: "num" }, r.isNew ? "new" : r.delta == null ? "—" : signed(r.delta)),
-      el("td", { class: "num" }, r.agedShare == null ? "—" : `${Math.round(100 * r.agedShare)}%`));
+      el("td", { class: "num c-aged" }, r.agedShare == null ? "—" : `${Math.round(100 * r.agedShare)}%`));
 }
 
 function togglePin(name) {
@@ -719,10 +892,63 @@ function selectionChanged() {
   else renderCity();
 }
 
+// ---------- the place page ----------
+// One page for a counted city and for each of its parts (DESIGN.md, "A neighbourhood is a place"): the
+// chain above it, the number and its change, the chart, the quest table, then the places inside it. It
+// paints from the series alone; the chain and the name layer's children follow when their region file is in.
+
+let pageSeq = 0;   // the newest renderCity call; older ones stop where they are
 async function renderCity() {
-  if (!hist || hist.city !== state.city) hist = await getJSON(`history/${state.city}.json`);
+  const seq = ++pageSeq;
+  if (!hist || hist.city !== state.city || (hist.part || "") !== state.part) {
+    placeHeadText();
+    const h = await seriesFor(state.city, state.part);
+    if (seq !== pageSeq) return;
+    if (!h) {   // a part without a published series: its city instead, saying so
+      const was = state.part;
+      state.part = "";
+      writeURL();
+      await renderCity();
+      setStatus(`No counts for that part of ${cityById(state.city).name} yet (${was}); here is the whole city.`);
+      return;
+    }
+    hist = h;
+    showDone = false;
+  }
+  placeHeadText(hist);
   renderCityCharts(hist);
-  renderQuestTable(hist);
+  renderQuestTable(shownSeries(hist));
+  await placeAround(seq);
+}
+
+// The head's name, kind and date; before the series is in, the city's name from cities.json.
+function placeHeadText(h = null) {
+  const c = cityById(state.city);
+  $("#place-name").textContent = h ? h.name : state.part ? "" : c.name;
+  $("#place-kind").textContent = !h ? "" : h.part ? partKind(h.subtype) : "city";
+  $("#place-asof").textContent = !h ? "" : `Newest count ${shortDate(last(h.dates))}, ${last(h.dates).slice(0, 4)}` +
+    (h.part ? `, from ${h.cityName}'s daily run.` : ".");
+  if (!h || !h.part) $("#place-crumbs").replaceChildren(placeLink(null, "All countries"), crumbSep(),
+    el("span", {}, cityWhere(c)));   // until the name layer gives the chain
+  else $("#place-crumbs").replaceChildren(placeLink(null, "All countries"), crumbSep(), cityLink(c, c.name));
+}
+const crumbSep = () => el("span", { class: "sep", "aria-hidden": "true" }, "›");
+
+// Below the table: the city's parts, and the name layer's places inside this one. The chain in the head.
+async function placeAround(seq) {
+  const c = cityById(state.city);
+  const box = $("#place-children");
+  const parts = await partsCard(c.id, state.part).catch(() => null);
+  if (seq !== pageSeq) return;
+  box.replaceChildren(...[parts].filter(Boolean));
+  const id = state.part || c.place, file = state.part ? hist.in : c.in;
+  const ref = id && file ? await resolvePlace(id, file).catch(() => null) : null;
+  if (seq !== pageSeq || !ref) return;
+  const up = chain(ref).reverse();
+  $("#place-crumbs").replaceChildren(placeLink(null, "All countries"),
+    ...up.slice(0, -1).flatMap((r) => [crumbSep(), placeLink(r)]));
+  const kids = childrenCard(ref, childRows(ref).map((i) => ({ ref: rowRef(ref.shard, i) })));
+  if (kids) box.append(kids);
 }
 
 // ---------- compare view ----------
@@ -987,15 +1213,38 @@ async function resolvePlace(id, hint) {
   return i == null ? null : rowRef(shard, i);
 }
 
+// A counted place's page is the place page: [city id, part id or ""], or null when the place is not
+// counted, or its city is not published yet.
+function countedAs(ref) {
+  const c = ref && refCounted(ref);
+  if (!c) return null;
+  const [city, part = ""] = c.split("/");
+  return cityById(city) ? [city, part] : null;
+}
+
 function placeHref(ref) {
+  const k = countedAs(ref);
+  if (k) return queryString({ ...state, view: "city", city: k[0], part: k[1] });
   return queryString({ ...state, view: "places", place: ref ? refId(ref) : "", placeIn: ref ? refIn(ref) : "" });
 }
 
 function goPlace(ref) {
+  const k = countedAs(ref);
+  if (k) { openCounted(...k); return; }
   state.view = "places";
   state.place = ref ? refId(ref) : "";
   state.placeIn = ref ? refIn(ref) : "";
   writeURL();
+  render();
+  window.scrollTo({ top: 0 });
+}
+
+// The place page of a counted city, or of a part of it.
+function openCounted(city, part = "") {
+  setCity(city, part);
+  state.view = "city";
+  writeURL();
+  renderFooter();
   render();
   window.scrollTo({ top: 0 });
 }
@@ -1009,14 +1258,12 @@ function placeLink(ref, text = refName(ref)) {
   } }, text);
 }
 
-function cityLink(c, text) {
-  return el("a", { href: queryString({ ...state, view: "city", city: c.id }), onclick: (e) => {
+// A link to a counted city's page, or to a part's with part.
+function cityLink(c, text, part = "") {
+  return el("a", { href: queryString({ ...state, view: "city", city: c.id, part }), onclick: (e) => {
     if (e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     e.preventDefault();
-    setCity(c.id);
-    renderFooter();
-    setView("city");
-    window.scrollTo({ top: 0 });
+    openCounted(c.id, part);
   } }, text);
 }
 
@@ -1050,9 +1297,10 @@ function showCity() {
   $("#city-where").textContent = cityWhere(c);
 }
 
-// The city in the state, the button and the reader's recent cities; the caller renders.
-function setCity(id) {
+// The city (and part of it) in the state, the button and the reader's recent cities; the caller renders.
+function setCity(id, part = "") {
   state.city = id;
+  state.part = part;
   showCity();
   try {
     localStorage.setItem(RECENT_KEY, JSON.stringify([id, ...recentCities().filter((x) => x !== id)].slice(0, MAX_RECENT + 1)));
@@ -1113,6 +1361,9 @@ function sheetStart() {
       el("button", { type: "button", class: "sheet-row", onclick: () => browseCountry(k) },
         el("span", { class: "sheet-name" }, k.name),
         el("span", { class: "sheet-value" }, `${nf.format(k.n)} ${k.n > 1 ? "cities" : "city"} ›`)))),
+    el("ul", { class: "sheet-list sheet-more" }, el("li", {},
+      el("button", { type: "button", class: "sheet-row", onclick: () => { $("#city-sheet").close(); goPlace(null); } },
+        "Every place, by country ›"))),
   ];
 }
 
@@ -1175,7 +1426,8 @@ function initCitySheet() {
   sheet.addEventListener("click", (e) => { if (e.target === sheet) sheet.close(); });   // the backdrop
   search.addEventListener("input", renderSheet);
   sheet.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" && e.target === search && fold(search.value)) { $("#city-results .sheet-row").click(); return; }
+    // preventDefault: the sheet closes, focus returns to the button that opened it, and Enter would press it again
+    if (e.key === "Enter" && e.target === search && fold(search.value)) { e.preventDefault(); $("#city-results .sheet-row").click(); return; }
     if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
     e.preventDefault();
     const rows = [search, ...sheet.querySelectorAll(".sheet-row")];
@@ -1273,6 +1525,15 @@ async function renderPlaces() {
       "Try the search above."));
     return;
   }
+  const k = countedAs(ref);
+  if (k) {   // a counted place has the place page; the ?place= link becomes its ?city= one
+    setCity(...k);
+    state.view = "city";
+    writeURL();
+    renderFooter();
+    await render();
+    return;
+  }
   if (state.placeScope !== ref.country.cc) { state.placeScope = ref.country.cc; $("#place-scope").value = ref.country.cc; }
   const head = placeHead(ref);
   const slot = el("div", {}, el("p", { class: "notice" }, ref.kind === "country" ? `Loading ${enName(ref.country)}'s places…` : "Loading…"));
@@ -1331,8 +1592,9 @@ async function placeSections(ref) {
     out.unshift(rollupCard(ref, shards));
     return out;
   }
-  if (counted && !counted.includes("/")) out.push(cityCard(ref, counted), await partsCard(counted, ref, null));
-  else if (counted) out.push(...await partCards(ref, counted));
+  // a counted place whose city is not in cities.json yet (counted ones open the place page)
+  if (counted) out.push(el("article", { class: "card" }, el("h2", {}, "Counted"),
+    el("p", { class: "sub" }, `${refName(ref)} is counted; its numbers arrive with the next published count.`)));
   else if (ref.kind === "region") out.push(rollupCard(ref, [ref.shard]));
   else {
     out.push(askCard(ref));
@@ -1432,26 +1694,16 @@ function askCard(ref) {
       el("a", { href: `${ASK_URL}?${search}` }, "look for a request"), ", and a 👍 on it is a vote."));
 }
 
-function cityCard(ref, cityId) {
-  const c = cityById(cityId);
-  if (!c) return el("article", { class: "card" }, el("h2", {}, "Counted"),
-    el("p", { class: "sub" }, `${refName(ref)} is counted; its numbers arrive with the next published count.`));
-  return el("article", { class: "card" },
-    el("div", { class: "tiles" },
-      tile("Open quests", nf.format(c.open), el("div", { class: "note" }, `as of ${c.asOfDate}, the app's default quests`), true),
-      tile("Aged, need resurvey", nf.format(c.agedOnly), el("div", { class: "note" }, c.open ? `${Math.round((100 * c.agedOnly) / c.open)}% of open` : "")),
-      tile("Per km² of land", ratio(c.open, c.landAreaKm2), el("div", { class: "note" }, c.landAreaKm2 ? `${nf1.format(c.landAreaKm2)} km²` : "area unknown"))),
-    el("p", {}, cityLink(c, `Open ${c.name}: every quest, ticks, pins and the chart over time →`)));
-}
-
 // The newest snapshot of a city: the parts are in it (cities.<id>.parts).
 function snapshotOf(c) { return optionalJSON(`${DATA}/${c.region}/snapshots/${c.asOfDate}.json`); }
 function partNames(cityId) { return optionalJSON(`${DATA}/parts/${encodeURIComponent(cityId)}.json`); }
 
 const partTotal = (counts) => Object.entries(counts || {}).reduce((s, [q, n]) => s + (selected(q) ? n : 0), 0);
+const partKind = (st) => (st === "neighborhood" ? "neighbourhood" : st || "part");
 
-// The city's parts with their totals over the ticked quests; null when it has none published.
-async function partsCard(cityId, ref, current) {
+// The city's parts with their totals over the ticked quests, from its newest snapshot, each linking to its
+// page; current (a part id) is the one shown. Null when the city has none published.
+async function partsCard(cityId, current) {
   const c = cityById(cityId);
   if (!c) return null;
   // the snapshot first: a city without parts has no names file to ask for
@@ -1459,74 +1711,18 @@ async function partsCard(cityId, ref, current) {
   const counts = snap && snap.cities && snap.cities[cityId] && snap.cities[cityId].parts;
   const names = counts && Object.keys(counts).length ? await partNames(cityId).catch(() => null) : null;
   if (!names || !names.parts || !names.parts.length) return null;
-  const sh = ref.shard;
   const rows = names.parts.map((p) => ({ p, open: counts[p.id] ? partTotal(counts[p.id]) : null }))
     .sort((a, b) => (b.open ?? -1) - (a.open ?? -1) || enName(a.p).localeCompare(enName(b.p)));
   return el("article", { class: "card" },
-    el("h2", {}, `Parts of ${c.name}`),
-    el("p", { class: "sub" }, `Open quests inside each part's OpenStreetMap boundary, counting ${selectionText()}. ` +
-      "Parts overlap and leave gaps, so they do not add up to the city."),
-    el("div", { class: "table-wrap" }, el("table", { class: "data" },
+    el("h2", {}, current ? `Every part of ${c.name}` : `Neighbourhoods and other parts of ${c.name}`),
+    el("p", { class: "sub" }, `Open quests inside each part's OpenStreetMap boundary on ${shortDate(c.asOfDate)}, counting ` +
+      `${selectionText()}. Parts overlap and leave gaps, so they do not add up to the city.`),
+    el("div", { class: "table-wrap" }, el("table", { class: "data parts" },
       el("thead", {}, el("tr", {}, el("th", { scope: "col" }, "Part"), el("th", { scope: "col" }, "Kind"), el("th", { scope: "col", class: "num" }, "Open"))),
-      el("tbody", {}, rows.map(({ p, open }) => {
-        const i = sh.byId.get(p.id);
-        const label = enName(p);
-        return el("tr", { class: p.id === current ? "picked" : null },
-          el("td", {}, i != null ? placeLink(rowRef(sh, i), label) : label),
-          el("td", {}, p.subtype === "neighborhood" ? "neighbourhood" : p.subtype),
-          el("td", { class: "num" }, open == null ? "—" : nf.format(open)));
-      })))));
-}
-
-// A counted part: its open quests per type from the city's newest snapshot, the ticked ones summed.
-async function partCards(ref, counted) {
-  const [cityId, pid] = [counted.slice(0, counted.indexOf("/")), counted.slice(counted.indexOf("/") + 1)];
-  const c = cityById(cityId);
-  const snap = c ? await snapshotOf(c).catch(() => null) : null;
-  const sc = snap && snap.cities && snap.cities[cityId];
-  const counts = sc && sc.parts && sc.parts[pid];
-  const cityName = c ? c.name : cityId;
-  if (!counts) {
-    return [el("article", { class: "card" }, el("h2", {}, `Counted as part of ${cityName}`),
-      el("p", { class: "sub" }, `${refName(ref)}'s numbers arrive with ${cityName}'s next count.`),
-      c ? el("p", {}, cityLink(c, `Open ${c.name} →`)) : null)];
-  }
-  const total = partTotal(counts);
-  const cityTotal = Object.entries(sc.quests).reduce((s, [q, v]) => s + (selected(q) ? v.open : 0), 0);
-  const rows = quests.quests.filter((q) => counts[q.name])
-    .sort((a, b) => selected(b.name) - selected(a.name) || counts[b.name] - counts[a.name] || a.order - b.order);
-  const none = quests.quests.filter((q) => q.status && q.status[cityId] === "counted" && !counts[q.name]).length;
-  const card = el("article", { class: "card" },
-    el("div", { class: "tiles" },
-      tile("Open quests", nf.format(total), el("div", { class: "note" }, `as of ${snap.asOfDate}`), true),
-      tile(`Share of ${cityName}'s`, cityTotal ? `${rate((100 * total) / cityTotal)}%` : "—",
-        el("div", { class: "note" }, `${nf.format(cityTotal)} open in ${cityName}`)),
-      tile("Quest types open here", nf.format(rows.length), el("div", { class: "note" }, `${none} counted types have none`))),
-    el("p", { class: "sub" }, `Counted in ${cityName}'s own run: the quests whose position is inside ${refName(ref)}'s ` +
-      `OpenStreetMap boundary, counting ${selectionText()}. Parts have no aged split or history yet, only the newest count ` +
-      "with the app's default resurvey setting."),
-    el("div", { class: "card-head" }, el("h2", {}, `Quests in ${refName(ref)}`),
-      el("button", { type: "button", class: "btn", title: "Tick the quests the app turns on by default, untick the rest",
-                     onclick: () => { state.selected = baseSet("app"); selectionChanged(); } }, "App defaults")),
-    el("div", { class: "table-wrap" }, el("table", { class: "data" },
-      el("thead", {}, el("tr", {},
-        el("th", { scope: "col", class: "c-pick" }, el("span", { class: "visually-hidden" }, "Counted")),
-        el("th", { scope: "col" }, "Quest"), el("th", { scope: "col", class: "num" }, "Open"),
-        el("th", { scope: "col", class: "num" }, `In ${cityName}`))),
-      el("tbody", {}, rows.map((q) => {
-        const sel = selected(q.name), name = questTitle(q.name);
-        return el("tr", { class: sel ? null : "unselected" },
-          el("td", { class: "c-pick" }, el("input", { type: "checkbox", checked: sel, "aria-label": `Count ${name} in the totals`,
-                                                      onchange: () => toggleSelect(q.name) })),
-          el("td", {}, el("div", { class: "quest-cell" }, questIcon(q.name),
-            el("div", {}, q.wikiLink ? el("a", { href: `https://wiki.openstreetmap.org/wiki/${q.wikiLink}` }, name) : el("span", {}, name),
-              q.defaultDisabled ? el("span", { class: "chip", title: "Off by default in the app" }, "off by default") : null,
-              el("span", { class: "code" }, q.name)))),
-          el("td", { class: "num" }, nf.format(counts[q.name])),
-          el("td", { class: "num" }, sc.quests[q.name] ? nf.format(sc.quests[q.name].open) : "—"));
-      })))),
-    el("p", {}, cityLink(c, `Open ${cityName}: the whole city, over time →`)));
-  return [card, await partsCard(cityId, ref, pid)];
+      el("tbody", {}, rows.map(({ p, open }) => el("tr", { class: p.id === current ? "picked" : null },
+        el("td", {}, p.id === current ? el("b", {}, enName(p)) : cityLink(c, enName(p), p.id)),
+        el("td", {}, partKind(p.subtype)),
+        el("td", { class: "num" }, open == null ? "—" : nf.format(open))))))));
 }
 
 // ---------- map view ----------
@@ -1654,14 +1850,14 @@ function setView(v) {
 
 async function render() {
   for (const t of document.querySelectorAll(".tab")) {
-    if (t.dataset.view === state.view) t.setAttribute("aria-current", "page");
+    if (t.dataset.view === (state.view === "places" ? "city" : state.view)) t.setAttribute("aria-current", "page");
     else t.removeAttribute("aria-current");
   }
   $("#view-city").hidden = state.view !== "city";
   $("#view-compare").hidden = state.view !== "compare";
   $("#view-places").hidden = state.view !== "places";
   $("#view-map").hidden = state.view !== "map";
-  $("#city-filters").style.display = ["places", "map"].includes(state.view) ? "none" : "";   // neither has a city picker
+  $("#city-filters").style.display = state.view === "compare" ? "" : "none";   // the place page has its own in its head
   setStatus("");
   try {
     if (state.view === "city") await renderCity();
@@ -1715,9 +1911,10 @@ async function main() {
   state.asThen = state.asThen && !!first;
   releases = ((rel && rel.releases) || []).map((r) => ({ ts: dayTs(r.date), version: r.version }))
     .map((r, i, all) => ({ ...r, major: isMajor(r, i, all) }));
-  if (cityById(state.city)) setCity(state.city);   // a link's city counts as seen
+  if (cityById(state.city)) setCity(state.city, state.part);   // a link's city counts as seen
   else {
     state.city = [...recentCities(), HOME_CITY].find(cityById) || cities.cities[0].id;
+    state.part = "";
     showCity();
   }
   state.pinned = state.pinned.filter((n) => questByName.has(n));
@@ -1735,7 +1932,15 @@ async function main() {
   asThen.closest("label").hidden = !first;
   asThen.addEventListener("change", () => { state.asThen = asThen.checked; writeURL(); render(); });
 
-  $("#quest-filter").addEventListener("input", (e) => { state.filter = e.target.value; if (hist) renderQuestTable(hist); });
+  $("#quest-filter").addEventListener("input", (e) => { state.filter = e.target.value; if (hist) renderQuestTable(shownSeries(hist)); });
+  $("#range").addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-range]");
+    if (!b || b.dataset.range === state.range) return;
+    state.range = b.dataset.range;
+    writeURL();
+    renderCity();
+  });
+  $("#place-change").addEventListener("click", () => $("#city-button").click());
   $("#select-shown").addEventListener("change", (e) => { if (hist) selectShown(e.target.checked); });
   $("#select-defaults").addEventListener("click", () => { state.selected = baseSet("app"); selectionChanged(); });
   $("#compare-quest").addEventListener("change", (e) => { state.compareQuest = e.target.value; writeURL(); renderCompare(); });
@@ -1749,7 +1954,7 @@ async function main() {
     if (e.target.closest("a") && e.defaultPrevented) { $("#place-search").value = ""; runSearch(); }
   });
 
-  sortHandler("#quest-table", () => state.questSort, () => renderQuestTable(hist));
+  sortHandler("#quest-table", () => state.questSort, () => renderQuestTable(shownSeries(hist)));
   sortHandler("#compare-table", () => state.compareSort, renderCompare);
 
   renderFooter();
