@@ -46,11 +46,18 @@ class PartsCacheTest {
             assertEquals(2, r.fromCache)
             assertEquals(0, r.parsed)
         }
-        // a source rewritten after the build, and one the cache never saw: both parsed from GeoJSON
+        // a source rewritten after the build, and one the cache never saw: by default the cache is trusted (its
+        // caller keeps it current) and only the unknown one is parsed; with verify both are parsed from GeoJSON
         File(base, a).writeText(multi)
         File(base, a).setLastModified(File(base, a).lastModified() + 5000)
         val c = geo("c.geojson", square)
         PartsCache.Reader(cacheFile, base).use { r ->
+            assertEquals(sample(Polygon.fromGeoJson(File(base, c))), sample(r.polygon(c)))
+            r.polygon(a)
+            assertEquals(1, r.fromCache)
+            assertEquals(1, r.parsed)
+        }
+        PartsCache.Reader(cacheFile, base, verify = true).use { r ->
             assertEquals(sample(Polygon.fromGeoJson(File(base, a))), sample(r.polygon(a)))
             assertEquals(sample(Polygon.fromGeoJson(File(base, c))), sample(r.polygon(c)))
             assertEquals(0, r.fromCache)

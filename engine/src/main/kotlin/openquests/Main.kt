@@ -159,7 +159,10 @@ fun count(opts: CountOptions): CountResult {
     val engine = Engine(registry, cities, parts)
     log("startup: registry and cities %.1f s, parts %.1f s%s, engine and its indexes %.1f s".format(
         (tParts - tStart) / 1e9, (tEngine - tParts) / 1e9,
-        cache?.let { " (${it.fromCache} outlines from ${it.file.name}, ${it.parsed} parsed)" } ?: "",
+        cache?.let { c ->
+            " (${c.fromCache} outlines from ${c.file.name}, ${c.parsed} parsed; lookup %.1f s, read %.1f s, decode %.1f s, polygons %.1f s)"
+                .format(c.nanos[0] / 1e9, c.nanos[1] / 1e9, c.nanos[2] / 1e9, c.nanos[3] / 1e9)
+        } ?: "",
         (System.nanoTime() - tEngine) / 1e9))
     if (opts.grid != null) engine.grid = TileGrid()
     engine.dumpQuests = opts.dumpQuests

@@ -19,9 +19,9 @@ import java.nio.file.StandardOpenOption
  * positional read of its rings as raw doubles, and the polygon is built from them as [Polygon.fromGeoJson] builds it,
  * bit for bit (the same doubles in the same order, the same band count).
  *
- * Each entry records its source file's size and modification time at build. On reading, a source that changed, or
- * an outline the cache lacks, is parsed from its GeoJSON as before (counted in [Reader.parsed]), so a stale cache
- * costs time, never an answer.
+ * An outline the cache lacks is parsed from its GeoJSON as before (counted in [Reader.parsed]). Each entry records
+ * its source file's size and modification time at build, but checking them per outline costs more than the cache
+ * saves on Windows, so it is opt-in ([VERIFY]); the caller decides once whether the cache is current.
  *
  * Layout, little endian: header `OQPC` magic (i32), version (i32), entries (i32), index offset (i64); the data, per
  * entry: rings (i32), then per ring its points (i32) and lat, lon f64 pairs; the index at the end, sorted by path
@@ -94,6 +94,10 @@ object PartsCache {
     }
 
     private const val HEADER = 20
+    /** `-Dopenquests.partsCacheVerify=true`: check each source's size and time before using its entry. Off by
+     *  default: on Windows those two calls were 14.1 s of a 17.6 s load (62,513 outlines), so the caller keeps the
+     *  cache current instead (world_cells.py partcache: one check of the world's places.json, placesets.parts_cache) */
+    private val VERIFY = System.getProperty("openquests.partsCacheVerify", "false") == "true"
 
     private fun header(count: Int, indexOffset: Long): ByteBuffer =
         ByteBuffer.allocate(HEADER).order(ByteOrder.LITTLE_ENDIAN).apply {
@@ -111,7 +115,7 @@ object PartsCache {
     }
 
     /** Reads outlines from a cache built by [build]. Not thread-safe: one per run, used while parts load. */
-    class Reader(val file: File, private val baseDir: File) : Closeable {
+    class Reader(val file: File, private val baseDir: File, private val verify: Boolean = VERIFY) : Closeable {
         private val ch = FileChannel.open(file.toPath(), StandardOpenOption.READ)
         private val count: Int
         private val paths: Array<ByteArray>
@@ -161,17 +165,33 @@ object PartsCache {
         }
 
         /** the outline at [path] (a registry's `geometry`), from the cache if its source is unchanged */
+        /** nanoseconds in: the index lookup and the source check, the read, decoding doubles, building polygons */
+        val nanos = LongArray(4)
+
         fun polygon(path: String): Polygon {
+            val t0 = System.nanoTime()
             val src = File(baseDir, path)
             val i = find(path)
-            if (i < 0 || src.length() != size[i] || src.lastModified() != mtime[i]) {
+            if (i < 0 || (verify && (src.length() != size[i] || src.lastModified() != mtime[i]))) {
                 parsed++
                 return Polygon.fromGeoJson(src)
             }
             fromCache++
+            val t1 = System.nanoTime()
             val b = read(offset[i], length[i])
-            val rings = List(b.int) { DoubleArray(2 * b.int).also { r -> for (k in r.indices) r[k] = b.double } }
-            return Polygon.fromRings(rings)
+            val t2 = System.nanoTime()
+            val rings = ArrayList<DoubleArray>()
+            repeat(b.int) {
+                val r = DoubleArray(2 * b.int)
+                b.asDoubleBuffer().get(r)  // the doubles at once, little endian as the buffer
+                b.position(b.position() + 8 * r.size)
+                rings += r
+            }
+            val t3 = System.nanoTime()
+            return Polygon.fromRings(rings).also {
+                val t4 = System.nanoTime()
+                nanos[0] += t1 - t0; nanos[1] += t2 - t1; nanos[2] += t3 - t2; nanos[3] += t4 - t3
+            }
         }
 
         override fun close() = ch.close()

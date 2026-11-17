@@ -42,9 +42,6 @@ import world_tier2 as T2  # noqa: E402
 EXE = ROOT / "tilestore" / "target" / "release" / "tilestore.exe"
 RING_M = 300.0
 NOTE_QUEST = "OsmNoteQuestType"
-# a world's part outlines in one file (`world_cells.py partcache`, engine PartsCache.kt); used by every engine run
-# with parts when it exists (a run without it parses each outline's GeoJSON: about 120 s of 121 for a notes run)
-PARTS_CACHE = "parts.cache"
 
 
 def _log(msg):
@@ -263,7 +260,7 @@ def engine_rows(day: Day, pbf: Path, out: Path, clock: str, cities: Path, parts:
         S.ENGINE = eng
     try:
         dump = S.engine(pbf, out, clock, cities, "UTC", None, area_pass=area_pass, heap_gb=day.heap_gb, base=ROOT,
-                        extra_opts=extra_opts, parts=parts, parts_cache=day.w / PARTS_CACHE)
+                        extra_opts=extra_opts, parts=parts, parts_cache=P.parts_cache(day.w))
     finally:
         S.ENGINE = saved
     side = json.loads(Path(str(dump) + ".json").read_text(encoding="utf-8"))
@@ -372,7 +369,7 @@ def counts_at(w: Path, clock: str, sets: P.PlaceSets, names: list[str], work: Pa
         d = w / "files" / f["id"]
         quiet(5)
         r = N.note_quests(d / "cities.json", d / "notes.jsonl", clock, work / f["id"], parts=d / "parts", engine=engine,
-                          heap_gb=heap_gb, parts_cache=w / PARTS_CACHE)
+                          heap_gb=heap_gb, parts_cache=P.parts_cache(w))
         nq["cities"].update(r["cities"])
         nq["parts"].update(r["parts"])
     if NOTE_QUEST not in names:
