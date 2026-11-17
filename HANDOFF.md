@@ -2101,3 +2101,13 @@ the file.
   pins came 10-21 in sentence case; the places page's `.card h3 { text-transform: capitalize }` (10-24, for
   lowercase place kinds like "county (12)") reached them too. `.multiples .card h3 { text-transform: none }`
   in `docs/style.css` undoes it for the pins only; places headings keep their capital.
+- **Day 3 and the planet punch: done, exact (11-16, 13:36-19:25).** DESIGN.md, "Compaction". Day 3 (diff 5167) on
+  the compacted store exact against the 11-05 clip (control 1,489). The punch's dry run equal to the independent
+  count to the byte; 9.40 GiB of pack 0 given back, every live tile the same, generation 3 against the clip the
+  same after; generation 0's pairs (21.25 GiB) gone. **It took 5.45 h** (0.47 s a range); later punches skip what
+  is already given back (31b7c503). **Now:** `.scratch/planet-cut/store` at 11-05, generation 3, compacted at 2,
+  punched at 3; `.scratch/planet-day/planet.loc` at 11-05. C: 141 GB free. `europe-2026-11-03` unpinned (its check is
+  done); `europe-2026-11-02` stays pinned for the engine's count on a read of the planet store. **Next:** the punch's
+  per-call cost (measure, then decide daily or weekly); days 5168-5176 are kept in `.scratch/planet/diffs-keep`
+  (their Europe clips age out of the store 14 days after their day, so 11-06 goes about 11-20); the 12-07 plan (cut
+  fresh or keep this store going) is the owner's call, with disk.

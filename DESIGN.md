@@ -5146,3 +5146,21 @@ synthetic test compacts after an empty second day.
 of 7.48 GiB live), 15.6 s, 138,827 tiles and 18,601 relation blobs copied, 9.59 GiB of files removed (about 4.3
 GiB net); the compacted generation 2 against `clip-1104` gives exactly what it gave before (13,968 same, 32
 differ, 5 only in the planet).
+
+**The third day, on the compacted store (11-16, 13:36-13:52; it waited for the daily run, which ended 13:36):**
+diff 5167, 647.8 s, 13 groups, 153,919 tiles reached, pack 6.53 GB. Node file to 11-05 (3.73M new, 413k moved,
+269k emptied), equal to `europe-2026-11-05` (127,777,322 nodes). Generation 3 against a cut of that clip at 2 km:
+13,968 equal, 32 differ, 5 only in the planet, all 37 explained by the same four ways; control, generation 2:
+1,489 differ. **An update on a compacted store is exact.**
+
+**The planet punch at generation 3 (13:52-19:25, `.scratch/planet-day/run4.sh`, log `logs/planet-punch.log`):**
+the dry run's 10,096,607,232 bytes in 41,404 ranges equal to the independent count (`count-dead.py`) byte for
+byte, so the gate passed; the punch zeroed them, free space up 10.71 GiB, every one of 31,709,976 live tiles of
+pack 0 the same (hashed before and after, 134 s each); generation 0's pair indexes (21.25 GiB) removed after.
+Generation 3 against `clip-1105` after the punch: the same counts and the same differing tiles as before it.
+pack-0000 is now 224 GiB on disk, 233 GiB long. **But the punch took 19,621 s, about 0.47 s a range** (on the
+clip 13 ms a range): the cost per `FSCTL_SET_ZERO_DATA` call grows with the file, cause not measured (the
+allocation map of a file with tens of thousands of holes is a guess). Fixed for later punches (31b7c503): only the
+dead ranges that still hold space (`FSCTL_QUERY_ALLOCATED_RANGES`) are punched; the planet's dry run now finds 0
+of 41,404. A day adds a few thousand new dead ranges, so a daily punch would cost tens of minutes at this rate;
+weekly, or the call's cost understood first, is the open choice. C: 141 GB free after.
