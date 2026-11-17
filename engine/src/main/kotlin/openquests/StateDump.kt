@@ -7,6 +7,7 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.util.Collections
 import java.util.concurrent.atomic.AtomicLong
+import kotlin.math.pow
 import kotlin.math.roundToInt
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Instant
@@ -81,8 +82,8 @@ class StateDump(private val file: File, val places: Boolean = false, private val
         if (b.remaining() < RECORD) drain(bufs)
         bufs.place.putInt(place)
         b.putLong(id * 4 + type)
-        b.putInt((lat * 1e7).roundToInt())
-        b.putInt((lon * 1e7).roundToInt())
+        b.putInt(e7(lat))
+        b.putInt(e7(lon))
         b.putShort(quest.toShort())
         b.put(flags.toByte())
         b.put(kind.toByte())
@@ -130,6 +131,21 @@ class StateDump(private val file: File, val places: Boolean = false, private val
 
     companion object {
         const val RECORD = 24
+
+        /**
+         * A coordinate in 1e-7 degrees, rounded, but kept inside the 1e-7 steps whose 6-decimal truncation toward
+         * zero is the exact value's, as SC truncates it (`Double.truncate(6)`: `(x * 10.0.pow(6)).toInt()`). So the
+         * stream can tell from the record alone whether an open note hides the position (OpenNotes.hides: the
+         * truncated position equals a note's): `trunc(e7 / 10)` toward zero is SC's truncated value. At most 1e-7
+         * from the exact value, against 0.5e-7 for plain rounding (tools/stream/notes_day.py, DESIGN.md
+         * "Release 1: the world day", step 4).
+         */
+        fun e7(x: Double): Int {
+            val r = (x * 1e7).roundToInt()
+            val t = (x * 10.0.pow(6)).toInt()
+            val (lo, hi) = if (t > 0 || (t == 0 && x >= 0.0)) t * 10 to t * 10 + 9 else t * 10 - 9 to t * 10
+            return r.coerceIn(lo, hi)
+        }
         const val MATCH = 0
         const val DUE = 1
         const val HIDDEN = 64
