@@ -2338,6 +2338,12 @@ checked against a full count. Until then the world's published numbers can only 
   - **Three agents from 11:15 on blockers 1-3:** P1 cheap place-outline loading in the engine (binary cache or a
     resident engine), P2 hidden flags at planet size, P3 the two cover gaps. Blocker 4 (rectangle grouping) follows
     P3; blocker 5 waits on the owner.
+  - **All three hit the usage limit at about 11:40 and were resumed at 12:02.**
+  - **P2 merged (12:20): blocker 2 gone.** `notes_day.notes_table` (the clip parsed once in parallel, cached beside
+    it), `open_keys`, `hidden_files` (a file opened only if a changed note falls in its box or it got rows that day;
+    rows found by binary search; changed flags written in place; files in parallel). The rehearsal's 50.3M rows: 150 s
+    to 3.6 s, byte-equal to the old path on all 16 files. Planet projection about 2 min with 8 workers. Not rerun:
+    `notes_check.py`'s engine checks (the rule is unchanged and the new path matches it byte for byte).
 
 ## The place page: merged (2026-11-16, evening; owner: "pick from handoff ui work", then "merge it now")
 
