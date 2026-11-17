@@ -5285,15 +5285,24 @@ was two thirds of a day's 8-14 min; it is read once for both tiers.
 at D-1's clock and on D at D's, only the recount's own changes applied), with four changes for the planet:
 - the cover in one global grid of 50 m cells, vectorised, not per city: `near_idx` loops over every city's box per
   point, which is 2,244 boxes for each of millions of changed nodes;
-- changed ways' old geometry as today's refs at yesterday's places (`NO_WAY_INDEX`, measured equal on Europe's five
-  days), so no way index; ways holding a changed node are left out (the same measurement; it leaves a tier-1 row of
-  an untouched way up to about 1 m from its true point, which moves no count unless it crosses a cell edge);
-- changed relations' member ways from the store (a new `tilestore` lookup by way id through the way pair index);
+- changed ways' old refs, and changed relations' member ways, from the store's generation D-1 (a new `tilestore`
+  lookup by way id through the way pair index), so no way index of our own. `NO_WAY_INDEX` (today's refs at
+  yesterday's places) was measured equal on Europe's five days, but it has no refs for a **deleted** way, whose
+  key then also misses the old-row lookup: its area-quest rows would stay. The lookup at D-1 covers both. Ways
+  holding a changed node are left out (the same measurement; a tier-1 row of an untouched way can stay up to about
+  1 m from its true point, which moves no count unless it crosses a cell edge);
 - the rectangles split at cell edges, each a city with its cell's time zone and no country codes (gated by
   position, as every cell is); map data by `tilestore read --gen D-1` and the newest generation, ring 300 m.
-Unknown, measured first: how many rectangles a planet day makes, and how the engine's area pass scales with tens
-of thousands of small cities in one run (a city's elements may be picked by a scan per city). If it scales badly,
-the rectangles are grouped per plan file, one engine run each.
+**Checked (22:00):** after `update --prune-pairs` the generation before reads byte for byte as before the update
+(the clip store, diff 5175), so both dates are readable until `compact`.
+**Measured (`.scratch/manyrects/probe.py`, the clip store, random 150 m rectangles in inner London, 300 m ring,
+area pass on, while the store's catch-up ran):** 100 rectangles: engine 6 s (pass 4.7); 1,000: 17 s (pass 14.4,
+5.9M nodes read); 10,000: 157 s (pass 148, 57.9M nodes read over 9.7M in the PBF). So about 14 ms a rectangle
+city on top of the map data, linear from 1,000 to 10,000 at the same data; whether it grows with the run's total
+data is not measured (grouping by plan file bounds that). The store's read cost 97 s for 10,000 cities against
+12 s for 1,000 over the same tiles: it opened each city's boundary file. A city's box is now read inline
+(`"box"` in the cities file; `tier2.write_cities` writes it): 1.8 s, the same bytes. Still unknown: how many
+rectangles a planet day makes.
 
 **Step 4, notes and ageing at the clock.** Ageing is the state's dates against the clock (step 3 of the stream,
 exact on Europe). Notes are not handled yet: `apply` has no notes clip, so a row keeps the seed's hidden flag until
@@ -5302,15 +5311,24 @@ D (the daily notes dump) set and clear the hidden flag on rows at the note's exa
 are counted from the dump at the clock.
 
 **Step 5, counts per place from the state.** The seed's snapshots come from the engine; a day's must come from the
-state. Each state row gets its places once (the seed: every row against the parts of its cell, as the engine
-assigns parts), then per-place counts move with the day's changed rows and the rows whose date comes, so a day
-never tests 2 billion rows against a million polygons. Also the aged split and the three resurvey settings, as the
-engine's snapshots carry them.
+state. **The engine assigns places, not a second test in Python:** a test on dumped positions already disagreed on
+Dublin's boundary (1 cm rounding), and a million polygons would multiply that. So the state dump carries each
+row's places as the engine found them (`--dump-state` extended, or a sidecar), decided **before** the seed runs,
+since a seed without them is a second planet count. A day's rows (tier 1 and the two rectangle recounts) come with
+their places the same way; per-place counts move with the day's changed rows and the rows whose date comes. Also
+the aged split and the three resurvey settings, as the engine's snapshots carry them.
 
-**Step 6, the checks every day.** The 147 counted cities as `osm-<city>` parts against that day's published
-snapshots (the daily run counts them from the extracts anyway: no extra cost), and Europe's 32 against the Europe
-clip; a day that misses the 0.1% bar stops the run, as the store's own check does.
+**Step 6, the checks every day.** The gate is like for like: Europe's 32 cities from the world state against
+today's engine on the Europe clip of the same instant (11-02 to 11-16 are pinned; 11-01 is cut from the history
+file at 11-01T00:00Z while it is on disk, step 7). A day that misses the 0.1% bar stops the run, as the store's own
+check does. The 147 published city snapshots are reported beside it, not gated: 11-01 and 11-02 are v64.0, and
+Canada's and Germany's extracts are not at 00:00Z (the 11-08 report's Regina -0.42% was that).
 
-**Step 7, catch up and publish.** The store cut again at 2026-11-01T00:00Z from a new history file and held there
-(HOLD) until steps 2-6 exist, then store and state together, one day at a time, to today; then daily. Publishing:
+**Step 7, catch up and publish.** The store cut again at 2026-11-01T00:00Z from a new history file (and, from the
+same file, the Europe polygon at 11-01T00:00Z for step 6's day one) and held there (HOLD) until steps 2-6 exist, then store and state together, one day at a time, to today; then daily. Publishing:
 place data on the R2 subdomain (DESIGN, "Place statistics for the whole world"), its DNS step the owner's.
+
+**Before release 1, two rules.** Steps 2-6 are built and held against a clip-sized world-mode store first
+(`.scratch/tiles/store-rsw`, the Europe clip with cells as cities), where every day has a whole count to compare
+row for row; only then the planet. A StreetComplete release before release 1 means a reseed at the store's day
+(the state is one quests file's).
