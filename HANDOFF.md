@@ -2335,6 +2335,9 @@ checked against a full count. Until then the world's published numbers can only 
     their segments (AddMaxHeight under a changed bridge): add the elements whose geometry meets the marked cells, from
     the store; (4) 128,544 planet rectangles per date: group per plan file and measure; (5) the 0.5 and 2 settings:
     the owner's call (date everything at all three settings in the engine, or publish the default only).
+  - **Three agents from 11:15 on blockers 1-3:** P1 cheap place-outline loading in the engine (binary cache or a
+    resident engine), P2 hidden flags at planet size, P3 the two cover gaps. Blocker 4 (rectangle grouping) follows
+    P3; blocker 5 waits on the owner.
 
 ## The place page: merged (2026-11-16, evening; owner: "pick from handoff ui work", then "merge it now")
 
