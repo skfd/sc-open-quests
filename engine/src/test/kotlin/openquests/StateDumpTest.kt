@@ -11,6 +11,19 @@ import kotlin.time.Instant
 
 /** --dump-state's records and the search for the day a waiting quest opens (the stream's seed). */
 class StateDumpTest {
+    /** the stored 1e-7 value keeps SC's 6-decimal truncation of the exact one (OpenNotes.hides), sign included */
+    @Test fun storedPositionKeepsTheTruncation() {
+        val rnd = java.util.Random(7)
+        val xs = (0 until 100_000).map { rnd.nextDouble() * 360 - 180 } +
+            listOf(-5, -1, 0, 1, 7, 52123457).flatMap { k -> listOf(0.0, 1e-9, 4e-8, 4.9e-8, -1e-9).map { k * 1e-6 - it } }
+        for (x in xs) {
+            val e = StateDump.e7(x)
+            val sc = (x * Math.pow(10.0, 6.0)).toInt()
+            assertEquals(sc, e / 10, "x=$x stored $e")  // Int division truncates toward zero, as the stream reads it
+            kotlin.test.assertTrue(kotlin.math.abs(e - x * 1e7) <= 1.0, "x=$x stored $e: more than 1e-7 off")
+        }
+    }
+
     @Test fun recordsReadBackFromEveryThread() {
         val f = File.createTempFile("state", ".bin").apply { deleteOnExit() }
         val s = StateDump(f)
