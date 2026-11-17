@@ -327,3 +327,17 @@ table.data tbody tr.done-head:hover td { background: none; }
 .done-toggle:hover { background: var(--wash); }
 .done-mark { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--good); color: #fff; font-size: 0.8rem; }
 .done-more { margin-left: auto; color: var(--link); font-weight: 400; font-size: 0.85rem; }
+
+/* a phone: the quest table fits the card, questions wrap instead of running off its edge; the trend,
+   the aged share and the class name are what gives way */
+@media (max-width: 600px) {
+  #quest-table .c-trend, #quest-table .c-aged, #quest-table .code { display: none; }
+  #quest-table td, #quest-table th { padding: 6px 4px; }
+  #quest-table .quest-cell { gap: 8px; }
+  #quest-table .q-icon { width: 26px; height: 26px; }
+  #quest-table .chip { margin-left: 0; white-space: normal; display: inline-block; }   /* "only in 34 countries, not Canada" */
+  #quest-table .quest-cell > div { min-width: 0; overflow-wrap: break-word; }
+  #quest-table tr.group-head th { white-space: normal; }
+}
+@media (max-width: 760px) { #quest-table .c-trend { display: none; } }
+@media (max-width: 360px) { #quest-table .quest-cell > div { overflow-wrap: anywhere; } }
