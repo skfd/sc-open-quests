@@ -2358,6 +2358,19 @@ checked against a full count. Until then the world's published numbers can only 
     (the same kinds as 11-10..11-13); all cells 30,013,907 against 30,012,738, the clip's edge included. So the
     default-setting residue grows about 20 groups a day before P3's fix. Keep G's worktree until P3 has rerun the days
     on copies of its state.
+  - **P3 merged (17:30): blocker 3 gone.** `tilestore context` answers a relation's member ways, every way a node is a
+    vertex of, and the ways with a tag crossing given segments; `store_context.py` and `world_tier2.py` mark relations
+    holding a changed way, untouched ways whose node moved (both days), and one box from a road's quest point to its
+    crossing with a changed bridge (or the reverse); `world_day.py` now calls F's store context (G's runner never did);
+    quest points use the line's own latitude. 56 Python tests pass. **Rehearsal rerun (11-10..11-13), default setting:
+    3, 4, 9, 9 groups differ (G: 15, 45, 66, 83); the 32 cities' counts 1, 1, 4, 4 of 5,306. It no longer grows.** Of
+    11-13's 9: 5 are the rehearsal's `clip_keep` dropping relations changed by tags alone (not on the planet; keep the
+    diff's relations the D-1 store holds if the rehearsal is rerun), 1 is the known AddHousenumber order effect, 3 not
+    traced (relation 13409862 AddRoofShape and AddBuildingLevels; Moscow road 684910576 AddMaxHeight: inside a
+    rectangle, the store holds the data, both recounts lack a quest the whole count has; next, an engine run on that
+    day's read, `days/<D>/t2/new.osm.pbf` in P3's worktree). Planet day 5172's cover with the store's answers
+    (Europe only): 128,796 rectangles, 102,475 km2. P3's rehearsal data is in
+    `.claude/worktrees/agent-a9b152efd4c2e1246/.scratch/r1/eu/` (keep it for the three traces).
 
 ## The place page: merged (2026-11-16, evening; owner: "pick from handoff ui work", then "merge it now")
 
