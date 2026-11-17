@@ -305,3 +305,39 @@ table.data tbody tr.group-head:hover th { background: none; }
 .btn.primary { background: var(--brand); color: #fff; border-color: var(--brand); text-decoration: none; display: inline-block; font-weight: 500; }
 .btn.primary:hover { background: var(--brand-2); color: #fff; }
 .ask p { margin: 6px 0; }
+
+/* ---------- the place page: head, range switch, the "done here" fold ---------- */
+#view-city, #view-places { padding-top: 18px; }
+.place-title { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; }
+#place-asof { margin: 2px 0 0; }
+.seg { display: inline-flex; border: 1px solid var(--axis); border-radius: 8px; overflow: hidden; }
+.seg[hidden] { display: none; }
+.seg button { font: inherit; font-size: 0.85rem; color: var(--ink-2); background: var(--surface); border: 0; padding: 5px 10px; cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--axis); }
+.seg button:hover { background: var(--wash); color: var(--ink); }
+.seg button[aria-pressed="true"] { background: var(--series-1); color: var(--surface); }   /* dark text on the dark theme's light indigo */
+.q-icon.sm { width: 20px; height: 20px; margin-right: 6px; }
+.top-quest { display: flex; align-items: center; }
+table.data tr.done-head td { padding: 4px 0; }
+table.data tbody tr.done-head:hover td { background: none; }
+.done-toggle {
+  display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px; font: inherit; font-weight: 500; text-align: left;
+  color: var(--good); background: none; border: 0; border-radius: 8px; cursor: pointer;
+}
+.done-toggle:hover { background: var(--wash); }
+.done-mark { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--good); color: #fff; font-size: 0.8rem; }
+.done-more { margin-left: auto; color: var(--link); font-weight: 400; font-size: 0.85rem; }
+
+/* a phone: the quest table fits the card, questions wrap instead of running off its edge; the trend,
+   the aged share and the class name are what gives way */
+@media (max-width: 600px) {
+  #quest-table .c-trend, #quest-table .c-aged, #quest-table .code { display: none; }
+  #quest-table td, #quest-table th { padding: 6px 4px; }
+  #quest-table .quest-cell { gap: 8px; }
+  #quest-table .q-icon { width: 26px; height: 26px; }
+  #quest-table .chip { margin-left: 0; white-space: normal; display: inline-block; }   /* "only in 34 countries, not Canada" */
+  #quest-table .quest-cell > div { min-width: 0; overflow-wrap: break-word; }
+  #quest-table tr.group-head th { white-space: normal; }
+}
+@media (max-width: 760px) { #quest-table .c-trend { display: none; } }
+@media (max-width: 360px) { #quest-table .quest-cell > div { overflow-wrap: anywhere; } }

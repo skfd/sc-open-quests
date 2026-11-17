@@ -2161,8 +2161,20 @@ clipped questions and `app.js:1506`'s stale "no history yet" line.
   history (`backfill_history.py`, the clips' months, `recut`) needs a fresh history first; name-ru-repair downloads
   its own when it becomes operational.
 
-## The place page: on branch `place-page` (worktree `../sc-open-quests-place`), not merged (2026-11-16, evening)
 
-The unified place page, the 90-day chart, the new tiles, the "done here" fold and the phone table are built and
-checked there; that branch's HANDOFF.md and DESIGN.md ("The place page") hold the details and the merge steps.
-Waiting on the owner's yes to merge (merging is publishing).
+## The place page: merged (2026-11-16, evening; owner: "pick from handoff ui work", then "merge it now")
+
+- **Merged into main from branch `place-page`; the next scheduled run publishes it.** DESIGN.md, "The place page".
+  One page for a counted city and each of its parts, reading the part series; the chart opens on 90 days ("All since
+  2017" in the link), steps marked (Toronto's 2026 import named), density tiles replaced by the 4-week change
+  (mapping vs resurvey) and the most-open quest type, zero rows folded into "N quest types done here", the phone
+  table fixed, `app.js:1506`'s stale line gone with the old part cards. Tabs: Places, Compare cities, Map (the owner
+  approved the collapse). Widget links (`?place=&in=`, `?city=`, `&pin=`) all land on it. Checks:
+  `.scratch/place-page/drive.py`, `clicks.py` (serve `docs/` on 8767), `fixtures.py` (serve the repo root on 8769).
+- **Data:** `run.py history` now writes `place`/`in` on each city in `cities.json` (146 of 147; London, GB has no
+  row). A full rebuild into `C:/tmp/pp` changed only `cities.json`. Not committed by hand: the first daily run after
+  the merge writes it. Until then the page shows "Ontario, Canada" as text instead of the linked chain.
+- **Left from the review, not done:** sort ticked quests first in the table (Toronto's opens on two unticked rows
+  bigger than the total), the class name moved off each row, the shorter phone header, relative dates elsewhere.
+  Compare's table scrolls sideways on a phone (it did before too). The 90-day chart's y axis starts at 0, so a
+  city's month barely moves the line; worth revisiting if the change should be visible.

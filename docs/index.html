@@ -30,9 +30,8 @@
       <span class="pin" style="--x:88%;--y:26%"><img src="icons/lantern.svg" alt=""></span>
     </div>
     <nav class="tabs" aria-label="View">
-      <a href="#" data-view="city" class="tab">One city</a>
+      <a href="#" data-view="city" class="tab">Places</a>
       <a href="#" data-view="compare" class="tab">Compare cities</a>
-      <a href="#" data-view="places" class="tab">Places</a>
       <a href="#" data-view="map" class="tab">Map</a>
     </nav>
   </div>
@@ -49,12 +48,25 @@
   <p id="status" class="notice" hidden></p>
 
   <section id="view-city" hidden>
+    <header class="card place-head">
+      <nav class="crumbs" id="place-crumbs" aria-label="Where it is"></nav>
+      <div class="place-title">
+        <h2><span id="place-name"></span> <span class="place-kind" id="place-kind"></span></h2>
+        <button type="button" class="btn" id="place-change" aria-haspopup="dialog">Change place</button>
+      </div>
+      <p class="sub" id="place-asof"></p>
+    </header>
+
     <div class="tiles" id="tiles"></div>
 
     <article class="card">
       <div class="card-head">
         <h2 id="chart-title">Open quests over time</h2>
         <div class="head-checks">
+          <div class="seg" id="range" role="group" aria-label="Time shown" hidden>
+            <button type="button" data-range="recent" aria-pressed="true">Last 90 days</button>
+            <button type="button" data-range="all" aria-pressed="false">All</button>
+          </div>
           <label class="field check small" title="Leaves each quest out until the release that first offered it, so the line steps up where quests were added. Counts are today's rules on that date's map.">
             <input type="checkbox" id="as-then"> Only quests the app had then
           </label>
@@ -95,12 +107,14 @@
             <th scope="col" class="c-trend" title="Open quests over time, each line scaled to its own range">Trend</th>
             <th scope="col" data-sort="open" class="num">Open</th>
             <th scope="col" data-sort="delta" class="num">Change</th>
-            <th scope="col" data-sort="aged" class="num" title="Share of open quests that exist only because a check date or the element has aged">Aged</th>
+            <th scope="col" data-sort="aged" class="num c-aged" title="Share of open quests that exist only because a check date or the element has aged">Aged</th>
           </tr></thead>
           <tbody></tbody>
         </table>
       </div>
     </article>
+
+    <div id="place-children"></div>
   </section>
 
   <section id="view-compare" hidden>
