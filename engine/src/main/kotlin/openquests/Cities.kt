@@ -92,15 +92,23 @@ class CityIndex(val cities: List<City>) : PolygonIndex(cities.map { it.polygon }
 
 /** Finds the polygons that contain a point: bounding boxes first (through a [BoxGrid]), then the
  *  polygons. */
-open class PolygonIndex(private val polygons: List<Polygon>) {
+open class PolygonIndex(private val polygons: List<Polygon>, clip: Polygon? = null) {
     private val minLat = DoubleArray(polygons.size) { polygons[it].minLat }
     private val maxLat = DoubleArray(polygons.size) { polygons[it].maxLat }
     private val minLon = DoubleArray(polygons.size) { polygons[it].minLon }
     private val maxLon = DoubleArray(polygons.size) { polygons[it].maxLon }
-    // floor() is monotone, so a point inside a box has its cell inside the box's cells
-    private val grid = BoxGrid(
-        IntArray(polygons.size) { deg7(minLat[it]) }, IntArray(polygons.size) { deg7(minLon[it]) },
-        IntArray(polygons.size) { deg7(maxLat[it]) }, IntArray(polygons.size) { deg7(maxLon[it]) })
+    // floor() is monotone, so a point inside a box has its cell inside the box's cells. With [clip] (the city whose
+    // parts these are: every point asked lies in it) the grid covers only the boxes' part inside the clip's box, so a
+    // country-sized part of a 150 m rectangle city costs one cell, not the 512 x 512 of the country's box; the
+    // answers are the same for any point inside the clip's box (a box wholly outside it keeps a 1-cell box at its edge)
+    private val grid = run {
+        val s = clip?.minLat; val w = clip?.minLon; val n = clip?.maxLat; val e = clip?.maxLon
+        BoxGrid(
+            IntArray(polygons.size) { deg7(if (s == null) minLat[it] else minOf(maxOf(minLat[it], s), n!!)) },
+            IntArray(polygons.size) { deg7(if (w == null) minLon[it] else minOf(maxOf(minLon[it], w), e!!)) },
+            IntArray(polygons.size) { deg7(if (n == null) maxLat[it] else maxOf(minOf(maxLat[it], n), s!!)) },
+            IntArray(polygons.size) { deg7(if (e == null) maxLon[it] else maxOf(minOf(maxLon[it], e), w!!)) })
+    }
 
     /** Whether the box could hold a point of some city. A polygon centroid lies in its convex hull
      *  and a polyline midpoint on the line, so an element whose bbox misses every city's bbox

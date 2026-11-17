@@ -496,7 +496,10 @@ def storecut(store: Path, out: Path, only: list[str] | None = None, at: str | No
     cutdir.mkdir(parents=True, exist_ok=True)
     exe = ROOT / "tilestore" / "target" / "release" / "tilestore.exe"
     rec = cutdir / "storecut.json"
-    with store_lock.reading(f"world_cells storecut into {out}"):
+    import contextlib
+    # the hold is the planet store's (its daily run moves it); a clip store of a rehearsal is nobody else's
+    planet = store.resolve() == store_lock.STORE.resolve()
+    with store_lock.reading(f"world_cells storecut into {out}") if planet else contextlib.nullcontext():
         gen = read_json(store / "store.json")["generations"][-1]
         day = gen["day"]
         if at and day != at:
