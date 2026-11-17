@@ -2137,9 +2137,11 @@ clipped questions and `app.js:1506`'s stale "no history yet" line.
   A full rebuild into `C:/tmp/pp` changed only `cities.json`. The worktree's `docs/data/cities.json` holds that rebuild
   for local testing and is **not committed**: the first daily run after the merge writes it. Until then the live
   page shows "Ontario, Canada" as text instead of the linked chain; nothing breaks.
-- **To merge:** in main, `git merge place-page` (fast-forward unless main moved), then
-  `git worktree remove ../sc-open-quests-place` (after `git -C ../sc-open-quests-place checkout docs/data/cities.json`)
-  and `git branch -d place-page`. The next scheduled run publishes.
+- **To merge:** stop the test servers (python http.server on 8767, 8768, 8769); copy `.scratch/place-page/` into main's
+  `.scratch/` (ignored, so removing the worktree would lose the check scripts); `git -C ../sc-open-quests-place checkout
+  docs/data/cities.json`; in main `git merge place-page` (expect append conflicts in DESIGN.md/HANDOFF.md if main
+  moved: keep both); rerun `drive.py` and `clicks.py` against main's `docs/`; `git worktree remove ../sc-open-quests-place`,
+  `git branch -d place-page`. The next scheduled run publishes.
 - **Left from the review, not done:** sort ticked quests first in the table (Toronto's opens on two unticked rows
   bigger than the total), the class name moved off each row, the shorter phone header, relative dates elsewhere.
   Compare's table scrolls sideways on a phone (also on main). The 90-day chart starts its y axis at 0, so a
