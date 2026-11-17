@@ -2255,6 +2255,13 @@ checked against a full count. Until then the world's published numbers can only 
     **Open, for the rule:** the engine dates area quests at the default setting only, so the world's 0.5 and 2 counts
     of area quests go stale from the day after a seed (28 values in Bremen at +30 days). Either the engine dates them
     at all three settings, or the world publishes the default setting only. The default is what the site shows.
+  - **D merged (23:20):** `tilestore ways --store S [--gen G] --ids W.npy [--rels R.npy] --out DIR` (`ways.rs`): each
+    way's refs and their places in a generation, through its way pairs, falling back to the relation store for the
+    relations given; npy files out (`ids`, `how`, `offs`, `refs`, `lat7`, `lon7`). Exact against the 11-12 clip on
+    99,889 ways (half of them relation members) and 1,000 absent ids; 1,000,000 ways in 18 s, 3.1 GiB.
+    **Order it forces on the world day:** a generation's way pairs go at the next `update --prune-pairs`, so the old
+    geometry (generation D-1) is looked up **before** the day's update; the new member ways of changed relations
+    after it. The tile reads of D-1 need only its tile index, which lasts until `compact`.
 
 ## The place page: merged (2026-11-16, evening; owner: "pick from handoff ui work", then "merge it now")
 
