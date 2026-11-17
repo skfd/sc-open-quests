@@ -5348,6 +5348,10 @@ Canada's and Germany's extracts are not at 00:00Z (the 11-08 report's Regina -0.
 same file, the Europe polygon at 11-01T00:00Z for step 6's day one) and held there (HOLD) until steps 2-6 exist, then store and state together, one day at a time, to today; then daily. Publishing:
 place data on the R2 subdomain (DESIGN, "Place statistics for the whole world"), its DNS step the owner's.
 
+**The world publishes the default resurvey setting only (the owner, 2026-11-17).** The engine dates settled
+matches and area quests at the default setting only, so the 0.5 and 2 counts would drift from the seed; the site
+shows the default. The world's counts and its daily gate are the default setting's; city snapshots keep all three.
+
 **Before release 1, two rules.** Steps 2-6 are built and held against a clip-sized world-mode store first
 (`.scratch/tiles/store-rsw`, the Europe clip with cells as cities), where every day has a whole count to compare
 row for row; only then the planet. A StreetComplete release before release 1 means a reseed at the store's day
