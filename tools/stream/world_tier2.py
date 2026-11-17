@@ -377,12 +377,17 @@ def _closed(r) -> bool:
 
 def cover(last_node: dict, last_way: dict, last_rel: dict, old_places, new_places, old_rows: np.ndarray | None,
           old_refs=None, member_refs=None, cap_km2: float = CAP_KM2, log=print, box_clip=None, old_tags=None,
-          address_nodes: np.ndarray | None = None, rule: bool = True, boxed_out: set | None = None):
+          address_nodes: np.ndarray | None = None, rule: bool = True, boxed_out: set | None = None,
+          old_node_tags=None, extra_candidates: list | None = None):
     """the cells a day touched. last_*: stream.read_diff's; old_places / new_places: node places at D-1 and D (a
     NodeFile, or DictPlaces); old_rows: the state's rows (lat, lon in 1e-7) of every changed key; old_refs(wid) and
     member_refs(wid): a way's refs at D-1 and at D (None when unknown); old_tags(kind, id): an element's tags at D-1
     ('w' or 'r'; None when unknown: a planet diff's deletions carry none, and a modification only its new ones);
     address_nodes: the sorted ids of every address node, if known (an area with one on its outline is a container).
+    old_node_tags(nid): a changed node's tags at D-1 ({} untagged; None unknown), so a deleted or modified node that a
+    container read (an address that went, a level removed) is found; extra_candidates: container boxes the diff alone
+    does not show, (box, kind, reason, tags known, ident) as the closed ways' (store_context.DayContext: relations
+    holding a changed way, the containers of a changed contained node, the areas a changed address is a vertex of).
     rule=False boxes every closed way and multipolygon (tier2's way; a test). Returns (codes, stats, secs)."""
     t0 = time.time()
     marks = Marks()
@@ -490,6 +495,10 @@ def cover(last_node: dict, last_way: dict, last_rel: dict, old_places, new_place
         marks.points(p[:, 0], p[:, 1], "street member node")
     secs["relations"] = time.time() - t
 
+    if extra_candidates:
+        candidates += extra_candidates
+        stats["store context: container boxes"] = len(extra_candidates)
+
     # the boxes: a container's whole box; any box up to SMALL_BOX_KM2; every other polygon by outline and quest points
     t = time.time()
     if candidates:
@@ -538,7 +547,13 @@ def cover(last_node: dict, last_way: dict, last_rel: dict, old_places, new_place
     in_ways = {r for refs in new_refs for r in refs} | {r for refs in old_list for r in refs}
     near = []
     for n, v in last_node.items():
-        kind = contained_kind(v[3]) if v[2] else (None if n in in_ways else "deleted, tags unknown")
+        ot = old_node_tags(n) if old_node_tags else None
+        if v[2]:
+            kind = contained_kind(v[3]) or (contained_kind(ot) if ot else None)
+        elif ot is not None:
+            kind = contained_kind(ot)  # deleted, its tags at D-1 known
+        else:
+            kind = None if n in in_ways else "deleted, tags unknown"
         if kind:
             near.append(n)
             stats[f"contained nodes: {kind}"] += 1
@@ -921,8 +936,10 @@ def changed_keys(last_node, last_way, last_rel) -> np.ndarray:
 # --- one day, timed ------------------------------------------------------------------------------
 
 def day(diff: Path, plan_path: Path, world: Path, nodes: Path, work: Path, base: Path, places_json: Path,
-        old_refs=None, member_refs=None, cap_km2: float = CAP_KM2, log=print) -> dict:
-    """the cover of one day and the engine's files for it, every stage timed (the node file is read only)"""
+        old_refs=None, member_refs=None, cap_km2: float = CAP_KM2, log=print, hooks: dict | None = None) -> dict:
+    """the cover of one day and the engine's files for it, every stage timed (the node file is read only); hooks:
+    store_context.DayContext.hooks(container_kind), the store's answers for the day (they replace old_refs and
+    member_refs)"""
     import stream as S
     T = {}
     t = time.time()
@@ -936,7 +953,8 @@ def day(diff: Path, plan_path: Path, world: Path, nodes: Path, work: Path, base:
     rows = old_rows(world, keys)
     T["old rows"] = time.time() - t
     log(f"old rows: {len(rows):,} of {len(keys):,} changed keys; {T['old rows']:.0f} s")
-    codes, stats, secs = cover(last_node, last_way, last_rel, old_places, new_places, rows, old_refs, member_refs, cap_km2, log)
+    kw = {"old_refs": old_refs, "member_refs": member_refs, **(hooks or {})}
+    codes, stats, secs = cover(last_node, last_way, last_rel, old_places, new_places, rows, cap_km2=cap_km2, log=log, **kw)
     T["cover"] = sum(secs.values())
     np.save(work / "codes.npy", codes)  # the marked cells: `rects` redoes the stages after the cover from them
     out = after_cover(codes, plan_path, world, work, base, places_json, T, log)

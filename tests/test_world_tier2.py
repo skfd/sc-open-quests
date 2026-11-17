@@ -213,6 +213,34 @@ class CoverTest(unittest.TestCase):
         _, stats, _ = self.cover(last_node={44: node(0, 0, alive=False)}, last_way={8: way([44, 1])})
         self.assertEqual(stats["contained nodes: deleted, tags unknown"], 0)
 
+    # --- the store's answers (store_context.DayContext's hooks) ---
+
+    def test_old_node_tags_decide_a_deleted_node(self):
+        # untagged the day before: a vertex, nothing around it is recounted
+        _, stats, rects = self.cover(last_node={44: node(0, 0, alive=False)}, old_node_tags=lambda n: {})
+        self.assertFalse(inside_any(rects, INSIDE[0] + 0.0008, INSIDE[1]))
+        self.assertEqual(stats["contained nodes: deleted, tags unknown"], 0)
+        # an address the day before: its surroundings, for the building that held it
+        _, stats, rects = self.cover(last_node={44: node(0, 0, alive=False)},
+                                     old_node_tags=lambda n: {"addr:housenumber": "4"})
+        self.assertTrue(inside_any(rects, INSIDE[0] + 0.0008, INSIDE[1]))
+        self.assertEqual(stats["contained nodes: address"], 1)
+
+    def test_old_node_tags_find_an_address_that_went(self):
+        n = (3, 0, True, {}, INSIDE)  # still there, its address removed today
+        _, stats, rects = self.cover(last_node={44: n}, old_node_tags=lambda i: {"addr:housenumber": "4"})
+        self.assertEqual(stats["contained nodes: address"], 1)
+        self.assertTrue(inside_any(rects, INSIDE[0] + 0.0008, INSIDE[1]))
+
+    def test_extra_candidates_are_boxed_as_containers(self):
+        box = (52.1, 9.8, 52.163, 9.9)  # BIG's box: a building multipolygon holding a changed ring, from the store
+        extra = [(box, "relation", "building (AddIsAmenityIndoor)", True, ("relation", 30))]
+        _, stats, rects = self.cover(last_way={20: way([40, 41])}, extra_candidates=extra)
+        self.assertTrue(inside_any(rects, 52.12, 9.83))
+        self.assertEqual(stats["store context: container boxes"], 1)
+        self.assertEqual(stats["boxes marked whole: container"], 1)
+
+
     def test_engine_files(self):
         _, _, rects = self.cover(last_way={7: way([1, 2])})
         ids = np.array(["far", "near"])
@@ -230,6 +258,54 @@ class CoverTest(unittest.TestCase):
         parts = json.loads((pdir / f"{c['id']}.json").read_text())["parts"]
         self.assertEqual(sorted(p["id"] for p in parts), ["near", "osm-x"])
 
+
+class DayContextTest(unittest.TestCase):
+    """store_context.DayContext's candidates, from hand-made store answers"""
+
+    def ctx(self, before=None, after=None, last_node=None, last_way=None):
+        import store_context as SC
+        dc = SC.DayContext(last_node or {}, last_way or {}, {}, W.contained_kind, W.wanted_relation)
+        for name, d in (("b", before), ("a", after)):
+            if d is not None:
+                c = SC.Context.__new__(SC.Context)
+                c.ways, c.rels, c.nodes, c.points, c.elements, c.stats = (
+                    d.get("ways", {}), d.get("rels", {}), d.get("nodes", {}), d.get("points", []), d.get("elements", {}), {})
+                setattr(dc, name, c)
+        return dc
+
+    def test_a_container_relation_holding_a_changed_way(self):
+        box = (52.1, 9.8, 52.163, 9.9)
+        before = {"ways": {20: {"refs": [40, 41], "tags": {}, "addr": [], "held_by": [30]}},
+                  "rels": {30: {"tags": {"type": "multipolygon", "building": "yes"}, "members": [], "box": box}}}
+        dc = self.ctx(before=before, last_way={20: way([40, 41])})
+        c = dc.extra_candidates(W.container_kind)
+        self.assertEqual([(x[0], x[4]) for x in c], [(box, ("relation", 30))])
+        before["rels"][30]["tags"] = {"type": "multipolygon", "natural": "wood"}
+        self.assertEqual(self.ctx(before=before, last_way={20: way([40, 41])}).extra_candidates(W.container_kind), [])
+
+    def test_the_container_of_a_changed_address_and_an_area_it_is_a_vertex_of(self):
+        bbox, abox = (52.12, 9.84, 52.14, 9.86), (52.0, 9.9, 52.05, 9.95)
+        after = {"points": [[(1, 50)]], "elements": {(1, 50): {"box": bbox, "tags": {"building": "yes"}},
+                                                    (1, 60): {"box": abox, "tags": {"landuse": "residential"}}},
+                 "nodes": {44: {"tags": {"addr:housenumber": "9"}, "vertex_of": [60]}}}
+        n = (2, 0, True, {"addr:housenumber": "9"}, INSIDE)
+        c = self.ctx(after=after, last_node={44: n}).extra_candidates(W.container_kind)
+        got = {x[4]: x[2] for x in c}
+        self.assertIn(("way", 50), got)
+        self.assertEqual(got[("way", 60)], "area with an address on its outline (AddHousenumber)")
+
+    def test_old_refs_tags_and_address_nodes(self):
+        before = {"ways": {20: {"refs": [10, 11], "tags": {"building": "yes"}, "addr": [11], "held_by": []}},
+                  "nodes": {44: {"tags": {"amenity": "bench"}, "vertex_of": []}}}
+        after = {"ways": {20: {"refs": [10, 12], "tags": {}, "addr": [12], "held_by": []}}}
+        dc = self.ctx(before=before, after=after, last_way={20: way([10, 12])})
+        self.assertEqual(dc.old_refs(20), [10, 11])
+        self.assertEqual(dc.old_tags("w", 20), {"building": "yes"})
+        self.assertIsNone(dc.old_tags("w", 21))
+        self.assertEqual(dc.old_node_tags(44), {"amenity": "bench"})
+        self.assertIsNone(dc.old_node_tags(45))
+        self.assertEqual(dc.address_nodes().tolist(), [11, 12])
+        self.assertEqual(dc.member_refs(20), [10, 12])
 
 @unittest.skipUnless(os.environ.get("WORLD_TIER2_EUROPE") == "1", "set WORLD_TIER2_EUROPE=1 (minutes, real data)")
 class EuropeDayTest(unittest.TestCase):
@@ -302,11 +378,22 @@ class EuropeDayTest(unittest.TestCase):
                                     & (allr[None, :, 1] <= p[:, None, 1]) & (p[:, None, 1] < allr[None, :, 3])).any(axis=1)
             return out
 
-        for label, rule in (("every box (tier2's way)", False), ("the rule", True)):
+        variants = [("every box (tier2's way)", False, {}), ("the rule", True, {})]
+        # WORLD_TIER2_CONTEXT=DIR: the store's answers for this day (`store_context.py day` on a copy of the 11-12 clip
+        # store, DIR its --work): the rule with old refs, old tags, holding relations, containers and outline addresses
+        ctx_dir = os.environ.get("WORLD_TIER2_CONTEXT")
+        if ctx_dir:
+            import store_context as SC
+            dc = SC.DayContext.load(Path(ctx_dir), last_node, last_way, last_rel, W.contained_kind, W.wanted_relation)
+            variants.append(("the rule with the store's context", True, dc.hooks(W.container_kind)))
+        all_stats = {}
+        for label, rule, hooks in variants:
             t = time.time()
             boxed: set = set()
-            codes, stats, _ = W.cover(last_node, last_way, last_rel, places, places, sel, member_refs=ways.refs_of,
-                                      box_clip=clip, rule=rule, boxed_out=boxed)
+            kw = {"member_refs": ways.refs_of, **hooks}
+            codes, stats, _ = W.cover(last_node, last_way, last_rel, places, places, sel, box_clip=clip, rule=rule,
+                                      boxed_out=boxed, **kw)
+            all_stats[label] = stats
             rects = W.rectangles(codes, plan_cells)
             out = outside(rects)
             justified = np.array([("line" in s) or bool(s & boxed) for s in sources], bool)
@@ -332,6 +419,12 @@ class EuropeDayTest(unittest.TestCase):
                 print("rule stats:", {k: v for k, v in stats.items() if "box" in k or "contain" in k or "km2" in k})
             self.assertEqual(int((justified & out).sum()), 0, label)
         self.assertGreater(len(pts), 0)
+        if ctx_dir:
+            keys = ["  of them, old tags unknown", "  of them, ways with outline addresses unknown (no address index)",
+                    "contained nodes: deleted, tags unknown", "wanted relations, no member geometry",
+                    "store context: container boxes", "boxes marked whole: container", "boxes by outline", "marked cells"]
+            for k in keys:
+                print(f"  {k}: rule {all_stats['the rule'].get(k, 0)}, with the store {all_stats[variants[-1][0]].get(k, 0)}")
 
 
 if __name__ == "__main__":

@@ -41,10 +41,18 @@
 //!       (i8, n + 1: way i's refs are refs[offs[i]:offs[i+1]], empty if absent), refs.npy (i8), lat7.npy and lon7.npy
 //!       (i4, 1e-7 degrees; i32::MIN where no payload held the node), ways.json (counts, seconds, peak memory).
 //!       wtiles-G goes at the next update with --prune-pairs: ask for D-1 before the day's update
+//!   tilestore context --store S [--gen -1] [--ways W.npy] [--rels R.npy] [--nodes N.npy --node-places NP.npy]
+//!       [--points P.npy] [--around 1] [--prefix addr: ...] --out DIR
+//!       what tier 2's cover needs around a day's changes, at generation G (context.rs): ways' tags, refs, places,
+//!       their refs with a --prefix tag and the relations holding them; relations' tags, members and member box;
+//!       nodes' tags at their places; the closed ways and multipolygons whose ring holds each point. NP and P are
+//!       '<i8' lat7, lon7 pairs. Ways and relations need G's pairs (gone at the next update with --prune-pairs),
+//!       nodes and points only G's tile index. Out files are listed in context.rs
 
 mod clip;
 mod compact;
 mod cols;
+mod context;
 mod history;
 mod locfile;
 mod nodefile;
@@ -122,6 +130,21 @@ fn main() {
             gen: arg(&args, "--gen").map(|s| s.parse().unwrap()).unwrap_or(-1),
             ids: PathBuf::from(arg(&args, "--ids").expect("--ids")),
             rels: arg(&args, "--rels").map(PathBuf::from),
+            out: PathBuf::from(arg(&args, "--out").expect("--out")),
+        }),
+        Some("context") => context::context(&context::Args {
+            store: PathBuf::from(arg(&args, "--store").expect("--store")),
+            gen: arg(&args, "--gen").map(|s| s.parse().unwrap()).unwrap_or(-1),
+            ways: arg(&args, "--ways").map(PathBuf::from),
+            rels: arg(&args, "--rels").map(PathBuf::from),
+            nodes: arg(&args, "--nodes").map(PathBuf::from),
+            node_places: arg(&args, "--node-places").map(PathBuf::from),
+            points: arg(&args, "--points").map(PathBuf::from),
+            around: arg(&args, "--around").map(|s| s.parse().unwrap()).unwrap_or(1),
+            prefixes: {
+                let v: Vec<String> = args.windows(2).filter(|w| w[0] == "--prefix").map(|w| w[1].clone()).collect();
+                if v.is_empty() { vec!["addr:".to_string()] } else { v }
+            },
             out: PathBuf::from(arg(&args, "--out").expect("--out")),
         }),
         Some("update") => update::update(&update::Args {
