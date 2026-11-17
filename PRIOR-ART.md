@@ -89,6 +89,15 @@ ported its filter language elsewhere.
   tooling. Its quests could be an optional extra set later.
 - Osmose, KeepRight, OSMCha, MapRoulette (no SC-derived challenges found), taginfo, OSM-Analytics: none know
   SC quests or fit as a backend. *(Lightly checked.)*
+- Validators charting their own counts over time (checked 2026-11-17):
+  - **Osmose** does. `/en/issues/graph.{png,json,csv}?item=&country=` gives one point per day for an item or
+    class, by country (`web_api/errors_graph.py` in osmose-qa/osmose-frontend). The scope is its own checks
+    and its fixed country extracts, not city polygons. Item 1040 + france came back empty, so the right
+    country key is unverified.
+  - **KeepRight** is unmaintained (last update 2024-04) and has no history chart. Its daily planet dump
+    of open errors could be snapshotted.
+  - **OSM Inspector**: no history found. **MapRoulette**: the UI is rendered by JavaScript, so this is
+    unverified. It tracks how far a challenge has got, not how many issues are open in the map.
 
 ## Sibling projects to borrow from (~/Code)
 
