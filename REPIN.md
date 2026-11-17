@@ -99,12 +99,20 @@ either: old snapshots keep them, the site shows them while the newest registry h
   `tools/sc-harness/README.md` (the run's timings and any new gotcha).
 - Merge to main, without a data commit on the branch (the daily "data" commits would conflict with
   it in the generated history files). From main, `engine/gradlew installDist` and `test` first (a new
-  Kotlin downloads on the first build; don't leave that to the scheduler), then `python run.py count`
-  by hand once (each region's newest extract is recounted with the new registry; older ones keep
-  their counts, so the break sits at the repin date), `history`, then `publish` via `update`, or let
-  the 13:15 run do it. Close the issue with the data commit.
-- Or recount everything: `tools/backfill_history.py recount --region <r>` then `merge --region <r>`
-  for every region rewrites every published snapshot with the new registry (from the store's extract
-  or a history slice), and the series carry one registry with no break, as was done for v64.0 (an
-  Ontario snapshot takes about 5 minutes, so it is an overnight job). The site marks a break only where
-  two consecutive snapshots differ, so nothing on the site needs changing either way.
+  Kotlin downloads on the first build; don't leave that to the scheduler).
+- **Recount forward from the release date** (the owner's rule, 2026-11-16): every region's snapshots from
+  the day the release was published to today are recounted with the new registry, from the extracts the
+  store still has; nothing older is touched, so the series shows the release as a step on its own date,
+  which is what players saw. For each region:
+  `python tools/backfill_history.py recount --region <r> --since <release date YYYY-MM-DD>`, then
+  `python tools/backfill_history.py merge --region <r>`; then `python run.py history` and `publish` via
+  `update`, or let the 12:15 run do it. Close the issue with the data commit. About 10 minutes of counting
+  per day recounted for all regions together; no history file is read (none is kept since 2026-11-16).
+  **Repin within 14 days of the release:** the store keeps a region's extracts 14 days, and a snapshot
+  whose extract is gone is left as counted (the recount names it). The issue is opened by the scheduled run
+  the day the release appears.
+- Only when a release fixes a quest so badly that the old numbers mislead: recount that quest further back
+  on demand, which needs a planet history file downloaded first (`osm_extracts.py fetch planet-history`,
+  hours and about 170 GB) and `recount` without `--since` (every published snapshot, from a history slice
+  where the extract is gone, as was done for v64.0). The site marks a break only where two consecutive
+  snapshots differ, so nothing on the site needs changing either way.

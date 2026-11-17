@@ -1195,7 +1195,9 @@ def open_repin_issue(release: dict, pinned: str) -> str:
     url = f"https://github.com/streetcomplete/StreetComplete/releases/tag/{version}"
     body = (f"StreetComplete {version} was released on {release['date']} ({url}); the engine is pinned "
             f"to {pinned} (engine/SC-VERSION.txt), so the daily counts use the {pinned} quest set.\n\n"
-            f"Repin it: the routine is REPIN.md. Until then every snapshot carries `scVersion` {pinned[1:]}, "
+            f"Repin it: the routine is REPIN.md, and **within 14 days**: the counts are redone forward from "
+            f"{release['date']} from the stored extracts, which the store keeps 14 days. "
+            f"Until then every snapshot carries `scVersion` {pinned[1:]}, "
             f"and the chart marks the break when the first {version[1:]} snapshot lands.\n\n"
             f"Opened by `python run.py check-release` (the scheduled update's last step).")
     return gh("issue", "create", "--title", repin_issue_title(version), "--body", body).strip()

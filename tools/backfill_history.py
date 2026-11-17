@@ -282,6 +282,9 @@ def count(r: Region, pbf: Path, meta: Path, out: Path) -> Path:
         if clip:
             cmd += ["--notes", str(clip.relative_to(run.ROOT))]
         cmd += ["--grid", str(out / "grid")]
+        # the parts (neighbourhoods) as the daily count has them: without this a recount merged over a published
+        # snapshot would drop its parts and partsAged
+        cmd += run.parts_args()
         run.log("running engine: " + " ".join(cmd[1:]))
         subprocess.run(cmd, cwd=run.ROOT, env=run.engine_env(r.config["timeZone"], heap=True), check=True)
     snaps = sorted((out / "snapshots").glob("*.json"), key=lambda p: p.stat().st_mtime)
@@ -435,15 +438,31 @@ def weekly(region_ids: list[str]) -> datetime:
     return t
 
 
-def recount(r: Region) -> None:
+def recount(r: Region, since: str | None = None) -> None:
     """Recount the published snapshots counted by an older engine, so the series has no seam where the
     history months meet them: from their Geofabrik extract if the store still has it, otherwise from a
-    history slice at their replication time (equal to the extract, see DESIGN.md)."""
-    history_end = datetime.fromisoformat(run.read_json(r.history.with_name(r.history.name + ".meta.json"))
-                                         ["replication_timestamp"])
+    history slice at their replication time (equal to the extract, see DESIGN.md).
+    With `since` (YYYY-MM-DD, a repin's release date: REPIN.md, step 6): only the snapshots from that date on,
+    the newest too, and only from the extracts the store still has; no history is read."""
     by_sha = {run.read_json(m).get("sha256"): (p, m) for p, m in run.dated_extracts(r.config)}
     snaps = sorted(r.published.glob("*.json"))
     newest = snaps[-1].name
+    if since:
+        gone = []
+        for p in snaps:
+            s = run.read_json(p)
+            if s["asOf"][:10] < since or (r.recount / "snapshots" / p.name).exists():
+                continue
+            extract = by_sha.get(s["source"]["sha256"])
+            if extract:
+                count(r, *extract, r.recount)
+            else:
+                gone.append(p.name)
+        if gone:
+            run.log(f"{r.id}: {len(gone)} snapshots since {since} whose extract is gone, left as counted: {', '.join(gone)}")
+        return
+    history_end = datetime.fromisoformat(run.read_json(r.history.with_name(r.history.name + ".meta.json"))
+                                         ["replication_timestamp"])
     for p in snaps:
         s = run.read_json(p)
         if p.name == newest or (r.recount / "snapshots" / p.name).exists():
@@ -499,13 +518,18 @@ def main(argv: list[str] | None = None) -> int:
     m.add_argument("--step", type=int, default=1, help="months between slices (12 = a yearly spine)")
     m.add_argument("--keep", action="store_true", help="keep the slices")
     rc = sub.add_parser("recount", parents=[common])
+    rc.add_argument("--since", help="YYYY-MM-DD: only the snapshots from this date (a repin's release date) on, "
+                    "from the stored extracts, no history (REPIN.md, step 6)")
     mg = sub.add_parser("merge", parents=[common])
     for p in (c, rc, mg):
         p.add_argument("--region", default="ontario")
     m.add_argument("--region", dest="regions", action="append",
                    help="repeatable (the regions of a clip share each slice); default ontario")
     a = ap.parse_args(argv)
-    set_planet(a.planet)
+    # a repin's recount from the release date and the merge after it read no history: they run with no history file
+    # in the store (deleted 2026-11-16; one is downloaded only when a recount needs it)
+    if not (a.cmd == "merge" or (a.cmd == "recount" and getattr(a, "since", None))):
+        set_planet(a.planet)
     if a.cmd == "clip":
         clip([Region(r) for r in a.regions or ["ontario"]])
         return 0
@@ -517,7 +541,7 @@ def main(argv: list[str] | None = None) -> int:
     r = Region(a.region)
     run.migrate_archive()  # snapshots published before 2026-10-24 still in docs/data count as published
     if a.cmd == "recount":
-        recount(r)
+        recount(r, a.since)
     elif a.cmd == "check":
         check(r, a.extract)
     else:
