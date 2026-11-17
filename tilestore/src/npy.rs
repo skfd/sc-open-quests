@@ -4,7 +4,7 @@ use std::fs::File;
 use std::io::{BufWriter, Seek, SeekFrom, Write};
 use std::path::Path;
 
-fn header(f: &mut impl Write, descr: &str, n: usize) {
+pub fn header(f: &mut impl Write, descr: &str, n: usize) {
     let mut h = format!("{{'descr': {descr}, 'fortran_order': False, 'shape': ({n},), }}");
     // magic (6) + version (2) + header length (2) + header, a multiple of 64, ending in a newline
     while (10 + h.len() + 1) % 64 != 0 {
