@@ -259,6 +259,84 @@ class CoverTest(unittest.TestCase):
         self.assertEqual(sorted(p["id"] for p in parts), ["near", "osm-x"])
 
 
+class P3Test(unittest.TestCase):
+    """relations holding a changed way, roads crossing a changed bridge, untouched ways of a moved node"""
+
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp())
+        self.cells = W.plan_cells(plan(self.tmp))
+        self.places = W.DictPlaces(PLACES.get)
+
+    def test_half_length_point_at_high_latitude(self):
+        # a road at 60 degrees: 1 km north then 2 km east; its half-length point lies on the east leg, 0.5 km along
+        dlat, dlon = 1000 / M_LAT, 1000 / (M_LAT * math.cos(math.radians(60.0)))
+        g = np.array([[60.0, 10.0], [60.0 + dlat, 10.0], [60.0 + dlat, 10.0 + 2 * dlon]])
+        qp = W._quest_points([g])[0]
+        self.assertAlmostEqual(qp[0], 60.0 + dlat, places=7)
+        self.assertAlmostEqual((qp[1] - 10.0) / dlon, 0.5, places=2)
+
+    def test_over_road_is_maxheights_bridge_filter(self):
+        self.assertTrue(W.over_road({"highway": "primary", "bridge": "yes"}))
+        self.assertTrue(W.over_road({"railway": "rail", "bridge": "viaduct", "layer": "1"}))
+        self.assertTrue(W.over_road({"building": "roof"}))
+        self.assertTrue(W.over_road({"man_made": "pipeline", "location": "overhead"}))
+        self.assertFalse(W.over_road({"highway": "primary", "bridge": "no"}))
+        self.assertFalse(W.over_road({"highway": "primary"}))
+        self.assertFalse(W.over_road({"railway": "abandoned", "bridge": "yes"}))
+        self.assertFalse(W.over_road(None))
+
+    def test_extra_lines_mark_the_quest_points_far_from_any_change(self):
+        road = np.array([[52.04, 10.04], [52.04, 10.06]])  # nothing changed there: only the extra line marks it
+        codes, stats, _ = W.cover({}, {}, {}, self.places, self.places, None, log=lambda m: None,
+                                  extra_lines=[("road crossing a changed bridge", road)])
+        rects = W.rectangles(codes, self.cells)
+        self.assertTrue(inside_any(rects, 52.04, 10.05))  # its half-length point, the road's quest point
+        self.assertFalse(inside_any(rects, 52.04, 10.0405))  # a road's other points are not marked
+        self.assertEqual(stats["store context: road crossing a changed bridge"], 1)
+
+    def test_a_relations_member_lines_mark_their_segments(self):
+        ring = np.array([[52.04, 10.04], [52.04, 10.06], [52.05, 10.06], [52.04, 10.04]])
+        codes, _, _ = W.cover({}, {}, {}, self.places, self.places, None, log=lambda m: None,
+                              extra_lines=[("relation holding a changed way", ring)])
+        rects = W.rectangles(codes, self.cells)
+        self.assertTrue(inside_any(rects, 52.04, 10.0405))  # on its outline
+        self.assertTrue(inside_any(rects, 52.0433, 10.0533))  # its ring's centroid
+
+    def test_daycontext_extra_lines_and_held_candidates(self):
+        import store_context as SC
+        dc = SC.DayContext({}, {20: way([40, 41])}, {}, W.contained_kind, W.wanted_relation)
+        bx, ax = SC.Context.__new__(SC.Context), SC.Context.__new__(SC.Context)
+        line = np.array([[52.0, 10.0], [52.0, 10.01]])
+        bx.rel_lines, bx.crossing = {}, {70: {"line": line, "tags": {"highway": "residential"}}}
+        bx.vertex_ways = {20: {"line": line, "tags": {}}, 21: {"line": line, "tags": {}}}  # 20 changed: the diff's
+        ax.rel_lines, ax.crossing, ax.vertex_ways = {30: [line, line]}, {}, {}
+        ax.rels = {30: {"tags": {"type": "multipolygon", "natural": "wood"}, "members": [], "box": (52.0, 10.0, 52.001, 10.001)},
+                   31: {"tags": {"type": "multipolygon", "building": "yes"}, "members": [], "box": (52.0, 10.0, 52.1, 10.1)}}
+        dc.bx, dc.ax, dc.held = bx, ax, {30, 31}
+        kinds = sorted(k for k, _ in dc.extra_lines())
+        self.assertEqual(kinds, ["relation holding a changed way"] * 2 + ["road crossing a changed bridge", "way of a moved node"])
+        # a container (31) is extra_candidates' job; the wood (30) goes to the box rule
+        self.assertEqual([(c[2], c[4]) for c in dc.held_candidates(W.container_kind)], [(None, ("relation", 30))])
+
+    def test_a_road_and_its_far_crossing_with_a_bridge_share_one_rectangle(self):
+        import store_context as SC
+        # a 2 km road along latitude 52.04; a bridge crossing it 900 m east of its middle
+        road = np.array([[52.04, 10.03], [52.04, 10.06]])
+        bridge = np.array([[52.035, 10.0583], [52.045, 10.0583]])
+        b = SC.crossing_box(road, [bridge])
+        self.assertIsNotNone(b)
+        s, w, n, e = b
+        self.assertAlmostEqual(w, 10.045, places=6)  # the road's quest point (its half-length point)
+        self.assertAlmostEqual(e, 10.0583, places=6)  # the crossing
+        self.assertIsNone(SC.crossing_box(road, [np.array([[52.05, 10.0], [52.06, 10.0]])]))
+        codes, _, _ = W.cover({}, {}, {}, W.DictPlaces({}.get), W.DictPlaces({}.get), None, log=lambda m: None,
+                              extra_candidates=[(b, "way", SC.ROAD_UNDER, True, ("way", 1))])
+        rects = W.rectangles(codes, self.cells)
+        hold = [k for k, r in rects.items() for x in r
+                if x[0] <= 52.04 <= x[2] and x[1] <= 10.045 and 10.0583 <= x[3]]
+        self.assertTrue(hold, "one rectangle holds both the road's quest point and the crossing")
+
+
 class DayContextTest(unittest.TestCase):
     """store_context.DayContext's candidates, from hand-made store answers"""
 

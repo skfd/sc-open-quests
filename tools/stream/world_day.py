@@ -129,6 +129,7 @@ class Day:
     new_places: object
     old_rows: np.ndarray
     gen_before: int
+    ctx: object = None  # store_context.DayContext: asked at D-1 here, at D in finish (None: the context is not used)
     heap_gb: int = 8
     engine: Path | None = None
     log: object = _log
@@ -137,7 +138,7 @@ class Day:
 
 
 def prepare(w: Path, store: Path, diff: Path, today: str, nodes: Path, work: Path, heap_gb: int = 8,
-            engine: Path | None = None, log=_log, keep=None) -> Day:
+            engine: Path | None = None, log=_log, keep=None, use_context: bool = True) -> Day:
     """everything that needs the world at D-1: run it before the store's update. `keep(last_node, last_way,
     last_rel, old_places, new_places, old_refs)` narrows the diff (a rehearsal on a clip: `clip_keep`)"""
     meta = json.loads((w / WS.WORLD_META).read_text(encoding="utf-8"))
@@ -171,12 +172,26 @@ def prepare(w: Path, store: Path, diff: Path, today: str, nodes: Path, work: Pat
         log(f"kept for the clip: {len(last_node):,} of {n0:,} nodes, {len(last_way):,} of {w0:,} ways, "
             f"{len(last_rel):,} of {r0:,} relations")
     keys = T2.changed_keys(last_node, last_way, last_rel)
-    rows = rows_of_keys(w, keys)
     T["places and old rows"] = time.time() - t
+    ctx = None
+    if use_context:
+        # the store's answers at D-1 (DayContext.before, BEFORE the update: a generation's pairs go at the next
+        # update): old tags, holding relations, containers, the roads under changed bridges, moved nodes' ways
+        import store_context as SC
+        t = time.time()
+        ctx = SC.DayContext.before(EXE, store, g0, last_node, last_way, last_rel, old_places, work / "context",
+                                   T2.contained_kind, T2.wanted_relation, log=log, over_road=T2.over_road)
+        held = np.array(sorted(ctx.held_by(ctx.b)), np.int64)
+        if len(held):  # a relation holding a changed way: its rows at its old quest point (its centre moves)
+            keys = np.union1d(keys, held * 4 + 2)
+        T["store context before"] = time.time() - t
+    t = time.time()
+    rows = rows_of_keys(w, keys)
+    T["places and old rows"] += time.time() - t
     log(f"old ways: {len(old_refs):,} of {len(last_way):,} found at generation {g0}; old rows {len(rows):,} of "
         f"{len(keys):,} changed keys")
     return Day(w, store, diff, today, meta["clock"], work, nodes, last_node, last_way, last_rel, old_refs, old_places,
-               new_places, rows, g0, heap_gb, engine, log, T, {"changedKeys": int(len(keys)), "oldRows": int(len(rows))})
+               new_places, rows, g0, ctx, heap_gb, engine, log, T, {"changedKeys": int(len(keys)), "oldRows": int(len(rows))})
 
 
 def clip_keep(polygon: Path):
@@ -412,10 +427,21 @@ def finish(day: Day) -> dict:
             return v[4] if v[2] else None
         return new_members.get(wid)
 
+    # the store's answers at D (after the update, before `compact`), and the cover's hooks from both days
+    hooks = {"old_refs": old_refs, "member_refs": member_refs}
+    if day.ctx is not None:
+        t = time.time()
+        day.ctx.after(EXE, day.store, g1, day.new_places, day.work / "context", log=log)
+        h = day.ctx.hooks(T2.container_kind)
+        h.pop("member_refs")  # the members looked up above (the diff's own refs first), as before
+        h["old_refs"] = old_refs
+        hooks.update(h)
+        T["store context after"] = time.time() - t
+
     # the cover and its rectangles (the old rows are the state's before tier 1 replaced any)
     t = time.time()
     codes, cstats, secs = T2.cover(day.last_node, day.last_way, day.last_rel, day.old_places, day.new_places,
-                                   day.old_rows, old_refs=old_refs, member_refs=member_refs, log=log)
+                                   day.old_rows, log=log, **hooks)
     T["cover"] = time.time() - t
     t2w = day.work / "t2"
     t2w.mkdir(parents=True, exist_ok=True)
@@ -515,8 +541,8 @@ def finish(day: Day) -> dict:
 
 def run(w: Path, store: Path, diff: Path, today: str, nodes: Path, work: Path, before_clip: Path | None = None,
         polygon: Path | None = None, before_loc: Path | None = None, heap_gb: int = 8, engine: Path | None = None,
-        log=_log, compact: bool = True, keep=None) -> dict:
-    day = prepare(w, store, diff, today, nodes, work, heap_gb, engine, log, keep=keep)
+        log=_log, compact: bool = True, keep=None, use_context: bool = True) -> dict:
+    day = prepare(w, store, diff, today, nodes, work, heap_gb, engine, log, keep=keep, use_context=use_context)
     update_store(day, before_clip, polygon, before_loc)
     rec = finish(day)
     if compact:

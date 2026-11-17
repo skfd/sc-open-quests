@@ -5511,3 +5511,51 @@ engine files 15-21 s, tier 1 215-245 s (16 engine runs, one per plan file), tier
 4. **A rectangle city's parts index** spanned every part's whole box (a country: 512 x 512 cells per rectangle) and
    ran out of heap at 8 GB on 28,703 rectangles; now clipped to the city (engine `PolygonIndex(clip=)`, same answers).
    The planet's 128,544 rectangles still need their runs grouped (per plan file) and measured.
+
+### Tier 2's two cover gaps closed (2026-11-17, afternoon; fork P3 of the release-1 build)
+
+The rehearsal's default-setting residues (above) came from what the day's diff does not show. Built:
+- **`tilestore context`** gains `--rel-geometry` (each asked relation's member ways from its relation store blob),
+  `--vertex-ways` (every way an asked node is a vertex of, with its geometry, from the node's tile) and `--crossing`
+  (the ways with a tag key whose segments cross given segments, with their geometry, from the tiles the segments
+  cross). Exact against the 11-12 clip: 300 relations' member ways, 799 of 799 vertex ways, 0 of 203 crossings missed.
+- **`store_context.DayContext`** asks them at D-1 (before the update) and at D (after it): the relations holding a
+  changed way (their member lines marked, a container boxed, any other by the box rule) and their old rows; the
+  untouched ways a moved node is a vertex of (their quest points at D-1 and D); the roads crossing a changed
+  `over_road` way (AddMaxHeight's `bridgeFilter`) and the bridges crossing a changed road, each crossing a box from the
+  road's quest point to the crossing (`crossing_box`), so one rectangle city holds the road's quest and the bridge (an
+  area's map data is the ways with a node in its padded box).
+- **`world_day` now asks the store context** (G's day never did, so F's container boxes never reached its cover).
+- `_quest_points` weighs longitude at the line's own latitude (a fixed 0.63 put a 15.7 km road's half-length point at
+  55.6 degrees 700 m off).
+
+**The rehearsal again** (`.scratch/p3/rerun.py` in fork P3's worktree: G's 11-09 seed counts, a fresh clip store and
+node index, each day checked against G's own whole count; 12 GB heap), default-setting groups different:
+
+| day | G | P3 | the 32 cities' own counts different (G, P3) |
+|---|---|---|---|
+| 11-10 | 15 | 3 | 1, 1 |
+| 11-11 | 45 | 4 | 3, 1 |
+| 11-12 | 66 | 9 | 7, 4 |
+| 11-13 | 83 | 9 | 7, 4 |
+
+Every "different" from a moved node and the Praha and Moscow bridges are gone; the residue no longer grows. Left
+(11-13), each traced:
+- **5 groups, relations changed by their tags alone** (2213778, 2213779 Salzburg and 3252407 Göteborg on 11-08,
+  `building:levels` added; 5328319 London, 3458546 München on 11-12): the rehearsal's `clip_keep` keeps a relation
+  only with a kept member, so a tags-only change is dropped before the cover. A rehearsal artifact: the planet runs
+  without `clip_keep`. Fix if the rehearsal is rerun: keep the diff's relations the D-1 store holds.
+- **1, w1577774915 AddHousenumber**: the order effect traced on 11-14 (DESIGN, "The one tier-2 row left, traced").
+- **3, not traced: r13409862 AddRoofShape and AddBuildingLevels** (a TUM building multipolygon whose members were
+  replaced on 11-12) and **w684910576 AddMaxHeight** (a 15.7 km Moscow trunk road changed on 11-11). Both lie inside a
+  rectangle on their day, the store's copies are right (the relation's new member way; the road's nine crossing
+  footway and road bridges, each within 10 m of its box), the engine's map data rule includes them (a way with a node
+  in the box comes with all its nodes), and yet both recounts lack the quest the whole count has. Needs an engine
+  reproduction on that day's read (`days/<D>/t2/new.osm.pbf`).
+
+**Planet day 5172's cover** (answers only inside Europe, from a clip store cut at 11-07; outside it the cover falls back
+as before): the rule 128,039 rectangles, 101,595 km2; with F's answers 128,260, 101,887; with P3's too 128,796,
+102,475 km2 (+0.6%). Inside Europe P3 added 486 holding relations (7,947 member lines), 3,266 moved-node ways and
+1,024 road-under-a-bridge boxes. The planet store holds every element, so the planet adds these everywhere: not
+measured; about 1.8% of 5172's changed ways lie in the clip, so a plain scale-up would be tens of thousands of boxes
+and lines, mostly small. A day's store questions took about 2.5 min in the rehearsal (D-1 15 s, D 115-135 s).
