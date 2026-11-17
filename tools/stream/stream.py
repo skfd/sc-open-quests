@@ -173,11 +173,14 @@ class DenseLocations:
     planet.loc), kept current in place: a day's changes wait in `overlay` and go into the file on save(), a deleted
     node emptied. A month of the world's changes would not fit an overlay pickle; the file only moves forward."""
 
-    def __init__(self, path: Path):
+    def __init__(self, path: Path, readonly: bool = False):
         import osmium.index
         self.path = Path(path)
         self.idx = osmium.index.create_map(f"dense_file_array,{self.path}")
         self.overlay: dict[int, tuple[float, float] | None] = {}
+        # readonly: the planet store's node file, which its own run moves forward (`tilestore loc advance`); the
+        # day's changes stay in the overlay and save() writes nothing
+        self.readonly = readonly
 
     def get(self, nid: int):
         if nid in self.overlay:
@@ -193,6 +196,8 @@ class DenseLocations:
 
     def save(self):
         import osmium
+        if self.readonly:
+            return
         for nid, p in self.overlay.items():
             self.idx.set(nid, osmium.osm.Location(p[1], p[0]) if p else osmium.osm.Location())
         self.overlay = {}
