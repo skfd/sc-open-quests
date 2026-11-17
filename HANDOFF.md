@@ -2243,6 +2243,18 @@ checked against a full count. Until then the world's published numbers can only 
     with and without it differ by 1e-7 on such rows, so **the seed must come from an engine with it. Not installed yet:
     `installDist` after tonight's store check and file-size reads are done** (they compare two runs of the installed
     engine, so either is fine for them).
+  - **B merged (23:30):** `world_state.py seed W` (each file's dump to `files/<f>/world.bin`, WREC rows sorted, plus
+    `place-sets.json` and `world.json`), `apply --places [--readonly-nodes]` (tier 1 with the cells and their parts, so
+    new rows carry places), `counts W [--clock]` with `tools/stream/place_counts.py` (per world `counts/counts.npz` +
+    `.json`: per (place, quest) open, nodes, ways, relations, agedOnly, open05, aged05, open2, aged2; cells as
+    `city:<cell>`; notes come in through `count_files(extra=...)`). **Engine change with it:** every `--dump-state`
+    writes `.places`, and each city holding a record joins its set as `city:<id>`, so a cell's total never rests on a
+    test of a rounded position. Checks: Bremen equal in all 9 measures; 30 days on, the main pass equal, area quests
+    equal at the default setting; Bremen as 16 cells with 1,199 places equal; tier 1 with places on a Dublin box equal
+    to the next day's count. About 15 min of one thread for 2 billion rows, files in parallel.
+    **Open, for the rule:** the engine dates area quests at the default setting only, so the world's 0.5 and 2 counts
+    of area quests go stale from the day after a seed (28 values in Bremen at +30 days). Either the engine dates them
+    at all three settings, or the world publishes the default setting only. The default is what the site shows.
 
 ## The place page: merged (2026-11-16, evening; owner: "pick from handoff ui work", then "merge it now")
 
