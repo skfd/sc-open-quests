@@ -5257,3 +5257,60 @@ sideways scroll except Compare's table, which scrolls the same on main; city-sta
 and `fixtures.py` (the test fixtures through `?data=`, one snapshot and no parts; dark mode). **Observed, not a page bug:** 1,715 of the 4,214 part series do not move
 at all over their 17 days, Casa Loma's 1,105 among them; they are the small and quiet ones (200 of Toronto's
 218 move, and every large one does).
+
+## Release 1: the world day, designed (2026-11-16, late evening; owner: "lets push towards first release")
+
+Release 1 publishes a count of every place in the world for every day from 2026-11-01, each day every quest
+(the rule in "Don't"). The pieces, in the order they are built. Nothing below is built unless it says so.
+
+**Where a day runs.** Inside the planet store's daily run (`tools/stream/planet_store_day.py`), between `update`
+and `loc advance`: there the node file still holds D-1 and both generations' tile indexes exist (`compact` keeps
+only the newest generation readable, so the day must be read before it). The store and the world state move
+together; the store never runs ahead of the state.
+
+**Step 1, the seed: built, being checked.** `world_cells.py storecut` reads each plan file's padded box from the
+store (`tilestore read`, ring 0, stamped with the store's day) into `cut/`, so `notes`, `count --state` and `report`
+run unchanged. `tools/stream/store_lock.py` holds the store while it is read (HOLD; the daily run takes no day
+while it exists, and keeps RUNNING while it works). The reader's blocks are bounded by size too (a blob must stay
+under 32 MiB; byte-identical output on the clip's rectangles). Checks, in order: `tools/stream/storecheck_cities.py`
+(the 32 European cities read from the store against the same day's clip, row for row), then two world files at
+full size (f0, the most nodes; f19, the widest box: time and peak memory), then the seed at 11-01 against the
+published 11-01 snapshots.
+
+**Step 2, tier 1 for the world.** `world_state.apply` as it ran on 11-09..11-14, but with the store's node file
+read-only (a `DenseLocations` that never saves: the store's `loc advance` moves the file). The diff read in Python
+was two thirds of a day's 8-14 min; it is read once for both tiers.
+
+**Step 3, tier 2 for the world.** `tier2.cover` as on Europe (the delta form: the same rectangles recounted on D-1
+at D-1's clock and on D at D's, only the recount's own changes applied), with four changes for the planet:
+- the cover in one global grid of 50 m cells, vectorised, not per city: `near_idx` loops over every city's box per
+  point, which is 2,244 boxes for each of millions of changed nodes;
+- changed ways' old geometry as today's refs at yesterday's places (`NO_WAY_INDEX`, measured equal on Europe's five
+  days), so no way index; ways holding a changed node are left out (the same measurement; it leaves a tier-1 row of
+  an untouched way up to about 1 m from its true point, which moves no count unless it crosses a cell edge);
+- changed relations' member ways from the store (a new `tilestore` lookup by way id through the way pair index);
+- the rectangles split at cell edges, each a city with its cell's time zone and no country codes (gated by
+  position, as every cell is); map data by `tilestore read --gen D-1` and the newest generation, ring 300 m.
+Unknown, measured first: how many rectangles a planet day makes, and how the engine's area pass scales with tens
+of thousands of small cities in one run (a city's elements may be picked by a scan per city). If it scales badly,
+the rectangles are grouped per plan file, one engine run each.
+
+**Step 4, notes and ageing at the clock.** Ageing is the state's dates against the clock (step 3 of the stream,
+exact on Europe). Notes are not handled yet: `apply` has no notes clip, so a row keeps the seed's hidden flag until
+its element is edited, and the note quest itself is not counted. Each day: notes opened and closed between D-1 and
+D (the daily notes dump) set and clear the hidden flag on rows at the note's exact position, and the note quests
+are counted from the dump at the clock.
+
+**Step 5, counts per place from the state.** The seed's snapshots come from the engine; a day's must come from the
+state. Each state row gets its places once (the seed: every row against the parts of its cell, as the engine
+assigns parts), then per-place counts move with the day's changed rows and the rows whose date comes, so a day
+never tests 2 billion rows against a million polygons. Also the aged split and the three resurvey settings, as the
+engine's snapshots carry them.
+
+**Step 6, the checks every day.** The 147 counted cities as `osm-<city>` parts against that day's published
+snapshots (the daily run counts them from the extracts anyway: no extra cost), and Europe's 32 against the Europe
+clip; a day that misses the 0.1% bar stops the run, as the store's own check does.
+
+**Step 7, catch up and publish.** The store cut again at 2026-11-01T00:00Z from a new history file and held there
+(HOLD) until steps 2-6 exist, then store and state together, one day at a time, to today; then daily. Publishing:
+place data on the R2 subdomain (DESIGN, "Place statistics for the whole world"), its DNS step the owner's.
