@@ -334,7 +334,7 @@ def apply_w(w: Path, nodes_dir: Path, diff: Path, today: str, readonly: bool = F
     stats = S.write_small_pbf(work / "touched.osm.pbf", today, last_node, last_way, locs, unplaced)
     S.log(f"small PBF: {dict(stats)}")
     dump = S.engine(work / "touched.osm.pbf", work, today, world_cities(w), "UTC", None, area_pass=False,
-                    heap_gb=heap_gb, base=S.ROOT, parts=world_parts(w))
+                    heap_gb=heap_gb, base=S.ROOT, parts=world_parts(w), parts_cache=w / "parts.cache")
     sets = P.PlaceSets(w / "place-sets.json")
     names = meta["quests"]
     n0 = len(names)

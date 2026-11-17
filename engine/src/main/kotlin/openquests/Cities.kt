@@ -57,7 +57,7 @@ class Part(val index: Int, val id: String, val city: Int, val polygon: Polygon)
 
 /** The parts of [cities] from `<dir>/<cityId>.json` where that file exists (DATA-FORMAT.md, "Places
  *  and parts"); geometry paths are relative to [baseDir]. In city order, each city's in registry order. */
-fun loadParts(dir: File, cities: List<City>, baseDir: File): List<Part> {
+fun loadParts(dir: File, cities: List<City>, baseDir: File, cache: PartsCache.Reader? = null): List<Part> {
     val parts = ArrayList<Part>()
     // a place in many cells (a world run's country or county) is read once; a Polygon is immutable
     val polygons = HashMap<String, Polygon>()
@@ -73,7 +73,7 @@ fun loadParts(dir: File, cities: List<City>, baseDir: File): List<Part> {
             require(seen.add(id)) { "${file.path}: part $id twice" }
             val geometry = p.str("geometry")!!
             parts += Part(parts.size, id, city.index,
-                polygons.getOrPut(geometry) { Polygon.fromGeoJson(File(baseDir, geometry)) })
+                polygons.getOrPut(geometry) { cache?.polygon(geometry) ?: Polygon.fromGeoJson(File(baseDir, geometry)) })
         }
     }
     return parts
