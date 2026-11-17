@@ -2197,6 +2197,8 @@ checked against a full count. Until then the world's published numbers can only 
   4. The world-day loop (tier 1 on the store's node file, tier 2 from the store, area dates), each day checked as
      above; caught up from 11-03, then daily.
   5. Publish world places once 30 days are in (the R2 place-data subdomain; its DNS step is the owner's).
+  **When:** the catch-up counts towards the 30, so release 1 is the day steps 1-4 are built and caught up, any day
+  after 12-02 (11-02 plus 30). The build time and a world day's cost (not measured) decide it, not a 30-day wait.
 - **Oracles pinned (21:45):** `europe-2026-11-02` to `11-16` in `~/Code/.osm-data/europe/pins.json` (25 GB), reason
   "release 1". **Each new Europe clip needs pinning too until the loop has checked its day** (a clip goes 14 days
   after its date); unpin each day once it is streamed and checked. The planet diffs from 5165 are hard-linked in
