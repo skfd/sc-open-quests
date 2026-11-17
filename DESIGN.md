@@ -2892,10 +2892,14 @@ straight from the bucket with no Worker:
   is a Class B read (10M a month free), harmless, and a reason the data bucket holds only published
   files.
 - **The place-data host is `sc-data.comentality.com`** on bucket `sc-open-quests-data` (ENAM, created
-  2026-11-17; domain attached by the owner). Its Cache Rule, on the zone: hostname equals
-  `sc-data.comentality.com`; eligible for cache; Edge TTL "use cache-control header if present, bypass
-  cache if not"; Browser TTL "respect origin TTL". So each upload's `Cache-Control` sets both: a week
-  for `place/`, until the next publish for `latest/<parent>`, minutes for `latest.json`.
+  2026-11-17; domain attached by the owner). Its Cache Rule "sc-data cache" is deployed on the zone
+  (2026-11-17, the zone's first): `(http.host eq "sc-data.comentality.com")`; eligible for cache; Edge
+  TTL "use cache-control header if present, bypass cache if not"; Browser TTL "respect origin TTL".
+  Checked: a JSON uploaded with `max-age=120` went MISS, HIT, HIT and kept its 120 (no 4-hour
+  rewrite). So each upload's `Cache-Control` sets both: a week for `place/`, until the next publish
+  for `latest/<parent>`, minutes for `latest.json`. A file uploaded without one is not cached.
+- **The test is cleaned up:** the test domain removed, the bucket `sc-open-quests-cachetest` and its
+  three objects deleted. The script stays in `.scratch/r2-cachetest/`.
 
 ## Countries in the place index: built on branch `countries`, not merged (2026-11-11, overnight)
 

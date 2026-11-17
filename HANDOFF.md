@@ -2241,6 +2241,7 @@ wording and tab structure as a first draft open to change, not as decided design
   minutes of the certificate. `run.py`'s verdict line misread this (it counts bucket-wide reads).
 - **Place-data host:** bucket `sc-open-quests-data` (ENAM, empty) created by Claude; `sc-data.comentality.com`
   attached by the owner, ssl and ownership active. Owner's name choice over `street-complete-data`.
-- **Owner's, open:** (1) the Cache Rule for `sc-data` in the dashboard, settings in DESIGN.md; Claude then checks
-  a test object HITs; (2) remove the test domain (`npx wrangler r2 bucket domain remove sc-open-quests-cachetest
-  --domain sc-r2-cachetest.comentality.com`), after which Claude deletes its three objects and the bucket.
+- **Cache Rule "sc-data cache" deployed by Claude in the owner's Chrome** (owner: "use chrome to do it yourself");
+  JSON on `sc-data` now MISS then HIT with its own max-age. Test domain removed the same way; the test bucket and
+  its objects deleted by API. `sc-open-quests-data` is empty again. Nothing open from this step: `sc-data` is ready
+  for the place publish (DESIGN.md, "Place statistics for the whole world").
