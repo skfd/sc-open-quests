@@ -42,12 +42,16 @@
 //!       (i4, 1e-7 degrees; i32::MIN where no payload held the node), ways.json (counts, seconds, peak memory).
 //!       wtiles-G goes at the next update with --prune-pairs: ask for D-1 before the day's update
 //!   tilestore context --store S [--gen -1] [--ways W.npy] [--rels R.npy] [--nodes N.npy --node-places NP.npy]
-//!       [--points P.npy] [--around 1] [--prefix addr: ...] --out DIR
+//!       [--points P.npy] [--around 1] [--prefix addr: ...] [--rel-geometry] [--vertex-ways]
+//!       [--crossing X.npy [--crossing-key highway ...]] --out DIR
 //!       what tier 2's cover needs around a day's changes, at generation G (context.rs): ways' tags, refs, places,
-//!       their refs with a --prefix tag and the relations holding them; relations' tags, members and member box;
-//!       nodes' tags at their places; the closed ways and multipolygons whose ring holds each point. NP and P are
-//!       '<i8' lat7, lon7 pairs. Ways and relations need G's pairs (gone at the next update with --prune-pairs),
-//!       nodes and points only G's tile index. Out files are listed in context.rs
+//!       their refs with a --prefix tag and the relations holding them; relations' tags, members and member box
+//!       (with --rel-geometry, their member ways' refs and places too); nodes' tags at their places (with
+//!       --vertex-ways, every way they are a vertex of, with its geometry); the closed ways and multipolygons whose
+//!       ring holds each point; with --crossing, the ways with a --crossing-key tag whose segments cross one of X's
+//!       segments ('<i8' lat7, lon7, lat7, lon7 each), with their geometry. NP and P are '<i8' lat7, lon7 pairs.
+//!       Ways and relations need G's pairs (gone at the next update with --prune-pairs), nodes, points and crossings
+//!       only G's tile index. Out files are listed in context.rs
 
 mod clip;
 mod compact;
@@ -145,6 +149,13 @@ fn main() {
                 let v: Vec<String> = args.windows(2).filter(|w| w[0] == "--prefix").map(|w| w[1].clone()).collect();
                 if v.is_empty() { vec!["addr:".to_string()] } else { v }
             },
+            rel_geometry: args.iter().any(|x| x == "--rel-geometry"),
+            crossing: arg(&args, "--crossing").map(PathBuf::from),
+            crossing_keys: {
+                let v: Vec<String> = args.windows(2).filter(|w| w[0] == "--crossing-key").map(|w| w[1].clone()).collect();
+                if v.is_empty() { vec!["highway".to_string()] } else { v }
+            },
+            vertex_ways: args.iter().any(|x| x == "--vertex-ways"),
             out: PathBuf::from(arg(&args, "--out").expect("--out")),
         }),
         Some("update") => update::update(&update::Args {

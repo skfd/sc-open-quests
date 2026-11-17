@@ -29,7 +29,7 @@ pub fn key_of(x: i64, y: i64, z: u32) -> u32 {
 
 /// every tile a segment crosses (tiles.py segment_tiles): column by column, its rows between the segment's y where
 /// it enters and leaves the column
-fn segment_tiles(fx0: f64, fy0: f64, fx1: f64, fy1: f64, z: u32, out: &mut Vec<u32>) {
+pub fn segment_tiles(fx0: f64, fy0: f64, fx1: f64, fy1: f64, z: u32, out: &mut Vec<u32>) {
     const EPS: f64 = 1e-9;
     let (xa, xb) = (fx0.min(fx1), fx0.max(fx1));
     let (c0, c1) = (xa.floor() as i64, xb.floor() as i64);

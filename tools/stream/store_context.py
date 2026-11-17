@@ -42,6 +42,75 @@ def _unpack_tags(d: Path, prefix: str) -> list[dict]:
     return [_tags(b[offs[i]:offs[i + 1]]) for i in range(len(offs) - 1)]
 
 
+def _line(lat7, lon7) -> np.ndarray:
+    """(k, 2) degrees, a place the payload lacked as NaN"""
+    g = np.column_stack([lat7, lon7]).astype(float)
+    g[(lat7 == NO) | (lon7 == NO)] = np.nan
+    return g / 1e7
+
+
+def _geo(d: Path, prefix: str) -> dict[int, dict]:
+    """a context output's ways with geometry (prefix v: vertex ways, x: crossing ways): id -> {line, tags}"""
+    if not (d / f"{prefix}_ids.npy").exists():
+        return {}
+    ids, offs = np.load(d / f"{prefix}_ids.npy"), np.load(d / f"{prefix}_offs.npy")
+    lat, lon = np.load(d / f"{prefix}_lat7.npy"), np.load(d / f"{prefix}_lon7.npy")
+    tags = _unpack_tags(d, prefix)
+    return {w: {"line": _line(lat[offs[i]:offs[i + 1]], lon[offs[i]:offs[i + 1]]), "tags": tags[i]}
+            for i, w in enumerate(ids.tolist())}
+
+
+def _segments_e7(lines) -> np.ndarray:
+    """consecutive placed points of each line as '<i8' lat7, lon7, lat7, lon7 rows (for --crossing)"""
+    out = []
+    for g in lines:
+        g = g[np.isfinite(g).all(axis=1)]
+        if len(g) >= 2:
+            out.append(np.hstack([g[:-1], g[1:]]))
+    if not out:
+        return np.zeros((0, 4), np.int64)
+    return np.round(np.vstack(out) * 1e7).astype(np.int64)
+
+
+def _cross_points(a: np.ndarray, b: np.ndarray) -> np.ndarray:
+    """the points where line a's segments cross line b's (degrees, (k, 2); NaN places dropped), touching included"""
+    a, b = a[np.isfinite(a).all(axis=1)], b[np.isfinite(b).all(axis=1)]
+    if len(a) < 2 or len(b) < 2:
+        return np.zeros((0, 2))
+    p, r = a[:-1][:, None, :], (a[1:] - a[:-1])[:, None, :]
+    q, s_ = b[:-1][None, :, :], (b[1:] - b[:-1])[None, :, :]
+    rxs = r[..., 0] * s_[..., 1] - r[..., 1] * s_[..., 0]
+    qp = q - p
+    with np.errstate(divide="ignore", invalid="ignore"):
+        t = (qp[..., 0] * s_[..., 1] - qp[..., 1] * s_[..., 0]) / rxs
+        u = (qp[..., 0] * r[..., 1] - qp[..., 1] * r[..., 0]) / rxs
+    # parallel segments (rxs 0) are left out: a road along a bridge's own segment is not a road under it
+    hit = (rxs != 0) & (t >= 0) & (t <= 1) & (u >= 0) & (u <= 1)
+    i, j = np.nonzero(hit)
+    return (p[i, 0] + t[i, j][:, None] * r[i, 0]).reshape(-1, 2)
+
+
+def _quest_points(g: np.ndarray) -> np.ndarray:
+    """a line's half-length point and, closed, its centroid (world_tier2._quest_points for one line)"""
+    import world_tier2 as W
+    return W._quest_points([g])
+
+
+def crossing_box(road: np.ndarray, others: list[np.ndarray]) -> tuple | None:
+    """the box of a road's quest point(s) and every point where it crosses one of `others`: one rectangle city holding
+    both, so its area pass's map data (ways with a node in its padded box) holds the crossing bridge (AddMaxHeight)"""
+    pts = [x for o in others for x in _cross_points(road, o)]
+    if not pts:
+        return None
+    pts = np.vstack([np.array(pts), _quest_points(road)])
+    pts = pts[np.isfinite(pts).all(axis=1)]
+    return (pts[:, 0].min(), pts[:, 1].min(), pts[:, 0].max(), pts[:, 1].max()) if len(pts) else None
+
+
+BRIDGE_KEYS = ("bridge", "building", "man_made")
+ROAD_UNDER = "road under a bridge (AddMaxHeight)"
+
+
 def _box_deg(b) -> tuple | None:
     if b[0] == NO:
         return None
@@ -102,14 +171,30 @@ class Context:
             tags = _unpack_tags(d, "e")
             for k, x, b, tg in zip(ek.tolist(), ei.tolist(), eb, tags):
                 self.elements[(k, x)] = {"box": _box_deg(b), "tags": tg}
+        # --rel-geometry: each relation's member ways; --vertex-ways and --crossing: ways with their geometry
+        self.rel_lines: dict[int, list[np.ndarray]] = {}
+        if (d / "r_woffs.npy").exists():
+            wo, po = np.load(d / "r_woffs.npy"), np.load(d / "rw_poffs.npy")
+            lat, lon = np.load(d / "rw_lat7.npy"), np.load(d / "rw_lon7.npy")
+            rids = np.load(d / "r_ids.npy")
+            for i, r in enumerate(rids.tolist()):
+                self.rel_lines[r] = [_line(lat[po[k]:po[k + 1]], lon[po[k]:po[k + 1]]) for k in range(wo[i], wo[i + 1])]
+        self.vertex_ways = _geo(d, "v")
+        self.crossing = _geo(d, "x")
 
 
 def run_context(exe: Path, store: Path, gen: int, out: Path, ways=None, rels=None, nodes=None, node_places=None,
-                points=None, around: int = 1, log=print) -> Context:
-    """`tilestore context` with these inputs (id lists; node_places and points as (lat, lon) degree arrays)"""
+                points=None, around: int = 1, log=print, rel_geometry: bool = False, vertex_ways: bool = False,
+                crossing: np.ndarray | None = None, crossing_keys=("highway",)) -> Context:
+    """`tilestore context` with these inputs (id lists; node_places and points as (lat, lon) degree arrays; crossing
+    as '<i8' lat7, lon7, lat7, lon7 rows)"""
     out = Path(out)
     out.mkdir(parents=True, exist_ok=True)
     args = [str(exe), "context", "--store", str(store), "--gen", str(gen), "--out", str(out), "--around", str(around)]
+    if rel_geometry:
+        args.append("--rel-geometry")
+    if vertex_ways:
+        args.append("--vertex-ways")
 
     def put(name, arr):
         p = out / f"in-{name}.npy"
@@ -128,6 +213,10 @@ def run_context(exe: Path, store: Path, gen: int, out: Path, ways=None, rels=Non
         pt = np.asarray(points, float).reshape(-1, 2)
         pt = pt[np.isfinite(pt).all(axis=1)]
         args += ["--points", put("points", np.round(pt * 1e7).astype(np.int64).reshape(-1))]
+    if crossing is not None and len(crossing):
+        args += ["--crossing", put("crossing", np.asarray(crossing, np.int64).reshape(-1))]
+        for k in crossing_keys:
+            args += ["--crossing-key", k]
     r = subprocess.run(args, capture_output=True, text=True)
     (out / "context.log").write_text(r.stderr or "", encoding="utf-8")
     if r.returncode:
@@ -147,16 +236,69 @@ class DayContext:
         self.bp: Context | None = None
         self.a: Context | None = None
         self.contained: list[int] = []
+        # fork P3: what the diff does not show but whose quests move: the relations holding a changed way, the roads
+        # crossing a changed bridge, the untouched ways of a moved node (bx at D-1, ax at D)
+        self.bx: Context | None = None
+        self.ax: Context | None = None
+        self.bxb: Context | None = None  # the bridges crossing the changed roads, at D-1 and at D
+        self.axb: Context | None = None
+        self.bridges: dict[str, list[np.ndarray]] = {}  # the changed bridges' lines, "b" at D-1 and "a" at D
+        self.roads: dict[str, dict[int, np.ndarray]] = {}  # the changed roads' lines
+        self.moved: np.ndarray = np.zeros(0, np.int64)
+        self.held: set[int] = set()
+        self.over_road = None
+
+    def _over_lines(self, c: Context) -> list[np.ndarray]:
+        """the changed ways that can pass over a road, as the store holds them in context c (old or new tags)"""
+        out = []
+        for w, v in self.last_way.items():
+            cw = c.ways.get(w) if c else None
+            if cw and (self.over_road(cw["tags"]) or (v[2] and self.over_road(v[3]))):
+                out.append(_line(cw["lat7"], cw["lon7"]))
+        return out
+
+    def _road_lines(self, c: Context) -> dict[int, np.ndarray]:
+        """the changed highways (old or new tags), as the store holds them in context c"""
+        out = {}
+        for w, v in self.last_way.items():
+            cw = c.ways.get(w) if c else None
+            if cw and ("highway" in cw["tags"] or (v[2] and "highway" in v[3])):
+                out[w] = _line(cw["lat7"], cw["lon7"])
+        return out
+
+    def _crossings(self, exe, store, gen, work: Path, when: str, c: Context, log):
+        """the roads crossing the changed bridges and the bridges crossing the changed roads, in context c's
+        generation: (roads ctx with --vertex-ways and moved nodes is the caller's; this asks the bridge side)"""
+        self.bridges[when] = self._over_lines(c)
+        self.roads[when] = self._road_lines(c)
+        segs = _segments_e7(list(self.roads[when].values()))
+        return run_context(exe, store, gen, Path(work) / f"{'before' if when == 'b' else 'after'}-xb", crossing=segs,
+                           crossing_keys=BRIDGE_KEYS, log=log) if len(segs) else None
+
+    def held_by(self, c: Context | None) -> set[int]:
+        return {r for w in self.last_way for r in ((c.ways.get(w) or {}).get("held_by") or [])} if c else set()
 
     @classmethod
     def before(cls, exe, store, gen, last_node, last_way, last_rel, old_places, work: Path, contained_kind,
-               wanted_relation, log=print) -> "DayContext":
+               wanted_relation, log=print, over_road=None) -> "DayContext":
         dc = cls(last_node, last_way, last_rel, contained_kind, wanted_relation)
+        dc.over_road = over_road
         # nodes that existed the day before: every changed node but a new one (version 1)
         old_n = np.array([n for n, v in last_node.items() if v[0] > 1], np.int64)
         op = old_places.places(old_n) if len(old_n) else np.zeros((0, 2))
         dc.b = run_context(exe, store, gen, Path(work) / "before", ways=list(last_way), rels=list(last_rel),
                            nodes=old_n, node_places=op, log=log)
+        if over_road is not None:
+            # the nodes that moved (alive at D, at another place than at D-1): the untouched ways they are a vertex of
+            # move their quest points; and the roads the changed bridges crossed at D-1
+            alive = np.array([bool(last_node[n][2]) for n in old_n.tolist()], bool) if len(old_n) else np.zeros(0, bool)
+            newp = np.array([last_node[n][4] if last_node[n][2] else (np.nan, np.nan) for n in old_n.tolist()],
+                            float).reshape(-1, 2)
+            moved = alive & np.isfinite(op).all(axis=1) & (np.abs(newp - op) > 1e-9).any(axis=1)
+            dc.moved = old_n[moved]
+            dc.bxb = dc._crossings(exe, store, gen, work, "b", dc.b, log)
+            dc.bx = run_context(exe, store, gen, Path(work) / "before-x", nodes=dc.moved, node_places=op[moved],
+                                vertex_ways=True, crossing=_segments_e7(dc.bridges["b"]), log=log)
         # the nodes a container reads, by their new or their old tags; their old places: what held them
         dc.contained = [n for n, v in last_node.items()
                         if (v[2] and contained_kind(v[3])) or contained_kind(dc.b.nodes.get(n, {}).get("tags"))]
@@ -179,7 +321,59 @@ class DayContext:
                              nodes=an, node_places=new_places.places(an) if len(an) else np.zeros((0, 2)),
                              points=pts, log=log)
         self.a_pts_ids = pts_ids[np.isfinite(pts).all(axis=1)] if len(pts_ids) else pts_ids
+        if self.over_road is not None:
+            # the relations holding a changed way (at D-1 or D) with their member ways at D; the moved nodes' ways at
+            # D; the roads the changed bridges cross at D
+            self.held = self.held_by(self.b) | self.held_by(self.a)
+            mp = new_places.places(self.moved) if len(self.moved) else np.zeros((0, 2))
+            self.axb = self._crossings(exe, store, gen, work, "a", self.a, log)
+            self.ax = run_context(exe, store, gen, Path(work) / "after-x", rels=sorted(self.held), rel_geometry=True,
+                                  nodes=self.moved, node_places=mp, vertex_ways=True,
+                                  crossing=_segments_e7(self.bridges["a"]), log=log)
         return self
+
+    def extra_lines(self) -> list[tuple[str, np.ndarray]]:
+        """lines the diff does not show whose quests move (world_tier2.cover's extra_lines)"""
+        out = []
+        if self.ax:
+            for r, lines in self.ax.rel_lines.items():
+                out += [("relation holding a changed way", g) for g in lines]
+        for c in (self.bx, self.ax):
+            if c:
+                out += [("road crossing a changed bridge", v["line"]) for v in c.crossing.values()]
+                out += [("way of a moved node", v["line"]) for w, v in c.vertex_ways.items() if w not in self.last_way]
+        return out
+
+    def crossing_candidates(self) -> list[tuple]:
+        """a box from each road's quest point to where it crosses a bridge, when the road or the bridge changed, at
+        D-1 and at D: one rectangle city then holds the road's quest and the bridge (its area pass's map data holds the
+        ways with a node in its padded box, so a bridge crossing far from the road's centre is otherwise not seen)"""
+        out = []
+        for when, cx, cxb in (("b", self.bx, self.bxb), ("a", self.ax, self.axb)):
+            if cx:  # roads crossing a changed bridge
+                for w, v in cx.crossing.items():
+                    b = crossing_box(v["line"], self.bridges.get(when, []))
+                    if b is not None:
+                        out.append((b, "way", ROAD_UNDER, True, ("way", w)))
+            if cxb:  # bridges crossing a changed road
+                bridges = [v["line"] for v in cxb.crossing.values() if self.over_road(v["tags"])]
+                if bridges:
+                    for w, g in self.roads.get(when, {}).items():
+                        b = crossing_box(g, bridges)
+                        if b is not None:
+                            out.append((b, "way", ROAD_UNDER, True, ("way", w)))
+        return out
+
+    def held_candidates(self, container_kind) -> list[tuple]:
+        """every relation holding a changed way as a box candidate, its tags at D: a container is boxed whole (as
+        extra_candidates), any other by the box rule (small: whole; else its member lines, from extra_lines)"""
+        out = []
+        if self.ax:
+            for r in sorted(self.held):
+                info = self.ax.rels.get(r)
+                if info and info["box"] is not None and container_kind(info["tags"], relation=True) is None:
+                    out.append((info["box"], "relation", None, True, ("relation", r)))
+        return out
 
     # --- hooks for world_tier2.cover ---
 
@@ -263,13 +457,23 @@ class DayContext:
         return out
 
     @classmethod
-    def load(cls, work: Path, last_node, last_way, last_rel, contained_kind, wanted_relation) -> "DayContext":
-        """a day's answers already asked (`day` below): work/before, before-points, after"""
+    def load(cls, work: Path, last_node, last_way, last_rel, contained_kind, wanted_relation, over_road=None) -> "DayContext":
+        """a day's answers already asked (`day` below): work/before, before-points, after (and P3's x and xb)"""
         work = Path(work)
         dc = cls(last_node, last_way, last_rel, contained_kind, wanted_relation)
+        dc.over_road = over_road
         dc.b = Context(work / "before")
         dc.bp = Context(work / "before-points") if (work / "before-points").exists() else None
         dc.a = Context(work / "after") if (work / "after").exists() else None
+        dc.bx = Context(work / "before-x") if (work / "before-x").exists() else None
+        dc.ax = Context(work / "after-x") if (work / "after-x").exists() else None
+        dc.bxb = Context(work / "before-xb") if (work / "before-xb").exists() else None
+        dc.axb = Context(work / "after-xb") if (work / "after-xb").exists() else None
+        if dc.ax is not None:
+            dc.held = set(dc.ax.rels)
+        if over_road is not None:
+            for when, c in (("b", dc.b), ("a", dc.a)):
+                dc.bridges[when], dc.roads[when] = dc._over_lines(c), dc._road_lines(c)
         dc.contained = [n for n, v in last_node.items()
                         if (v[2] and contained_kind(v[3])) or contained_kind(dc.b.nodes.get(n, {}).get("tags"))]
         return dc
@@ -277,7 +481,9 @@ class DayContext:
     def hooks(self, container_kind) -> dict:
         return {"old_refs": self.old_refs, "member_refs": self.member_refs, "old_tags": self.old_tags,
                 "address_nodes": self.address_nodes(), "old_node_tags": self.old_node_tags,
-                "extra_candidates": self.extra_candidates(container_kind)}
+                "extra_candidates": (self.extra_candidates(container_kind) + self.held_candidates(container_kind)
+                                     + self.crossing_candidates()),
+                "extra_lines": self.extra_lines()}
 
 
 def main():
@@ -313,7 +519,7 @@ def main():
     meta = json.loads((o.store / "store.json").read_text())
     g0 = meta["generations"][-1]["gen"]
     dc = DayContext.before(o.exe, o.store, g0, last_node, last_way, last_rel, old_places, o.work, W.contained_kind,
-                           W.wanted_relation)
+                           W.wanted_relation, over_road=W.over_road)
     r = subprocess.run([str(o.exe), "update", "--store", str(o.store), "--diff", str(o.diff), "--before", str(o.before_pbf),
                         "--day", o.day, "--polygon", str(o.polygon), "--prune-pairs"], capture_output=True, text=True)
     (o.work / "update.log").write_text(r.stderr or "", encoding="utf-8")
@@ -321,7 +527,10 @@ def main():
         raise SystemExit(f"update failed: {o.work / 'update.log'}")
     dc.after(o.exe, o.store, g0 + 1, new_places, o.work)
     print(json.dumps({"before": dc.b.stats, "beforePoints": dc.bp.stats if dc.bp else None, "after": dc.a.stats,
-                      "extraCandidates": len(dc.extra_candidates(W.container_kind))}, indent=1))
+                      "beforeX": dc.bx.stats if dc.bx else None, "afterX": dc.ax.stats if dc.ax else None,
+                      "extraCandidates": len(dc.extra_candidates(W.container_kind)),
+                      "heldCandidates": len(dc.held_candidates(W.container_kind)),
+                      "extraLines": len(dc.extra_lines())}, indent=1))
 
 
 if __name__ == "__main__":

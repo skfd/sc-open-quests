@@ -112,6 +112,20 @@ def contained_kind(tags: dict | None) -> str | None:
     return None
 
 
+BRIDGE_RAILWAYS = {"rail", "light_rail", "subway", "narrow_gauge", "tram", "disused", "preserved", "funicular", "monorail"}
+
+
+def over_road(tags: dict | None) -> bool:
+    """AddMaxHeight's bridgeFilter (quests/max_height/MaxHeightUtils.kt): a way that can pass over a road, which the
+    road's quest reads by its segments crossing (`intersects`), wherever the road's own quest point lies. Taken
+    broadly (any highway, `and layer` not required): a few extra crossings only add ground."""
+    if not tags:
+        return False
+    if (("highway" in tags or tags.get("railway") in BRIDGE_RAILWAYS) and tags.get("bridge", "no") != "no"):
+        return True
+    return tags.get("building") == "roof" or (tags.get("man_made") == "pipeline" and tags.get("location") == "overhead")
+
+
 def wanted_relation(tags: dict) -> str | None:
     """a changed relation whose members' quests it decides, and how (the area quests' code)"""
     typ = tags.get("type", "")
@@ -378,7 +392,7 @@ def _closed(r) -> bool:
 def cover(last_node: dict, last_way: dict, last_rel: dict, old_places, new_places, old_rows: np.ndarray | None,
           old_refs=None, member_refs=None, cap_km2: float = CAP_KM2, log=print, box_clip=None, old_tags=None,
           address_nodes: np.ndarray | None = None, rule: bool = True, boxed_out: set | None = None,
-          old_node_tags=None, extra_candidates: list | None = None):
+          old_node_tags=None, extra_candidates: list | None = None, extra_lines: list | None = None):
     """the cells a day touched. last_*: stream.read_diff's; old_places / new_places: node places at D-1 and D (a
     NodeFile, or DictPlaces); old_rows: the state's rows (lat, lon in 1e-7) of every changed key; old_refs(wid) and
     member_refs(wid): a way's refs at D-1 and at D (None when unknown); old_tags(kind, id): an element's tags at D-1
@@ -388,6 +402,10 @@ def cover(last_node: dict, last_way: dict, last_rel: dict, old_places, new_place
     container read (an address that went, a level removed) is found; extra_candidates: container boxes the diff alone
     does not show, (box, kind, reason, tags known, ident) as the closed ways' (store_context.DayContext: relations
     holding a changed way, the containers of a changed contained node, the areas a changed address is a vertex of).
+    extra_lines: (kind, line) pairs, line a (k, 2) lat/lon array, the diff does not show but whose quest points move
+    or must be recounted (store_context: the member ways of relations holding a changed way, the roads crossing a
+    changed bridge at D-1 and D, the untouched ways a moved node is a vertex of at D-1 and D): their quest points are
+    marked, and for a relation's member lines their segments too (a big relation's outline).
     rule=False boxes every closed way and multipolygon (tier2's way; a test). Returns (codes, stats, secs)."""
     t0 = time.time()
     marks = Marks()
@@ -498,6 +516,23 @@ def cover(last_node: dict, last_way: dict, last_rel: dict, old_places, new_place
     if extra_candidates:
         candidates += extra_candidates
         stats["store context: container boxes"] = len(extra_candidates)
+        stats["store context: boxes, not containers"] = sum(1 for c in extra_candidates if c[2] is None)
+
+    # lines the store found around the day's changes: their quest points (and a relation member's segments)
+    if extra_lines:
+        by_kind = defaultdict(list)
+        for kind, g in extra_lines:
+            by_kind[kind].append(np.asarray(g, float).reshape(-1, 2))
+        for kind, gs in by_kind.items():
+            stats[f"store context: {kind}"] = len(gs)
+            qp = _quest_points(gs)
+            if len(qp):
+                marks.points(qp[:, 0], qp[:, 1], f"quest point ({kind})")
+            if kind.startswith("relation"):
+                segs = [np.column_stack([g[:-1], g[1:]]) for g in gs if len(g) >= 2]
+                if segs:
+                    s_ = np.vstack(segs)
+                    marks.segments(s_[np.isfinite(s_).all(axis=1)], kind)
 
     # the boxes: a container's whole box; any box up to SMALL_BOX_KM2; every other polygon by outline and quest points
     t = time.time()

@@ -15,6 +15,14 @@
 //!   point (even-odd), looked for in the tiles of the point's tile and its --around neighbours each way (default 1, a
 //!   3 x 3 block, about 7 km at mid latitudes): a container whose outline crosses none of them is not found.
 //!
+//! - with --rel-geometry, each asked relation's member ways from its relation store blob (refs and places), for its
+//!   quest point when a member way changed but the relation did not (its centre moves);
+//! - with --vertex-ways, every way (open or closed) an asked node is a vertex of, with its geometry, from the node's
+//!   own tile: an untouched way whose node moved has a quest point that moved;
+//! - crossings (--crossing X.npy, '<i8' lat7, lon7, lat7, lon7 per segment; --crossing-key K, default highway): the
+//!   ways with a tag key K whose segments cross (or touch) one of X's segments, with their geometry, from the tiles the
+//!   segments cross (a tile holds every way crossing it whole): the roads under a changed bridge (AddMaxHeight).
+//!
 //! No new index: way pairs, relation pairs, tiles and the relation store hold all of it. Way pairs go at the next
 //! `update --prune-pairs` and the tile index at `compact`: the ways and relations parts need G's pairs, the nodes and
 //! points parts only its tile index.
@@ -27,11 +35,14 @@
 //!   n_ids, n_found (u1: 1 tagged, 2 untagged, 0 not in the tile at its place), n_toffs + n_tags.bin, n_voffs + n_vways (closed ways with it as
 //!   a vertex); p_offs + p_kind (u1: 1 way, 2 relation) + p_id; for every closed way or multipolygon a node or a point
 //!   found: e_kind, e_id, e_box (i4, 4 each), e_toffs + e_tags.bin; context.json (counts, seconds, peak memory).
+//!   --rel-geometry: r_woffs (n + 1, into rw_*) + rw_ids + rw_poffs + rw_refs/rw_lat7/rw_lon7 (each member way's
+//!   refs and places). --vertex-ways: v_ids + v_offs + v_refs/v_lat7/v_lon7 + v_toffs/v_tags.bin (the union of the
+//!   ways). --crossing: x_ids + x_offs + x_refs/x_lat7/x_lon7 + x_toffs/x_tags.bin.
 
 use crate::npy;
 use crate::pbf::tag_pairs;
 use crate::read::{find, payloads, Part};
-use crate::tiles::{frac_xy, key_of};
+use crate::tiles::{frac_xy, key_of, segment_tiles};
 use crate::ways::{load_vec_i64, save_vec};
 use rayon::prelude::*;
 use std::collections::{HashMap, HashSet};
@@ -49,6 +60,10 @@ pub struct Args {
     pub points: Option<PathBuf>,
     pub around: i64,
     pub prefixes: Vec<String>,
+    pub rel_geometry: bool,
+    pub crossing: Option<PathBuf>,
+    pub crossing_keys: Vec<String>,
+    pub vertex_ways: bool,
     pub out: PathBuf,
 }
 
@@ -154,6 +169,72 @@ fn save_i4(dir: &Path, name: &str, v: &[i32]) {
 }
 fn save_u1(dir: &Path, name: &str, v: &[u8]) {
     save_vec(&dir.join(name), "'|u1'", v, |x| vec![x]);
+}
+
+/// ways with their geometry, for an output prefix: ids, offs, refs, places, tags
+#[derive(Default)]
+struct Geo {
+    ids: Vec<i64>,
+    offs: Vec<i64>,
+    refs: Vec<i64>,
+    lat: Vec<i32>,
+    lon: Vec<i32>,
+    toffs: Vec<i64>,
+    tags: Vec<u8>,
+}
+
+impl Geo {
+    fn new() -> Geo {
+        Geo { offs: vec![0], toffs: vec![0], ..Default::default() }
+    }
+    /// way j of payload p, its places from the payload (NO where it has none)
+    fn push_way(&mut self, p: &Part, j: usize) {
+        self.ids.push(p.wid[j]);
+        for r in &p.wrefs[p.w_roff[j]..p.w_roff[j + 1]] {
+            self.refs.push(*r);
+            match p.nid.binary_search(r) {
+                Ok(q) => {
+                    self.lat.push(p.lat[q]);
+                    self.lon.push(p.lon[q]);
+                }
+                Err(_) => {
+                    self.lat.push(NO);
+                    self.lon.push(NO);
+                }
+            }
+        }
+        self.offs.push(self.refs.len() as i64);
+        self.tags.extend_from_slice(&p.wtb[p.w_toff[j]..p.w_toff[j + 1]]);
+        self.toffs.push(self.tags.len() as i64);
+    }
+    fn save(&self, dir: &Path, prefix: &str) {
+        save_i8(dir, &format!("{prefix}_ids.npy"), &self.ids);
+        save_i8(dir, &format!("{prefix}_offs.npy"), &self.offs);
+        save_i8(dir, &format!("{prefix}_refs.npy"), &self.refs);
+        save_i4(dir, &format!("{prefix}_lat7.npy"), &self.lat);
+        save_i4(dir, &format!("{prefix}_lon7.npy"), &self.lon);
+        save_i8(dir, &format!("{prefix}_toffs.npy"), &self.toffs);
+        fs::write(dir.join(format!("{prefix}_tags.bin")), &self.tags).unwrap();
+    }
+}
+
+/// do segments a-b and c-d (lat7, lon7 as f64) cross or touch: orientation tests, collinear overlap included
+fn seg_cross(a: (f64, f64), b: (f64, f64), c: (f64, f64), d: (f64, f64)) -> bool {
+    fn orient(p: (f64, f64), q: (f64, f64), r: (f64, f64)) -> f64 {
+        (q.0 - p.0) * (r.1 - p.1) - (q.1 - p.1) * (r.0 - p.0)
+    }
+    fn on(p: (f64, f64), q: (f64, f64), r: (f64, f64)) -> bool {
+        r.0 >= p.0.min(q.0) && r.0 <= p.0.max(q.0) && r.1 >= p.1.min(q.1) && r.1 <= p.1.max(q.1)
+    }
+    let (d1, d2, d3, d4) = (orient(c, d, a), orient(c, d, b), orient(a, b, c), orient(a, b, d));
+    if ((d1 > 0.0 && d2 < 0.0) || (d1 < 0.0 && d2 > 0.0)) && ((d3 > 0.0 && d4 < 0.0) || (d3 < 0.0 && d4 > 0.0)) {
+        return true;
+    }
+    (d1 == 0.0 && on(c, d, a)) || (d2 == 0.0 && on(c, d, b)) || (d3 == 0.0 && on(a, b, c)) || (d4 == 0.0 && on(a, b, d))
+}
+
+fn has_key(tags: &[u8], keys: &[String]) -> bool {
+    tag_pairs(tags).any(|(k, _)| keys.iter().any(|x| k == x.as_bytes()))
 }
 
 /// a way in a decoded payload: refs, places (NO where absent), tags, the refs carrying a prefix tag, holding relations
@@ -377,6 +458,25 @@ pub fn context(a: &Args) {
             }
         }
         fetch_blobs(&rel_ids, &mut relidx, &mut blobs);
+        if a.rel_geometry {
+            // each relation's member ways from its blob (the relation store keeps a kept relation's member ways whole)
+            let mut geo = Geo::new();
+            let mut woffs = vec![0i64];
+            for r in &rel_ids {
+                if let Some(b) = blobs.get(r) {
+                    for j in 0..b.wid.len() {
+                        geo.push_way(b, j);
+                    }
+                }
+                woffs.push(geo.ids.len() as i64);
+            }
+            save_i8(&a.out, "r_woffs.npy", &woffs);
+            save_i8(&a.out, "rw_ids.npy", &geo.ids);
+            save_i8(&a.out, "rw_poffs.npy", &geo.offs);
+            save_i8(&a.out, "rw_refs.npy", &geo.refs);
+            save_i4(&a.out, "rw_lat7.npy", &geo.lat);
+            save_i4(&a.out, "rw_lon7.npy", &geo.lon);
+        }
         let mut tags = Out::new();
         let (mut fnd, mut moffs, mut mtype, mut mref, mut boxes) = (Vec::new(), vec![0i64], Vec::new(), Vec::new(), Vec::new());
         for (i, f) in found.iter().enumerate() {
@@ -431,6 +531,9 @@ pub fn context(a: &Args) {
         // the closed ways with the node as a vertex (a tile holds every way crossing it, so the node's own tile has
         // them all): an area with an address on its outline is a container (AddHousenumber)
         let mut vways: Vec<Vec<i64>> = vec![Vec::new(); ids.len()];
+        // --vertex-ways: every way with an asked node as a vertex, its geometry (the union over the nodes)
+        let mut vgeo = Geo::new();
+        let mut vseen: HashSet<i64> = HashSet::new();
         let keys: Vec<i64> = by_tile.keys().copied().collect();
         for chunk in keys.chunks(4096) {
             for (k, p) in st.tiles(chunk) {
@@ -439,6 +542,10 @@ pub fn context(a: &Args) {
                 let mut ring_of: HashMap<i64, Vec<usize>> = HashMap::new();
                 for j in 0..p.wid.len() {
                     let r = &p.wrefs[p.w_roff[j]..p.w_roff[j + 1]];
+                    if a.vertex_ways && !vseen.contains(&p.wid[j]) && r.iter().any(|n| asked.contains(n)) {
+                        vseen.insert(p.wid[j]);
+                        vgeo.push_way(&p, j);
+                    }
                     if r.len() >= 4 && r[0] == r[r.len() - 1] {
                         for &n in &r[..r.len() - 1] {
                             if asked.contains(&n) {
@@ -486,9 +593,12 @@ pub fn context(a: &Args) {
         fs::write(a.out.join("n_tags.bin"), &tags.tags).unwrap();
         save_i8(&a.out, "n_voffs.npy", &voffs);
         save_i8(&a.out, "n_vways.npy", &vflat);
+        if a.vertex_ways {
+            vgeo.save(&a.out, "v");
+        }
         stats.insert("nodes".into(), serde_json::json!({"asked": ids.len(), "tagged": fnd.iter().filter(|&&x| x == 1).count(),
             "untagged": fnd.iter().filter(|&&x| x == 2).count(), "absent": fnd.iter().filter(|&&x| x == 0).count(),
-            "onClosedWays": (0..ids.len()).filter(|&i| voffs[i + 1] > voffs[i]).count(),
+            "onClosedWays": (0..ids.len()).filter(|&i| voffs[i + 1] > voffs[i]).count(), "vertexWays": vgeo.ids.len(),
             "tilesRead": keys.len(), "seconds": t.elapsed().as_secs_f64()}));
     }
 
@@ -617,6 +727,73 @@ pub fn context(a: &Args) {
         save_i8(d, "p_id.npy", &pid);
         stats.insert("points".into(), serde_json::json!({"asked": n, "withContainer": hits.iter().filter(|h| !h.is_empty()).count(),
             "newContainers": elements.len() - n_el0, "tilesRead": n_tiles, "around": a.around, "seconds": t.elapsed().as_secs_f64()}));
+    }
+
+    // --- crossings: the ways with a key whose segments cross the given segments ----------------------------------
+    if let Some(xp) = &a.crossing {
+        let t = Instant::now();
+        let v = load_vec_i64(xp);
+        assert!(v.len() % 4 == 0, "--crossing: lat7, lon7, lat7, lon7 per segment");
+        let segs: Vec<[f64; 4]> = v.chunks(4).map(|c| [c[0] as f64, c[1] as f64, c[2] as f64, c[3] as f64]).collect();
+        let nt = (1u64 << st.z) as f64;
+        let mut by_tile: HashMap<i64, Vec<usize>> = HashMap::new();
+        let mut k: Vec<u32> = Vec::new();
+        for (i, s_) in segs.iter().enumerate() {
+            k.clear();
+            let (ax, ay) = frac_xy(s_[0] as i32, s_[1] as i32, nt);
+            let (bx, by) = frac_xy(s_[2] as i32, s_[3] as i32, nt);
+            k.push(key_of(ax.floor() as i64, ay.floor() as i64, st.z));
+            k.push(key_of(bx.floor() as i64, by.floor() as i64, st.z));
+            segment_tiles(ax, ay, bx, by, st.z, &mut k);
+            k.sort_unstable();
+            k.dedup();
+            for &key in &k {
+                by_tile.entry(key as i64).or_default().push(i);
+            }
+        }
+        let mut keys: Vec<i64> = by_tile.keys().copied().collect();
+        keys.sort_unstable();
+        let mut geo = Geo::new();
+        let mut seen: HashSet<i64> = HashSet::new();
+        let mut tested = 0usize;
+        for chunk in keys.chunks(1024) {
+            for (key, p) in st.tiles(chunk) {
+                let mine: Vec<[f64; 4]> = by_tile[&key].iter().map(|&i| segs[i]).collect();
+                // the given segments' box in this tile, a first cut for each way
+                let (bs, bw, bn, be) = mine.iter().fold((f64::MAX, f64::MAX, f64::MIN, f64::MIN), |b, s_| {
+                    (b.0.min(s_[0]).min(s_[2]), b.1.min(s_[1]).min(s_[3]), b.2.max(s_[0]).max(s_[2]), b.3.max(s_[1]).max(s_[3]))
+                });
+                for j in 0..p.wid.len() {
+                    if seen.contains(&p.wid[j]) || !has_key(&p.wtb[p.w_toff[j]..p.w_toff[j + 1]], &a.crossing_keys) {
+                        continue;
+                    }
+                    let r = &p.wrefs[p.w_roff[j]..p.w_roff[j + 1]];
+                    let pos: Vec<Option<(f64, f64)>> =
+                        r.iter().map(|n| p.nid.binary_search(n).ok().map(|q| (p.lat[q] as f64, p.lon[q] as f64))).collect();
+                    tested += 1;
+                    let mut hit = false;
+                    'way: for w2 in pos.windows(2) {
+                        let (Some(u), Some(w_)) = (w2[0], w2[1]) else { continue };
+                        if u.0.max(w_.0) < bs || u.0.min(w_.0) > bn || u.1.max(w_.1) < bw || u.1.min(w_.1) > be {
+                            continue;
+                        }
+                        for s_ in &mine {
+                            if seg_cross(u, w_, (s_[0], s_[1]), (s_[2], s_[3])) {
+                                hit = true;
+                                break 'way;
+                            }
+                        }
+                    }
+                    if hit {
+                        seen.insert(p.wid[j]);
+                        geo.push_way(&p, j);
+                    }
+                }
+            }
+        }
+        geo.save(&a.out, "x");
+        stats.insert("crossing".into(), serde_json::json!({"segments": segs.len(), "tilesRead": keys.len(),
+            "waysTested": tested, "waysCrossing": geo.ids.len(), "keys": a.crossing_keys, "seconds": t.elapsed().as_secs_f64()}));
     }
 
     if !elements.is_empty() || a.points.is_some() || a.nodes.is_some() {
