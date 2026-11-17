@@ -2303,6 +2303,17 @@ checked against a full count. Until then the world's published numbers can only 
     2.5 h for 128 files. **The merged engine is installed (e3a4e656):** place sets, `city:<id>` in each set, `e7`
     positions. Found by G: a notes-only engine run is 120 s of loading 63,353 part outlines and 0.2 s of counting;
     loading outlines needs to be faster for a million places.
+  - **Agents F and G stopped at 01:15 on the 5-hour usage limit and were resumed at 08:12.** Nothing ran between.
+  - **F merged (08:30):** `tilestore context` (`context.rs`): for one generation, ways (tags, refs, places, which refs
+    carry `addr:*`, the relations holding them), relations (tags, members, member box), nodes (tags, the closed ways
+    they are a vertex of), points (the closed ways and multipolygons whose ring holds them, in the 3x3 tiles around).
+    No new index. Exact against the 11-12 clip on 62,968 ways, 15,341 relations, 57,340 nodes, 2,000 vertices and
+    4,520 points. `tools/stream/store_context.py` `DayContext` asks it at D-1 before the update and at D after, and
+    hands the cover its hooks. Europe day with the store: 0 rule-justified cells outside the rectangles; 55,631 km2
+    against 61,200 without. Inside Europe on day 5172 it resolves every one of E's flagged cases. **Left:** a container
+    wider than about 7 km around a point is not found (`--around` widens); `route=hiking` relations are not in the
+    store (it keeps only relations the app keeps), so whether the summit quests can read hiking routes at all is open;
+    the planet store's daily run must call `DayContext.before` before its update and `after` before `compact`.
 
 ## The place page: merged (2026-11-16, evening; owner: "pick from handoff ui work", then "merge it now")
 
