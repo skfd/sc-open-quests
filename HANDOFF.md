@@ -2346,6 +2346,14 @@ checked against a full count. Until then the world's published numbers can only 
     rows found by binary search; changed flags written in place; files in parallel). The rehearsal's 50.3M rows: 150 s
     to 3.6 s, byte-equal to the old path on all 16 files. Planet projection about 2 min with 8 workers. Not rerun:
     `notes_check.py`'s engine checks (the rule is unchanged and the new path matches it byte for byte).
+  - **P1 merged (14:50): blocker 1 gone.** Engine `partcache` writes a world's part outlines into one file
+    (`W/parts.cache`, stamped with the world's `places.json`); `--parts-cache` reads them into the same polygons.
+    `world_cells.py partcache --out W` builds it; world_day, world_state.apply, notes_day.note_quests and
+    world_cells count use it when current, and fall back to GeoJSON with a line on stderr when stale. Exact: 16 notes
+    and 16 tier-1 runs of the rehearsal, Bremen's 628,119 rows with places; 112 engine tests pass on main,
+    SnapshotReproductionTest included; installed. f0's parts 34 s to 1.8 s; notes for 16 files 233 s to 86 s, tier 1
+    200 s to 79 s (warm). Planet: about a minute of loading plus about 8 min of JVM starts per pass. The cache is
+    2.6 GB for Europe; the planet's is estimated at 10-15 GB. **Rebuild it whenever a world's places change.**
 
 ## The place page: merged (2026-11-16, evening; owner: "pick from handoff ui work", then "merge it now")
 
