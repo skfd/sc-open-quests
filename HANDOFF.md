@@ -2313,3 +2313,17 @@ wording and tab structure as a first draft open to change, not as decided design
   20 s; Rust `tilestore at` 1.4 s); output checked equal to the Docker osmium's.
 - **Decides:** whether release 2's monthly backfill (`backfill_history.py` slices and cuts) stays on osmium, goes
   native, or moves to Rust. Not before release 1's catch-up.
+- **Switching, asked by the owner (11-17, 04:15: "maybe we can look into switching to it now?").** The install was
+  refused by auto mode (downloading and running micromamba): it needs the owner's explicit yes. Timings wait for a
+  quiet machine (at 04:15 the store's catch-up and two release-1 jobs held about 46 GB). Every Docker osmium caller:
+  - **osm-extracts** (`osm_extracts.py`, `OSMIUM_IMAGE`; shared with the other projects): `apply-changes -H` (the
+    planet history kept current: 2-3 h a week through the mount, the biggest gain), clips' `extract -s smart`,
+    `check-refs`, `merge`, `extract --with-history`, `time-filter`. Its own change, its own repo, all projects' runs.
+  - **here:** `backfill_history.py` (`extract --with-history`, `time-filter`), `add_parts.py` (`getid -r`,
+    `export`), `world_cells.py` cut (`extract -s smart`; the storecut from the Rust store replaced it in release 1's
+    plan), `tilecheck/atcheck.sh` (test). The Overpass bench runs osmium inside the Overpass container: stays.
+  - **How:** one knob per repo (`OSMIUM=docker|native` or a path), default Docker until each command's output is
+    shown equal (same file through both: `osmium diff -q`, or byte-equal where the writer is deterministic), then
+    the default flipped. Native osmium takes Windows paths, so the `/osm`, `/in`, `/out` mapping goes behind the knob.
+    Order: the install and a smoke run of every command above; timings when quiet; here first (small, ours);
+    osm-extracts after, its next weekly history update as the proof.
