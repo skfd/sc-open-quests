@@ -2383,7 +2383,9 @@ checked against a full count. Until then the world's published numbers can only 
     10,286 rectangles) 28,507 km2, median file 1,603. **Planet parts cache built:** `.scratch/planet/world-places/
     parts.cache`, 1,069,679 outlines, 5.8 GB, 870 s. **Measuring:** `.scratch/rectgroups/measure.py f116` (log
     `.scratch/rectgroups/planet.log`, results `planet/results.json`), from the planet store's generation 15 under a
-    HOLD; a HOLD left by a dead run says "blocker 4 measurement": remove it by hand.
+    HOLD. **Measured (18:44), blocker 4 gone:** all 127 groups, one date, 4 engines at a time: 1,220 s wall time,
+    reads 643 s (8.0 GB of map data), peak heap 6.7 GB, every group OK at 8 GB. **About 40 min of tier 2 a planet
+    day** (DESIGN.md, "Tier 2 per plan file, measured on the planet"). Set `WORLD_T2_WORKERS=4` for planet days.
   - **Step 2's history file (owner, 18:20): add a download to osm-extracts** (`fetch planet-history` cannot start
     without a file; the newest weekly dump is `history-261109.osm.pbf`, about 155 GB). Then delete the store, cut at
     11-01T00Z. Disk: 216 GB free now; the store is 292 GB, `.scratch/planet-day` 115 GB.

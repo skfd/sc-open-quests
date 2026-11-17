@@ -5559,3 +5559,32 @@ as before): the rule 128,039 rectangles, 101,595 km2; with F's answers 128,260, 
 1,024 road-under-a-bridge boxes. The planet store holds every element, so the planet adds these everywhere: not
 measured; about 1.8% of 5172's changed ways lie in the clip, so a plain scale-up would be tens of thousands of boxes
 and lines, mostly small. A day's store questions took about 2.5 min in the rehearsal (D-1 15 s, D 115-135 s).
+
+### Tier 2 per plan file, measured on the planet (2026-11-17, evening; blocker 4)
+
+`world_day.rect_rows` recounts the rectangles group by group instead of in one engine run. A group is one plan
+file's rectangle cities, since their cells share the file's parts. A file whose padded area passes
+`WORLD_T2_GROUP_KM2` (default no cap) is cut further. Each group is read from the store on its own, and
+`WORLD_T2_WORKERS` engines run at a time (default 1). The dumps are ingested in group order, D-1's before D's, so
+the place-set numbering does not depend on which engine ends first.
+
+**Exact:** on the rehearsal's 11-13 (clip store generation 4, the day's own cities and parts), 16 groups give the same
+5,668,905 rows as the one run, with 0 different (`.scratch/rectgroups/exact.py`). Grouping took 145 s at 4 workers,
+the one run 157 s.
+
+**The planet, one date** (`.scratch/rectgroups/measure.py all --workers 4 --heap 8`): planet day 5172's rectangles
+under the big-polygon rule (128,544 in 127 files, 101,651 km2, 289,864 km2 padded by the 300 m ring), read from
+the planet store's generation 15 (11-17) with the planet parts cache (1,069,679 outlines, 5.8 GB, built in 870 s).
+
+| | |
+|---|---|
+| wall time, 4 engines at a time | 1,220 s |
+| reads, one at a time beside the engines | 643 s in all; 7,961 MB of map data |
+| engine time summed | 4,684 s (passes 3,603 s, the rest startup: about 20 s an engine) |
+| peak heap of the largest group | 6.7 GB (f11, 2,441 rectangles, 287 MB of map data) |
+| the most rectangles in one group | f116, 10,286, north Norway: 36 MB of map data, 168 s with others running, 82 s alone |
+
+So **tier 2 on a planet day is about 40 minutes for both dates at 4 workers**, and 8 GB heaps fit with no cap. The
+engine's cost follows map data and rectangle count, not area: f116 is 10% of the padded area and 0.5% of the map
+data. Not measured: 6 or 8 workers (the engines already use every thread each, so 4 to 1,220 s is close to the
+summed time over 4), or the cover's extra P3 boxes the planet would add outside Europe.
