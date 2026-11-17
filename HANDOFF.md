@@ -2299,3 +2299,15 @@ wording and tab structure as a first draft open to change, not as decided design
   places (`AreaPass.kt`, Rust) instead of three.
 - **When:** not before release 1's loop is caught up and checked (subcmp/why are its diagnosis tools); early
   December at the earliest. Not while the release-1 agents' worktrees are open.
+
+## Parked: benchmark a native Windows osmium (owner, 2026-11-17, 04:00: "lets put benchmarking it into todo")
+
+- **Whether it exists is unchecked.** DESIGN.md (the cut and Docker's bind mount) notes conda-forge may have
+  `osmium-tool` for Windows. First step: confirm, install into its own env (no change to the Docker image).
+- **Why:** every osmium time we have went through Docker's mount (reads 4.5x slower, a pass 1.85x). Its real speed
+  here is unmeasured, so the Rust-vs-osmium figures (HANDOFF/DESIGN) are not like-for-like.
+- **Measure, same files, warm and cold:** `fileinfo -e` and `extract -s smart` on a Europe clip (Docker: 19-20 s /
+  74 s through the mount, 4.4 s / 40 s on container disk); `time-filter` of Berlin's history at a date (Docker about
+  20 s; Rust `tilestore at` 1.4 s); output checked equal to the Docker osmium's.
+- **Decides:** whether release 2's monthly backfill (`backfill_history.py` slices and cuts) stays on osmium, goes
+  native, or moves to Rust. Not before release 1's catch-up.
