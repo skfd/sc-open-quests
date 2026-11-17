@@ -10,6 +10,7 @@ import os
 import sys
 import tempfile
 import unittest
+from collections import Counter
 from pathlib import Path
 
 import numpy as np
@@ -31,7 +32,11 @@ def way(refs, alive=True, tags=None):
 
 
 PLACES = {1: (52.0, 9.9995), 2: (52.0, 10.0005), 3: (52.001, 10.0), 10: (52.01, 9.99), 11: (52.01, 9.995),
-          12: (52.015, 9.995), 13: (52.015, 9.99)}
+          12: (52.015, 9.995), 13: (52.015, 9.99),
+          # a big ring, about 7 x 7 km (49 km2), west of the cell edge, and a node far inside it
+          40: (52.1, 9.8), 41: (52.1, 9.9), 42: (52.163, 9.9), 43: (52.163, 9.8), 44: (52.13, 9.85)}
+BIG = [40, 41, 42, 43, 40]
+INSIDE = (52.13, 9.85)  # the big ring's middle, about 3 km from its outline
 
 
 def plan(tmp: Path) -> dict:
@@ -128,23 +133,85 @@ class CoverTest(unittest.TestCase):
         self.assertTrue(inside_any(rects, 52.01, 9.9925))  # on the old segment 10-11
         self.assertTrue(inside_any(rects, 52.0005, 9.99975))  # on the new segment 1-3
 
-    def test_closed_way_box_and_its_cap(self):
-        ring = [10, 11, 12, 13, 10]
-        whole, _, rects = self.cover(last_way={8: way(ring)})
-        self.assertTrue(inside_any(rects, 52.0125, 9.9925))  # the middle of the box
-        outline, stats, _ = self.cover(last_way={8: way(ring)}, cap_km2=0.1)
-        self.assertEqual(stats["closed boxes over the cap (outline only)"], 1)
-        # the box's inside is not marked (a small outline's rectangles may still merge over it: merge_rects' ring)
-        self.assertLess(len(outline), len(whole) / 2)
-        self.assertTrue(any("outline only" in x for x in self.logs))
+    def test_a_small_closed_way_is_boxed_whatever_its_tags(self):
+        _, stats, rects = self.cover(last_way={8: way([10, 11, 12, 13, 10])})
+        self.assertTrue(inside_any(rects, 52.0125, 9.9925))  # the middle of the box (0.19 km2)
+        self.assertEqual(stats["boxes marked whole: small"], 2)  # its new ring and its old one (NO_WAY_INDEX)
 
-    def test_a_multipolygon_marks_its_members_and_box(self):
-        members = {20: [10, 11, 12], 21: [12, 13, 10]}
-        rel = {30: (True, {"type": "multipolygon"}, [("w", 20), ("w", 21)]),
+    def test_a_big_polygon_no_quest_reads_is_marked_by_outline_and_quest_points(self):
+        _, stats, rects = self.cover(last_way={8: way(BIG, tags={"landuse": "forest"})})
+        self.assertEqual(stats["boxes by outline"], 2)
+        self.assertFalse(inside_any(rects, 52.12, 9.83))  # inside, away from the outline and the centroid
+        self.assertTrue(inside_any(rects, 52.1, 9.85))  # on the outline
+        self.assertTrue(inside_any(rects, 52.1315, 9.85))  # the centroid: the polygon's own quest point
+        self.assertLess(W.rect_km2(rects), 15)
+
+    def test_a_big_building_or_mall_or_addressed_area_is_boxed(self):
+        for tags in ({"building": "yes"}, {"shop": "mall"}, {"railway": "station"},
+                     {"amenity": "school", "addr:housenumber": "5"}):
+            _, stats, rects = self.cover(last_way={8: way(BIG, tags=tags)})
+            self.assertTrue(inside_any(rects, 52.12, 9.83), tags)
+            self.assertEqual(stats["boxes marked whole: container"], 2, tags)
+        _, stats, rects = self.cover(last_way={8: way(BIG, tags={"building": "roof"})})
+        self.assertFalse(inside_any(rects, 52.12, 9.83))  # a roof holds nothing (buildingFilter: building != roof)
+
+    def test_an_area_with_an_address_on_its_outline_is_boxed(self):
+        addr = (2, 0, True, {"addr:housenumber": "1"}, PLACES[41])
+        _, _, rects = self.cover(last_node={41: addr}, last_way={8: way(BIG, tags={"landuse": "residential"})})
+        self.assertTrue(inside_any(rects, 52.12, 9.83))
+        _, _, rects = self.cover(last_way={8: way(BIG, tags={"landuse": "residential"})},
+                                 address_nodes=np.array([7, 42, 99], np.int64))
+        self.assertTrue(inside_any(rects, 52.12, 9.83))
+
+    def test_old_tags_decide_the_old_ring(self):
+        _, stats, rects = self.cover(last_way={8: way(BIG, tags={"landuse": "grass"})},
+                                     old_tags=lambda kind, i: {"building": "yes"})
+        self.assertTrue(inside_any(rects, 52.12, 9.83))  # it was a building yesterday: its inside is recounted
+        _, stats, _ = self.cover(last_way={8: way(BIG, tags={"landuse": "grass"})})
+        self.assertEqual(stats["  of them, old tags unknown"], 1)  # the old ring, its tags not known
+
+    def test_the_safety_cap_is_logged(self):
+        _, stats, _ = self.cover(last_way={8: way(BIG, tags={"building": "yes"})}, cap_km2=10)
+        self.assertEqual(stats["boxes over the safety cap"], 2)
+        self.assertTrue(any("safety cap" in x for x in self.logs))
+
+    def test_a_multipolygon_marks_its_members_and_is_boxed_only_as_a_container(self):
+        members = {20: [40, 41, 42], 21: [42, 43, 40]}
+        rel = {30: (True, {"type": "multipolygon", "natural": "wood"}, [("w", 20), ("w", 21)]),
                31: (True, {"type": "route", "route": "bus"}, [("w", 20)])}
         _, stats, rects = self.cover(last_rel=rel, member_refs=members.get)
-        self.assertEqual(stats["wanted relations"], 1)
-        self.assertTrue(inside_any(rects, 52.0125, 9.9925))
+        self.assertEqual(stats["wanted relations: multipolygon"], 1)
+        self.assertTrue(inside_any(rects, 52.1, 9.85))  # a member way
+        self.assertFalse(inside_any(rects, 52.12, 9.83))
+        rel[30] = (True, {"type": "multipolygon", "building": "yes"}, [("w", 20), ("w", 21)])
+        _, _, rects = self.cover(last_rel=rel, member_refs=members.get)
+        self.assertTrue(inside_any(rects, 52.12, 9.83))
+
+    def test_hiking_routes_and_addressed_relations_mark_their_member_ways(self):
+        members = {20: [10, 11]}
+        for tags in ({"type": "route", "route": "hiking"}, {"type": "site", "addr:housenumber": "3"}):
+            _, _, rects = self.cover(last_rel={30: (True, tags, [("w", 20)])}, member_refs=members.get)
+            self.assertTrue(inside_any(rects, 52.01, 9.9925), tags)
+
+    def test_a_street_relation_marks_its_member_nodes(self):
+        rel = {30: (True, {"type": "associatedStreet"}, [("n", 13), ("w", 20)])}
+        _, _, rects = self.cover(last_rel=rel, member_refs={20: [1, 2]}.get)
+        self.assertTrue(inside_any(rects, *PLACES[13]))
+
+    def test_a_contained_node_marks_its_surroundings(self):
+        n = (2, 0, True, {"addr:housenumber": "9"}, INSIDE)
+        _, stats, rects = self.cover(last_node={44: n})
+        self.assertTrue(inside_any(rects, INSIDE[0] + 0.0008, INSIDE[1]))  # about 90 m north
+        self.assertEqual(stats["contained nodes: address"], 1)
+        _, _, rects = self.cover(last_node={44: (2, 0, True, {"amenity": "bench"}, INSIDE)})
+        self.assertFalse(inside_any(rects, INSIDE[0] + 0.0008, INSIDE[1]))
+
+    def test_a_deleted_node_no_way_held_marks_its_surroundings(self):
+        _, stats, rects = self.cover(last_node={44: node(0, 0, alive=False)})
+        self.assertTrue(inside_any(rects, INSIDE[0] + 0.0008, INSIDE[1]))  # its old place, from the old places
+        self.assertEqual(stats["contained nodes: deleted, tags unknown"], 1)
+        _, stats, _ = self.cover(last_node={44: node(0, 0, alive=False)}, last_way={8: way([44, 1])})
+        self.assertEqual(stats["contained nodes: deleted, tags unknown"], 0)
 
     def test_engine_files(self):
         _, _, rects = self.cover(last_way={7: way([1, 2])})
@@ -188,39 +255,83 @@ class EuropeDayTest(unittest.TestCase):
         infos = T.city_infos(Path(meta["cities"]))
         nid = np.fromiter(last_node, np.int64, len(last_node))
         old_pos = {n: (None if np.isnan(p[0]) else (p[0], p[1])) for n, p in zip(nid.tolist(), places.places(nid).tolist())}
+        # every mark tier2 makes, by where it came from: a box (the element) or anything else ("line")
+        src: dict = {}
+        orig_bbox, orig_mark = T.Cover.bbox, T.Cover.mark
+
+        def bbox(cov, pts, kind, element):
+            cov._box = element
+            try:
+                orig_bbox(cov, pts, kind, element)
+            finally:
+                cov._box = None
+
+        def mark(cov, i, j, kind, element):
+            if 0 <= i <= cov.max_i and 0 <= j <= cov.max_j:
+                src.setdefault((id(cov), i, j), set()).add(getattr(cov, "_box", None) or "line")
+            orig_mark(cov, i, j, kind, element)
+
         T.NO_WAY_INDEX, was = True, T.NO_WAY_INDEX
+        T.Cover.bbox, T.Cover.mark = bbox, mark
         try:
             t = time.time()
             covers, _ = T.cover(infos, rows, last_node, last_way, last_rel, old_pos, locs, ways, print)
             t_old = time.time() - t
         finally:
             T.NO_WAY_INDEX = was
-        cells = [(c["lat0"] + (i + 0.5) * cov.cell / M_LAT, c["lon0"] + (j + 0.5) * cov.cell / c["mlon"])
-                 for cov in covers for c in (cov.c,) for (i, j) in cov.cells]
+            T.Cover.bbox, T.Cover.mark = orig_bbox, orig_mark
+        cells, sources = [], []
+        for cov in covers:
+            c = cov.c
+            for (i, j) in cov.cells:
+                cells.append((c["lat0"] + (i + 0.5) * cov.cell / M_LAT, c["lon0"] + (j + 0.5) * cov.cell / c["mlon"]))
+                sources.append(src[(id(cov), i, j)])
         pts = np.array(cells, float)
         keys = W.changed_keys(last_node, last_way, last_rel)
         sel = rows[np.isin(rows["key"], keys)]
         plan_cells = W.plan_cells(json.loads(plan_path.read_text()))
-        result = {}
         # tier2 fills a box only inside each city's grid (its box and one cell)
         clip = [(s - 0.01, w - 0.01, n + 0.01, e + 0.01) for s, w, n, e in (c["box"] for c in infos)]
-        for label, cap, bc in (("no cap, boxes cut to the cities", 1e12, clip), ("cap 25 km2", W.CAP_KM2, None)):
-            t = time.time()
-            codes, _, _ = W.cover(last_node, last_way, last_rel, places, places, sel, member_refs=ways.refs_of,
-                                  cap_km2=cap, box_clip=bc)
-            rects = W.rectangles(codes, plan_cells)
+
+        def outside(rects):
             allr = np.vstack(list(rects.values()))
-            missing = 0
+            out = np.zeros(len(pts), bool)
             for k in range(0, len(pts), 2000):
                 p = pts[k:k + 2000]
-                inside = ((allr[None, :, 0] <= p[:, None, 0]) & (p[:, None, 0] < allr[None, :, 2])
-                          & (allr[None, :, 1] <= p[:, None, 1]) & (p[:, None, 1] < allr[None, :, 3])).any(axis=1)
-                missing += int((~inside).sum())
-            result[label] = missing
-            print(f"{label}: world {len(allr):,} rectangles, {W.rect_km2(rects):.0f} km2 ({time.time() - t:.0f} s); "
-                  f"tier2's {len(pts):,} marked cells ({t_old:.0f} s) outside them: {missing}")
+                out[k:k + 2000] = ~((allr[None, :, 0] <= p[:, None, 0]) & (p[:, None, 0] < allr[None, :, 2])
+                                    & (allr[None, :, 1] <= p[:, None, 1]) & (p[:, None, 1] < allr[None, :, 3])).any(axis=1)
+            return out
+
+        for label, rule in (("every box (tier2's way)", False), ("the rule", True)):
+            t = time.time()
+            boxed: set = set()
+            codes, stats, _ = W.cover(last_node, last_way, last_rel, places, places, sel, member_refs=ways.refs_of,
+                                      box_clip=clip, rule=rule, boxed_out=boxed)
+            rects = W.rectangles(codes, plan_cells)
+            out = outside(rects)
+            justified = np.array([("line" in s) or bool(s & boxed) for s in sources], bool)
+            print(f"{label}: world {sum(len(v) for v in rects.values()):,} rectangles, {W.rect_km2(rects):.0f} km2 "
+                  f"({time.time() - t:.0f} s); tier2's {len(pts):,} cells ({t_old:.0f} s): {int(justified.sum()):,} "
+                  f"justified by the rule, {int((justified & out).sum())} of them outside; "
+                  f"{int((~justified).sum()):,} only in boxes the rule leaves to their outline, "
+                  f"{int((~justified & out).sum()):,} of those outside")
+            if rule:
+                why = Counter()
+                for s in (sources[k] for k in np.flatnonzero(~justified & out)):
+                    for el in s:
+                        if el == "line":
+                            continue
+                        typ, i = el
+                        tags = (last_way[i][3] if last_way[i][2] else None) if typ == "way" else last_rel[i][1]
+                        cls = ("deleted, tags unknown" if tags is None else
+                               next((f"{k}={tags[k]}" for k in ("landuse", "natural", "leisure", "amenity", "boundary",
+                                                                "place", "waterway", "highway", "barrier") if k in tags),
+                                    "other: " + ",".join(sorted(tags)[:3])))
+                        why[(typ, cls)] += 1
+                print("dropped cells' boxes, by element class:", why.most_common(25))
+                print("rule stats:", {k: v for k, v in stats.items() if "box" in k or "contain" in k or "km2" in k})
+            self.assertEqual(int((justified & out).sum()), 0, label)
         self.assertGreater(len(pts), 0)
-        self.assertEqual(result["no cap, boxes cut to the cities"], 0)
 
 
 if __name__ == "__main__":

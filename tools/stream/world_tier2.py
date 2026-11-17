@@ -3,14 +3,17 @@
 What tier2.cover does per city, done once for the planet in one global grid of CELL m cells, vectorised:
 
 - the ground a day touched: a changed node's old and new place; a changed way's new segments and its old ones (old
-  refs from `old_refs(wid)`, by default today's refs at yesterday's places: tier2's NO_WAY_INDEX); a closed way's
-  box (a box over `cap_km2` marks its outline only, and is logged); a changed multipolygon's, street's or ferry
-  route's member ways (`member_refs(wid)`), a multipolygon's box too; and the old position of every state row of
-  every changed node, way and relation, whether or not its geometry was marked (a deleted way has no refs: its rows
-  are how its quests are found);
+  refs from `old_refs(wid)`, by default today's refs at yesterday's places: tier2's NO_WAY_INDEX) and every line's
+  quest points; a closed way's or multipolygon's whole box only where an area quest reads its inside for other
+  elements (a building, a mall or station, an addressed area or one with an address on its outline) or where the box
+  is small, otherwise its outline (DESIGN, "What tier 2 must recount, from the code"); the member ways of the
+  relations the area quests read (multipolygons, streets with their member nodes, ferry and hiking routes,
+  addressed relations); R_CONTAINED around a changed node a container reads; and the old position of every state
+  row of every changed node, way and relation, whether or not its geometry was marked (a deleted way has no refs:
+  its rows are how its quests are found);
 - the marked cells padded by PAD, as runs along each grid row, split at the world plan's cell edges (plan.json
   files[].cells[].rect, [s, w, n, e]; the cells tile the globe with shared float edges), merged per plan cell with
-  tier2.merge_rects in the cell's local metres, and back to degrees inside the cell;
+  merge_rects_overlap in the cell's local metres, and back to degrees inside the cell;
 - written for the engine: every rectangle a city `<cell>-<k>` with its cell's time zone and no country codes (gated
   by position, as every cell is), a boundary file as tier2.write_cities writes, `"box"` inline for `tilestore read`;
   and a parts dir with `<rectId>.json`: the cell's parts whose bbox meets the rectangle (place bboxes from the name
@@ -32,6 +35,8 @@ the engine's files 190 s. Against tier2.cover on diff 5175 in europe-west's thre
 uncapped (cut to the cities, as tier2 fills them) every one of tier2's 103,785 marked cells is inside a rectangle;
 with the 25 km2 cap, 71,730 are not: on that day most of tier2's ground came from boxes over 25 km2 (742 of them,
 the largest 287,196 km2). The cap is a decision, not a detail (DESIGN, "Release 1: the world day", step 3).
+The rule that replaced the cap, and its numbers on the same two days: DESIGN, "What tier 2 must recount, from the
+code".
 """
 from __future__ import annotations
 
@@ -46,14 +51,81 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from tier2 import M_LAT, CELL, PAD, RING, WANTED_REL, merge_rects  # noqa: E402
+from tier2 import M_LAT, CELL, PAD, RING, merge_rects  # noqa: E402
 
 DLAT = CELL / M_LAT
 MAX_COS_LAT = 85.0  # a cell's width is taken at 85 degrees at most, as the rings are (world_cells.padded)
 I_OFF = 1 << 20  # row offset so codes stay positive: |i| <= 90 * M_LAT / CELL < 2**18
 MAX_STEPS = 100_000
-CAP_KM2 = 25.0
+CAP_KM2 = 5000.0  # a safety net only: no container the rule boxes comes near it (logged when hit)
 INVALID = 2147483647
+
+
+# --- what tier 2 must recount, from the code (DESIGN.md, "What tier 2 must recount, from the code") ----------
+#
+# A changed closed way's or multipolygon's whole box is marked only where an area quest reads that polygon's inside
+# for OTHER elements: a building holding an indoor-amenity node (AddIsAmenityIndoor), a mall or station holding
+# shops and things on several levels (AddLevel, AddLevelThing), an addressed area or an area with an address on
+# its outline holding buildings (AddHousenumber, step 5). Everything else a polygon decides is its own quest at its
+# own quest point (AddHousenumber's address nodes inside a building, AddChargingStationSocket's charge points,
+# AddForestLeafType's area, AddRoofShape's centre) or happens on its outline's vertices (entrances, kerbs, barriers,
+# crossings): the outline and the quest points cover those.
+
+SMALL_BOX_KM2 = 0.25  # a box this small is marked whole whatever its tags: cheap, and deleted elements carry no tags
+R_CONTAINED = 100.0  # m around a changed node that a container's quest reads (an address, a level, a charge point)
+ADDR_KEYS = ("addr:housenumber", "addr:housename", "addr:conscriptionnumber", "addr:streetnumber")
+HIKING = "hiking"
+
+
+def container_kind(tags: dict | None, relation: bool = False) -> str | None:
+    """the area quest that reads this polygon's inside for other elements, or None. Only a multipolygon relation
+    has a polygon geometry in SC (getGeometry of any other relation is polylines, `as? ElementPolygonsGeometry`
+    fails)."""
+    if not tags:
+        return None
+    if relation and tags.get("type") != "multipolygon":
+        return None
+    b = tags.get("building")
+    if b is not None and b != "roof":
+        return "building (AddIsAmenityIndoor)"  # buildingFilter: building and building != roof
+    if "building" not in tags and any(k in tags for k in ADDR_KEYS):
+        return "addressed area (AddHousenumber)"  # nonBuildingAreasWithAddressFilter
+    if (tags.get("shop") in ("mall", "department_store") or tags.get("aeroway") == "terminal"
+            or tags.get("railway") == "station" or tags.get("amenity") == "bus_station"
+            or tags.get("public_transport") == "station"):
+        return "mall or station (AddLevel, AddLevelThing)"  # the two mallFilters, together
+    return None
+
+
+def contained_kind(tags: dict | None) -> str | None:
+    """a node whose change can change a container's quest, or every element's in a container: an address
+    (AddHousenumber: the building or area holding it), a level (LevelUtils: a mall's levels), a charge point
+    (AddChargingStationSocket: the station holding it)"""
+    if not tags:
+        return None
+    if any(k in tags for k in ADDR_KEYS):
+        return "address"
+    if "level" in tags:
+        return "level"
+    if tags.get("man_made") == "charge_point":
+        return "charge point"
+    return None
+
+
+def wanted_relation(tags: dict) -> str | None:
+    """a changed relation whose members' quests it decides, and how (the area quests' code)"""
+    typ = tags.get("type", "")
+    if typ == "multipolygon":
+        return "multipolygon"
+    if typ in ("associatedStreet", "street"):
+        return "street"  # AddAddressStreet: a member address (node, way or relation) has its street
+    if tags.get("route") == "ferry":
+        return "ferry"  # the ferry quests and AddMaxWeight: the relation is the quest, its member ways are not
+    if tags.get("route") == HIKING:
+        return "hiking"  # SummitMarkingsUtil: a peak within 10 m of a hiking route's geometry
+    if any(k in tags for k in ADDR_KEYS):
+        return "addressed relation"  # AddHousenumber step 2: a member building of it is no quest
+    return None
 
 
 # --- the grid ------------------------------------------------------------------------------------
@@ -266,11 +338,52 @@ def _closed_boxes(refs_list, lines) -> np.ndarray:
     return np.array(out, float).reshape(-1, 4)
 
 
+def _quest_points(lines) -> np.ndarray:
+    """each line's half-length point and, for a closed one, its polygon centroid (tier2.quest_points, vectorised
+    per line): where SC puts a way's or area's quest"""
+    out = []
+    for g in lines:
+        g = g[np.isfinite(g).all(axis=1)]
+        if len(g) < 2:
+            if len(g) == 1:
+                out.append(g[0])
+            continue
+        d = np.hypot(np.diff(g[:, 0]), np.diff(g[:, 1]) * 0.63)
+        c = np.concatenate([[0.0], np.cumsum(d)])
+        half = c[-1] / 2
+        k = min(int(np.searchsorted(c, half, "right")) - 1, len(d) - 1)
+        if d[k] > 0:
+            t = (half - c[k]) / d[k]
+            out.append(g[k] + (g[k + 1] - g[k]) * t)
+        if len(g) >= 4 and (g[0] == g[-1]).all():
+            y, x = g[:, 0], g[:, 1]
+            f = x[:-1] * y[1:] - x[1:] * y[:-1]
+            a2 = f.sum()
+            if a2:
+                out.append(((((y[:-1] + y[1:]) * f).sum()) / (3 * a2), (((x[:-1] + x[1:]) * f).sum()) / (3 * a2)))
+    return np.array(out, float).reshape(-1, 2)
+
+
+def _box_of(g) -> tuple | None:
+    g = g[np.isfinite(g).all(axis=1)]
+    if not len(g):
+        return None
+    return (g[:, 0].min(), g[:, 1].min(), g[:, 0].max(), g[:, 1].max())
+
+
+def _closed(r) -> bool:
+    return len(r) >= 4 and r[0] == r[-1]
+
+
 def cover(last_node: dict, last_way: dict, last_rel: dict, old_places, new_places, old_rows: np.ndarray | None,
-          old_refs=None, member_refs=None, cap_km2: float = CAP_KM2, log=print, box_clip=None):
+          old_refs=None, member_refs=None, cap_km2: float = CAP_KM2, log=print, box_clip=None, old_tags=None,
+          address_nodes: np.ndarray | None = None, rule: bool = True, boxed_out: set | None = None):
     """the cells a day touched. last_*: stream.read_diff's; old_places / new_places: node places at D-1 and D (a
     NodeFile, or DictPlaces); old_rows: the state's rows (lat, lon in 1e-7) of every changed key; old_refs(wid) and
-    member_refs(wid): a way's refs at D-1 and at D (None when unknown). Returns (codes, stats)."""
+    member_refs(wid): a way's refs at D-1 and at D (None when unknown); old_tags(kind, id): an element's tags at D-1
+    ('w' or 'r'; None when unknown: a planet diff's deletions carry none, and a modification only its new ones);
+    address_nodes: the sorted ids of every address node, if known (an area with one on its outline is a container).
+    rule=False boxes every closed way and multipolygon (tier2's way; a test). Returns (codes, stats, secs)."""
     t0 = time.time()
     marks = Marks()
     stats = Counter()
@@ -285,33 +398,64 @@ def cover(last_node: dict, last_way: dict, last_rel: dict, old_places, new_place
     stats["changed nodes"] = len(nid)
     secs["nodes"] = time.time() - t0
 
-    # changed ways: new segments (at D), old segments (old refs at D-1)
+    # changed ways: new segments (at D), old segments (old refs at D-1), and every line's quest points
     t = time.time()
+    wids = list(last_way)
     new_refs = [v[4] if v[2] and v[4] else [] for v in last_way.values()]
     if old_refs is None:
         old_list = new_refs  # NO_WAY_INDEX: today's refs at yesterday's places
     else:
-        old_list = [old_refs(w) or [] for w in last_way]
+        old_list = [old_refs(w) or [] for w in wids]
     nseg, nlines = _lines(new_refs, new_places)
     oseg, olines = _lines(old_list, old_places)
     marks.segments(nseg, "way")
     marks.segments(oseg, "way")
-    boxes = np.vstack([_closed_boxes(new_refs, nlines), _closed_boxes(old_list, olines)])
+    qp = _quest_points(nlines + olines)
+    if len(qp):
+        marks.points(qp[:, 0], qp[:, 1], "quest point")
     stats["changed ways"] = len(last_way)
     stats["deleted ways"] = sum(1 for v in last_way.values() if not v[2])
     secs["ways"] = time.time() - t
 
-    # changed relations: member ways of the wanted kinds, a multipolygon's box
+    # closed ways: each ring (new at D, old at D-1) a candidate box (box, kind, container reason or None, tags known)
     t = time.time()
+    addr_new = {n for n, v in last_node.items() if v[3] and any(k in v[3] for k in ADDR_KEYS)}
+    candidates = []
+    for k, w in enumerate(wids):
+        v = last_way[w]
+        nt = v[3] if v[2] else None
+        ot = old_tags("w", w) if old_tags else None
+        rings = ((new_refs[k], nlines[k], nt, True),
+                 # the old ring's tags: as asked, else the new ones stand in (unknown: a deletion has none)
+                 (old_list[k], olines[k], ot if ot is not None else nt, ot is not None))
+        for refs, g, tags, known in rings:
+            if not _closed(refs):
+                continue
+            b = _box_of(g)
+            if b is None:
+                continue
+            reason = container_kind(tags)
+            if reason is None:
+                if address_nodes is not None and len(address_nodes):
+                    a_ = np.asarray(refs, np.int64)
+                    i = np.minimum(np.searchsorted(address_nodes, a_), len(address_nodes) - 1)
+                    if (address_nodes[i] == a_).any():
+                        reason = "area with an address on its outline (AddHousenumber)"
+                elif addr_new.intersection(refs):
+                    reason = "area with an address on its outline (AddHousenumber)"
+            candidates.append((b, "way", reason, known, ("way", w)))
+
+    # changed relations: member ways (and a street relation's member nodes) of the kinds the code reads
     rel_refs: list[list[int]] = []
-    mp_spans: list[tuple[int, int]] = []  # a multipolygon's member ways: rel_refs[a:b]
+    rel_nodes: list[int] = []
     skipped = Counter()
     for rid, (visible, tags, members) in last_rel.items():
-        typ = tags.get("type", "")
         if not visible:
+            stats["deleted relations"] += 1
             continue
-        if not (typ in WANTED_REL or tags.get("route") == "ferry"):
-            skipped[typ or "(none)"] += 1
+        kind = wanted_relation(tags)
+        if kind is None:
+            skipped[tags.get("type", "") or "(none)"] += 1
             continue
         refs = []
         for mt, ref in members:
@@ -319,44 +463,93 @@ def cover(last_node: dict, last_way: dict, last_rel: dict, old_places, new_place
                 r = member_refs(ref) if member_refs else (last_way[ref][4] if ref in last_way and last_way[ref][2] else None)
                 if r:
                     refs.append(r)
-        if not refs:
+            elif mt == "n" and kind == "street":
+                rel_nodes.append(ref)
+        if not refs and not (kind == "street" and rel_nodes):
             stats["wanted relations, no member geometry"] += 1
             continue
-        if typ == "multipolygon":
-            mp_spans.append((len(rel_refs), len(rel_refs) + len(refs)))
+        stats[f"wanted relations: {kind}"] += 1
+        a = len(rel_refs)
         rel_refs += refs
-        stats["wanted relations"] += 1
+        if kind == "multipolygon":
+            ot = old_tags("r", rid) if old_tags else None
+            pts = [p for r in refs for p in r]
+            if pts:
+                rlines_k = _lines([pts], new_places)[1]
+                b = _box_of(rlines_k[0]) if rlines_k else None
+                if b is not None:
+                    reason = container_kind(tags, relation=True) or container_kind(ot, relation=True)
+                    candidates.append((b, "relation", reason, True, ("relation", rid)))  # a deleted one is skipped above
     rseg, rlines = _lines(rel_refs, new_places)
     marks.segments(rseg, "relation")
-    mp_boxes = []
-    for a, b in mp_spans:
-        g = np.vstack(rlines[a:b])
-        g = g[np.isfinite(g).all(axis=1)]
-        if len(g):
-            mp_boxes.append((g[:, 0].min(), g[:, 1].min(), g[:, 0].max(), g[:, 1].max()))
-    if mp_boxes:
-        boxes = np.vstack([boxes, np.array(mp_boxes, float)])
+    qp = _quest_points([g for g, r in zip(rlines, rel_refs) if _closed(r)])
+    if len(qp):
+        marks.points(qp[:, 0], qp[:, 1], "quest point")
+    if rel_nodes:
+        p = new_places.places(np.array(rel_nodes, np.int64))
+        marks.points(p[:, 0], p[:, 1], "street member node")
     secs["relations"] = time.time() - t
 
-    # closed ways' and multipolygons' boxes, capped
+    # the boxes: a container's whole box; any box up to SMALL_BOX_KM2; every other polygon by outline and quest points
     t = time.time()
-    if len(boxes) and box_clip is not None:  # (a test against tier2, which fills a box only inside its cities' boxes)
-        cut = []
-        for s, w, n, e in box_clip:
-            c = np.column_stack([np.maximum(boxes[:, 0], s), np.maximum(boxes[:, 1], w),
-                                 np.minimum(boxes[:, 2], n), np.minimum(boxes[:, 3], e)])
-            cut.append(c[(c[:, 0] <= c[:, 2]) & (c[:, 1] <= c[:, 3])])
-        boxes = np.vstack(cut)
-    if len(boxes):
-        boxes = np.unique(boxes, axis=0)  # a way's old and new ring are often the same
-        area = box_km2(boxes)
-        big = area > cap_km2
+    if candidates:
+        boxes = np.array([c[0] for c in candidates], float)
+        area = box_km2(boxes)  # decided on the whole box, before any test clip
+        container = np.array([c[2] is not None for c in candidates], bool)
+        small = area <= SMALL_BOX_KM2
+        whole = (container | small | (not rule)) & (area <= cap_km2)
         stats["closed boxes"] = int(len(boxes))
-        stats["closed boxes over the cap (outline only)"] = int(big.sum())
-        if big.any():
-            log(f"world tier 2: {int(big.sum())} closed-way boxes over {cap_km2} km2 marked by outline only, largest {area.max():.0f} km2")
-        marks.boxes(boxes[~big], "box")
+        stats["boxes marked whole: small"] = int((small & whole).sum())
+        stats["boxes marked whole: container"] = int((container & ~small & whole).sum())
+        for c, a, wh in zip(candidates, area.tolist(), whole.tolist()):
+            if wh and c[2] is not None and a > SMALL_BOX_KM2:
+                stats[f"container: {c[2]}"] += 1
+        outline = ~whole
+        tags_unknown = ~np.array([c[3] for c in candidates], bool)
+        stats["boxes by outline"] = int(outline.sum())
+        stats["  of them, old tags unknown"] = int((outline & tags_unknown).sum())
+        if address_nodes is None:
+            stats["  of them, ways with outline addresses unknown (no address index)"] = int(
+                (outline & np.array([c[1] == "way" for c in candidates], bool)).sum())
+        if outline.any():
+            stats["km2 by outline"] = round(float(area[outline].sum()), 1)
+        over = area > cap_km2
+        if over.any():
+            stats["boxes over the safety cap"] = int(over.sum())
+            log(f"world tier 2: {int(over.sum())} boxes over the {cap_km2} km2 safety cap, outline only, largest "
+                f"{area.max():.0f} km2 ({sum(1 for c, o in zip(candidates, over) if o and c[2])} of them containers)")
+        if boxed_out is not None:
+            boxed_out.update(c[4] for c, wh in zip(candidates, whole.tolist()) if wh)
+        wb = boxes[whole]
+        if box_clip is not None and len(wb):  # (a test against tier2, which fills a box only inside its cities' boxes)
+            cut = []
+            for s, w, n, e in box_clip:
+                c = np.column_stack([np.maximum(wb[:, 0], s), np.maximum(wb[:, 1], w),
+                                     np.minimum(wb[:, 2], n), np.minimum(wb[:, 3], e)])
+                cut.append(c[(c[:, 0] <= c[:, 2]) & (c[:, 1] <= c[:, 3])])
+            wb = np.vstack(cut)
+        if len(wb):
+            marks.boxes(np.unique(wb, axis=0), "box")
     secs["boxes"] = time.time() - t
+
+    # a changed node that a container reads: R_CONTAINED around it, for the container's quest point; a deleted node
+    # that no changed way held (its tags are gone: most such deletions are points of interest) the same
+    t = time.time()
+    in_ways = {r for refs in new_refs for r in refs} | {r for refs in old_list for r in refs}
+    near = []
+    for n, v in last_node.items():
+        kind = contained_kind(v[3]) if v[2] else (None if n in in_ways else "deleted, tags unknown")
+        if kind:
+            near.append(n)
+            stats[f"contained nodes: {kind}"] += 1
+    if near:
+        a = np.array(near, np.int64)
+        p = np.vstack([old_places.places(a), new_places.places(a)])
+        p = p[np.isfinite(p).all(axis=1)]
+        dlat = R_CONTAINED / M_LAT
+        dlon = R_CONTAINED / (M_LAT * np.cos(np.radians(np.minimum(np.abs(p[:, 0]), MAX_COS_LAT))))
+        marks.boxes(np.column_stack([p[:, 0] - dlat, p[:, 1] - dlon, p[:, 0] + dlat, p[:, 1] + dlon]), "contained")
+    secs["contained"] = time.time() - t
 
     # the old position of every row of every changed key
     t = time.time()
@@ -444,12 +637,74 @@ def split_by_cells(runs: np.ndarray, cells: list[dict]) -> dict[int, np.ndarray]
     return {k: np.vstack(v) for k, v in out.items()}
 
 
+# a merge may add this much padded area over the two boxes' union: a rectangle city costs the engine about 14 ms of
+# its own (DESIGN, "Release 1: the world day", the probe), so two runs a row apart with slightly different spans
+# are one city; a strip still cannot grow across a polygon's inside (each row there adds about 0.3 km2)
+MERGE_SLACK_M2 = 100_000.0
+
+
+def merge_rects_overlap(rects, ring):
+    """tier2.merge_rects, but the gain counts what two padded boxes share: two rectangles become their bounding box
+    when that box with its ring is no larger than the union of the two with theirs (not their sum). With the sum, a
+    long strip grew one 50 m run at a time across a polygon's whole inside, since each small run's own ring looked
+    dearer than the strip's next row (a 7 km outline became its 52 km2 box). rects: (y0, x0, y1, x1) in metres"""
+    def cost(r):
+        return (r[2] - r[0] + 2 * ring) * (r[3] - r[1] + 2 * ring)
+
+    def shared(r, q):
+        dy = min(r[2], q[2]) - max(r[0], q[0]) + 2 * ring
+        dx = min(r[3], q[3]) - max(r[1], q[1]) + 2 * ring
+        return dy * dx if dy > 0 and dx > 0 else 0.0
+
+    bucket = max(4 * ring, 400.0)
+    live = dict(enumerate(rects))
+    index = defaultdict(set)
+
+    def keys(r):
+        for a in range(int((r[0] - ring) // bucket), int((r[2] + ring) // bucket) + 1):
+            for b in range(int((r[1] - ring) // bucket), int((r[3] + ring) // bucket) + 1):
+                yield a, b
+
+    for k, r in live.items():
+        for key in keys(r):
+            index[key].add(k)
+    work = list(live)
+    nxt = len(rects)
+    while work:
+        k = work.pop()
+        if k not in live:
+            continue
+        r = live[k]
+        best = None
+        for key in keys(r):
+            for o in index[key]:
+                if o == k:
+                    continue
+                q = live[o]
+                u = (min(r[0], q[0]), min(r[1], q[1]), max(r[2], q[2]), max(r[3], q[3]))
+                gain = cost(r) + cost(q) - shared(r, q) - cost(u)
+                if gain >= -MERGE_SLACK_M2 and (best is None or gain > best[0]):
+                    best = (gain, o, u)
+        if best:
+            _, o, u = best
+            for dead in (k, o):
+                for key in keys(live[dead]):
+                    index[key].discard(dead)
+                del live[dead]
+            live[nxt] = u
+            for key in keys(u):
+                index[key].add(nxt)
+            work.append(nxt)
+            nxt += 1
+    return list(live.values())
+
+
 def merge_in_cell(rs: np.ndarray, cell_rect, ring: float = RING) -> np.ndarray:
-    """tier2.merge_rects in the cell's local metres, back to degrees, inside the cell"""
+    """merge_rects_overlap in the cell's local metres, back to degrees, inside the cell"""
     s0, w0, n0, e0 = cell_rect
     mlon = M_LAT * math.cos(math.radians(min(abs((s0 + n0) / 2), MAX_COS_LAT)))
     m = np.column_stack([(rs[:, 0] - s0) * M_LAT, (rs[:, 1] - w0) * mlon, (rs[:, 2] - s0) * M_LAT, (rs[:, 3] - w0) * mlon])
-    merged = np.array(merge_rects([tuple(r) for r in m.tolist()], ring), float).reshape(-1, 4)
+    merged = np.array(merge_rects_overlap([tuple(r) for r in m.tolist()], ring), float).reshape(-1, 4)
     d = np.column_stack([s0 + merged[:, 0] / M_LAT, w0 + merged[:, 1] / mlon, s0 + merged[:, 2] / M_LAT, w0 + merged[:, 3] / mlon])
     d[:, 0] = np.maximum(d[:, 0], s0)
     d[:, 1] = np.maximum(d[:, 1], w0)
