@@ -2227,3 +2227,15 @@ wording and tab structure as a first draft open to change, not as decided design
   A full recount from history is the on-demand exception (a history download first). Found and fixed on the way:
   `backfill_history.py`'s count did not pass the parts registry, so a merged recount would have dropped every
   snapshot's parts; now it does (Bremen 11-14 and 11-15 recounted equal to the published, parts included).
+
+## R2 cache test done; place-data host `sc-data` set up (2026-11-17, 02:30; owner at the desk)
+
+- **Result (DESIGN.md, "The R2 cache premise: checked"):** a cache HIT is not an R2 read (PNG: 30 fetches,
+  1 GetObject); JSON is never cached without a rule (60 of 60 DYNAMIC, all R2 reads); the zone's 4-hour
+  Browser Cache TTL raises a lower origin max-age. Scanner bots probed ~30 secret-looking keys within two
+  minutes of the certificate. `run.py`'s verdict line misread this (it counts bucket-wide reads).
+- **Place-data host:** bucket `sc-open-quests-data` (ENAM, empty) created by Claude; `sc-data.comentality.com`
+  attached by the owner, ssl and ownership active. Owner's name choice over `street-complete-data`.
+- **Owner's, open:** (1) the Cache Rule for `sc-data` in the dashboard, settings in DESIGN.md; Claude then checks
+  a test object HITs; (2) remove the test domain (`npx wrangler r2 bucket domain remove sc-open-quests-cachetest
+  --domain sc-r2-cachetest.comentality.com`), after which Claude deletes its three objects and the bucket.

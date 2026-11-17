@@ -2872,21 +2872,30 @@ straight from the bucket with no Worker:
   road length per place. Open for later, at world scale: which places Compare lists once there is no
   fixed list of 147 (for example, cities over a population bar with a country filter).
 
-### The R2 cache premise: half checked (2026-11-11, overnight)
+### The R2 cache premise: checked (2026-11-17, 02:20)
 
 - **JSON is not cached by default.** Cloudflare's docs (cache/concepts/default-cache-behavior): "The
   Cloudflare CDN does not cache HTML or JSON by default", and caching goes by file extension, not MIME
-  type; the R2 public-buckets page: "By default, only certain file types are cached. To cache all files
-  in your bucket, you must set a Cache Everything page rule." So the place-data subdomain needs a Cache
-  Rule (eligible for cache, respect origin TTL; the Free plan has 10) before launch, or every read of a
-  `place/` or `latest/` file is an R2 read. Neither page says whether a cache hit counts as a Class B
-  operation; that is what the test below measures.
-- **The test is ready but not run.** The test bucket `sc-open-quests-cachetest` exists (empty). Attaching
-  its custom domain `sc-r2-cachetest.comentality.com` is a DNS change the auto-mode classifier refused to
-  Claude, so the owner runs that one command (`.scratch/r2-cachetest/run.py` has it, and the clean-up),
-  then the script: it uploads a JSON with Cache-Control, one without, and a PNG, fetches each 30 times,
-  and compares cf-cache-status with the bucket's GetObject count from the GraphQL analytics (the deploy
-  token can read them; checked). Expected: the PNG HITs, both JSONs stay DYNAMIC until a Cache Rule.
+  type. Measured on the test bucket `sc-open-quests-cachetest` at `sc-r2-cachetest.comentality.com`:
+  30 fetches each of a JSON with `Cache-Control: public, max-age=3600` and one without were all
+  `cf-cache-status: DYNAMIC`, every one an R2 read.
+- **A cache hit is not an R2 read.** The PNG beside them: 1 MISS, 29 HITs, and the bucket's GraphQL
+  analytics (`r2OperationsAdaptiveGroups` by `objectName`) show exactly 1 GetObject for it. So
+  Cloudflare's cache in front of a custom-domain bucket does answer repeat reads without R2, once a
+  file is eligible for cache. (The script's own verdict line said otherwise; it counted bucket-wide
+  reads, which included scanner bots, below.)
+- **The zone's Browser Cache TTL is 4 hours** (comentality.com, `browser_cache_ttl` 14400) and it
+  raises a lower origin `max-age`: the PNG uploaded with 3600 went out with 14400. A file meant to be
+  cached for minutes (`latest.json`, the date) needs the rule below to respect origin TTL.
+- **Scanners arrive within two minutes of a new hostname's certificate** (Certificate Transparency):
+  about 30 GetObject probes for `.env`, `.ssh/id_rsa`, `backup.sql`, `wp-admin/...`. Each missing key
+  is a Class B read (10M a month free), harmless, and a reason the data bucket holds only published
+  files.
+- **The place-data host is `sc-data.comentality.com`** on bucket `sc-open-quests-data` (ENAM, created
+  2026-11-17; domain attached by the owner). Its Cache Rule, on the zone: hostname equals
+  `sc-data.comentality.com`; eligible for cache; Edge TTL "use cache-control header if present, bypass
+  cache if not"; Browser TTL "respect origin TTL". So each upload's `Cache-Control` sets both: a week
+  for `place/`, until the next publish for `latest/<parent>`, minutes for `latest.json`.
 
 ## Countries in the place index: built on branch `countries`, not merged (2026-11-11, overnight)
 
