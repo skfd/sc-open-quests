@@ -75,6 +75,15 @@ class GridTest(unittest.TestCase):
         m.boxes(np.array([[52.0, 10.0, 52.0045, 10.0073]]), "box")  # about 500 x 500 m
         self.assertAlmostEqual(len(m.codes()), 121, delta=25)
 
+    def test_blocks_split_runs_at_their_edges_and_keep_every_point(self):
+        rs = np.array([[0.4999, -0.6, 0.5001, -0.4], [10.1, 10.1, 10.2, 10.2]])
+        bl = W.blocks_of(rs, (-90.0, -180.0, 90.0, 180.0), block=0.5)
+        self.assertEqual(len(bl), 5)  # the first run spans 2 x 2 blocks
+        allr = np.vstack([b for _, b in bl])
+        self.assertAlmostEqual(float(W.box_km2(allr).sum()), float(W.box_km2(rs).sum()), places=6)
+        for brect, b in bl:
+            self.assertTrue((b[:, 0] >= brect[0]).all() and (b[:, 2] <= brect[2]).all())
+
     def test_antimeridian_segment_marks_its_ends_only(self):
         m = W.Marks()
         m.segments(np.array([[0.0, 179.9999, 0.0, -179.9999]]), "way")
@@ -172,11 +181,13 @@ class EuropeDayTest(unittest.TestCase):
             self.skipTest("the europe-west t2a inputs are gone")
         last_node, last_way, last_rel, _ = S.read_diff(diff)
         locs = S.Locations(d)
+        places = W.SparsePlaces(d)
         ways = T.WayStore(d)
         rows = np.load(d / "rows.npy")
         meta = json.loads((d / "state.json").read_text())
         infos = T.city_infos(Path(meta["cities"]))
-        old_pos = {n: locs.get(n) for n in last_node}
+        nid = np.fromiter(last_node, np.int64, len(last_node))
+        old_pos = {n: (None if np.isnan(p[0]) else (p[0], p[1])) for n, p in zip(nid.tolist(), places.places(nid).tolist())}
         T.NO_WAY_INDEX, was = True, T.NO_WAY_INDEX
         try:
             t = time.time()
@@ -184,27 +195,32 @@ class EuropeDayTest(unittest.TestCase):
             t_old = time.time() - t
         finally:
             T.NO_WAY_INDEX = was
-        places = W.DictPlaces(locs.get)
+        cells = [(c["lat0"] + (i + 0.5) * cov.cell / M_LAT, c["lon0"] + (j + 0.5) * cov.cell / c["mlon"])
+                 for cov in covers for c in (cov.c,) for (i, j) in cov.cells]
+        pts = np.array(cells, float)
         keys = W.changed_keys(last_node, last_way, last_rel)
         sel = rows[np.isin(rows["key"], keys)]
-        t = time.time()
-        codes, _, _ = W.cover(last_node, last_way, last_rel, places, places, sel, member_refs=ways.refs_of)
-        rects = W.rectangles(codes, W.plan_cells(json.loads(plan_path.read_text())))
-        t_new = time.time() - t
-        missing = total = 0
-        allr = np.vstack(list(rects.values()))
-        for cov in covers:
-            c = cov.c
-            for (i, j) in cov.cells:
-                lat = c["lat0"] + (i + 0.5) * cov.cell / M_LAT
-                lon = c["lon0"] + (j + 0.5) * cov.cell / c["mlon"]
-                total += 1
-                if not ((allr[:, 0] <= lat) & (lat < allr[:, 2]) & (allr[:, 1] <= lon) & (lon < allr[:, 3])).any():
-                    missing += 1
-        print(f"tier2 marked {total:,} cells in {len(covers)} cities ({t_old:.0f} s); world: {len(allr):,} rectangles, "
-              f"{W.rect_km2(rects):.0f} km2 ({t_new:.0f} s); tier2 cells outside them: {missing}")
-        self.assertGreater(total, 0)
-        self.assertEqual(missing, 0)
+        plan_cells = W.plan_cells(json.loads(plan_path.read_text()))
+        result = {}
+        # tier2 fills a box only inside each city's grid (its box and one cell)
+        clip = [(s - 0.01, w - 0.01, n + 0.01, e + 0.01) for s, w, n, e in (c["box"] for c in infos)]
+        for label, cap, bc in (("no cap, boxes cut to the cities", 1e12, clip), ("cap 25 km2", W.CAP_KM2, None)):
+            t = time.time()
+            codes, _, _ = W.cover(last_node, last_way, last_rel, places, places, sel, member_refs=ways.refs_of,
+                                  cap_km2=cap, box_clip=bc)
+            rects = W.rectangles(codes, plan_cells)
+            allr = np.vstack(list(rects.values()))
+            missing = 0
+            for k in range(0, len(pts), 2000):
+                p = pts[k:k + 2000]
+                inside = ((allr[None, :, 0] <= p[:, None, 0]) & (p[:, None, 0] < allr[None, :, 2])
+                          & (allr[None, :, 1] <= p[:, None, 1]) & (p[:, None, 1] < allr[None, :, 3])).any(axis=1)
+                missing += int((~inside).sum())
+            result[label] = missing
+            print(f"{label}: world {len(allr):,} rectangles, {W.rect_km2(rects):.0f} km2 ({time.time() - t:.0f} s); "
+                  f"tier2's {len(pts):,} marked cells ({t_old:.0f} s) outside them: {missing}")
+        self.assertGreater(len(pts), 0)
+        self.assertEqual(result["no cap, boxes cut to the cities"], 0)
 
 
 if __name__ == "__main__":

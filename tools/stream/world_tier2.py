@@ -169,6 +169,47 @@ class NodeFile:
         return out
 
 
+class SparsePlaces:
+    """a region's node places as stream.Locations keeps them (D/nodes.idx, sorted id u64, x i32, y i32, plus
+    D/overlay.pickle), vectorised; `extra` (id -> (lat, lon) or None) goes over both"""
+
+    def __init__(self, d: Path, extra: dict | None = None):
+        import pickle
+        a = np.memmap(Path(d) / "nodes.idx", dtype=[("id", "<u8"), ("x", "<i4"), ("y", "<i4")], mode="r")
+        n = len(a)
+        lo, hi = 0, n  # the file ends in unused zero slots: the first of them by bisection over id == 0
+        while lo < hi:
+            mid = (lo + hi) // 2
+            if a["id"][mid] == 0:  # ids rise, then zeros to the end: the first zero
+                hi = mid
+            else:
+                lo = mid + 1
+        self.a = a[:lo]
+        self.keys = np.asarray(self.a["id"]).astype(np.int64)
+        with open(Path(d) / "overlay.pickle", "rb") as f:
+            over = pickle.load(f)
+        over.update(extra or {})
+        self.oid = np.fromiter(over.keys(), np.int64, len(over))
+        v = np.array([p if p else (np.nan, np.nan) for p in over.values()], float).reshape(-1, 2)
+        order = np.argsort(self.oid)
+        self.oid, self.ov = self.oid[order], v[order]
+
+    def places(self, ids) -> np.ndarray:
+        ids = np.asarray(ids, np.int64)
+        out = np.full((len(ids), 2), np.nan)
+        if len(self.keys) and len(ids):
+            i = np.minimum(np.searchsorted(self.keys, ids), len(self.keys) - 1)
+            hit = self.keys[i] == ids
+            rows = self.a[i[hit]]
+            out[hit, 0] = rows["y"] / 1e7
+            out[hit, 1] = rows["x"] / 1e7
+        if len(self.oid) and len(ids):
+            i = np.minimum(np.searchsorted(self.oid, ids), len(self.oid) - 1)
+            hit = self.oid[i] == ids
+            out[hit] = self.ov[i[hit]]
+        return out
+
+
 class DictPlaces:
     """node places from a mapping (tests, or a stream.Locations): get(id) -> (lat, lon) | None"""
 
@@ -216,7 +257,7 @@ def _closed_boxes(refs_list, lines) -> np.ndarray:
 
 
 def cover(last_node: dict, last_way: dict, last_rel: dict, old_places, new_places, old_rows: np.ndarray | None,
-          old_refs=None, member_refs=None, cap_km2: float = CAP_KM2, log=print):
+          old_refs=None, member_refs=None, cap_km2: float = CAP_KM2, log=print, box_clip=None):
     """the cells a day touched. last_*: stream.read_diff's; old_places / new_places: node places at D-1 and D (a
     NodeFile, or DictPlaces); old_rows: the state's rows (lat, lon in 1e-7) of every changed key; old_refs(wid) and
     member_refs(wid): a way's refs at D-1 and at D (None when unknown). Returns (codes, stats)."""
@@ -289,6 +330,13 @@ def cover(last_node: dict, last_way: dict, last_rel: dict, old_places, new_place
 
     # closed ways' and multipolygons' boxes, capped
     t = time.time()
+    if len(boxes) and box_clip is not None:  # (a test against tier2, which fills a box only inside its cities' boxes)
+        cut = []
+        for s, w, n, e in box_clip:
+            c = np.column_stack([np.maximum(boxes[:, 0], s), np.maximum(boxes[:, 1], w),
+                                 np.minimum(boxes[:, 2], n), np.minimum(boxes[:, 3], e)])
+            cut.append(c[(c[:, 0] <= c[:, 2]) & (c[:, 1] <= c[:, 3])])
+        boxes = np.vstack(cut)
     if len(boxes):
         boxes = np.unique(boxes, axis=0)  # a way's old and new ring are often the same
         area = box_km2(boxes)
@@ -400,6 +448,37 @@ def merge_in_cell(rs: np.ndarray, cell_rect, ring: float = RING) -> np.ndarray:
     return d[np.lexsort((d[:, 1], d[:, 0]))]
 
 
+BLOCK_DEG = 0.5  # runs are merged within blocks of this many degrees: a planet cell of 71,228 runs took 283 s whole
+
+
+def blocks_of(rs: np.ndarray, cell_rect, block: float = BLOCK_DEG) -> list[tuple[tuple, np.ndarray]]:
+    """a cell's runs clipped to blocks of `block` degrees (inside the cell): [(block rect, runs)]"""
+    s0, w0, n0, e0 = cell_rect
+    bs0 = np.floor(rs[:, 0] / block).astype(np.int64)
+    bs1 = np.floor(np.nextafter(rs[:, 2], -np.inf) / block).astype(np.int64)
+    bw0 = np.floor(rs[:, 1] / block).astype(np.int64)
+    bw1 = np.floor(np.nextafter(rs[:, 3], -np.inf) / block).astype(np.int64)
+    nlat, nlon = bs1 - bs0 + 1, bw1 - bw0 + 1
+    reps = nlat * nlon
+    k = np.repeat(np.arange(len(rs)), reps)
+    off = np.arange(int(reps.sum())) - np.repeat(np.concatenate([[0], np.cumsum(reps)[:-1]]), reps)
+    bi = bs0[k] + off // nlon[k]
+    bj = bw0[k] + off % nlon[k]
+    lo_s, lo_w = np.maximum(bi * block, s0), np.maximum(bj * block, w0)
+    hi_n, hi_e = np.minimum((bi + 1) * block, n0), np.minimum((bj + 1) * block, e0)
+    c = np.column_stack([np.maximum(rs[k, 0], lo_s), np.maximum(rs[k, 1], lo_w), np.minimum(rs[k, 2], hi_n), np.minimum(rs[k, 3], hi_e)])
+    keep = (c[:, 0] < c[:, 2]) & (c[:, 1] < c[:, 3])
+    c, bi, bj = c[keep], bi[keep], bj[keep]
+    lo_s, lo_w, hi_n, hi_e = lo_s[keep], lo_w[keep], hi_n[keep], hi_e[keep]
+    key = (bi << 32) + (bj & 0xFFFFFFFF)
+    order = np.argsort(key, kind="stable")
+    out = []
+    for g in np.split(order, np.flatnonzero(np.diff(key[order])) + 1):
+        i = g[0]
+        out.append(((lo_s[i], lo_w[i], hi_n[i], hi_e[i]), c[g]))
+    return out
+
+
 def _merge_job(args):
     k, rs, rect, ring = args
     t = time.time()
@@ -415,27 +494,33 @@ def rectangles(codes: np.ndarray, cells: list[dict], ring: float = RING, pad: in
     t1 = time.time()
     split = split_by_cells(runs, cells)
     t2 = time.time()
-    jobs = sorted(((k, rs, cells[k]["rect"], ring) for k, rs in split.items()), key=lambda j: -len(j[1]))
+    jobs = [(k, brs, brect, ring) for k, rs in split.items() for brect, brs in blocks_of(rs, cells[k]["rect"])]
+    jobs.sort(key=lambda j: -len(j[1]))
     workers = workers if workers is not None else max(1, min(len(jobs), (os.cpu_count() or 2) - 2))
-    out, slow = {}, (None, 0.0, 0)
+    got: dict[int, list[np.ndarray]] = defaultdict(list)
+    slow = (None, 0.0, 0)
     if workers > 1 and len(runs) > 20_000:
         from concurrent.futures import ProcessPoolExecutor
         with ProcessPoolExecutor(workers) as ex:
-            for k, r, s in ex.map(_merge_job, jobs, chunksize=1):
-                out[k] = r
+            results = ex.map(_merge_job, jobs, chunksize=1)  # largest first, one at a time: chunks would bunch them
+            for (k, r, s), j in zip(results, jobs):
+                got[k].append(r)
                 if s > slow[1]:
-                    slow = (cells[k]["id"], s, len(split[k]))
+                    slow = (cells[k]["id"], s, len(j[1]))
     else:
         for j in jobs:
             k, r, s = _merge_job(j)
-            out[k] = r
+            got[k].append(r)
             if s > slow[1]:
-                slow = (cells[k]["id"], s, len(split[k]))
-    out = dict(sorted(out.items()))
+                slow = (cells[k]["id"], s, len(j[1]))
+    out = {}
+    for k in sorted(got):
+        d = np.vstack(got[k])
+        out[k] = d[np.lexsort((d[:, 1], d[:, 0]))]
     if log:
         log(f"world tier 2 rectangles: {len(runs):,} runs ({t1 - t:.1f} s), split into {len(split)} cells ({t2 - t1:.1f} s), "
-            f"merged to {sum(len(r) for r in out.values()):,} ({time.time() - t2:.1f} s, {workers} processes; slowest cell "
-            f"{slow[0]}: {slow[2]:,} runs in {slow[1]:.1f} s)")
+            f"{len(jobs):,} blocks merged to {sum(len(r) for r in out.values()):,} ({time.time() - t2:.1f} s, {workers} "
+            f"processes; slowest block in {slow[0]}: {slow[2]:,} runs in {slow[1]:.1f} s)")
     return out
 
 
