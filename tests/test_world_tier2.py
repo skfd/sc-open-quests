@@ -267,6 +267,14 @@ class P3Test(unittest.TestCase):
         self.cells = W.plan_cells(plan(self.tmp))
         self.places = W.DictPlaces(PLACES.get)
 
+    def test_half_length_point_at_high_latitude(self):
+        # a road at 60 degrees: 1 km north then 2 km east; its half-length point lies on the east leg, 0.5 km along
+        dlat, dlon = 1000 / M_LAT, 1000 / (M_LAT * math.cos(math.radians(60.0)))
+        g = np.array([[60.0, 10.0], [60.0 + dlat, 10.0], [60.0 + dlat, 10.0 + 2 * dlon]])
+        qp = W._quest_points([g])[0]
+        self.assertAlmostEqual(qp[0], 60.0 + dlat, places=7)
+        self.assertAlmostEqual((qp[1] - 10.0) / dlon, 0.5, places=2)
+
     def test_over_road_is_maxheights_bridge_filter(self):
         self.assertTrue(W.over_road({"highway": "primary", "bridge": "yes"}))
         self.assertTrue(W.over_road({"railway": "rail", "bridge": "viaduct", "layer": "1"}))

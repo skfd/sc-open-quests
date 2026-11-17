@@ -362,7 +362,9 @@ def _quest_points(lines) -> np.ndarray:
             if len(g) == 1:
                 out.append(g[0])
             continue
-        d = np.hypot(np.diff(g[:, 0]), np.diff(g[:, 1]) * 0.63)
+        # metres along the line, a degree of longitude at the line's own latitude (a fixed 0.63, cos 51 degrees, put a
+        # 15.7 km road's half-length point at 55.6 degrees about 700 m off: fork P3)
+        d = np.hypot(np.diff(g[:, 0]), np.diff(g[:, 1]) * math.cos(math.radians(min(abs(float(g[:, 0].mean())), MAX_COS_LAT))))
         c = np.concatenate([[0.0], np.cumsum(d)])
         half = c[-1] / 2
         k = min(int(np.searchsorted(c, half, "right")) - 1, len(d) - 1)
