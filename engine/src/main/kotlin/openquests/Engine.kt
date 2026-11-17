@@ -151,15 +151,17 @@ class Engine(val registry: Registry, val cities: List<City>, val parts: List<Par
         return if (local.isEmpty()) local else IntArray(local.size) { partsOfCity[c][local[it]] }
     }
 
-    /** --dump-state with parts: the place set of a record at [p] in the cities [cityIdx], from the exact position, as
-     *  [partsAt] counts it (StateDump.placeSet); 0 without parts */
+    /** --dump-state: the place set of a record at [p] in the cities [cityIdx], from the exact position: the parts
+     *  holding it as [partsAt] counts them, and each city of [cityIdx] as the pseudo part `city:<id>` (index
+     *  parts.size + city, StateDump's partIds), so a city's counts can be summed from the state as exactly as a
+     *  part's (a test on the record's rounded position can put a point on a cell edge in the wrong cell) */
     private fun placeSetAt(cityIdx: IntArray, p: LatLon): Int {
         val st = state ?: return 0
         if (!st.places) return 0
-        var all = CityIndex.NONE
+        var all = IntArray(cityIdx.size) { parts.size + cityIdx[it] }
         for (c in cityIdx) {
             val h = partsAt(c, p)
-            if (h.isNotEmpty()) all = if (all.isEmpty()) h else all + h
+            if (h.isNotEmpty()) all += h
         }
         return st.placeSet(all)
     }
