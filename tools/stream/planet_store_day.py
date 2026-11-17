@@ -7,7 +7,9 @@ For each day: `tilestore update` by the next diff (--world --group-mib 512 --pru
 forward (`loc advance`) and held against the Europe clip of the same replication sequence (`loc check`), the store's
 new generation held against a cut of that clip (subcmp at 2 km, every difference explained by why.py: ways the
 clip's extract drops), then `compact --min-dead 0.25` and `punch`. Any failure writes STOPPED beside the store and
-every later run refuses until a person removes it. Waits while today's daily run (kk-SCOpenQuests) is still going.
+every later run refuses until a person removes it. HOLD beside the store (its text the reason) makes a run take no
+day, not a failure: a reader of the store (tools/stream/store_lock.py) or a hold at a seed day. While a run works it
+keeps RUNNING beside the store, so a reader waits. Waits while today's daily run (kk-SCOpenQuests) is still going.
 Log: logs/planet-store.log."""
 import argparse
 import datetime as dt
@@ -24,6 +26,8 @@ STORE = ROOT / ".scratch/planet-cut/store"
 LOC = ROOT / ".scratch/planet-day/planet.loc"
 WORK = ROOT / ".scratch/planet-day"
 STOPPED = STORE.parent / "STOPPED"
+HOLD = STORE.parent / "HOLD"  # no day taken while it exists (a reader, or the store held at a seed day)
+RUNNING = STORE.parent / "RUNNING"  # a run is moving the store: readers wait
 DATA = Path.home() / "Code/.osm-data"
 DIFF_DIRS = [DATA / "planet/diffs", ROOT / ".scratch/planet/diffs-keep"]
 KEEP = ROOT / ".scratch/planet/diffs-keep"
@@ -96,6 +100,9 @@ def monthly_going():
 
 
 def one_day():
+    if HOLD.exists():
+        log(f"held: {HOLD} says {HOLD.read_text(encoding='utf-8').strip()}; no day taken")
+        return False
     meta = json.loads((STORE / "store.json").read_text())
     gen = meta["generations"][-1]["gen"]
     day = meta["generations"][-1]["day"]
@@ -180,8 +187,12 @@ def main():
     shutil.copy2(EXE_SRC, EXE)  # a rebuild of tilestore/ while this runs does not touch the binary in use
     log(f"planet store run started; binary {EXE_SRC} copied")
     n = 0
-    while n < a.max_days and one_day():
-        n += 1
+    RUNNING.write_text(f"{dt.datetime.now().isoformat(timespec='seconds')}\n", encoding="utf-8")
+    try:
+        while n < a.max_days and one_day():
+            n += 1
+    finally:
+        RUNNING.unlink(missing_ok=True)
     log(f"planet store run ended: {n} days")
 
 
