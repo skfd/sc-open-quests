@@ -137,7 +137,8 @@ class Engine(val registry: Registry, val cities: List<City>, val parts: List<Par
     /** each city's parts (indices into [parts]) and an index over their polygons (null for a city without) */
     val partsOfCity: Array<IntArray> = Array(cities.size) { c -> parts.filter { it.city == c }.map { it.index }.toIntArray() }
     private val partIndex: Array<PolygonIndex?> = Array(cities.size) { c ->
-        partsOfCity[c].takeIf { it.isNotEmpty() }?.let { ps -> PolygonIndex(ps.map { parts[it].polygon }) }
+        // clipped to the city: every point asked of a city's parts lies in the city
+        partsOfCity[c].takeIf { it.isNotEmpty() }?.let { ps -> PolygonIndex(ps.map { parts[it].polygon }, clip = cities[c].polygon) }
     }
     /** per (part, quest): the open quests at resurvey x1 whose position is in the part, as the city counts them */
     val partOpen = AtomicLongArray(parts.size * quests.size)

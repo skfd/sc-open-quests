@@ -48,6 +48,13 @@ def _log(msg):
     print(f"[{time.strftime('%H:%M:%S')}] {msg}", flush=True)
 
 
+def quiet(ahead_minutes: int = 0):
+    """no engine starts in (or runs into) the daily update's window: world_cells.quiet"""
+    sys.path.insert(0, str(ROOT / "tools"))
+    import world_cells
+    world_cells.quiet(ahead_minutes)
+
+
 def files_of(w: Path) -> list[dict]:
     return json.loads((w / "plan.json").read_text(encoding="utf-8"))["files"]
 
@@ -130,8 +137,9 @@ class Day:
 
 
 def prepare(w: Path, store: Path, diff: Path, today: str, nodes: Path, work: Path, heap_gb: int = 8,
-            engine: Path | None = None, log=_log) -> Day:
-    """everything that needs the world at D-1: run it before the store's update"""
+            engine: Path | None = None, log=_log, keep=None) -> Day:
+    """everything that needs the world at D-1: run it before the store's update. `keep(last_node, last_way,
+    last_rel, old_places, new_places, old_refs)` narrows the diff (a rehearsal on a clip: `clip_keep`)"""
     meta = json.loads((w / WS.WORLD_META).read_text(encoding="utf-8"))
     if diff.name in meta["applied"]:
         raise SystemExit(f"{diff.name} applied before")
@@ -152,6 +160,16 @@ def prepare(w: Path, store: Path, diff: Path, today: str, nodes: Path, work: Pat
         old_places, new_places = T2.NodeFile(nodes), T2.NodeFile(nodes, overlay=overlay)
     else:  # a region's sparse index, at D-1 until this day saves its overlay
         old_places, new_places = T2.SparsePlaces(nodes), T2.SparsePlaces(nodes, extra=overlay)
+    if keep is not None:  # a rehearsal on a clip: only what the clip's extract would hold of the planet's diff
+        n0, w0, r0 = len(last_node), len(last_way), len(last_rel)
+        last_node, last_way, last_rel = keep(last_node, last_way, last_rel, old_places, new_places, old_refs)
+        overlay = {n: (v[4] if v[2] else None) for n, v in last_node.items()}
+        if nodes.is_file():
+            new_places = T2.NodeFile(nodes, overlay=overlay)
+        else:
+            new_places = T2.SparsePlaces(nodes, extra=overlay)
+        log(f"kept for the clip: {len(last_node):,} of {n0:,} nodes, {len(last_way):,} of {w0:,} ways, "
+            f"{len(last_rel):,} of {r0:,} relations")
     keys = T2.changed_keys(last_node, last_way, last_rel)
     rows = rows_of_keys(w, keys)
     T["places and old rows"] = time.time() - t
@@ -159,6 +177,49 @@ def prepare(w: Path, store: Path, diff: Path, today: str, nodes: Path, work: Pat
         f"{len(keys):,} changed keys")
     return Day(w, store, diff, today, meta["clock"], work, nodes, last_node, last_way, last_rel, old_refs, old_places,
                new_places, rows, g0, heap_gb, engine, log, T, {"changedKeys": int(len(keys)), "oldRows": int(len(rows))})
+
+
+def clip_keep(polygon: Path):
+    """the part of a planet diff a clip's extract (osmium, complete ways) would hold: nodes inside the polygon at D-1
+    or D; ways with a node inside at D, or that the clip store held at D-1, and all their nodes; relations with a kept
+    member or held before (approximated by a kept member: the store's relation lookup is not asked)"""
+    import shapely
+    from shapely.geometry import shape
+    gj = json.loads(Path(polygon).read_text(encoding="utf-8"))
+    geom = (shapely.union_all([shape(f["geometry"]) for f in gj["features"]]) if "features" in gj
+            else shape(gj.get("geometry", gj)))
+    shapely.prepare(geom)
+
+    def inside(p):
+        ok = np.isfinite(p).all(axis=1)
+        out = np.zeros(len(p), bool)
+        if ok.any():
+            out[ok] = shapely.contains_xy(geom, p[ok, 1], p[ok, 0])
+        return out
+
+    def keep(last_node, last_way, last_rel, old_places, new_places, old_refs):
+        nid = np.fromiter(last_node, np.int64, len(last_node))
+        kn = set(nid[inside(new_places.places(nid)) | inside(old_places.places(nid))].tolist())
+        # every way's refs at once: one place lookup and one polygon test, reduced per way
+        wids = list(last_way)
+        lens = np.array([len(last_way[w_][4] or []) for w_ in wids], np.int64)
+        allrefs = np.fromiter((r for w_ in wids for r in (last_way[w_][4] or [])), np.int64, int(lens.sum()))
+        hit = inside(new_places.places(allrefs)) if len(allrefs) else np.zeros(0, bool)
+        starts = np.concatenate([[0], np.cumsum(lens)[:-1]]) if len(lens) else np.zeros(0, np.int64)
+        any_in = np.zeros(len(wids), bool)
+        nz = lens > 0
+        if nz.any():
+            any_in[nz] = np.maximum.reduceat(hit, starts[nz])
+        kw = set()
+        for k, wid in enumerate(wids):
+            if any_in[k] or wid in old_refs:
+                kw.add(wid)
+                kn.update(r for r in (last_way[wid][4] or []) if r in last_node)
+        kr = {rid for rid, (_, _, ms) in last_rel.items()
+              if any((t == "n" and r in kn) or (t == "w" and (r in kw or r in old_refs)) for t, r in ms)}
+        return ({n: last_node[n] for n in kn}, {w_: last_way[w_] for w_ in kw}, {r: last_rel[r] for r in kr})
+
+    return keep
 
 
 def update_store(day: Day, before_clip: Path | None = None, polygon: Path | None = None, before_loc: Path | None = None):
@@ -192,6 +253,7 @@ def rect_to_cell(rows: np.ndarray, sets: P.PlaceSets) -> np.ndarray:
 
 def engine_rows(day: Day, pbf: Path, out: Path, clock: str, cities: Path, parts: Path, area_pass: bool,
                 sets: P.PlaceSets, names: list[str], extra_opts: str = "", rects: bool = False) -> np.ndarray:
+    quiet(20)
     eng = day.engine
     saved = S.ENGINE
     if eng:
@@ -305,6 +367,7 @@ def counts_at(w: Path, clock: str, sets: P.PlaceSets, names: list[str], work: Pa
     nq = {"cities": {}, "parts": Counter()}
     for f in files_of(w):
         d = w / "files" / f["id"]
+        quiet(5)
         r = N.note_quests(d / "cities.json", d / "notes.jsonl", clock, work / f["id"], parts=d / "parts", engine=engine,
                           heap_gb=heap_gb)
         nq["cities"].update(r["cities"])
@@ -458,8 +521,8 @@ def finish(day: Day) -> dict:
 
 def run(w: Path, store: Path, diff: Path, today: str, nodes: Path, work: Path, before_clip: Path | None = None,
         polygon: Path | None = None, before_loc: Path | None = None, heap_gb: int = 8, engine: Path | None = None,
-        log=_log, compact: bool = True) -> dict:
-    day = prepare(w, store, diff, today, nodes, work, heap_gb, engine, log)
+        log=_log, compact: bool = True, keep=None) -> dict:
+    day = prepare(w, store, diff, today, nodes, work, heap_gb, engine, log, keep=keep)
     update_store(day, before_clip, polygon, before_loc)
     rec = finish(day)
     if compact:

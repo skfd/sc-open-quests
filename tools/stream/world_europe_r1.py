@@ -154,7 +154,7 @@ def days(n: int):
             log(f"{diff.name} ({day}) applied before")
         else:
             WD.run(W, STORE, diff, today, nodes=NODES, before_clip=clip(prev), polygon=POLYGON,
-                   work=OUT / "days" / day, heap_gb=HEAP_GB, engine=ENGINE, log=log)
+                   work=OUT / "days" / day, heap_gb=HEAP_GB, engine=ENGINE, log=log, keep=WD.clip_keep(POLYGON))
             meta = json.loads((W / "world.json").read_text(encoding="utf-8"))
         o = oracle(day)
         WD.check(W, o, OUT / "days" / day, log=log)
