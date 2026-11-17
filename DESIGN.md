@@ -5429,3 +5429,61 @@ own quest at its own quest point, or happens on vertices and segments the outlin
   14 ms a rectangle city that is about 30 min of engine per date against 12, on top of half the map data. The slack
   (`MERGE_SLACK_M2`, 0.1 km2) is the knob: it also sets how wide a non-container polygon may be before its inside is
   no longer filled (about 2 km at 0.1 km2).
+
+### The world day, rehearsed on the Europe clip (2026-11-17)
+
+`tools/stream/world_day.py` (prepare before the store's update, finish after it; `run` for a rehearsal; `check`
+against a whole count) and `tools/stream/world_europe_r1.py` (the driver; out dir `.scratch/r1/eu/` of the worktree
+it ran in). The Europe clip of 11-09 as a world plan: 16 files, 57 cells, 15,875 places as parts plus the 32 cities'
+own outlines (`osm-<city>`); a clip store cut at 11-09 and moved by the planet's day diffs 5172 on (polygon mode);
+a sparse node index; the seed counted from the store (`storecut`, `count --state` with parts, 947 s at 8 GB a file):
+50,273,232 rows, 16,682 place sets. Each day D is held against a whole count of the same plan from a fresh store cut
+of D's Europe clip, with the seed's notes clips on both sides.
+
+**Day 0 (the seed through the stream's own counting): exact.** 0 of 36,795,912 (element, quest) groups differ; 0 of
+631,304 counts per place and cell (note quests by the engine included); all cells' open quests 29,983,203 both.
+
+**Days 11-10 to 11-13, streamed:**
+
+| day | groups differing (of 36.8M) | at the default setting | 0.5 / 2 settings only | outside the clip's polygon | the 32 cities' counts differing (of 5,306) | all cells open, whole / stream |
+|---|---|---|---|---|---|---|
+| 11-10 | 1,093 | 15 | 831 | 247 | 1 (by 1) | 29,989,003 / 29,989,161 |
+| 11-11 | 2,390 | 45 | 1,754 | 591 | 3 (by 1-2) | 29,993,706 / 29,994,157 |
+| 11-12 | 3,551 | 66 | 2,579 | 906 | 7 (by 1) | 29,999,555 / 30,000,246 |
+| 11-13 | 4,489 | 83 | 3,118 | 1,288 | 7 (by 1) | 30,005,680 / 30,006,664 |
+
+Rows are compared at the clock: a date the stream kept that has come counts as the open, aged match the whole count
+writes (the same count). By cause:
+- **Outside the clip's polygon** (1.6-7.5 km out): the moved store keeps edge ways a fresh extract of the clip drops,
+  as the planet store's daily check found. Not the stream; it is also most of the all-cells difference.
+- **The 0.5 and 2 settings only:** quests the seed did not date at those settings come open there (CheckExistence and
+  other quests the match cache settles: `Engine.offerInZone` dates only `!isSure` matches; area quests are dated at
+  the default only). The default setting, which the site shows, is not touched. Fix in the engine (date settled
+  matches too, area quests at all three settings) or publish the default only.
+- **At the default setting**, growing by about 20 a day:
+  - most are a quest point moved by under a metre on an untouched way whose node moved (tier 1's known limit; no
+    count changes unless it crosses a place's edge);
+  - AddRoofShape of building multipolygons whose member way changed while the relation is not in the diff: the cover
+    marks the outline, not the relation's quest point (Göteborg -1 from day one);
+  - AddMaxHeight of roads under a changed bridge whose quest point lies outside the bridge's rectangles: the recount
+    takes elements by centre, so a road crossing a rectangle is not recounted (Praha -2, Moscow -1);
+  - a few recount-vs-whole disagreements on touched keys inside rectangles (AddMaxHeight again).
+
+**Time per day** (the clip's share of the planet diff: about 42k nodes, 12.6k ways): read the planet diff 150-190 s,
+old ways 1-4 s, store update 45-60 s, cover 2-3 s, rectangles 2-3 s (2,700-3,000 rectangles, 1,600-1,900 km2),
+engine files 15-21 s, tier 1 215-245 s (16 engine runs, one per plan file), tier 2 reads 19 s, tier 2 engine
+240-260 s, delta 31-34 s, notes 165-185 s, counts and note quests 200-285 s (16 engine runs): 20-23 minutes.
+
+**What blocks the planet:**
+1. **Loading parts per engine run.** Tier 1 and the note quests run once per plan file (all of a world's parts in one
+   run do not fit: Europe alone has 502,597 part entries, and 8 GB ran out); a note-quest run is 120 s of which the
+   pass is 0.2 s, the rest loading the file's 63k outlines. At 128 planet files that is hours a day. Needed: the
+   engine kept running with its parts loaded, or the note quests as state rows with their places (the engine writes
+   them at the seed; a day recounts only the cells whose notes changed).
+2. **Notes' hidden flags over every row**: 165-185 s for 50M rows in one Python thread; the planet's 2 billion need
+   the rows near changed notes found by position, or the files in parallel.
+3. **The two cover gaps above** (a relation's quest point when a member way changed; roads crossing a rectangle):
+   both need the elements whose geometry meets the marked cells, from the store, added to the cover.
+4. **A rectangle city's parts index** spanned every part's whole box (a country: 512 x 512 cells per rectangle) and
+   ran out of heap at 8 GB on 28,703 rectangles; now clipped to the city (engine `PolygonIndex(clip=)`, same answers).
+   The planet's 128,544 rectangles still need their runs grouped (per plan file) and measured.
