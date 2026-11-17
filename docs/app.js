@@ -635,7 +635,7 @@ function tile(label, value, extra, hero = false) {
 
 // The net change in words: edits, aging and new map data together, since the site cannot count solves.
 function changeWords(d, from, to) {
-  const when = daysBetween(from, to) === 1 ? "yesterday" : `on ${shortDate(from)}`;
+  const when = daysBetween(from, to) === 1 ? "the day before" : `on ${shortDate(from)}`;   // the count's day, not the reader's
   return d === 0 ? `The same as ${when}` : `${nf.format(Math.abs(d))} ${d < 0 ? "fewer" : "more"} than ${when}`;
 }
 
@@ -654,11 +654,13 @@ function renderTiles(h, tot) {
   const young = j < 0;
   if (young) j = 0;
   const w = n > 1 ? likeForLike(h, j, i) : null;
+  const across = breaks(h).some((b) => b.i > j && b.i <= i);   // a new app version inside the span
   const key = (v) => el("span", { class: "key", style: `background:${css(v)}` });
   const weeks = w
     ? tile(young ? `Since ${shortDate(h.dates[j])}` : "Last 4 weeks", signed(w.open),
         el("div", { class: "note" }, w.aged == null ? "net change, aged split not counted then"
-          : [key("--series-1"), `mapping ${signed(w.open - w.aged)} `, key("--series-2"), `resurvey ${signed(w.aged)}`]))
+          : [key("--series-1"), `mapping ${signed(w.open - w.aged)} `, key("--series-2"), `resurvey ${signed(w.aged)}`],
+          across ? el("div", {}, "across an app release, see below the chart") : null))
     : tile("Last 4 weeks", "—", el("div", { class: "note" }, "one count so far"));
   let top = null;
   for (const [name, s] of Object.entries(h.quests))
@@ -934,21 +936,32 @@ function placeHeadText(h = null) {
 }
 const crumbSep = () => el("span", { class: "sep", "aria-hidden": "true" }, "›");
 
-// Below the table: the city's parts, and the name layer's places inside this one. The chain in the head.
+// The chain in the head, from the name layer's region file (15-80 KB). Below the table, the city's parts
+// and the name layer's places inside this one, once the reader nears them: the parts come from the city's
+// newest snapshot, which for Ontario is 250 KB gzipped.
+let childWatch = null;
 async function placeAround(seq) {
   const c = cityById(state.city);
   const box = $("#place-children");
-  const parts = await partsCard(c.id, state.part).catch(() => null);
-  if (seq !== pageSeq) return;
-  box.replaceChildren(...[parts].filter(Boolean));
+  box.replaceChildren();
   const id = state.part || c.place, file = state.part ? hist.in : c.in;
   const ref = id && file ? await resolvePlace(id, file).catch(() => null) : null;
-  if (seq !== pageSeq || !ref) return;
-  const up = chain(ref).reverse();
-  $("#place-crumbs").replaceChildren(placeLink(null, "All countries"),
-    ...up.slice(0, -1).flatMap((r) => [crumbSep(), placeLink(r)]));
-  const kids = childrenCard(ref, childRows(ref).map((i) => ({ ref: rowRef(ref.shard, i) })));
-  if (kids) box.append(kids);
+  if (seq !== pageSeq) return;
+  if (ref) {
+    const up = chain(ref).reverse();
+    $("#place-crumbs").replaceChildren(placeLink(null, "All countries"),
+      ...up.slice(0, -1).flatMap((r) => [crumbSep(), placeLink(r)]));
+  }
+  childWatch?.disconnect();
+  childWatch = new IntersectionObserver(async (seen) => {
+    if (!seen.some((e) => e.isIntersecting)) return;
+    childWatch.disconnect();
+    const parts = await partsCard(c.id, state.part).catch(() => null);
+    if (seq !== pageSeq) return;
+    const kids = ref && childrenCard(ref, childRows(ref).map((i) => ({ ref: rowRef(ref.shard, i) })));
+    box.replaceChildren(...[parts, kids].filter(Boolean));
+  }, { rootMargin: "800px 0px" });
+  childWatch.observe(box);
 }
 
 // ---------- compare view ----------
@@ -1527,6 +1540,8 @@ async function renderPlaces() {
   }
   const k = countedAs(ref);
   if (k) {   // a counted place has the place page; the ?place= link becomes its ?city= one
+    state.place = "";
+    state.placeIn = "";
     setCity(...k);
     state.view = "city";
     writeURL();

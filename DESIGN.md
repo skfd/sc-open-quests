@@ -5219,12 +5219,17 @@ The city view is now the place page of "A neighbourhood is a place", for the 147
   On a phone the trend, aged share and class name give way and chips wrap, so the table fits from 320 px.
 - **Children:** the city's parts from its newest snapshot (name, kind, open over the ticked quests), each a link
   to its page, the current one marked on a part's page; then the name layer's places inside. No per-child change:
-  that would be a file per child (`latest/<parent>` does that, later).
+  that would be a file per child (`latest/<parent>` does that, later). **Loaded when the reader nears them**: the
+  snapshot is the region's (Ontario's is 2.4 MB, 249 KB gzipped, against Toronto's 37 KB history). The chain's
+  region file loads at once (15-80 KB gzipped; the largest a counted city sits in, France's, 79 KB).
+- **Wording:** "fewer than the day before", not "yesterday": the counts can land two days late. The 4-week tile
+  says "across an app release" when a version break falls inside it.
 - **Navigation:** three tabs, Places, Compare cities, Map. The place browser (countries, regions, the ask card)
   is reached from "All countries" in the chain and from the city sheet ("Every place, by country").
 
 Checked with `.scratch/place-page/drive.py` (every link shape and level at 1200 and 390 px: no page errors, no
-sideways scroll except Compare's table, which scrolls the same on main) and `clicks.py` (range, fold, ticks and
-pins on a part, crumbs, sheet, tabs). **Observed, not a page bug:** 1,715 of the 4,214 part series do not move
+sideways scroll except Compare's table, which scrolls the same on main; city-states and a Berlin part included),
+`clicks.py` (range, fold, ticks and pins on a part, crumbs, sheet, tabs, a widget link then Map's "find a place")
+and `fixtures.py` (the test fixtures through `?data=`, one snapshot and no parts; dark mode). **Observed, not a page bug:** 1,715 of the 4,214 part series do not move
 at all over their 17 days, Casa Loma's 1,105 among them; they are the small and quiet ones (200 of Toronto's
 218 move, and every large one does).
