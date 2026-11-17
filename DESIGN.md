@@ -5332,3 +5332,100 @@ place data on the R2 subdomain (DESIGN, "Place statistics for the whole world"),
 (`.scratch/tiles/store-rsw`, the Europe clip with cells as cities), where every day has a whole count to compare
 row for row; only then the planet. A StreetComplete release before release 1 means a reseed at the store's day
 (the state is one quests file's).
+
+### What tier 2 must recount, from the code (2026-11-17, overnight; fork E of the release-1 build)
+
+Tier 2 marked a changed closed way's or multipolygon's whole box; on planet day 5172 the largest was 2.7M km2, and a
+25 km2 cap lost 69% of tier 2's own cells on the Europe day. The 40 area quests (`engine/src/main/kotlin/ported/`,
+paths below under `quests/`) were read for what OTHER elements can change whether an element is a quest, and how
+far that reaches. Only three things read a polygon's inside for other elements; everything else is the element's
+own quest at its own quest point, or happens on vertices and segments the outline marking already covers.
+
+| quest (file) | what else decides it | reach | how the cover catches it |
+|---|---|---|---|
+| AddIsAmenityIndoor (`amenity_indoor/AddIsAmenityIndoor.kt`) | a building (`building and building != roof`) holding the node | the building's inside | **container**: a changed building's whole box; the changed node marks itself |
+| AddLevel, AddLevelThing (`level/AddLevel.kt`, `AddLevelThing.kt`, `LevelUtils.kt`) | a mall or station polygon (`shop ~ mall\|department_store`, `aeroway = terminal`, `railway = station`, `amenity = bus_station`, `public_transport = station`) holding the node; elements with `level` inside it make it multi-level | the polygon's inside | **container**: its whole box; a changed `level` element: R_CONTAINED (100 m) around it |
+| AddHousenumber step 5 (`address/AddHousenumber.kt`) | an addressed area that is no building (`nonBuildingAreasWithAddressFilter`), or any area way with an address node on its outline (`areasWithAddressesOnOutline`), holding the building's centre | the area's inside | **container**: its whole box. The outline case needs to know the vertices' tags: from the diff for changed nodes, or from an address-node index (`address_nodes`, not built) |
+| AddHousenumber steps 1, 4 | address nodes on the building's outline or inside it | the building's inside, for the building's own quest | the building's quest point (centroid); a changed address node: R_CONTAINED around it, for the building holding it |
+| AddHousenumber step 2 | a relation that is no multipolygon, with an address, holding the building | membership | **new**: such relations' member ways (lines and centroids) |
+| AddHousenumber, AddIsAmenityIndoor step 3 | the map data's bbox: a building not completely inside it is no quest | the recount's ring | the recount's own limit (300 m ring), not a changed element |
+| AddChargingStationSocket (`socket/AddChargingStationSocket.kt`) | `man_made = charge_point` nodes inside the station way | the station's inside, for its own quest | its quest point; a changed charge point: R_CONTAINED around it |
+| AddAddressStreet (`address/AddAddressStreet.kt`) | `associatedStreet`/`street` relations holding the address; `addr:interpolation` ways' vertices | membership; vertices | the relation's member ways and **new: its member nodes**; interpolation ways by their segments |
+| AddSummitCross, AddSummitRegister (`summit/SummitMarkingsUtil.kt`) | `sac_scale` hiking paths and **`route = hiking` relations** within 10 m of the peak | 10 m of the line | changed paths by their segments; **new: hiking routes' member ways** (tier2.WANTED_REL left them out: a real gap) |
+| ferry quests, AddMaxWeight (`ferry/*.kt`, `FerryUtils.kt`, `max_weight/AddMaxWeight.kt`) | `route = ferry` relations: the relation is the quest, its member ways are not | membership | the relation's member ways and their quest points |
+| AddMaxHeight (`max_height/AddMaxHeight.kt`, `MaxHeightUtils.kt`) | bridges (and `building = roof`, overhead pipelines) crossing a road, road and railway vertices | the crossing: `intersects` is outlines crossing (`util/math/ElementGeometryMath.kt`), not an inside | segments |
+| AddEntrance, AddEntranceReference (`building_entrance*/`) | building outline vertices, incoming and private footways' vertices | vertices | segments |
+| AddKerbHeight, AddTactilePavingKerb (`osm/kerb/KerbUtil.kt`) | footway vertices, `barrier = kerb` ways' vertices, crossing ends | vertices | segments |
+| AddCrossing, AddBarrierOnPath, AddBarrierOnRoad (`osm/WaysCrossingUtils.kt`, `DetectWayBarrierIntersectionUtil.kt`) | shared vertices and their neighbours' places | vertices and the next segment | segments |
+| AddCrossing\*, AddRailwayCrossingBarrier, AddTactilePavingCrosswalk, AddTrafficSignals\*, AddStileType, AddStepCountStile, AddBollardType, AddBarrierOpening, AddMaxHeight's nodes | the vertex sets of included or excluded ways | vertices | segments |
+| AddOneway (`oneway/AddOneway.kt`) | roads meeting the way's end vertices | vertices | segments |
+| AddForestLeafType (`leaf_detail/AddForestLeafType.kt`) | its own area (under 1 ha) | itself | its quest point (centroid) |
+| AddRoofShape, AddCycleway | the country at its own centre | itself | its quest point |
+| AddBicycleIncline | its own length (under 200 m) | itself | its segments |
+| AddAmenityCover, CheckExistence | nothing (getFeature of the element) | itself | itself |
+
+**The rule, in `tools/stream/world_tier2.py`** (`container_kind`, `contained_kind`, `wanted_relation`):
+- a changed closed way's ring (new at D, old at D-1) or a changed multipolygon is marked **whole** if its tags make it
+  a container (above), or its box is at most `SMALL_BOX_KM2` (0.25 km2: cheap, and a planet diff's deletions carry no
+  tags, so a deleted building is still boxed); otherwise by its outline and its **quest points** (the half-length
+  point and the polygon centroid, as SC places a way's or area's quest), which every changed line now gets;
+- the old ring's tags come from `old_tags(kind, id)`; without it the new tags stand in (logged as unknown);
+- a changed node that a container reads (an address, a `level`, a charge point) marks `R_CONTAINED` (100 m) around
+  its old and new place, for the container's quest point; so does a deleted node no changed way held (its tags are
+  gone, and such deletions are mostly points of interest);
+- relations: multipolygons (member lines, boxed only as containers), street relations (member ways and nodes),
+  ferry routes, **hiking routes**, **addressed relations that are no multipolygon**;
+- `CAP_KM2` (5,000 km2) is only a logged safety net: no container comes near it.
+- **The merge changed too** (`merge_rects_overlap`): tier2.merge_rects counted two padded boxes' sum, so a long strip
+  grew one 50 m run at a time across a polygon's whole inside (a 7 km outline became its 52 km2 box). The gain now
+  counts what the two padded boxes share, with 0.1 km2 of slack (a rectangle city costs the engine about 14 ms):
+  the same outline is 5 rectangles, 8.6 km2.
+
+**Not exact yet, and what makes it exact:**
+- **Old tags.** A planet diff's deletion has no tags and no refs, and a modification only its new tags. A big way
+  or multipolygon that stops being a container (a 2 km2 campus losing its address, a station polygon deleted) is
+  marked by its outline only. Fix: `tilestore ways` returning each way's tags at D-1 (the payload has them; a small
+  Rust change), passed as `old_tags`; the same for relations through the relation store.
+- **Addresses on an area's outline.** Without an index of address nodes, only addresses changed that day are seen.
+  Fix: a sorted array of every address node id, built once from the store and moved by the diffs (`address_nodes`).
+- **Containers wider than R_CONTAINED.** A changed address or `level` node inside a building or mall whose quest
+  point is more than about 100 m away (plus a cell's padding) is missed. Fix: look the containers up (the store's
+  tiles at the node), or measure how often it happens on a real day before choosing a radius.
+- **A multipolygon's old members** are not known (only its new ones, by `member_refs`); its old rows cover its own
+  quest.
+- **A changed ring of a container multipolygon.** An untagged closed way is usually a multipolygon's member; when
+  only the way changes, the relation is not in the diff, so a big building or mall multipolygon's changed outer ring
+  is marked by its outline. Fix: the relations holding a changed way, with their tags (a reverse lookup in the
+  relation store, Rust).
+
+**Measured (2026-11-17, night).**
+- **Europe day, diff 5175, europe-west's three cities, tier2.cover against the world cover on the same inputs**
+  (`WORLD_TIER2_EUROPE=1`, log `logs/world-tier2-europe-rule.log`): of tier 2's 103,785 cells, 7,401 are justified
+  by the rule (not from a box, or from a box the rule marks) and **0 of them lie outside the rule's rectangles**.
+  96,384 came only from boxes the rule leaves to their outline; 81,470 of those fall outside its rectangles: 80,181
+  from one `place = island` multipolygon (no area quest reads an island's inside), 1,277 from untagged closed ways
+  (multipolygon member rings: safe unless their relation is a container, the gap above), 15 from
+  `landuse = greenfield`.
+- **Planet day 5172**, world plan, the 11-08 seed's rows, the node file read only (`.scratch/world-tier2/5172-rule/`,
+  log `logs/world-tier2-5172-rule.log`), against fork A's run with the 25 km2 cap:
+
+| | fork A (cap 25 km2) | the rule |
+|---|---|---|
+| marked cells | 10.0M | 5.31M |
+| rectangles | 52,128 | 128,544 |
+| km2 per date | 217,299 | 101,651 |
+| rectangle km2: median, 90th, 99th percentile, largest | 0.19, -, 50, 1,207 | 0.49, 1.8, 4.9, 52.5 |
+
+  626,044 closed boxes: 610,982 small and marked whole, 141 marked whole as containers (115 addressed areas, 18
+  buildings, 6 malls or stations, 2 areas with an address on the outline), 14,921 by outline (their boxes 6.4M km2
+  together; 5,850 of them with old tags unknown, 11,701 ways with outline addresses unknown); 9 over the safety cap,
+  none a container, the largest 2.7M km2. Relations marked: 14,386 multipolygons, 330 hiking routes, 128 streets (2,659
+  member nodes), 1 ferry, 1 addressed; 1,436 wanted relations had no member geometry (the store lookup gives it).
+  Contained nodes: 17,455 addresses, 1,865 `level`, 80 charge points, and **390,467 deleted nodes no changed way
+  held**, which mark 965k of the 5.3M cells: most are vertices of deleted ways, whose refs a planet diff does not
+  carry, so with old refs from `tilestore ways` (generation D-1) they drop out. Time: read the diff 123 s, old rows
+  63 s, cover 146 s, rectangles 44 s, the engine's files 177 s.
+  **The trade:** half the area, but 2.5 times the rectangles, since outlines no longer swallow their boxes; at about
+  14 ms a rectangle city that is about 30 min of engine per date against 12, on top of half the map data. The slack
+  (`MERGE_SLACK_M2`, 0.1 km2) is the knob: it also sets how wide a non-container polygon may be before its inside is
+  no longer filled (about 2 km at 0.1 km2).
