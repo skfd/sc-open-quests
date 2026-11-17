@@ -29,32 +29,57 @@ import kotlin.time.Instant
  * quest at [FAR_DAYS] and then halving the days in between (a quest that only `newer` tests open is not found: it
  * is not open at FAR either); the area quests' at the default setting only and only up to [AREA_DUE_DAYS] ahead
  * (the sidecar's `areaDueDays`), on a small map data round each (AreaPass.dateCandidates).
+ *
+ * With [places] (the run has parts), `<file>.places` holds a u32 per record, in the same order: the record's place
+ * set, the parts holding its position as the engine found them (the counted parts, from the exact position, not
+ * the record's rounded one); set 0 is no part. `<file>.places.json` lists the sets as indices into its `parts`,
+ * the part ids (DESIGN.md, "Release 1: the world day", step 5).
  */
-class StateDump(private val file: File) : Closeable {
+class StateDump(private val file: File, val places: Boolean = false, private val partIds: List<String> = emptyList()) : Closeable {
     private val channel = FileOutputStream(file).channel
-    private val buffers = Collections.synchronizedList(ArrayList<ByteBuffer>())
+    private val placeChannel = if (places) FileOutputStream(File(file.path + ".places")).channel else null
+    /** a thread's records and, aligned with them, their place sets */
+    private class Bufs(val rec: ByteBuffer, val place: ByteBuffer)
+    private val buffers = Collections.synchronizedList(ArrayList<Bufs>())
     private val local = ThreadLocal.withInitial {
-        ByteBuffer.allocate(RECORD * 8192).order(ByteOrder.LITTLE_ENDIAN).also { buffers += it }
+        Bufs(ByteBuffer.allocate(RECORD * 8192).order(ByteOrder.LITTLE_ENDIAN),
+             ByteBuffer.allocate(4 * 8192).order(ByteOrder.LITTLE_ENDIAN)).also { buffers += it }
+    }
+    /** the place sets: run-local part indices, sorted, to a set number; 0 is the empty set */
+    private val setIds = java.util.concurrent.ConcurrentHashMap<List<Int>, Int>().also { it[emptyList()] = 0 }
+    private val setList = Collections.synchronizedList(arrayListOf<List<Int>>(emptyList()))
+
+    /** the number of the place set [parts] (run-local part indices, any order, repeats allowed) */
+    fun placeSet(parts: IntArray): Int {
+        if (parts.isEmpty()) return 0
+        val key = parts.distinct().sorted()
+        setIds[key]?.let { return it }
+        synchronized(setList) {
+            return setIds.getOrPut(key) { setList.add(key); setList.size - 1 }
+        }
     }
     val matches = AtomicLong()
     val dues = AtomicLong()
     /** how many days ahead the area quests were dated (AreaPass, [AREA_DUE_DAYS]); 0: not dated */
     @Volatile var areaDueDays = 0
 
-    fun match(type: Int, id: Long, lat: Double, lon: Double, quest: Int, mask: Int, hidden: Boolean) {
+    fun match(type: Int, id: Long, lat: Double, lon: Double, quest: Int, mask: Int, hidden: Boolean, place: Int = 0) {
         matches.incrementAndGet()
-        put(type, id, lat, lon, quest, mask or (if (hidden) HIDDEN else 0), MATCH, 0)
+        put(type, id, lat, lon, quest, mask or (if (hidden) HIDDEN else 0), MATCH, 0, place)
     }
 
     /** [setting] is the variant bit of the resurvey setting the date is for: [M_NOW] (the default), [M_05] or [M_2] */
-    fun due(type: Int, id: Long, lat: Double, lon: Double, quest: Int, hidden: Boolean, setting: Int, dueMinute: Int) {
+    fun due(type: Int, id: Long, lat: Double, lon: Double, quest: Int, hidden: Boolean, setting: Int, dueMinute: Int,
+            place: Int = 0) {
         dues.incrementAndGet()
-        put(type, id, lat, lon, quest, setting or (if (hidden) HIDDEN else 0), DUE, dueMinute)
+        put(type, id, lat, lon, quest, setting or (if (hidden) HIDDEN else 0), DUE, dueMinute, place)
     }
 
-    private fun put(type: Int, id: Long, lat: Double, lon: Double, quest: Int, flags: Int, kind: Int, due: Int) {
-        val b = local.get()
-        if (b.remaining() < RECORD) drain(b)
+    private fun put(type: Int, id: Long, lat: Double, lon: Double, quest: Int, flags: Int, kind: Int, due: Int, place: Int) {
+        val bufs = local.get()
+        val b = bufs.rec
+        if (b.remaining() < RECORD) drain(bufs)
+        bufs.place.putInt(place)
         b.putLong(id * 4 + type)
         b.putInt((lat * 1e7).roundToInt())
         b.putInt((lon * 1e7).roundToInt())
@@ -64,15 +89,35 @@ class StateDump(private val file: File) : Closeable {
         b.putInt(due)
     }
 
-    private fun drain(b: ByteBuffer) {
+    /** a thread's records and their place sets, written under one lock so the two files stay aligned */
+    private fun drain(bufs: Bufs) {
+        val b = bufs.rec
+        val pb = bufs.place
         b.flip()
-        synchronized(channel) { while (b.hasRemaining()) channel.write(b) }
+        pb.flip()
+        synchronized(channel) {
+            while (b.hasRemaining()) channel.write(b)
+            if (placeChannel != null) while (pb.hasRemaining()) placeChannel.write(pb)
+        }
         b.clear()
+        pb.clear()
     }
 
     override fun close() {
         synchronized(buffers) { buffers.forEach(::drain) }
         channel.close()
+        placeChannel?.let { pc ->
+            pc.close()
+            // the sets as indices into the part ids (a place in several cells is one id)
+            val ids = LinkedHashMap<String, Int>()
+            val sets = synchronized(setList) { setList.toList() }.map { set ->
+                set.map { ids.getOrPut(partIds[it]) { ids.size } }.distinct().sorted()
+            }
+            File(file.path + ".places.json").writeText(
+                "{\"record\":\"u32 place set per record of ${file.name}, in its order\",\"sets\":" +
+                    sets.joinToString(",", "[", "]") { it.joinToString(",", "[", "]") } +
+                    ",\"parts\":" + ids.keys.joinToString(",", "[", "]") { jsonString(it) } + "}\n")
+        }
     }
 
     /** the sidecar `<file>.json`: what the records mean */

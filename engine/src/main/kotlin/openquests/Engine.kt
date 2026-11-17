@@ -151,6 +151,19 @@ class Engine(val registry: Registry, val cities: List<City>, val parts: List<Par
         return if (local.isEmpty()) local else IntArray(local.size) { partsOfCity[c][local[it]] }
     }
 
+    /** --dump-state with parts: the place set of a record at [p] in the cities [cityIdx], from the exact position, as
+     *  [partsAt] counts it (StateDump.placeSet); 0 without parts */
+    private fun placeSetAt(cityIdx: IntArray, p: LatLon): Int {
+        val st = state ?: return 0
+        if (!st.places) return 0
+        var all = CityIndex.NONE
+        for (c in cityIdx) {
+            val h = partsAt(c, p)
+            if (h.isNotEmpty()) all = if (all.isEmpty()) h else all + h
+        }
+        return st.placeSet(all)
+    }
+
     /** one open quest [qi] counted in a city: count it in [hits], the parts of that city holding its position;
      *  [aged] when it is open only because of time */
     private fun countParts(qi: Int, hits: IntArray, aged: Boolean) {
@@ -264,14 +277,15 @@ class Engine(val registry: Registry, val cities: List<City>, val parts: List<Par
     /** AreaPass, --dump-state: area quest [qi] not open now but from [dueMinute] on, at the default setting */
     fun dueArea(qi: Int, e: Element, center: LatLon, dueMinute: Int) {
         val hidden = notes?.hides(center) == true
-        state?.due(e.type.ordinal, e.id, center.latitude, center.longitude, qi, hidden, M_NOW, dueMinute)
+        state?.due(e.type.ordinal, e.id, center.latitude, center.longitude, qi, hidden, M_NOW, dueMinute,
+            placeSetAt(cityIndex.citiesAt(center.latitude, center.longitude), center))
     }
 
     /** AreaPass: one result of area quest [qi] in city [c], with the bits of [matchVariants] */
     fun countArea(c: Int, qi: Int, e: Element, center: LatLon, mask: Int) {
         val type = e.type.ordinal
         val hidden = notes?.hides(center) == true
-        state?.match(type, e.id, center.latitude, center.longitude, qi, mask, hidden)
+        state?.let { it.match(type, e.id, center.latitude, center.longitude, qi, mask, hidden, placeSetAt(intArrayOf(c), center)) }
         if (hidden) { if (mask and M_NOW != 0) stats.hiddenByNotes.incrementAndGet(); return }
         counts.add(c, qi, type, mask)
         if (mask and M_NOW == 0) return
@@ -315,6 +329,8 @@ class Engine(val registry: Registry, val cities: List<City>, val parts: List<Par
         var ids: List<String>? = null
         // the parts holding the position, per city of cityIdx; looked up once, when a quest first counts there
         var partHits: Array<IntArray?>? = null
+        // --dump-state: the record's place set, looked up once, when the first record is written
+        var pset = -1
         // what the element's signature settles for every city alike (MatchCache); without it every quest is asked
         val settled = matchCache?.outcome(type, e)
         if (settled != null && MATCH_CACHE == "verify") verifySettled(e, type, settled)
@@ -348,10 +364,11 @@ class Engine(val registry: Registry, val cities: List<City>, val parts: List<Par
             if (!here) continue
             val hidden = notes?.hides(center) == true
             if (st != null) {
-                if (mask != 0) st.match(type, e.id, center.latitude, center.longitude, qi, mask, hidden)
-                if (due >= 0) st.due(type, e.id, center.latitude, center.longitude, qi, hidden, M_NOW, due)
-                if (due05 >= 0) st.due(type, e.id, center.latitude, center.longitude, qi, hidden, M_05, due05)
-                if (due2 >= 0) st.due(type, e.id, center.latitude, center.longitude, qi, hidden, M_2, due2)
+                if (pset < 0) pset = placeSetAt(cityIdx, center)
+                if (mask != 0) st.match(type, e.id, center.latitude, center.longitude, qi, mask, hidden, pset)
+                if (due >= 0) st.due(type, e.id, center.latitude, center.longitude, qi, hidden, M_NOW, due, pset)
+                if (due05 >= 0) st.due(type, e.id, center.latitude, center.longitude, qi, hidden, M_05, due05, pset)
+                if (due2 >= 0) st.due(type, e.id, center.latitude, center.longitude, qi, hidden, M_2, due2, pset)
             }
             if (mask == 0) continue
             if (hidden) { if (mask and M_NOW != 0) stats.hiddenByNotes.incrementAndGet(); continue }

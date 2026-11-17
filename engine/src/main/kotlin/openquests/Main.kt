@@ -178,7 +178,11 @@ fun count(opts: CountOptions): CountResult {
         }
     }
 
-    engine.state = opts.dumpState?.let { f -> f.absoluteFile.parentFile.mkdirs(); StateDump(f) }
+    // with parts, each record's place set too (<file>.places, StateDump)
+    engine.state = opts.dumpState?.let { f ->
+        f.absoluteFile.parentFile.mkdirs()
+        StateDump(f, places = engine.parts.isNotEmpty(), partIds = engine.parts.map { it.id })
+    }
     t0 = System.nanoTime()
     engine.run(pbf.dataBlobs)
     engine.state?.let { s ->
