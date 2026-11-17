@@ -2174,20 +2174,27 @@ checked against a full count. Until then the world's published numbers can only 
   "Last 4 weeks" tile are 28 days). The place chart keeps opening on 90 days (`RECENT_DAYS`); for world places it
   starts at the first world day until 90 have built up. Every published day counts every quest (rule above).
 - **Release 2: a monthly backfill for the world**, built and running (monthly points from 2017-01, as the cities have).
-- **Asked: backfill the dailies to 90?** Possible, not recommended (answered in chat): it needs a seed 90 days back,
-  so a new planet history download (hours, about 170 GB), the store cut again at that date (it replaces today's,
-  both don't fit), a full world count with state, and each day streamed forward. About a week of machine. Release
-  2's monthly points fill the chart's 90-day window anyway, coarsely, and real days fill it by about two months
-  after the first. Owner's answer pending.
+- **Asked: backfill the dailies to 90?** Not recommended (Claude, in chat). A seed 90 days back needs a new planet
+  history download (hours, about 170 GB), the store cut again at that date (it replaces today's: both don't fit), a
+  full world count with state, then every day streamed forward, whose cost with tier 2 from the store is not measured
+  (a guess: days of machine). Worse, nothing checks those days: city dailies start 10-11, Europe's 11-02, and clips
+  last 14 days, so most of them could only be checked where they arrive, against the rule's "checked against a full
+  count". Release 2's monthly points fill the 90-day chart coarsely anyway. The one backfill worth weighing is a seed
+  about 30 days back, to release sooner; the same list of costs. Owner's answer pending.
+- **Supersedes** "daily from the 11-08 seed onward" (11-14, "The world's resolution"): the 11-08 seed has no area
+  quests' dates, so under the rule it cannot start the published series. The 11-08 full count itself is still a valid
+  all-quests world point.
 - **What this means for the order of work (Claude, same evening):**
-  - The 11-08 world seed has no area quests' dates, so under the rule it cannot start the published series. A new
-    seed is needed: the whole world read from the planet store at its day, counted with `--state` and area dates,
-    checked against that day's published city counts. No history download needed.
-  - The world-day loop needs the map data at D and D-1, and the store holds only its current day, so the store
-    must not run ahead of the loop: from the seed day, hold the store (disable `kk-SCOpenQuests-planetstore`) until
-    the loop is built, then move store and loop forward together; the diffs are kept. The 30 days are counted from
-    the seed day, not from the day the loop is finished.
-  - So: (1) the world read from the store and the dated seed; (2) the world-day loop (tier 1 on the store's node
+  - A new seed: the whole world read from the planet store at its day, counted with `--state` and area dates, checked
+    against that day's published city counts. No history download needed.
+  - The world-day loop needs the map data at D and D-1. The store's design keeps D-1 (the previous generation of each
+    changed tile), but the daily run's `--prune-pairs`, `compact` and `punch` keep what the newest generation uses;
+    whether D-1 stays readable after them is **not checked**. If not, the store cannot run ahead of the loop.
+  - **Owner's call, open:** hold the store at the seed day (disable `kk-SCOpenQuests-planetstore` until the loop is
+    built; the 30 days count from the seed day; pin each day's Europe clip from then, or the catch-up loses its check
+    after 14 days) or keep it running and seed when the loop is ready (the 30 days count from then). Holding wins
+    weeks; release 1 lands mid-December at the earliest either way.
+  - Then: (1) the world read from the store and the dated seed; (2) the world-day loop (tier 1 on the store's node
     file, tier 2 from the store, area dates), each day checked against the Europe clip and the published cities;
     (3) catch up and run daily; (4) publish world places at 30 days (the R2 place-data subdomain, its DNS step the
     owner's).
