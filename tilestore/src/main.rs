@@ -34,6 +34,13 @@
 //!       pack 0's whole 64 KiB units no live tile touches given back in place (sparse file, zeroed ranges), every
 //!       live tile hashed before and after; generation 0's pair indexes removed (punch.rs)
 //!   tilestore read --store S [--gen -1] --cities C.json [--base DIR] [--ring 300] --out Y.osm.pbf [--stamp T]
+//!   tilestore ways --store S [--gen -1] --ids W.npy [--rels R.npy] --out DIR
+//!       each asked way's node refs and their places in generation G (ways.rs): through wtiles-G and a tile that holds
+//!       the way whole; a way in no tile from the relation store blobs of the relations in R.npy. W.npy and R.npy are
+//!       1-d '<i8' ids. DIR gets ids.npy (as asked), how.npy (u1: 0 absent, 1 a tile, 2 the relation store), offs.npy
+//!       (i8, n + 1: way i's refs are refs[offs[i]:offs[i+1]], empty if absent), refs.npy (i8), lat7.npy and lon7.npy
+//!       (i4, 1e-7 degrees; i32::MIN where no payload held the node), ways.json (counts, seconds, peak memory).
+//!       wtiles-G goes at the next update with --prune-pairs: ask for D-1 before the day's update
 
 mod clip;
 mod compact;
@@ -51,6 +58,7 @@ mod read;
 mod stream;
 mod tiles;
 mod update;
+mod ways;
 
 use rayon::prelude::*;
 use std::fs::{self, File};
@@ -108,6 +116,13 @@ fn main() {
             ring: arg(&args, "--ring").map(|s| s.parse().unwrap()).unwrap_or(300.0),
             out: PathBuf::from(arg(&args, "--out").expect("--out")),
             stamp: arg(&args, "--stamp"),
+        }),
+        Some("ways") => ways::ways(&ways::Args {
+            store: PathBuf::from(arg(&args, "--store").expect("--store")),
+            gen: arg(&args, "--gen").map(|s| s.parse().unwrap()).unwrap_or(-1),
+            ids: PathBuf::from(arg(&args, "--ids").expect("--ids")),
+            rels: arg(&args, "--rels").map(PathBuf::from),
+            out: PathBuf::from(arg(&args, "--out").expect("--out")),
         }),
         Some("update") => update::update(&update::Args {
             store: PathBuf::from(arg(&args, "--store").expect("--store")),
