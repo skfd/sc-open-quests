@@ -28,7 +28,7 @@ pub struct Args {
 }
 
 /// a 1-d .npy of one plain dtype ('<i8', '<i4', '|u1')
-fn load_vec_i64(path: &Path) -> Vec<i64> {
+pub(crate) fn load_vec_i64(path: &Path) -> Vec<i64> {
     let b = fs::read(path).unwrap_or_else(|e| panic!("{}: {e}", path.display()));
     assert!(b.starts_with(b"\x93NUMPY\x01"), "{}: not a version 1 .npy", path.display());
     let start = 10 + u16::from_le_bytes([b[8], b[9]]) as usize;
@@ -37,7 +37,7 @@ fn load_vec_i64(path: &Path) -> Vec<i64> {
     b[start..].chunks_exact(8).map(|r| i64::from_le_bytes(r.try_into().unwrap())).collect()
 }
 
-fn save_vec<T: Copy>(path: &Path, descr: &str, v: &[T], bytes: impl Fn(T) -> Vec<u8>) {
+pub(crate) fn save_vec<T: Copy>(path: &Path, descr: &str, v: &[T], bytes: impl Fn(T) -> Vec<u8>) {
     let mut f = BufWriter::with_capacity(1 << 22, File::create(path).unwrap());
     npy::header(&mut f, descr, v.len());
     for &x in v {
