@@ -85,6 +85,21 @@ class HistoryTest(unittest.TestCase):
         self.assertEqual(trends["trend"]["toronto"][-1], toronto["open"])
         self.assertEqual(trends["trend"]["toronto"][1], 9 + 6 + 4)   # AddC counted that day only
 
+    def test_city_index_names_the_citys_place(self):
+        idx = self.load("cities.json")
+        self.assertNotIn("place", idx["cities"][1])   # no name layer beside the data, no place
+        shard = self.tmp / "places" / "ca" / "eb1eed766420.json"
+        shard.parent.mkdir(parents=True)
+        shard.write_text('{"schema":1,"region":"eb1eed766420","places":[\n'
+                         '["eb1eed766420","Ontario",2,-1,0,0,1,1,null,null],\n'
+                         '["9fc3a6b4bdda","Toronto",3,0,0,0,1,1,null,"toronto"],\n'
+                         '["02a7d5cf2058","Casa \\"Loma\\"",8,1,0,0,1,1,null,"toronto/02a7d5cf2058"]]}', encoding="utf-8")
+        run.history(self.data, self.config)
+        ottawa, toronto = self.load("cities.json")["cities"]
+        self.assertEqual((toronto["place"], toronto["in"]), ("9fc3a6b4bdda", "ca/eb1eed766420"))
+        self.assertNotIn("place", ottawa)
+        self.assertEqual(run.counted_place_files(self.tmp / "places"), {"toronto/02a7d5cf2058": "ca/eb1eed766420"})
+
     def test_rerun_changes_nothing(self):
         before = {p: p.read_bytes() for p in self.data.rglob("*.json")}
         self.assertEqual(run.history(self.data, self.config), 0)

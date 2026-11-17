@@ -721,18 +721,23 @@ def build_part_history(snapshots: list[dict], registries: dict[str, dict],
     return out
 
 
-COUNTED_PART = re.compile(r'"([^"/]+/[0-9a-f]{12})"\]')
+COUNTED_ROW = re.compile(r'^\["([0-9a-f]{12})",.*,"([^"]+)"\](?:,|\]\})?\s*$', re.MULTILINE)
+
+
+def counted_places(places_dir: Path) -> dict[str, tuple[str, str]]:
+    """{"<city>" or "<city>/<placeId>": (placeId, "<cc>/<regionId>")}: the name-layer row of each counted
+    city and part (its last field, DATA-FORMAT.md "Places and parts", rows one to a line) and the file
+    it is in; the first file when a place is in several. Empty without a name layer."""
+    found: dict[str, tuple[str, str]] = {}
+    for p in sorted(places_dir.glob("*/*.json")):
+        for pid, mark in COUNTED_ROW.findall(p.read_text(encoding="utf-8")):
+            found.setdefault(mark, (pid, f"{p.parent.name}/{p.stem}"))
+    return found
 
 
 def counted_place_files(places_dir: Path) -> dict[str, str]:
-    """{"<city>/<placeId>": "<cc>/<regionId>"}: the name-layer file each counted part is in (its last
-    field, DATA-FORMAT.md "Places and parts"); the first file when a part is in several. Empty
-    without a name layer."""
-    found: dict[str, str] = {}
-    for p in sorted(places_dir.glob("*/*.json")):
-        for mark in COUNTED_PART.findall(p.read_text(encoding="utf-8")):
-            found.setdefault(mark, f"{p.parent.name}/{p.stem}")
-    return found
+    """{"<city>/<placeId>": "<cc>/<regionId>"}: the name-layer file each counted part is in."""
+    return {k: f for k, (_, f) in counted_places(places_dir).items() if "/" in k}
 
 
 def write_part_history(data_dir: Path, snapshots: list[dict], parts_dir: Path) -> int:
@@ -934,6 +939,10 @@ def history(data_dir: Path = DATA_DIR, cities_config: Path = CITIES_CONFIG, arch
                                f"published until 2026-10-24) or delete {published} to rebuild from what is there")
     changed += merge_quests(data_dir, archive)
     out = build_history(snapshots, read_json(cities_config)["cities"], default_disabled(data_dir), regions())
+    places = counted_places(data_dir.parent / "places")
+    for c in out["cities"]["cities"]:   # the city's row in the name layer: its page's chain and children
+        if c["id"] in places:
+            c["place"], c["in"] = places[c["id"]]
     for cid, series in out["history"].items():
         changed += write_json(data_dir / "history" / f"{cid}.json", series, compact=True)
     for stale in (data_dir / "history").glob("*.json"):

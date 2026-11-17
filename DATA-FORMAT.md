@@ -205,6 +205,9 @@ the file the switch is hidden.
     "id": "toronto", "name": "Toronto", "region": "ontario", "asOfDate": "2026-07-16", "scVersion": "63.4",
     "countryCodes": ["CA", "CA-ON"],             // config/cities.json's, for saying where a quest isn't offered
     "aka": ["Wien"],                             // config/cities.json's, when it has any: other names to find it by
+    "place": "9fc3a6b4bdda", "in": "ca/eb1eed766420",   // since 2026-11-17: the city's row in the name layer
+                                                 //   ("Places and parts") and the file holding it, for its
+                                                 //   page's chain and children; absent when no row is the city
     "landAreaKm2": 665.9, "population": null, "highwayKm": 0.0,
     "open": 0,          // headline: counted quests, default-disabled excluded
     "agedOnly": 0,      // of `open`
