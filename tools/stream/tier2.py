@@ -415,7 +415,8 @@ def write_cities(infos, rects, work: Path, base: Path) -> Path:
                                          "tags": {"name": cid}}), encoding="utf-8")
             eng.append({"id": cid, "name": cid, "relation": rid, "adminLevel": 2, "countryCodes": c["countryCodes"],
                         "timeZone": c["timeZone"], "population": 1, "landAreaKm2": 1.0,
-                        "boundary": Path(os.path.relpath(bpath, base)).as_posix(), "region": "tier2"})
+                        "boundary": Path(os.path.relpath(bpath, base)).as_posix(), "region": "tier2",
+                        "box": [s, w, n, e]})  # read inline by `tilestore read`, not from the boundary file
             rid += 1
     f = work / "cities.json"
     f.write_text(json.dumps({"cities": eng}, indent=1), encoding="utf-8")

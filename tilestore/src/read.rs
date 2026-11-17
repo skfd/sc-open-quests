@@ -21,10 +21,17 @@ pub fn tiles_of(cities: &Path, base: &Path, ring: f64, z: u32) -> Vec<u32> {
     let c: serde_json::Value = serde_json::from_slice(&fs::read(cities).expect("the cities file")).unwrap();
     let mut keys = Vec::new();
     for city in c["cities"].as_array().expect("cities") {
-        let p = base.join(city["boundary"].as_str().expect("boundary"));
-        let b: serde_json::Value = serde_json::from_slice(&fs::read(&p).unwrap_or_else(|e| panic!("{}: {e}", p.display()))).unwrap();
-        let f = |k: &str| b["bounds"][k].as_f64().expect("bounds");
-        let (s, w, n, e) = (f("minlat"), f("minlon"), f("maxlat"), f("maxlon"));
+        // a city's box inline ("box": [s, w, n, e]) spares opening its boundary file: tens of thousands of fresh
+        // small files cost seconds each thousand on Windows (DESIGN, "Release 1: the world day")
+        let (s, w, n, e) = if let Some(bx) = city["box"].as_array() {
+            let v: Vec<f64> = bx.iter().map(|x| x.as_f64().expect("box")).collect();
+            (v[0], v[1], v[2], v[3])
+        } else {
+            let p = base.join(city["boundary"].as_str().expect("boundary"));
+            let b: serde_json::Value = serde_json::from_slice(&fs::read(&p).unwrap_or_else(|e| panic!("{}: {e}", p.display()))).unwrap();
+            let f = |k: &str| b["bounds"][k].as_f64().expect("bounds");
+            (f("minlat"), f("minlon"), f("maxlat"), f("maxlon"))
+        };
         let d_lat = ring / M_LAT;
         let d_lon = ring / (M_LAT * s.abs().max(n.abs()).min(85.0).to_radians().cos());
         let (s, w, n, e) = (s - d_lat, w - d_lon, n + d_lat, e + d_lon);
