@@ -2339,3 +2339,27 @@ wording and tab structure as a first draft open to change, not as decided design
     the default flipped. Native osmium takes Windows paths, so the `/osm`, `/in`, `/out` mapping goes behind the knob.
     Order: the install and a smoke run of every command above; timings when quiet; here first (small, ours);
     osm-extracts after, its next weekly history update as the proof.
+- **Installed and smoke-tested (11-16, 22:45-23:20; owner: pixi via winget, "both repos").** pixi 0.81.0 (winget
+  `prefix-dev.pixi`, `%LOCALAPPDATA%\pixi\bin\pixi.exe`); `pixi global install osmium-tool=1.19.1`: launcher
+  `~/.pixi/bin/osmium.exe`, the real exe `~/.pixi/envs/osmium-tool/Library/bin/osmium.exe`. Provenance checked:
+  the package's sha256 equals anaconda.org's; the feedstock's recipe pins osmcode's v1.19.1 tarball, whose sha256
+  matches a fresh download. Docker's image untouched.
+  - **Same output, every command** (`.scratch/osmium-native/smoke.sh`, Bremen 11-02 and Berlin's history 261005,
+    planet diff 5165): `extract -s smart -b`, `-s complete_ways -p`, `--with-history`, `time-filter`,
+    `apply-changes`, `apply-changes -H`, `sort`, `getid -r`, `cat -f osm`, `merge` (pbf + xml), `export
+    geojsonseq` all equal by `osmium diff -q` or text; `check-refs -r` equal but for CRLF line ends (parse
+    tolerantly if switched).
+  - **But native is 2-3x slower on any real decode** (the machine was busy, both sides alternating, so ratios
+    not absolutes): Bremen extracts 9.5/10.6 s Docker against 2.8/4.2 s native (Docker's start and mount dominate a
+    20 MB file); Berlin history extract 34 s against 97 s; `time-filter` 8-12 s against 21-24 s; `apply-changes`
+    15 s against 42 s; `apply-changes -H` 41 s against 113 s. Not the file write (to a pipe the same); fewer
+    threads slower (`OSMIUM_POOL_THREADS=1` 29-47 s, 4 and 8 the same as default); not zlib (uncompressed, native
+    reads in about 19 s, the same as compressed, while Docker reads compressed in 9 s): it is native osmium's own
+    per-object work. Likely the Windows heap (the Rust store had the same: mimalloc took Berlin's read from 25-35 s
+    to 1.4 s), not shown. `.scratch/osmium-native/threads.sh`, `zlib.sh`.
+  - **So nothing switched.** At planet size Docker's mount costs about 1.85x a pass, native's compute about 2-3x:
+    the weekly `apply-changes -H` and the clips would get slower. Native wins only where a container's start
+    outweighs the work (files of tens of MB). Next, if wanted: mimalloc injected into a copy of the native exe
+    (conda-forge `mimalloc` 3.6.1 has win-64; its install was refused by auto mode, needs the owner's yes), or
+    osmium built natively with mimalloc. Otherwise stay on Docker; remove with `pixi global uninstall
+    osmium-tool` and `winget uninstall prefix-dev.pixi`.
