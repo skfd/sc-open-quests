@@ -5164,3 +5164,28 @@ allocation map of a file with tens of thousands of holes is a guess). Fixed for 
 dead ranges that still hold space (`FSCTL_QUERY_ALLOCATED_RANGES`) are punched; the planet's dry run now finds 0
 of 41,404. A day adds a few thousand new dead ranges, so a daily punch would cost tens of minutes at this rate;
 weekly, or the call's cost understood first, is the open choice. C: 141 GB free after.
+
+### Why the punch was slow: its own memory-mapped hash pass (11-16, evening; owner: "work out why the punch is slow")
+
+The planet punch cost about 0.47 s a call. Measured with `.scratch/punch-cost/` (`zt.py`, `at.py`, `grow.py`,
+`evict.py`, `unstick.py`, `mapread.py`, `flushtime.py`: Python and ctypes around the same Windows calls):
+- **A fixed cost per call, on that file only.** Zeroing ranges of pack-0000 that were already holes (no data to
+  free) cost 0.43-0.95 s each; at the same moment a fresh 1 GiB file and a 30 GiB test file punched in 0.04 ms.
+  `FlushFileBuffers` on pack-0000 with nothing to write cost about 370 ms every time; on every other store file
+  (`planet.loc` 115 GB, the newest pack, the pair index, rel-0000) 0.1 ms.
+- **Not the number of extents.** pack-0000 has 85,106 extents (41,405 allocated ranges). A 30 GiB file written
+  past the cache and punched to 41,664 allocated ranges kept 0.04 ms a call all the way (`grow.out`).
+- **Not cached pages.** The same file read whole through the cache (30 GiB of cached clean pages): flush 0.1 ms,
+  punches 0.0 ms.
+- **Pages read through a memory mapping.** The same file read through a mapping, one page touched per MiB, then
+  closed: flush 40 ms, each punch 21 ms. The punch's own "hash before" mapped pack-0000 and read all 217 GiB of
+  its live tiles, then punched: every one of the 41,404 calls paid for those pages. Reading 80 GiB of other data
+  (the history file) until they left memory brought pack-0000 back to a 0.1 ms flush and 0.0 ms calls, hours
+  after the punch. A non-cached handle, a flush or a non-cached write did not.
+
+**Fix** (the change landed in 41dacebd, another session's commit that took the uncommitted file with it): the
+hashes come from 8 MiB positional reads, never a mapping. On the clip the punch phase went from 12.9 s to 0.1 s
+for the same 990 ranges, storecmp equal after, the negative control still caught. Nothing else in the tile store
+maps a pack (`npy.rs` maps pair indexes, `update.rs` the node file; both flush fast). **So a daily punch costs
+seconds, not hours**, unless something maps a pack first; any new reader of packs must not use a mapping. Not
+shown at planet size yet: the next planet punch (a day's new dead ranges) is the test.

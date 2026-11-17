@@ -2115,3 +2115,11 @@ the file.
 (planet store waits); the chart opens on 90 days, notes at the import steps; density tiles replaced;
 zero rows folded into "N done here". Details at the end of the review file. Also fix the phone table's
 clipped questions and `app.js:1506`'s stale "no history yet" line.
+- **Why the punch was slow: found and fixed (11-16, evening; owner: "work out why the punch is slow").** DESIGN.md,
+  "Why the punch was slow". Its own hash pass read pack-0000 through a memory mapping; while those pages stay in
+  memory every zeroing call and flush of that file is slow (0.4-0.9 s on the planet pack; on a 30 GiB test file 21
+  ms after a mapped read, 0.04 ms without; not the extents, not cached pages). The hashes now come from block reads
+  (the change is in 41dacebd, swept into another session's commit): the clip's punch phase 12.9 s to 0.1 s, exact.
+  pack-0000 is back to 0.04 ms calls (its mapped pages were pushed out by reading other data). Not yet shown at
+  planet size: the next planet punch. Test files deleted; the scripts stay in `.scratch/punch-cost/`. **Rule: no
+  reader of packs may use a memory mapping.**
