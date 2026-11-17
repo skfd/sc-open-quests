@@ -528,7 +528,10 @@ def storecut(store: Path, out: Path, only: list[str] | None = None, at: str | No
             if r.returncode:
                 raise SystemExit(f"read of {f['id']} failed ({r.returncode}): see {cutdir / (f['id'] + '.read.log')}")
             part.rename(dst)
-            done["files"][f["id"]] = {"seconds": round(time.time() - t, 1), "bytes": dst.stat().st_size}
+            stats = Path(str(part) + ".json")  # the read's own figures (tiles, objects, seconds, peak memory)
+            st = json.loads(stats.read_text()) if stats.exists() else {}
+            stats.unlink(missing_ok=True)
+            done["files"][f["id"]] = {"seconds": round(time.time() - t, 1), "bytes": dst.stat().st_size, "read": st}
             write_json(rec, done)
             print(f"storecut {f['id']}: {dst.stat().st_size / 2**30:.2f} GiB in {time.time() - t:.0f} s", flush=True)
         print(f"storecut: {len(done['files'])} files at {day}, this run {time.time() - t0:.0f} s")
