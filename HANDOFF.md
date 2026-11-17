@@ -2123,3 +2123,25 @@ clipped questions and `app.js:1506`'s stale "no history yet" line.
   pack-0000 is back to 0.04 ms calls (its mapped pages were pushed out by reading other data). Not yet shown at
   planet size: the next planet punch. Test files deleted; the scripts stay in `.scratch/punch-cost/`. **Rule: no
   reader of packs may use a memory mapping.**
+- **The planet store, kept daily (11-16, 20:15; owner: "yes catch up and setup daily").** The owner chose to keep
+  the store going rather than cut fresh at 12-07. `tools/stream/planet_store_day.py` moves it forward by every diff it
+  has not had: update (`--world --group-mib 512 --prune-pairs`), node file forward and held against the Europe clip
+  of the same sequence, the new generation against a cut of that clip at 2 km with every difference explained
+  (`tools/stream/tilecheck/why.py`), then `compact --min-dead 0.25` and `punch`. Any failure writes
+  `.scratch/planet-cut/STOPPED` and later runs refuse until a person removes it. It keeps each diff it uses in
+  `.scratch/planet/diffs-keep` (hard links). Log `logs/planet-store.log` (stdout of the task in `planet-store.out`).
+  - **Task `kk-SCOpenQuests-planetstore`, daily 14:45** (from 11-17; waits for the 12:15 run, and up to 8 h for the
+    monthly planet job, then leaves the day to the next run). Registered with the owner's yes.
+  - **Catch-up running since 20:16** (hidden, the same script): 11-06 to 11-16, diffs 5168-5178, about 20 min a day.
+- **12-07, the plan rewritten (owner: keep the store going):**
+  - **No fresh cut and no node-file rebuild.** The planet store and its node file move by daily diffs and never read
+    `history-261102` again; the monthly job retiring that file does not touch them.
+  - **The monthly job still runs** (`kk-SCOpenQuests-planet`, Monday 12-07 07:30, up to 14 h: the history file, the
+    clips' re-cut and months). It needs about 170 GB while it writes the new history file, plus the 40 GiB floor:
+    **about 213 GB free by 12-07 07:30, against 138 GB now, so the owner frees about 75 GB** (the store stays about
+    flat under compaction, so today's free space is the baseline).
+  - That day the planet store's 14:45 run waits for the monthly job (or skips; the next run catches up).
+  - Superseded by this: the fresh-cut option, "`planet.loc` must go before 12-07", and rebuilding the node store from
+    the 12-07 file. The world stream (tier 1), if taken up again, could read the store's node file
+    (`.scratch/planet-day/planet.loc`, the same layout and `.state` form) only if it never writes it; not designed.
+  - Still on 12-07 as before: the batch engine's canary on polar and antimeridian cells, when a world count runs.
