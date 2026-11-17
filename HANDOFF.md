@@ -2222,6 +2222,19 @@ checked against a full count. Until then the world's published numbers can only 
     region or file is skipped.
   - **Keep `.scratch/planet/world-places/`** (the 11-08 count and seed state): when the re-cut store passes 11-08 it
     is the one planet-wide like-for-like check of the store's read and of seven streamed days.
+  - **Built later the same evening (all on main):** after `update --prune-pairs` the generation before reads byte for
+    byte (so a day reads D-1 and D before `compact`); the many-rectangles probe (about 14 ms a rectangle city in the
+    engine; `.scratch/manyrects/`); a city's box inline in the reader (97 s to 1.8 s for 10,000 cities); **engine
+    `--dump-state` with parts writes each record's place set** (`<state>.places`, `.places.json`; Bremen's part counts
+    rebuilt from the records equal the snapshot's; `.scratch/placesets/check.py`; the installed engine has it, and
+    without parts nothing changes); `tools/stream/placesets.py` (world rows WREC = the record plus a world place-set
+    number, one append-only `place-sets.json` per world); `DenseLocations(readonly=True)`.
+  - **Fanned out at about 22:20, four agents in worktrees:** A `tools/stream/world_tier2.py` (the global cover, the
+    rectangles split at cells, their cities and parts files; a planet day's rectangle count); B `world_state.py` on WREC
+    rows with places and the counts per place from the state; C `tools/stream/notes_day.py` (notes at the clock:
+    hidden flags and note quests); D `tilestore ways` (ways' refs and places from a generation, for old geometry and
+    relation members). Each reports back; merging is mine. Their worktrees are under `.claude/worktrees/` if a session
+    ends first.
 
 ## The place page: merged (2026-11-16, evening; owner: "pick from handoff ui work", then "merge it now")
 
