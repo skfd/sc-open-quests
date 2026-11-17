@@ -89,6 +89,12 @@ def daily_run_going():
     return started and not any("update done" in x for x in lines[-5:])
 
 
+def monthly_going():
+    """the monthly planet job (kk-SCOpenQuests-planet: about 170 GB while it writes the new history file) is running"""
+    p = subprocess.run(["schtasks", "/query", "/tn", "kk-SCOpenQuests-planet", "/fo", "csv", "/nh"], capture_output=True, text=True)
+    return '"Running"' in (p.stdout or "")
+
+
 def one_day():
     meta = json.loads((STORE / "store.json").read_text())
     gen = meta["generations"][-1]["gen"]
@@ -158,6 +164,17 @@ def main():
     while not a.no_wait and daily_run_going() and waited < 180:
         if waited == 0:
             log("today's daily run is going: waiting for it (up to 3 h)")
+        time.sleep(60)
+        waited += 1
+    # the monthly planet job and this one both need tens of GB at once: wait for it, or leave the day to the next
+    # run (each run catches up every day it finds missing)
+    waited = 0
+    while not a.no_wait and monthly_going():
+        if waited == 0:
+            log("the monthly planet job is running: waiting for it (up to 8 h)")
+        if waited >= 480:
+            log("the monthly planet job is still running after 8 h: no days this run; the next run catches up")
+            return
         time.sleep(60)
         waited += 1
     shutil.copy2(EXE_SRC, EXE)  # a rebuild of tilestore/ while this runs does not touch the binary in use
