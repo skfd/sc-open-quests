@@ -2275,6 +2275,21 @@ checked against a full count. Until then the world's published numbers can only 
     polygons each one consults as a container (buildings for house numbers, malls for levels, and so on); a changed
     big polygon that no area quest reads as a container needs only its outline. That is exact by construction, not a
     cap. Not built; the next thing to build in step 3, with the relations' member ways through `tilestore ways`.
+  - **E merged (23:55): the big-polygon rule** (DESIGN.md, "What tier 2 must recount, from the code"). Only buildings
+    (AddIsAmenityIndoor), malls and stations (AddLevel, AddLevelThing) and addressed areas (AddHousenumber) read a
+    polygon's inside; a changed ring gets its whole box only if it is such a container or its box is at most
+    0.25 km2, else its outline and quest points. Found missing: `route=hiking` (the summit quests), addressed
+    non-multipolygon relations, street relations' member nodes. And `merge_rects` grew strips across a polygon's
+    inside (sum, not union): `merge_rects_overlap` in world_tier2. Europe day: every rule-justified cell of tier 2's
+    covered. **Planet day 5172 with the rule: 128,544 rectangles, 101,651 km2 per date** (largest 52.5 km2), about
+    9 min; the engine's per-rectangle cost goes up (about 30 min a date), the map data halves (`MERGE_SLACK_M2`).
+    Four gaps left: old tags of changed rings, addresses on an outline, containers wider than 100 m, a changed member
+    ring of a container multipolygon.
+  - **Overnight, two agents (from 00:00):** F, one `tilestore` query for the four gaps (a way's tags, its tagged nodes,
+    the relations holding it; the polygons containing a point) wired into the cover; G, `tools/stream/world_day.py`
+    (one world day in the store's order) and its rehearsal on the Europe clip, 11-09 seed, days 11-10..11-14 each
+    against a whole count (`.scratch/r1/eu/`), running its own engine build; no engine above 8 GB until
+    `logs/storecut-filesize.log` says "filesize exit".
 
 ## The place page: merged (2026-11-16, evening; owner: "pick from handoff ui work", then "merge it now")
 
