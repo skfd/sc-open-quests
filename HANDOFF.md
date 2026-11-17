@@ -2174,30 +2174,33 @@ checked against a full count. Until then the world's published numbers can only 
   "Last 4 weeks" tile are 28 days). The place chart keeps opening on 90 days (`RECENT_DAYS`); for world places it
   starts at the first world day until 90 have built up. Every published day counts every quest (rule above).
 - **Release 2: a monthly backfill for the world**, built and running (monthly points from 2017-01, as the cities have).
-- **Asked: backfill the dailies to 90?** Not recommended (Claude, in chat). A seed 90 days back needs a new planet
-  history download (hours, about 170 GB), the store cut again at that date (it replaces today's: both don't fit), a
-  full world count with state, then every day streamed forward, whose cost with tier 2 from the store is not measured
-  (a guess: days of machine). Worse, nothing checks those days: city dailies start 10-11, Europe's 11-02, and clips
-  last 14 days, so most of them could only be checked where they arrive, against the rule's "checked against a full
-  count". Release 2's monthly points fill the 90-day chart coarsely anyway. The one backfill worth weighing is a seed
-  about 30 days back, to release sooner; the same list of costs. Owner's answer pending.
+- **Backfill: from November 1 (owner, 2026-11-16, 21:40).** The first published world day is the instant
+  2026-11-02T00:00Z (the end of 1 November): the instant the planet store was first cut at, and the oldest Europe
+  clip still on disk (`europe-2026-11-02`, sequence 5164), so day one has its check. Every later day is checked
+  against its Europe clip and the published city snapshots. 90 days back was not taken (no check for most of it).
 - **Supersedes** "daily from the 11-08 seed onward" (11-14, "The world's resolution"): the 11-08 seed has no area
   quests' dates, so under the rule it cannot start the published series. The 11-08 full count itself is still a valid
   all-quests world point.
-- **What this means for the order of work (Claude, same evening):**
-  - A new seed: the whole world read from the planet store at its day, counted with `--state` and area dates, checked
-    against that day's published city counts. No history download needed.
-  - The world-day loop needs the map data at D and D-1. The store's design keeps D-1 (the previous generation of each
-    changed tile), but the daily run's `--prune-pairs`, `compact` and `punch` keep what the newest generation uses;
-    whether D-1 stays readable after them is **not checked**. If not, the store cannot run ahead of the loop.
-  - **Owner's call, open:** hold the store at the seed day (disable `kk-SCOpenQuests-planetstore` until the loop is
-    built; the 30 days count from the seed day; pin each day's Europe clip from then, or the catch-up loses its check
-    after 14 days) or keep it running and seed when the loop is ready (the 30 days count from then). Holding wins
-    weeks; release 1 lands mid-December at the earliest either way.
-  - Then: (1) the world read from the store and the dated seed; (2) the world-day loop (tier 1 on the store's node
-    file, tier 2 from the store, area dates), each day checked against the Europe clip and the published cities;
-    (3) catch up and run daily; (4) publish world places at 30 days (the R2 place-data subdomain, its DNS step the
-    owner's).
+- **The store is held, Claude's call at the owner's "you decide".** Each world day needs the map data at D-1 and D,
+  and the daily run's compaction may not keep D-1 (not checked), so the store must not run ahead of the world loop.
+  And the store is at 11-08 by tonight, past the seed day, so it is **cut again at 11-02T00Z** and held there until
+  the loop is built; then store and loop go forward together, one day at a time, catching up.
+- **Plan, in order:**
+  1. The world read from the store (every file's cells to the engine) and the dated seed, built against today's store,
+     which keeps running daily meanwhile as a rehearsal of the daily store run.
+  2. A planet history file again, through osm-extracts (hours, about 170 GB; check what `fetch planet-history` does
+     with `history-261102` missing first). Then the current store is deleted, the store cut at 11-02T00Z (about
+     1 h 42 min, about 290 GB peak), the node file built at 11-02, the history file deleted, and
+     `kk-SCOpenQuests-planetstore` disabled until step 4.
+  3. The seed: the world at 11-02 from the store, counted with `--state` and area dates, checked against the 11-02
+     Europe clip's count and the published city snapshots of 11-02.
+  4. The world-day loop (tier 1 on the store's node file, tier 2 from the store, area dates), each day checked as
+     above; caught up from 11-03, then daily.
+  5. Publish world places once 30 days are in (the R2 place-data subdomain; its DNS step is the owner's).
+- **Oracles pinned (21:45):** `europe-2026-11-02` to `11-16` in `~/Code/.osm-data/europe/pins.json` (25 GB), reason
+  "release 1". **Each new Europe clip needs pinning too until the loop has checked its day** (a clip goes 14 days
+  after its date); unpin each day once it is streamed and checked. The planet diffs from 5165 are hard-linked in
+  `.scratch/planet/diffs-keep` by the store run.
 
 ## The place page: merged (2026-11-16, evening; owner: "pick from handoff ui work", then "merge it now")
 
