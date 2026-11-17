@@ -483,6 +483,57 @@ def cut(pbf: Path, out: Path, keep_regions: bool = False) -> None:
     print(f"cut {len(p['files'])} files in {len(regions)} region(s), {time.time() - t:.0f} s")
 
 
+def storecut(store: Path, out: Path, only: list[str] | None = None, at: str | None = None) -> None:
+    """The plan's files read from the planet tile store (`tilestore read`, tools/stream/store_lock.py holds the store),
+    not cut from a planet PBF: each file's padded bbox as one box, no further ring, stamped with the store's day.
+    Written to cut/<f>.osm.pbf as `cut` writes, so `notes`, `count` and `report` follow unchanged. With `at` (a day)
+    the store must be at that day. A file already there is skipped; the store must not move between files, so the
+    day is checked before each read and recorded in cut/storecut.json."""
+    sys.path.insert(0, str(ROOT / "tools" / "stream"))
+    import store_lock
+    p = read_json(out / "plan.json")
+    cutdir = out / "cut"
+    cutdir.mkdir(parents=True, exist_ok=True)
+    exe = ROOT / "tilestore" / "target" / "release" / "tilestore.exe"
+    rec = cutdir / "storecut.json"
+    with store_lock.reading(f"world_cells storecut into {out}"):
+        gen = read_json(store / "store.json")["generations"][-1]
+        day = gen["day"]
+        if at and day != at:
+            raise SystemExit(f"the store is at {day}, not {at}")
+        done = read_json(rec) if rec.exists() else {"day": day, "gen": gen["gen"], "files": {}}
+        if done["day"] != day:
+            raise SystemExit(f"{rec} holds files read at {done['day']}; the store is at {day}")
+        stamp = f"{day}T00:00:00Z"
+        t0 = time.time()
+        for f in p["files"]:
+            if only and f["id"] not in only:
+                continue
+            dst = cutdir / f"{f['id']}.osm.pbf"
+            if dst.exists():
+                continue
+            if read_json(store / "store.json")["generations"][-1]["day"] != day:
+                raise SystemExit("the store moved while it was held")
+            w, s, e, n = f["bbox"]
+            box = cutdir / f"{f['id']}.box.json"
+            write_json(box, {"bounds": {"minlat": s, "minlon": w, "maxlat": n, "maxlon": e}})
+            cities = cutdir / f"{f['id']}.read.json"
+            write_json(cities, {"cities": [{"id": f["id"], "boundary": box.name}]})
+            part = Path(str(dst) + ".part")
+            t = time.time()
+            r = subprocess.run([str(exe), "read", "--store", str(store), "--cities", str(cities), "--base", str(cutdir),
+                                "--ring", "0", "--out", str(part), "--stamp", stamp], cwd=ROOT,
+                               capture_output=True, text=True)
+            (cutdir / f"{f['id']}.read.log").write_text(r.stderr or "", encoding="utf-8")
+            if r.returncode:
+                raise SystemExit(f"read of {f['id']} failed ({r.returncode}): see {cutdir / (f['id'] + '.read.log')}")
+            part.rename(dst)
+            done["files"][f["id"]] = {"seconds": round(time.time() - t, 1), "bytes": dst.stat().st_size}
+            write_json(rec, done)
+            print(f"storecut {f['id']}: {dst.stat().st_size / 2**30:.2f} GiB in {time.time() - t:.0f} s", flush=True)
+        print(f"storecut: {len(done['files'])} files at {day}, this run {time.time() - t0:.0f} s")
+
+
 # --- notes ---------------------------------------------------------------------------------------
 
 def box_poly(path: Path, box) -> Path:
@@ -783,6 +834,9 @@ def main(argv=None) -> None:
     a.add_argument("--cities", help="comma-separated city ids: the parts to check against, instead of a country's")
     a = sub.add_parser("cut"); a.add_argument("--pbf", type=Path, required=True); a.add_argument("--out", type=Path, required=True)
     a.add_argument("--keep-regions", action="store_true")
+    a = sub.add_parser("storecut"); a.add_argument("--store", type=Path, default=ROOT / ".scratch/planet-cut/store")
+    a.add_argument("--out", type=Path, required=True); a.add_argument("--only", help="comma-separated file ids")
+    a.add_argument("--at", help="the day the store must be at")
     a = sub.add_parser("notes"); a.add_argument("--out", type=Path, required=True)
     a = sub.add_parser("count"); a.add_argument("--out", type=Path, required=True)
     # one engine with two cells under way fills the CPU: two engines side by side took 223 s for two files against
@@ -806,6 +860,8 @@ def main(argv=None) -> None:
         plan(o.grid, o.out, o.file_nodes, o.cell_nodes, o.cities.split(",") if o.cities else None)
     elif o.cmd == "cut":
         cut(o.pbf, o.out, o.keep_regions)
+    elif o.cmd == "storecut":
+        storecut(o.store, o.out, o.only.split(",") if o.only else None, o.at)
     elif o.cmd == "notes":
         notes(o.out)
     elif o.cmd == "count":
