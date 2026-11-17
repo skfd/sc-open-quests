@@ -400,17 +400,42 @@ def merge_in_cell(rs: np.ndarray, cell_rect, ring: float = RING) -> np.ndarray:
     return d[np.lexsort((d[:, 1], d[:, 0]))]
 
 
-def rectangles(codes: np.ndarray, cells: list[dict], ring: float = RING, pad: int = PAD, log=None) -> dict[int, np.ndarray]:
-    """cell index -> its rectangles (s, w, n, e), merged"""
+def _merge_job(args):
+    k, rs, rect, ring = args
+    t = time.time()
+    return k, merge_in_cell(rs, rect, ring), time.time() - t
+
+
+def rectangles(codes: np.ndarray, cells: list[dict], ring: float = RING, pad: int = PAD, log=None,
+               workers: int | None = None) -> dict[int, np.ndarray]:
+    """cell index -> its rectangles (s, w, n, e), merged; the cells merged in parallel processes (merge_rects is plain
+    Python: one process took 718 s for a planet day's 1.85M runs), the largest first"""
     t = time.time()
     runs = runs_of(codes, pad)
     t1 = time.time()
     split = split_by_cells(runs, cells)
     t2 = time.time()
-    out = {k: merge_in_cell(rs, cells[k]["rect"], ring) for k, rs in sorted(split.items())}
+    jobs = sorted(((k, rs, cells[k]["rect"], ring) for k, rs in split.items()), key=lambda j: -len(j[1]))
+    workers = workers if workers is not None else max(1, min(len(jobs), (os.cpu_count() or 2) - 2))
+    out, slow = {}, (None, 0.0, 0)
+    if workers > 1 and len(runs) > 20_000:
+        from concurrent.futures import ProcessPoolExecutor
+        with ProcessPoolExecutor(workers) as ex:
+            for k, r, s in ex.map(_merge_job, jobs, chunksize=1):
+                out[k] = r
+                if s > slow[1]:
+                    slow = (cells[k]["id"], s, len(split[k]))
+    else:
+        for j in jobs:
+            k, r, s = _merge_job(j)
+            out[k] = r
+            if s > slow[1]:
+                slow = (cells[k]["id"], s, len(split[k]))
+    out = dict(sorted(out.items()))
     if log:
         log(f"world tier 2 rectangles: {len(runs):,} runs ({t1 - t:.1f} s), split into {len(split)} cells ({t2 - t1:.1f} s), "
-            f"merged to {sum(len(r) for r in out.values()):,} ({time.time() - t2:.1f} s)")
+            f"merged to {sum(len(r) for r in out.values()):,} ({time.time() - t2:.1f} s, {workers} processes; slowest cell "
+            f"{slow[0]}: {slow[2]:,} runs in {slow[1]:.1f} s)")
     return out
 
 
@@ -563,6 +588,15 @@ def day(diff: Path, plan_path: Path, world: Path, nodes: Path, work: Path, base:
     log(f"old rows: {len(rows):,} of {len(keys):,} changed keys; {T['old rows']:.0f} s")
     codes, stats, secs = cover(last_node, last_way, last_rel, old_places, new_places, rows, old_refs, member_refs, cap_km2, log)
     T["cover"] = sum(secs.values())
+    np.save(work / "codes.npy", codes)  # the marked cells: `rects` redoes the stages after the cover from them
+    out = after_cover(codes, plan_path, world, work, base, places_json, T, log)
+    out = {"diff": diff.name, "changedKeys": int(len(keys)), "oldRows": int(len(rows)), **{k: int(v) for k, v in stats.items()},
+           **out, "coverSeconds": {k: round(v, 1) for k, v in secs.items()}}
+    (work / "day.json").write_text(json.dumps(out, indent=1), encoding="utf-8")
+    return out
+
+
+def after_cover(codes, plan_path: Path, world: Path, work: Path, base: Path, places_json: Path, T: dict, log=print) -> dict:
     t = time.time()
     plan = json.loads(plan_path.read_text(encoding="utf-8"))
     cells = plan_cells(plan)
@@ -575,13 +609,11 @@ def day(diff: Path, plan_path: Path, world: Path, nodes: Path, work: Path, base:
     T["engine files"] = time.time() - t
     n = sum(len(r) for r in rects.values())
     areas = np.concatenate([box_km2(r) for r in rects.values()]) if rects else np.zeros(0)
-    out = {"diff": diff.name, "changedKeys": int(len(keys)), "oldRows": int(len(rows)), **{k: int(v) for k, v in stats.items()},
-           "rectangles": n, "cellsWithRectangles": len(rects), "rectKm2": round(float(areas.sum()), 1),
-           "rectKm2Quantiles": [round(float(x), 3) for x in (np.quantile(areas, [0.5, 0.9, 0.99, 1.0]) if n else [])],
-           "files": wst, "coverSeconds": {k: round(v, 1) for k, v in secs.items()},
-           "seconds": {k: round(v, 1) for k, v in T.items()}}
-    (work / "day.json").write_text(json.dumps(out, indent=1), encoding="utf-8")
-    return out
+    np.save(work / "rects.npy", np.array([(k, *r) for k, rs in rects.items() for r in rs.tolist()], float).reshape(-1, 5))
+    return {"markedCells": int(len(codes)), "rectangles": n, "cellsWithRectangles": len(rects),
+            "rectKm2": round(float(areas.sum()), 1),
+            "rectKm2Quantiles": [round(float(x), 3) for x in (np.quantile(areas, [0.5, 0.9, 0.99, 1.0]) if n else [])],
+            "files": wst, "seconds": {k: round(v, 1) for k, v in T.items()}}
 
 
 def main():
@@ -597,9 +629,18 @@ def main():
     a.add_argument("--base", type=Path, default=Path.cwd())
     a.add_argument("--places", type=Path, default=Path(".scratch/world-places/world/places.json"))
     a.add_argument("--cap-km2", type=float, default=CAP_KM2)
+    b = sub.add_parser("rects", help="the stages after the cover again, from a `time` run's work/codes.npy")
+    b.add_argument("--plan", type=Path, required=True)
+    b.add_argument("--world", type=Path, required=True)
+    b.add_argument("--work", type=Path, required=True)
+    b.add_argument("--base", type=Path, default=Path.cwd())
+    b.add_argument("--places", type=Path, default=Path(".scratch/world-places/world/places.json"))
     o = ap.parse_args()
     o.work.mkdir(parents=True, exist_ok=True)
-    r = day(o.diff, o.plan, o.world, o.nodes, o.work, o.base.resolve(), o.places, cap_km2=o.cap_km2)
+    if o.cmd == "time":
+        r = day(o.diff, o.plan, o.world, o.nodes, o.work, o.base.resolve(), o.places, cap_km2=o.cap_km2)
+    else:
+        r = after_cover(np.load(o.work / "codes.npy"), o.plan, o.world, o.work, o.base.resolve(), o.places, {})
     print(json.dumps(r, indent=1))
 
 
