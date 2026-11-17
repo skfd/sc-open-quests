@@ -2371,6 +2371,10 @@ checked against a full count. Until then the world's published numbers can only 
     day's read, `days/<D>/t2/new.osm.pbf` in P3's worktree). Planet day 5172's cover with the store's answers
     (Europe only): 128,796 rectangles, 102,475 km2. P3's rehearsal data is in
     `.claude/worktrees/agent-a9b152efd4c2e1246/.scratch/r1/eu/` (keep it for the three traces).
+  - **Cleanup (18:10):** G's worktree (62.7 GB of rehearsal copies) removed, after first unlinking three junctions it
+    held into main's `.scratch` (`overture`, `planet`, `world-places`) so the removal could not follow them; main's
+    folders checked intact (128 world files). **Agents' worktrees can hold junctions into main's data: unlink them
+    before `git worktree remove`.** C: 216 GB free. P3's worktree (28.6 GB, no links) stays for the three traces.
 
 ## The place page: merged (2026-11-16, evening; owner: "pick from handoff ui work", then "merge it now")
 
