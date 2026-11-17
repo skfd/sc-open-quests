@@ -312,12 +312,13 @@ pub fn read(a: &Args) {
     let t_write = t.elapsed().as_secs_f64();
 
     let st = format!(
-        "{{\"by\": \"tilestore (Rust)\", \"gen\": {g}, \"tiles\": {}, \"tileBytes\": {tile_bytes}, \"relBytes\": {rel_bytes}, \"nodes\": {}, \"ways\": {}, \"relations\": {}, \"pbfBytes\": {bytes}, \"secondsTiles\": {t_tiles:.2}, \"secondsMerge\": {t_merge:.2}, \"secondsWrite\": {t_write:.2}, \"seconds\": {:.2}}}",
+        "{{\"by\": \"tilestore (Rust)\", \"gen\": {g}, \"tiles\": {}, \"tileBytes\": {tile_bytes}, \"relBytes\": {rel_bytes}, \"nodes\": {}, \"ways\": {}, \"relations\": {}, \"pbfBytes\": {bytes}, \"secondsTiles\": {t_tiles:.2}, \"secondsMerge\": {t_merge:.2}, \"secondsWrite\": {t_write:.2}, \"seconds\": {:.2}, \"peakPrivateGiB\": {:.2}}}",
         rows.len(),
         nodes.len(),
         ways.len(),
         rels.len(),
-        t0.elapsed().as_secs_f64()
+        t0.elapsed().as_secs_f64(),
+        crate::ptime::peak_private()
     );
     fs::write(format!("{}.json", a.out.display()), &st).unwrap();
     eprintln!("read: {st}");

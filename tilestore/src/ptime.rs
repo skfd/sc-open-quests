@@ -57,6 +57,14 @@ struct Ways {
     key_sum: u64,
 }
 
+/// the peak of the private bytes in GiB: the program's own memory at its highest
+pub fn peak_private() -> f64 {
+    let mut c = Counters { cb: std::mem::size_of::<Counters>() as u32, ..Default::default() };
+    // SAFETY: as in memory()
+    unsafe { K32GetProcessMemoryInfo(GetCurrentProcess(), &mut c, c.cb) };
+    c.peak_pagefile as f64 / (1u64 << 30) as f64
+}
+
 pub fn run(pbf: &Path, at: Option<i64>, nodes: &Path, z: u32, sparse: bool, keep: bool) {
     let t0 = Instant::now();
     let mut phases: Vec<String> = Vec::new();
