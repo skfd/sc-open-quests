@@ -2235,6 +2235,14 @@ checked against a full count. Until then the world's published numbers can only 
     hidden flags and note quests); D `tilestore ways` (ways' refs and places from a generation, for old geometry and
     relation members). Each reports back; merging is mine. Their worktrees are under `.claude/worktrees/` if a session
     ends first.
+  - **C merged (22:40):** `tools/stream/notes_day.py` (`hidden_step`: hidden flags carried between clocks, only rows at
+    notes that opened or closed plus the day's recounts; `note_quests`: the engine counts the note quests on an empty
+    PBF with the cells and parts, so places stay the engine's), `notes_check.py`, tests. Bremen and Berlin: flags and
+    note quests per city and part equal the engine's second run. **Engine change with it, `StateDump.e7`:** a dumped
+    position keeps SC's 6-decimal truncation (plain rounding got 11 Bremen rows' hidden flag wrong). Dumps from engines
+    with and without it differ by 1e-7 on such rows, so **the seed must come from an engine with it. Not installed yet:
+    `installDist` after tonight's store check and file-size reads are done** (they compare two runs of the installed
+    engine, so either is fine for them).
 
 ## The place page: merged (2026-11-16, evening; owner: "pick from handoff ui work", then "merge it now")
 
