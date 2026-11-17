@@ -2197,7 +2197,8 @@ checked against a full count. Until then the world's published numbers can only 
      published snapshots of 11-01 (every region).
   4. The world-day loop (tier 1 on the store's node file, tier 2 from the store, area dates), each day checked as
      above; caught up from 11-02 (diff 5164; download it again if the store has pruned it), then daily.
-  5. Publish world places once 30 days are in (the R2 place-data subdomain; its DNS step is the owner's).
+  5. Publish world places once 30 days are in (bucket `sc-open-quests-data` at `sc-data.comentality.com`, Cache Rule
+     live since 11-17: every upload must carry `Cache-Control` or it is not cached).
   **When:** the catch-up counts towards the 30, so release 1 is the day steps 1-4 are built and caught up, any day
   after 11-30 (11-01 plus 30 days). The build time and a world day's cost (not measured) decide it, not a 30-day wait.
 - **Oracles pinned (21:45):** `europe-2026-11-02` to `11-16` in `~/Code/.osm-data/europe/pins.json` (25 GB), reason
