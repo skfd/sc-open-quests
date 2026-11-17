@@ -296,6 +296,26 @@ def world_notes(w: Path) -> Path:
     return out
 
 
+def counts_at(w: Path, clock: str, sets: P.PlaceSets, names: list[str], work: Path, engine: Path | None = None,
+              heap_gb: int = 8) -> Path:
+    """the counts per place and per cell at the clock (W/counts/<day>/): the state's rows through place_counts, the
+    note quests counted by the engine over the notes alone (notes_day.note_quests) added per place and per cell"""
+    nq = N.note_quests(WS.world_cities(w), world_notes(w), clock, work, parts=WS.world_parts(w), engine=engine,
+                       heap_gb=min(heap_gb, 8))
+    if NOTE_QUEST not in names:
+        names.append(NOTE_QUEST)
+    qi = names.index(NOTE_QUEST)
+    vec = lambda n: np.array([n] + [0] * (len(C.MEASURES) - 1), np.int64)  # noqa: E731
+    extra = [(sets.part(f"city:{cid}"), qi, vec(v["quests"])) for cid, v in nq["cities"].items() if v["quests"]]
+    extra += [(sets.part(pid), qi, vec(n)) for pid, n in nq["parts"].items() if n]
+    sets.save()
+    paths = [w / "files" / f["id"] / WS.WORLD_BIN for f in files_of(w)]
+    codes_c, sums = C.count_files(paths, P.WREC, S.minute(clock), sets.sets, len(names), extra=extra)
+    cdir = w / "counts" / clock[:10]
+    C.write(cdir, codes_c, sums, len(names), clock, names, sets.parts)
+    return cdir
+
+
 def finish(day: Day) -> dict:
     """everything after the store holds D (both generations readable: run before `compact`)"""
     w, log, T = day.w, day.log, day.T
@@ -399,30 +419,10 @@ def finish(day: Day) -> dict:
         nst["rowsTouched"] += s["rowsTouched"]
         if (r["flags"] != before).any():
             WS.write_rows(p, r)
-    nq = N.note_quests(WS.world_cities(w), clip, day.today, day.work / "notes", parts=WS.world_parts(w),
-                       engine=day.engine, heap_gb=min(day.heap_gb, 8))
     T["notes"] = time.time() - t
-
-    # the counts per place at D, the note quests added per place and per cell
     t = time.time()
-    qi = names.index(NOTE_QUEST) if NOTE_QUEST in names else None
-    if qi is None:
-        names.append(NOTE_QUEST)
-        qi = len(names) - 1
-    extra = []
-    vec = lambda n: np.array([n] + [0] * (len(C.MEASURES) - 1), np.int64)  # noqa: E731
-    for cid, v in nq["cities"].items():
-        if v["quests"]:
-            extra.append((sets.part(f"city:{cid}"), qi, vec(v["quests"])))
-    for pid, n in nq["parts"].items():
-        if n:
-            extra.append((sets.part(pid), qi, vec(n)))
-    sets.save()
-    paths = [w / "files" / f["id"] / WS.WORLD_BIN for f in files]
-    codes_c, sums = C.count_files(paths, P.WREC, S.minute(day.today), sets.sets, len(names), extra=extra)
-    cdir = w / "counts" / day.today[:10]
-    C.write(cdir, codes_c, sums, len(names), day.today, names, sets.parts)
-    T["counts"] = time.time() - t
+    counts_at(w, day.today, sets, names, day.work / "notes", day.engine, day.heap_gb)
+    T["counts and note quests"] = time.time() - t
 
     locs.save()  # a region's overlay moves to D (the planet's node file is read only: the store moves it)
     meta["clock"] = day.today

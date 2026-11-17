@@ -73,6 +73,11 @@ def plan_into(d: Path):
         for p in (src / "parts").glob("*.json"):
             if not (dst / "parts" / p.name).exists():
                 os.link(p, dst / "parts" / p.name)
+        # the seed's notes clips: the same dump on both sides (a newer one may arrive between days)
+        if (src / "notes.jsonl").exists() and not (dst / "notes.jsonl").exists():
+            os.link(src / "notes.jsonl", dst / "notes.jsonl")
+    if (W / "notes.done").exists() and not (d / "notes.done").exists():
+        (d / "notes.done").write_text("the seed's clips, linked\n")
 
 
 def count_world(d: Path, store: Path, day: str):
@@ -109,6 +114,18 @@ def setup():
     if not (W / "world.json").exists():
         import world_state as WS
         WS.seed_w(W)
+    # day 0: the seed counted through the stream's own counting (rows, place sets, note quests by the engine) and
+    # checked against the seed count's own snapshots: what every later check stands on
+    d0 = OUT / "days" / SEED_DAY
+    if not (d0 / "check.json").exists():
+        import placesets as P
+        import world_day as WD
+        meta = json.loads((W / "world.json").read_text(encoding="utf-8"))
+        names = meta["quests"]
+        WD.counts_at(W, meta["clock"], P.PlaceSets(W / "place-sets.json"), names, d0 / "notes", ENGINE, HEAP_GB)
+        meta["quests"] = names
+        (W / "world.json").write_text(json.dumps(meta, indent=1), encoding="utf-8")
+        WD.check(W, W, d0, log=log)
     log("setup done")
 
 
