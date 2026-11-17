@@ -121,19 +121,52 @@ pub fn dead_ranges(live: &mut [(i64, i64)], len: i64) -> Vec<(i64, i64)> {
     out
 }
 
-/// a hash of every live range, in the order given
+/// a hash of every live range (sorted by offset), in that order. Read in blocks of up to 8 MiB with plain
+/// positional reads, NOT through a memory mapping: the pages of a file read through a mapping stay in memory
+/// afterwards, and while they do every FSCTL_SET_ZERO_DATA and every flush of the file costs time in proportion to
+/// them (the planet's first punch mapped 217 GiB of live tiles here and then took 0.47 s a call, 5.45 h; a 30 GiB
+/// test file touched through a mapping went from 0.04 ms to 21 ms a call; reading other data until those pages
+/// left memory brought both back to 0.04 ms. DESIGN.md, "Why the punch was slow").
 fn hashes(path: &Path, live: &[(i64, i64)]) -> Vec<u64> {
     use rayon::prelude::*;
+    use std::os::windows::fs::FileExt;
+    const BLOCK: i64 = 8 << 20;
     let f = File::open(path).unwrap();
-    // SAFETY: read only, and nothing writes the file while it is mapped here
-    let m = unsafe { memmap2::Mmap::map(&f) }.expect("map the pack");
-    live.par_iter()
-        .map(|&(o, n)| {
-            let mut h = std::collections::hash_map::DefaultHasher::new();
-            h.write(&m[o as usize..(o + n) as usize]);
-            h.finish()
+    // (block start, block end, first range, end range)
+    let mut blocks: Vec<(i64, i64, usize, usize)> = Vec::new();
+    let mut i = 0;
+    while i < live.len() {
+        let start = live[i].0;
+        let mut end = live[i].0 + live[i].1;
+        let mut j = i + 1;
+        while j < live.len() && live[j].0 + live[j].1 - start <= BLOCK {
+            end = end.max(live[j].0 + live[j].1);
+            j += 1;
+        }
+        blocks.push((start, end, i, j));
+        i = j;
+    }
+    let parts: Vec<Vec<u64>> = blocks
+        .par_iter()
+        .map(|&(start, end, a, b)| {
+            let mut buf = vec![0u8; (end - start) as usize];
+            let mut got = 0usize;
+            while got < buf.len() {
+                let n = f.seek_read(&mut buf[got..], start as u64 + got as u64).expect("read the pack");
+                assert!(n > 0, "the pack ends before {}", start as u64 + got as u64);
+                got += n;
+            }
+            live[a..b]
+                .iter()
+                .map(|&(o, n)| {
+                    let mut h = std::collections::hash_map::DefaultHasher::new();
+                    h.write(&buf[(o - start) as usize..(o - start + n) as usize]);
+                    h.finish()
+                })
+                .collect()
         })
-        .collect()
+        .collect();
+    parts.into_iter().flatten().collect()
 }
 
 fn save(path: &Path, meta: &serde_json::Value) {
@@ -169,8 +202,7 @@ pub fn punch(dir: &Path, dry: bool) {
         ranges.len(),
         gib(dead)
     ));
-    // only what still holds space: a range punched before is not punched again (each call costs about 0.5 s on a
-    // 233 GiB pack; the planet's first punch of 41,404 ranges took 5.45 h)
+    // only what still holds space: a range punched before is not punched again
     ranges.sort_unstable();
     let held = allocated(&File::open(&pack).unwrap(), len);
     let ranges = intersect(&ranges, &held);

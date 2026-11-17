@@ -2111,3 +2111,7 @@ the file.
   per-call cost (measure, then decide daily or weekly); days 5168-5176 are kept in `.scratch/planet/diffs-keep`
   (their Europe clips age out of the store 14 days after their day, so 11-06 goes about 11-20); the 12-07 plan (cut
   fresh or keep this store going) is the owner's call, with disk.
+**Owner's answers (13:10): all four as recommended.** Next session: the unified place page first
+(planet store waits); the chart opens on 90 days, notes at the import steps; density tiles replaced;
+zero rows folded into "N done here". Details at the end of the review file. Also fix the phone table's
+clipped questions and `app.js:1506`'s stale "no history yet" line.

@@ -81,3 +81,14 @@ weakest one we have. Products usually stumble on that order: infrastructure read
 - Chart default range: 90 days, 1 year, or keep all since 2017?
 - Remove the density tiles from the city page (they stay in Compare)?
 - Zero-open quest types: folded into "N done here", or hidden?
+
+## The owner's answers (2026-11-16, 13:10)
+
+All four as recommended:
+- **The place page comes first.** The next session builds one page for every level, city down to
+  neighbourhood, on the 147 cities and 4,214 parts, reading the part series. The planet store waits.
+- **The chart opens on 90 days**, with an "All since 2017" switch that the link remembers, and notes at
+  the import steps.
+- **The density tiles are replaced** on the city page by the 4-week change (map vs resurvey) and the
+  top open quest type. Density stays in Compare.
+- **Zero rows fold** into one expandable line, "N quest types done here".
