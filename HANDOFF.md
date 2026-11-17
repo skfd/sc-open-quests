@@ -2527,3 +2527,11 @@ wording and tab structure as a first draft open to change, not as decided design
     than linearly. libosmium allocates per block in its pool threads, so it fits, but is still not shown.
   - libosmium's changelog 2.22 to 2.23.1 names no speed change, so a version regression is unlikely but not ruled
     out (that is what native 1.18.0 would test).
+
+## Blog draft: how StreetComplete quests age (owner, 2026-11-17, late evening)
+
+- Owner: "write an article ... it will go into our future blog". Draft at `blog/how-streetcomplete-quests-age.md`
+  (front matter `status: draft`). It covers which quests age, the intervals (from SC's quest filters, counted in
+  the `StreetComplete-fast` checkout; the Temp `sc-v64.0` checkout has no sources left), how "older" is decided
+  (`ElementFilter.kt` `CompareTagAge`), what an answer writes (`ResurveyUtils.kt` `updateWithCheckDate`), and why
+  the site splits resurvey from mapping. No blog exists on the site yet; nothing links to it.
