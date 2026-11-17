@@ -2160,3 +2160,9 @@ clipped questions and `app.js:1506`'s stale "no history yet" line.
   counts from extracts, the planet store from daily diffs, the monthly job is disabled. Consequences: a recount from
   history (`backfill_history.py`, the clips' months, `recut`) needs a fresh history first; name-ru-repair downloads
   its own when it becomes operational.
+
+## The place page: on branch `place-page` (worktree `../sc-open-quests-place`), not merged (2026-11-16, evening)
+
+The unified place page, the 90-day chart, the new tiles, the "done here" fold and the phone table are built and
+checked there; that branch's HANDOFF.md and DESIGN.md ("The place page") hold the details and the merge steps.
+Waiting on the owner's yes to merge (merging is publishing).
