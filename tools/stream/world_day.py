@@ -300,8 +300,15 @@ def counts_at(w: Path, clock: str, sets: P.PlaceSets, names: list[str], work: Pa
               heap_gb: int = 8) -> Path:
     """the counts per place and per cell at the clock (W/counts/<day>/): the state's rows through place_counts, the
     note quests counted by the engine over the notes alone (notes_day.note_quests) added per place and per cell"""
-    nq = N.note_quests(WS.world_cities(w), world_notes(w), clock, work, parts=WS.world_parts(w), engine=engine,
-                       heap_gb=min(heap_gb, 8))
+    # one engine run per plan file, its cells and its parts (all of a world's parts in one run do not fit: Europe
+    # alone has 502,597 part entries); each note is in one cell, so the files' counts add up
+    nq = {"cities": {}, "parts": Counter()}
+    for f in files_of(w):
+        d = w / "files" / f["id"]
+        r = N.note_quests(d / "cities.json", d / "notes.jsonl", clock, work / f["id"], parts=d / "parts", engine=engine,
+                          heap_gb=heap_gb)
+        nq["cities"].update(r["cities"])
+        nq["parts"].update(r["parts"])
     if NOTE_QUEST not in names:
         names.append(NOTE_QUEST)
     qi = names.index(NOTE_QUEST)
@@ -365,8 +372,11 @@ def finish(day: Day) -> dict:
     t1w = day.work / "t1"
     t1w.mkdir(parents=True, exist_ok=True)
     pst = S.write_small_pbf(t1w / "touched.osm.pbf", day.today, day.last_node, day.last_way, locs, unplaced)
-    new1 = engine_rows(day, t1w / "touched.osm.pbf", t1w, day.today, WS.world_cities(w), WS.world_parts(w), False,
-                       sets, names)
+    # one engine run per plan file over the same small PBF (its cells and parts; elements outside them are skipped)
+    new1 = np.concatenate([engine_rows(day, t1w / "touched.osm.pbf", t1w / f["id"], day.today,
+                                       w / "files" / f["id"] / "cities.json", w / "files" / f["id"] / "parts", False,
+                                       sets, names) for f in files]) if files else np.zeros(0, P.WREC)
+    new1 = np.unique(new1)
     tier1 = WS.tier1_mask(names)
     new1 = new1[tier1[new1["quest"]]]
     touched = np.unique(np.concatenate([np.fromiter(day.last_node, np.int64, len(day.last_node)) * 4,
@@ -459,19 +469,6 @@ def run(w: Path, store: Path, diff: Path, today: str, nodes: Path, work: Path, b
 
 # --- the check against a whole count ---------------------------------------------------------------------------
 
-def _canon(rows: np.ndarray, sets: P.PlaceSets) -> dict:
-    """(key, quest) -> sorted tuple of (lat, lon, flags, kind, due, place ids)"""
-    ids = {}
-    out = defaultdict(list)
-    for r in rows.tolist():
-        key, lat, lon, q, fl, kind, due, place = r
-        pl = ids.get(place)
-        if pl is None:
-            pl = ids[place] = tuple(sorted(sets.ids_of(place)))
-        out[(key, q)].append((lat, lon, fl, kind, due, pl))
-    return {k: tuple(sorted(v)) for k, v in out.items()}
-
-
 def check(w: Path, oracle: Path, work: Path, log=_log) -> dict:
     """the state at its clock against the oracle's whole count of the same plan at the same instant (its files'
     state.bin and .places, and their snapshots): every row, records and place sets, split by cause; and every
@@ -493,7 +490,49 @@ def check(w: Path, oracle: Path, work: Path, log=_log) -> dict:
     orows = np.concatenate(orows)
     if clock != meta["clock"]:
         raise SystemExit(f"oracle at {clock}, state at {meta['clock']}")
-    a, b = _canon(np.unique(state), sets), _canon(np.unique(orows), osets)
+    # the two sides with place sets as canonical ids (each side numbers its own sets), deduplicated; rows that appear
+    # on one side only found by sorting both together as bytes; only their (element, quest) groups go to Python
+    canon_ids: dict[tuple, int] = {}
+
+    def lut(sets_):
+        return np.array([canon_ids.setdefault(tuple(sorted(sets_.ids_of(i))), len(canon_ids)) for i in range(len(sets_.sets))],
+                        np.int32)
+
+    CR = np.dtype([("key", "<i8"), ("quest", "<i4"), ("lat", "<i4"), ("lon", "<i4"), ("flags", "<i4"), ("kind", "<i4"),
+                   ("due", "<i4"), ("pl", "<i4")])
+
+    def canon(r, lt):
+        o = np.zeros(len(r), CR)
+        for n in ("key", "quest", "lat", "lon", "flags", "kind", "due"):
+            o[n] = r[n]
+        o["pl"] = lt[r["place"]]
+        return np.unique(o)
+
+    A, B = canon(state, lut(sets)), canon(orows, lut(osets))
+    del state
+    allr = np.concatenate([A, B])
+    v = allr.view(f"V{CR.itemsize}")
+    order = np.argsort(v, kind="stable")
+    vs = v[order]
+    eq = vs[1:] == vs[:-1]
+    paired = np.zeros(len(vs), bool)
+    paired[:-1] |= eq
+    paired[1:] |= eq
+    single = order[~paired]
+    gcode = lambda r: r["key"] * 1024 + r["quest"].astype(np.int64)  # noqa: E731
+    diff_codes = np.unique(gcode(allr[single]))
+    n_groups = len(np.union1d(gcode(A), gcode(B)))
+    inv = {i: t for t, i in canon_ids.items()}
+
+    def small(R):
+        sel = R[np.isin(gcode(R), diff_codes)]
+        out = defaultdict(list)
+        for key, q, la_, lo_, fl, kd, du, pl in sel.tolist():
+            out[(key, q)].append((la_, lo_, fl, kd, du, pl))
+        return {k: tuple(sorted(v_)) for k, v_ in out.items()}
+
+    a, b = small(A), small(B)
+    del allr, v, vs
     touched = set(np.load(w / "touched.npy").tolist()) if (w / "touched.npy").exists() else set()
     rects = np.load(w / "rects.npy") if (w / "rects.npy").exists() else np.zeros((0, 5))
     HID = 64
@@ -502,6 +541,15 @@ def check(w: Path, oracle: Path, work: Path, log=_log) -> dict:
         if not len(rects):
             return False
         return bool(((rects[:, 1] <= lat) & (lat <= rects[:, 3]) & (rects[:, 2] <= lon) & (lon <= rects[:, 4])).any())
+
+    def strip(v_):
+        return tuple((la_, lo_, fl & ~HID, kd, du, pl) for la_, lo_, fl, kd, du, pl in v_) if v_ else v_
+
+    def noplace(v_):
+        return tuple(r[:5] for r in v_) if v_ else v_
+
+    def show(v_):
+        return [r[:5] + (inv[r[5]],) for r in v_] if v_ else v_
 
     causes = Counter()
     examples = defaultdict(list)
@@ -512,8 +560,6 @@ def check(w: Path, oracle: Path, work: Path, log=_log) -> dict:
         key, q = k
         r0 = (x or y)[0]
         lat, lon = r0[0] / 1e7, r0[1] / 1e7
-        strip = lambda v: tuple((la, lo, fl & ~HID, kd, du, pl) for la, lo, fl, kd, du, pl in v) if v else v  # noqa: E731
-        noplace = lambda v: tuple(r[:5] for r in v) if v else v  # noqa: E731
         if x and y and strip(x) == strip(y):
             c = "hidden flag only"
         elif x and y and noplace(x) == noplace(y):
@@ -526,7 +572,7 @@ def check(w: Path, oracle: Path, work: Path, log=_log) -> dict:
         causes[c] += 1
         if len(examples[c]) < 8:
             examples[c].append({"key": key, "type": "nwr"[key & 3], "id": key >> 2, "quest": names[q] if q < len(names) else q,
-                                "at": [round(lat, 6), round(lon, 6)], "state": x, "whole": y})
+                                "at": [round(lat, 6), round(lon, 6)], "state": show(x), "whole": show(y)})
     # counts: per (place, quest) open and agedOnly, against the oracle's snapshots summed over its cells
     cdir = w / "counts" / meta["clock"][:10]
     cz = np.load(cdir / "counts.npz")
@@ -558,7 +604,7 @@ def check(w: Path, oracle: Path, work: Path, log=_log) -> dict:
     cells_open = {k: v for k, v in want.items() if k[0].startswith("city:")}
     tot_w = sum(cells_open.values())
     tot_g = sum(v[0] for k, v in got.items() if k[0].startswith("city:"))
-    res = {"clock": meta["clock"], "stateRows": int(len(state)), "wholeRows": int(len(orows)),
+    res = {"clock": meta["clock"], "stateRows": int(len(A)), "wholeRows": int(len(B)), "groups": n_groups,
            "groupsDifferent": int(sum(causes.values())), "causes": dict(causes.most_common()),
            "countsCompared": len(set(want) | set(got)), "countsDifferent": len(cdiff),
            "openAllCells": {"whole": tot_w, "state": tot_g}, "worstCounts": cdiff[:30], "examples": examples,
@@ -566,6 +612,6 @@ def check(w: Path, oracle: Path, work: Path, log=_log) -> dict:
     work.mkdir(parents=True, exist_ok=True)
     (work / "check.json").write_text(json.dumps(res, indent=1, default=str), encoding="utf-8")
     log(f"check {meta['clock'][:10]}: {res['groupsDifferent']:,} (element, quest) groups differ of "
-        f"{len(a.keys() | b.keys()):,}: {res['causes']}; counts {len(cdiff):,} of {res['countsCompared']:,} differ; "
+        f"{n_groups:,}: {res['causes']}; counts {len(cdiff):,} of {res['countsCompared']:,} differ; "
         f"all cells open: whole {tot_w:,}, state {tot_g:,}")
     return res
