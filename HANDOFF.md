@@ -2354,6 +2354,10 @@ checked against a full count. Until then the world's published numbers can only 
     SnapshotReproductionTest included; installed. f0's parts 34 s to 1.8 s; notes for 16 files 233 s to 86 s, tier 1
     200 s to 79 s (warm). Planet: about a minute of loading plus about 8 min of JVM starts per pass. The cache is
     2.6 GB for Europe; the planet's is estimated at 10-15 GB. **Rebuild it whenever a world's places change.**
+  - **Rehearsal day 11-14 checked (15:01):** 8 of 5,307 city counts differ; about 110 groups at the default setting
+    (the same kinds as 11-10..11-13); all cells 30,013,907 against 30,012,738, the clip's edge included. So the
+    default-setting residue grows about 20 groups a day before P3's fix. Keep G's worktree until P3 has rerun the days
+    on copies of its state.
 
 ## The place page: merged (2026-11-16, evening; owner: "pick from handoff ui work", then "merge it now")
 
