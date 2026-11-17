@@ -212,7 +212,8 @@ def main():
         want_a = sorted({x for x in w_refs[w] if any(k.startswith("addr:") for k in n_tags.get(x, {}))})
         if sorted(set(anodes[aoffs[i]:aoffs[i + 1]].tolist())) != want_a:
             bad.append(("addr nodes", w, want_a, anodes[aoffs[i]:aoffs[i + 1]].tolist()))
-        if how[i] == 1 and sorted(hrels[hoffs[i]:hoffs[i + 1]].tolist()) != sorted(holders.get(w, [])):
+        # as sets: a relation can list the same way twice
+        if how[i] == 1 and set(hrels[hoffs[i]:hoffs[i + 1]].tolist()) != set(holders.get(w, [])):
             bad.append(("holding relations", w))
     n_ways_bad = len(bad)
     # relations
