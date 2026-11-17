@@ -2168,6 +2168,30 @@ Anything published counts all quests, never an easier subset (DESIGN.md, "Don't"
 stream's tier 1 alone is never published; a world day goes on the site only with tier 2 and area dates in it and
 checked against a full count. Until then the world's published numbers can only come from full counts.
 
+## Release goals (owner, 2026-11-16, late evening)
+
+- **Release 1: daily world updates, with 30 days of them published** (the widget's window and the place page's
+  "Last 4 weeks" tile are 28 days). The place chart keeps opening on 90 days (`RECENT_DAYS`); for world places it
+  starts at the first world day until 90 have built up. Every published day counts every quest (rule above).
+- **Release 2: a monthly backfill for the world**, built and running (monthly points from 2017-01, as the cities have).
+- **Asked: backfill the dailies to 90?** Possible, not recommended (answered in chat): it needs a seed 90 days back,
+  so a new planet history download (hours, about 170 GB), the store cut again at that date (it replaces today's,
+  both don't fit), a full world count with state, and each day streamed forward. About a week of machine. Release
+  2's monthly points fill the chart's 90-day window anyway, coarsely, and real days fill it by about two months
+  after the first. Owner's answer pending.
+- **What this means for the order of work (Claude, same evening):**
+  - The 11-08 world seed has no area quests' dates, so under the rule it cannot start the published series. A new
+    seed is needed: the whole world read from the planet store at its day, counted with `--state` and area dates,
+    checked against that day's published city counts. No history download needed.
+  - The world-day loop needs the map data at D and D-1, and the store holds only its current day, so the store
+    must not run ahead of the loop: from the seed day, hold the store (disable `kk-SCOpenQuests-planetstore`) until
+    the loop is built, then move store and loop forward together; the diffs are kept. The 30 days are counted from
+    the seed day, not from the day the loop is finished.
+  - So: (1) the world read from the store and the dated seed; (2) the world-day loop (tier 1 on the store's node
+    file, tier 2 from the store, area dates), each day checked against the Europe clip and the published cities;
+    (3) catch up and run daily; (4) publish world places at 30 days (the R2 place-data subdomain, its DNS step the
+    owner's).
+
 ## The place page: merged (2026-11-16, evening; owner: "pick from handoff ui work", then "merge it now")
 
 **Owner, 11-16 late evening: accepted, but the design is preliminary and not reviewed by the owner.** The direction
