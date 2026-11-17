@@ -2123,3 +2123,24 @@ clipped questions and `app.js:1506`'s stale "no history yet" line.
   pack-0000 is back to 0.04 ms calls (its mapped pages were pushed out by reading other data). Not yet shown at
   planet size: the next planet punch. Test files deleted; the scripts stay in `.scratch/punch-cost/`. **Rule: no
   reader of packs may use a memory mapping.**
+
+## The place page: built on branch `place-page`, not merged (2026-11-16, evening; owner: "pick from handoff ui work")
+
+- **Built in worktree `../sc-open-quests-place`, branch `place-page`, not merged: merging is publishing.** DESIGN.md,
+  "The place page". One page for a counted city and each of its parts, reading the part series; the chart opens on
+  90 days ("All since 2017" in the link), steps marked (Toronto's 2026 import named), density tiles replaced by the
+  4-week change (mapping vs resurvey) and the most-open quest type, zero rows folded into "N quest types done here",
+  the phone table fixed, `app.js:1506`'s stale line gone with the old part cards. Tabs: Places, Compare cities, Map.
+  Widget links (`?place=&in=`, `?city=`, `&pin=`) all land on it. Checks: `.scratch/place-page/drive.py`, `clicks.py`
+  (serve the worktree's `docs/` on 8767), unit tests 138 OK.
+- **Data:** `run.py history` now writes `place`/`in` on each city in `cities.json` (146 of 147; London, GB has no row).
+  A full rebuild into `C:/tmp/pp` changed only `cities.json`. The worktree's `docs/data/cities.json` holds that rebuild
+  for local testing and is **not committed**: the first daily run after the merge writes it. Until then the live
+  page shows "Ontario, Canada" as text instead of the linked chain; nothing breaks.
+- **To merge:** in main, `git merge place-page` (fast-forward unless main moved), then
+  `git worktree remove ../sc-open-quests-place` (after `git -C ../sc-open-quests-place checkout docs/data/cities.json`)
+  and `git branch -d place-page`. The next scheduled run publishes.
+- **Left from the review, not done:** sort ticked quests first in the table (Toronto's opens on two unticked rows
+  bigger than the total), the class name moved off each row, the shorter phone header, relative dates elsewhere.
+  Compare's table scrolls sideways on a phone (also on main). The 90-day chart starts its y axis at 0, so a
+  city's month barely moves the line; a design choice to revisit if the owner wants the change visible.
