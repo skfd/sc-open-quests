@@ -532,11 +532,21 @@ def run(w: Path, store: Path, diff: Path, today: str, nodes: Path, work: Path, b
 
 # --- the check against a whole count ---------------------------------------------------------------------------
 
-def check(w: Path, oracle: Path, work: Path, log=_log) -> dict:
+def check(w: Path, oracle: Path, work: Path, log=_log, polygon: Path | None = None) -> dict:
     """the state at its clock against the oracle's whole count of the same plan at the same instant (its files'
     state.bin and .places, and their snapshots): every row, records and place sets, split by cause; and every
     count per place and per cell, open and agedOnly, note quests included"""
     t = time.time()
+    outside = None
+    if polygon is not None:  # a rehearsal on a clip: rows outside its polygon are the clip's edge, not the stream
+        import shapely
+        from shapely.geometry import shape
+        gj = json.loads(Path(polygon).read_text(encoding="utf-8"))
+        geom = shapely.union_all([shape(f["geometry"]) for f in gj["features"]]) if "features" in gj else shape(gj)
+        shapely.prepare(geom)
+
+        def outside(lat, lon):
+            return not shapely.contains_xy(geom, lon, lat)
     meta = json.loads((w / WS.WORLD_META).read_text(encoding="utf-8"))
     names = meta["quests"]
     sets = P.PlaceSets(w / "place-sets.json")
@@ -587,12 +597,32 @@ def check(w: Path, oracle: Path, work: Path, log=_log) -> dict:
     n_groups = len(np.union1d(gcode(A), gcode(B)))
     inv = {i: t for t, i in canon_ids.items()}
 
+    clock_min = S.minute(meta["clock"])
+    SETTINGS = (1, 4, 16)  # M_NOW, M_05, M_2; each one's aged bit is the next one up
+
+    def at_clock(v_):
+        """a group as it counts at the clock: a date that has come is an open, aged match at its setting (no
+        setting bit is the default), merged into the group's match row; dates still to come kept as they are.
+        The engine at D writes such a quest as a match, the stream keeps the date it was given: the same count."""
+        match = {}
+        later = []
+        for la_, lo_, fl, kd, du, pl in v_:
+            if kd == 1 and du <= clock_min:
+                st_ = (fl & 21) or 1
+                kd, fl = 0, (fl & 64) | st_ | (st_ << 1)
+            if kd == 0:
+                k_ = (la_, lo_, pl)
+                match[k_] = match.get(k_, 0) | fl
+            else:
+                later.append((la_, lo_, fl, kd, du, pl))
+        return tuple(sorted([(la_, lo_, fl, 0, 0, pl) for (la_, lo_, pl), fl in match.items()] + later))
+
     def small(R):
         sel = R[np.isin(gcode(R), diff_codes)]
         out = defaultdict(list)
         for key, q, la_, lo_, fl, kd, du, pl in sel.tolist():
             out[(key, q)].append((la_, lo_, fl, kd, du, pl))
-        return {k: tuple(sorted(v_)) for k, v_ in out.items()}
+        return {k: at_clock(v_) for k, v_ in out.items()}
 
     a, b = small(A), small(B)
     del allr, v, vs
@@ -623,15 +653,22 @@ def check(w: Path, oracle: Path, work: Path, log=_log) -> dict:
         key, q = k
         r0 = (x or y)[0]
         lat, lon = r0[0] / 1e7, r0[1] / 1e7
-        if x and y and strip(x) == strip(y):
+        def default(v_):  # what the site counts: the default setting's open match (and its aged bit), not hidden
+            return tuple(sorted((r[0], r[1], r[2] & 3, r[5]) for r in v_ if r[3] == 0 and r[2] & 1 and not r[2] & 64)) if v_ else ()
+
+        if x == y:
+            continue  # equal once both are at the clock: a date the stream kept, the same count
+        if outside is not None and outside(lat, lon):
+            c = "outside the clip's polygon (a clip-edge difference, not the stream's)"
+        elif x and y and strip(x) == strip(y):
             c = "hidden flag only"
         elif x and y and noplace(x) == noplace(y):
             c = "place set only"
-        elif x and y and {r[:2] for r in x} == {r[:2] for r in y} and {r[3] for r in x} != {r[3] for r in y}:
-            c = "a date (match vs due)"
         else:
             c = ("only in state" if y is None else "only in whole count" if x is None else "different") + \
                 (", touched key" if key in touched else "") + (", in a rectangle" if in_rect(lat, lon) else "")
+            if default(x) == default(y):
+                c += " (not at the default setting)"
         causes[c] += 1
         if len(examples[c]) < 8:
             examples[c].append({"key": key, "type": "nwr"[key & 3], "id": key >> 2, "quest": names[q] if q < len(names) else q,
@@ -664,17 +701,21 @@ def check(w: Path, oracle: Path, work: Path, log=_log) -> dict:
         if g[0] != want.get(k, 0) or g[1] != want_aged.get(k, 0):
             cdiff.append((k[0], k[1], want.get(k, 0), g[0], want_aged.get(k, 0), g[1]))
     cdiff.sort(key=lambda r: -abs(r[2] - r[3]))
+    cities_diff = [r for r in cdiff if r[0].startswith("osm-")]  # the counted cities' own outlines: inside the clip
     cells_open = {k: v for k, v in want.items() if k[0].startswith("city:")}
     tot_w = sum(cells_open.values())
     tot_g = sum(v[0] for k, v in got.items() if k[0].startswith("city:"))
     res = {"clock": meta["clock"], "stateRows": int(len(A)), "wholeRows": int(len(B)), "groups": n_groups,
            "groupsDifferent": int(sum(causes.values())), "causes": dict(causes.most_common()),
            "countsCompared": len(set(want) | set(got)), "countsDifferent": len(cdiff),
+           "cityCountsCompared": len([k for k in set(want) | set(got) if k[0].startswith("osm-")]),
+           "cityCountsDifferent": len(cities_diff), "worstCityCounts": cities_diff[:30],
            "openAllCells": {"whole": tot_w, "state": tot_g}, "worstCounts": cdiff[:30], "examples": examples,
            "seconds": round(time.time() - t, 1)}
     work.mkdir(parents=True, exist_ok=True)
     (work / "check.json").write_text(json.dumps(res, indent=1, default=str), encoding="utf-8")
     log(f"check {meta['clock'][:10]}: {res['groupsDifferent']:,} (element, quest) groups differ of "
-        f"{n_groups:,}: {res['causes']}; counts {len(cdiff):,} of {res['countsCompared']:,} differ; "
+        f"{n_groups:,}: {res['causes']}; counts {len(cdiff):,} of {res['countsCompared']:,} differ "
+        f"(the 32 cities' own: {len(cities_diff):,} of {res['cityCountsCompared']:,}); "
         f"all cells open: whole {tot_w:,}, state {tot_g:,}")
     return res

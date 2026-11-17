@@ -156,8 +156,27 @@ def days(n: int):
             WD.run(W, STORE, diff, today, nodes=NODES, before_clip=clip(prev), polygon=POLYGON,
                    work=OUT / "days" / day, heap_gb=HEAP_GB, engine=ENGINE, log=log, keep=WD.clip_keep(POLYGON))
             meta = json.loads((W / "world.json").read_text(encoding="utf-8"))
+        snapshot(day)
         o = oracle(day)
-        WD.check(W, o, OUT / "days" / day, log=log)
+        if not (OUT / "days" / day / "check.json").exists() or "cityCountsCompared" not in json.loads(
+                (OUT / "days" / day / "check.json").read_text(encoding="utf-8")):
+            WD.check(W, o, OUT / "days" / day, log=log, polygon=POLYGON)
+
+
+def snapshot(day: str):
+    """the state as the day left it, hard links (the files are only ever replaced whole, so a link keeps this day's
+    version): days/<D>/state/, for a check run again later"""
+    dst = OUT / "days" / day / "state"
+    if dst.exists():
+        return
+    for f in json.loads((W / "plan.json").read_text(encoding="utf-8"))["files"]:
+        (dst / "files" / f["id"]).mkdir(parents=True, exist_ok=True)
+        for n in ("world.bin", "world-keys.npy"):
+            os.link(W / "files" / f["id"] / n, dst / "files" / f["id"] / n)
+    for n in ("world.json", "place-sets.json", "plan.json", "touched.npy", "rects.npy"):
+        if (W / n).exists():
+            shutil.copy2(W / n, dst / n)
+    shutil.copytree(W / "counts" / day, dst / "counts" / day)
 
 
 def main():
