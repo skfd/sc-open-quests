@@ -2262,6 +2262,19 @@ checked against a full count. Until then the world's published numbers can only 
     **Order it forces on the world day:** a generation's way pairs go at the next `update --prune-pairs`, so the old
     geometry (generation D-1) is looked up **before** the day's update; the new member ways of changed relations
     after it. The tile reads of D-1 need only its tile index, which lasts until `compact`.
+  - **A merged (23:30):** `tools/stream/world_tier2.py` (the cover in one 50 m grid, vectorised; rectangles split at
+    cells and merged per cell in parallel; the engine's cities, boundary and parts files; read-only `NodeFile`;
+    `old_rows` from the seed files) and `tests/test_world_tier2.py` (13; the Europe day test is opt-in,
+    `WORLD_TIER2_EUROPE=1`, about 11 min). On diff 5175 for europe-west with boxes uncapped, all 103,785 of tier 2's own
+    cells lie inside its rectangles. **Planet day 5172:** 3.93M nodes, 690k ways, 37k relations changed; 10.0M cells
+    marked; **52,128 rectangles, 217,299 km2 per date** (median 0.19 km2, 99th percentile 50 km2); about 12 min for the
+    cover and the files. Outputs in `.scratch/world-tier2/5172/`.
+    **The open problem for step 3: big closed ways and multipolygons.** Tier 2 marks a changed closed way's or
+    multipolygon's whole box; on a planet day the largest box was 2.7M km2, and a 25 km2 cap (outline only above it)
+    loses 69% of tier 2's cells on the Europe day. Proposed rule (Claude): read from the engine's area quests which
+    polygons each one consults as a container (buildings for house numbers, malls for levels, and so on); a changed
+    big polygon that no area quest reads as a container needs only its outline. That is exact by construction, not a
+    cap. Not built; the next thing to build in step 3, with the relations' member ways through `tilestore ways`.
 
 ## The place page: merged (2026-11-16, evening; owner: "pick from handoff ui work", then "merge it now")
 
