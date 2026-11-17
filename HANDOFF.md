@@ -2205,6 +2205,23 @@ checked against a full count. Until then the world's published numbers can only 
   "release 1". **Each new Europe clip needs pinning too until the loop has checked its day** (a clip goes 14 days
   after its date); unpin each day once it is streamed and checked. The planet diffs from 5165 are hard-linked in
   `.scratch/planet/diffs-keep` by the store run.
+- **Building, 2026-11-16 from 22:00 (owner: "lets push towards first release"); the plan is DESIGN.md, "Release 1:
+  the world day, designed".**
+  - **The store's hold:** `tools/stream/store_lock.py` (a reader writes `.scratch/planet-cut/HOLD`, then waits while
+    `RUNNING` exists or the log shows a run going); `planet_store_day.py` takes no day while HOLD exists ("held: ..."
+    in `logs/planet-store.log`, not a failure) and keeps RUNNING while it works. **A HOLD left by a dead reader stops
+    the store quietly: its text says who and when; remove it by hand.**
+  - Built: `world_cells.py storecut` (the plan's files read from the store into `cut/`), `tools/stream/storecheck_cities.py`,
+    the reader's size-bounded blocks and its peak memory in the stats file.
+  - **Running hidden, both waiting for tonight's catch-up to end (about 23:30):** `.scratch/storecheck/run.sh` (log
+    `logs/storecheck-cities.log`: the 32 European cities from the store against the 11-16 clip, row for row; output
+    `.scratch/storecheck/cities/`), then `.scratch/storecheck/filesize.sh` (log `logs/storecut-filesize.log`: f0 and
+    f19 read at full size into `.scratch/planet/storecut-test/cut/`, figures in `storecut.json`). Each holds the
+    store while it reads; tomorrow's 14:45 store run waits or takes no day meanwhile. Rerun either the same way
+    (`Start-Process -WindowStyle Hidden 'C:\Program Files\Git\bin\bash.exe' -ArgumentList <script>`); a finished
+    region or file is skipped.
+  - **Keep `.scratch/planet/world-places/`** (the 11-08 count and seed state): when the re-cut store passes 11-08 it
+    is the one planet-wide like-for-like check of the store's read and of seven streamed days.
 
 ## The place page: merged (2026-11-16, evening; owner: "pick from handoff ui work", then "merge it now")
 
