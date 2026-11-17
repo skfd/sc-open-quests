@@ -2174,31 +2174,32 @@ checked against a full count. Until then the world's published numbers can only 
   "Last 4 weeks" tile are 28 days). The place chart keeps opening on 90 days (`RECENT_DAYS`); for world places it
   starts at the first world day until 90 have built up. Every published day counts every quest (rule above).
 - **Release 2: a monthly backfill for the world**, built and running (monthly points from 2017-01, as the cities have).
-- **Backfill: from November 1 (owner, 2026-11-16, 21:40).** The first published world day is the instant
-  2026-11-02T00:00Z (the end of 1 November): the instant the planet store was first cut at, and the oldest Europe
-  clip still on disk (`europe-2026-11-02`, sequence 5164), so day one has its check. Every later day is checked
-  against its Europe clip and the published city snapshots. 90 days back was not taken (no check for most of it).
+- **Backfill: from November 1 (owner, 2026-11-16, 21:40).** The first published world day is **2026-11-01**,
+  the planet at 2026-11-01T00:00Z (snapshots are named by the instant they count, `data_date`; europe-west's and
+  Ontario's published 11-01 snapshots are that instant). Day one is checked against every region's published 11-01
+  snapshot; from 11-02 on, each day also against its Europe clip (the oldest kept is `europe-2026-11-02`, sequence
+  5164). 90 days back was not taken (no check for most of it).
 - **Supersedes** "daily from the 11-08 seed onward" (11-14, "The world's resolution"): the 11-08 seed has no area
   quests' dates, so under the rule it cannot start the published series. The 11-08 full count itself is still a valid
   all-quests world point.
 - **The store is held, Claude's call at the owner's "you decide".** Each world day needs the map data at D-1 and D,
   and the daily run's compaction may not keep D-1 (not checked), so the store must not run ahead of the world loop.
-  And the store is at 11-08 by tonight, past the seed day, so it is **cut again at 11-02T00Z** and held there until
+  And the store is at 11-08 by tonight, past the seed day, so it is **cut again at 11-01T00Z** and held there until
   the loop is built; then store and loop go forward together, one day at a time, catching up.
 - **Plan, in order:**
   1. The world read from the store (every file's cells to the engine) and the dated seed, built against today's store,
      which keeps running daily meanwhile as a rehearsal of the daily store run.
   2. A planet history file again, through osm-extracts (hours, about 170 GB; check what `fetch planet-history` does
-     with `history-261102` missing first). Then the current store is deleted, the store cut at 11-02T00Z (about
-     1 h 42 min, about 290 GB peak), the node file built at 11-02, the history file deleted, and
+     with `history-261102` missing first). Then the current store is deleted, the store cut at 11-01T00Z (about
+     1 h 42 min, about 290 GB peak), the node file built at 11-01, the history file deleted, and
      `kk-SCOpenQuests-planetstore` disabled until step 4.
-  3. The seed: the world at 11-02 from the store, counted with `--state` and area dates, checked against the 11-02
-     Europe clip's count and the published city snapshots of 11-02.
+  3. The seed: the world at 11-01 from the store, counted with `--state` and area dates, checked against the
+     published snapshots of 11-01 (every region).
   4. The world-day loop (tier 1 on the store's node file, tier 2 from the store, area dates), each day checked as
-     above; caught up from 11-03, then daily.
+     above; caught up from 11-02 (diff 5164; download it again if the store has pruned it), then daily.
   5. Publish world places once 30 days are in (the R2 place-data subdomain; its DNS step is the owner's).
   **When:** the catch-up counts towards the 30, so release 1 is the day steps 1-4 are built and caught up, any day
-  after 12-02 (11-02 plus 30). The build time and a world day's cost (not measured) decide it, not a 30-day wait.
+  after 11-30 (11-01 plus 30 days). The build time and a world day's cost (not measured) decide it, not a 30-day wait.
 - **Oracles pinned (21:45):** `europe-2026-11-02` to `11-16` in `~/Code/.osm-data/europe/pins.json` (25 GB), reason
   "release 1". **Each new Europe clip needs pinning too until the loop has checked its day** (a clip goes 14 days
   after its date); unpin each day once it is streamed and checked. The planet diffs from 5165 are hard-linked in
