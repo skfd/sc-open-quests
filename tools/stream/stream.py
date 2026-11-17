@@ -268,7 +268,7 @@ def write_small_pbf(path: Path, stamp: str, last_node, last_way, locs: Locations
 
 def engine(pbf: Path, out: Path, today: str, cities: Path, zone: str, notes: Path | None, area_pass: bool,
            heap_gb: int = 8, quests: Path | None = None, base: Path | None = None, extra_opts: str = "",
-           parts: Path | None = None, parts_cache: Path | None = None) -> Path:
+           parts: Path | None = None, parts_cache: Path | None = None, exe: Path | None = None) -> Path:
     # the engine runs where the cities file's data is (its boundaries are relative paths; data/ is not all in git)
     pbf, out, cities = pbf.resolve(), out.resolve(), cities.resolve()
     notes = notes.resolve() if notes else None
@@ -276,7 +276,7 @@ def engine(pbf: Path, out: Path, today: str, cities: Path, zone: str, notes: Pat
     quests = (quests or sorted((base / "data" / "quests").glob("v*.json"))[-1]).resolve()
     dump = out / "state.bin"
     out.mkdir(parents=True, exist_ok=True)
-    args = [str(ENGINE), "count", "--pbf", str(pbf), "--quests", str(quests), "--cities", str(cities),
+    args = [str(exe or ENGINE), "count", "--pbf", str(pbf), "--quests", str(quests), "--cities", str(cities),
             "--out", str(out / "out"), "--today", today, "--dump-state", str(dump)]
     if notes:
         args += ["--notes", str(notes)]

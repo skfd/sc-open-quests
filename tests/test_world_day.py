@@ -72,6 +72,27 @@ class RectToCellTest(unittest.TestCase):
             out = WD.rect_to_cell(rows, sets)
             self.assertEqual(out["place"].tolist(), [want, s2, 0])
 
+    def test_rect_groups(self):
+        def city(cid, s, w, n, e):
+            return {"id": cid, "box": [s, w, n, e]}
+        with tempfile.TemporaryDirectory() as t:
+            cs = [city("f10c0-0", 50, 10, 50.01, 10.01), city("f2c3-0", 50, 10, 50.01, 10.01),
+                  city("f2c3-1", 50, 11, 50.01, 11.01), city("f2c4-0", 50, 12, 50.01, 12.01)]
+            src = Path(t) / "cities.json"
+            src.write_text(json.dumps({"cities": cs}))
+            # per plan file, in plan-file order (f2 before f10), each file's cities in their order
+            gs = WD.rect_groups(src, Path(t) / "g")
+            self.assertEqual([g for g, _ in gs], ["f2", "f10"])
+            got = [[c["id"] for c in json.loads(p.read_text())["cities"]] for _, p in gs]
+            self.assertEqual(got, [["f2c3-0", "f2c3-1", "f2c4-0"], ["f10c0-0"]])
+            # a rectangle of about 1.1 x 0.7 km padded by 300 m is about 1.7 x 1.3 km: two fit under 5 km2, not three
+            a = WD.padded_km2([50, 10, 50.01, 10.01])
+            self.assertAlmostEqual(a, (1.1132 + 0.6) * (0.7155 + 0.6), delta=0.01)
+            gs = WD.rect_groups(src, Path(t) / "h", cap_km2=5)
+            self.assertEqual([g for g, _ in gs], ["f2-0", "f2-1", "f10"])
+            got = [[c["id"] for c in json.loads(p.read_text())["cities"]] for _, p in gs]
+            self.assertEqual(got, [["f2c3-0", "f2c3-1"], ["f2c4-0"], ["f10c0-0"]])
+
 
 if __name__ == "__main__":
     unittest.main()

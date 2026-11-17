@@ -266,18 +266,91 @@ def rect_to_cell(rows: np.ndarray, sets: P.PlaceSets) -> np.ndarray:
     return rows
 
 
+def engine_dump(day: Day, pbf: Path, out: Path, clock: str, cities: Path, parts: Path, area_pass: bool,
+                extra_opts: str = "") -> Path:
+    """one engine run, its state dump's path (thread-safe: the engine is passed, not set on `stream`)"""
+    quiet(20)
+    return S.engine(pbf, out, clock, cities, "UTC", None, area_pass=area_pass, heap_gb=day.heap_gb, base=ROOT,
+                    extra_opts=extra_opts, parts=parts, parts_cache=P.parts_cache(day.w), exe=day.engine)
+
+
 def engine_rows(day: Day, pbf: Path, out: Path, clock: str, cities: Path, parts: Path, area_pass: bool,
                 sets: P.PlaceSets, names: list[str], extra_opts: str = "", rects: bool = False) -> np.ndarray:
-    quiet(20)
-    eng = day.engine
-    saved = S.ENGINE
-    if eng:
-        S.ENGINE = eng
-    try:
-        dump = S.engine(pbf, out, clock, cities, "UTC", None, area_pass=area_pass, heap_gb=day.heap_gb, base=ROOT,
-                        extra_opts=extra_opts, parts=parts, parts_cache=P.parts_cache(day.w))
-    finally:
-        S.ENGINE = saved
+    return dump_rows(engine_dump(day, pbf, out, clock, cities, parts, area_pass, extra_opts), sets, names, rects)
+
+
+# Tier 2's recount runs one engine per group of rectangles, not one for the day: on a planet day one run would hold
+# 128,544 rectangles over about 290,000 km2 of padded map data. A group is one plan file's rectangles (their cells
+# share the file's parts), cut further where its padded area passes T2_GROUP_KM2. Engines run T2_WORKERS at a time;
+# their dumps are ingested in group order, so the place-set numbering does not depend on which engine ends first.
+T2_GROUP_KM2 = float(os.environ.get("WORLD_T2_GROUP_KM2", "inf"))
+T2_WORKERS = int(os.environ.get("WORLD_T2_WORKERS", "1"))
+
+
+def padded_km2(box, ring_m: float = RING_M) -> float:
+    """a rectangle city's box (s, w, n, e) grown by the map data's ring on every side, in km2"""
+    s, w_, n, e = box
+    lat = np.radians((s + n) / 2)
+    pad = 2 * ring_m / 1000
+    return float(((n - s) * 111.32 + pad) * ((e - w_) * 111.32 * np.cos(lat) + pad))
+
+
+def rect_groups(cities: Path, out: Path, cap_km2: float = T2_GROUP_KM2, ring_m: float = RING_M) -> list[tuple[str, Path]]:
+    """the rectangle cities (ids `f<N>c<M>-<k>`) split per plan file, a file cut where its padded area passes cap_km2;
+    one cities file each under out/<group>/, in plan-file order"""
+    import re
+    by: dict[str, list] = defaultdict(list)
+    for e in json.loads(cities.read_text(encoding="utf-8"))["cities"]:
+        m = re.match(r"(f\d+)c", e["id"])
+        if not m:
+            raise SystemExit(f"{cities}: {e['id']} is not a rectangle city of a plan file")
+        by[m.group(1)].append(e)
+    groups: list[tuple[str, list]] = []
+    for f in sorted(by, key=lambda s: int(s[1:])):
+        chunks, cur, km2 = [], [], 0.0
+        for e in by[f]:  # in the file's order, cell by cell
+            a = padded_km2(e["box"], ring_m)
+            if cur and km2 + a > cap_km2:
+                chunks.append(cur)
+                cur, km2 = [], 0.0
+            cur.append(e)
+            km2 += a
+        chunks.append(cur)
+        groups += [(f if len(chunks) == 1 else f"{f}-{i}", c) for i, c in enumerate(chunks)]
+    res = []
+    for gid, cs in groups:
+        d = out / gid
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "cities.json").write_text(json.dumps({"cities": cs}), encoding="utf-8")
+        res.append((gid, d / "cities.json"))
+    return res
+
+
+def rect_rows(day: Day, cities: Path, parts: Path, gen: int, clock: str, stamp: str, which: str, out: Path,
+              sets: P.PlaceSets, names: list[str], opts: str, workers: int = T2_WORKERS,
+              cap_km2: float = T2_GROUP_KM2) -> tuple[np.ndarray, dict]:
+    """the rectangles recounted on one generation of the store at one clock, group by group: each group's map data
+    read on its own (`tilestore read`), its engines `workers` at a time, the rows ingested in group order"""
+    from concurrent.futures import ThreadPoolExecutor
+    gs = rect_groups(cities, out, cap_km2)
+    st = {"groups": len(gs), "read s": 0.0, "pbf MB": 0.0}
+    with ThreadPoolExecutor(max(1, workers)) as ex:
+        futs = []
+        for gid, cf in gs:  # reads one at a time (the reader uses the threads), engines start as their read lands
+            pbf = cf.parent / f"{which}.osm.pbf"
+            t = time.time()
+            tilestore("read", "--store", day.store, "--gen", gen, "--cities", cf, "--base", ROOT, "--ring",
+                      f"{RING_M:.0f}", "--out", pbf, "--stamp", stamp, log=day.log)
+            st["read s"] += time.time() - t
+            st["pbf MB"] += pbf.stat().st_size / 1e6
+            futs.append(ex.submit(engine_dump, day, pbf, cf.parent / which, clock, cf, parts, True, opts))
+        dumps = [f.result() for f in futs]
+    rows = [dump_rows(d, sets, names, rects=True) for d in dumps]
+    st = {k: round(v, 1) if isinstance(v, float) else v for k, v in st.items()}
+    return (np.unique(np.concatenate(rows)) if rows else np.zeros(0, P.WREC)), st
+
+
+def dump_rows(dump: Path, sets: P.PlaceSets, names: list[str], rects: bool = False) -> np.ndarray:
     side = json.loads(Path(str(dump) + ".json").read_text(encoding="utf-8"))
     n0 = len(names)
     rows = WS.renumber(P.ingest(dump, sets), side["quests"], names)
@@ -487,15 +560,14 @@ def finish(day: Day) -> dict:
     opts = f"-Dopenquests.areaPaddingM={RING_M:.0f}"
     t2s = {}
     if rinfo["rectangles"]:
-        tilestore("read", "--store", day.store, "--gen", day.gen_before, "--cities", cities, "--base", ROOT, "--ring",
-                  f"{RING_M:.0f}", "--out", t2w / "old.osm.pbf", "--stamp", day.prev, log=log)
-        tilestore("read", "--store", day.store, "--gen", g1, "--cities", cities, "--base", ROOT, "--ring", f"{RING_M:.0f}",
-                  "--out", t2w / "new.osm.pbf", "--stamp", day.today, log=log)
-        T["tier 2 reads"] = time.time() - t
-        t = time.time()
-        old = engine_rows(day, t2w / "old.osm.pbf", t2w / "old", day.prev, cities, rparts, True, sets, names, opts, rects=True)
-        new = engine_rows(day, t2w / "new.osm.pbf", t2w / "new", day.today, cities, rparts, True, sets, names, opts, rects=True)
-        T["tier 2 engine"] = time.time() - t
+        # group by group (rect_groups), D-1 first: its rows are ingested before D's, as when the day was one run
+        old, gst_old = rect_rows(day, cities, rparts, day.gen_before, day.prev, day.prev, "old", t2w / "groups",
+                                 sets, names, opts)
+        new, gst_new = rect_rows(day, cities, rparts, g1, day.today, day.today, "new", t2w / "groups", sets, names, opts)
+        T["tier 2 reads"] = gst_old["read s"] + gst_new["read s"]
+        T["tier 2 engine"] = time.time() - t - T["tier 2 reads"]
+        log(f"tier 2 groups: {gst_old['groups']}, map data {gst_old['pbf MB']:,.0f} MB at D-1 and "
+            f"{gst_new['pbf MB']:,.0f} MB at D")
         t = time.time()
         t2s = delta_w(w, old, new, files, added)
         T["tier 2 delta"] = time.time() - t
