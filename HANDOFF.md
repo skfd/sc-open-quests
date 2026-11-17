@@ -2302,8 +2302,10 @@ wording and tab structure as a first draft open to change, not as decided design
 
 ## Parked: benchmark a native Windows osmium (owner, 2026-11-17, 04:00: "lets put benchmarking it into todo")
 
-- **Whether it exists is unchecked.** DESIGN.md (the cut and Docker's bind mount) notes conda-forge may have
-  `osmium-tool` for Windows. First step: confirm, install into its own env (no change to the Docker image).
+- **It exists (checked 11-17, 04:10):** conda-forge builds `osmium-tool` for win-64, versions 1.18.0, 1.19.0 and
+  1.19.1 (the latest on every platform; the Docker image is 1.18). Not on MSYS2; osmcode's GitHub releases ship no
+  binaries. No conda, mamba, micromamba or pixi is installed here: the install is one micromamba (single exe) or
+  pixi, into its own env (no change to the Docker image). Not yet run: whether every command we use works there.
 - **Why:** every osmium time we have went through Docker's mount (reads 4.5x slower, a pass 1.85x). Its real speed
   here is unmeasured, so the Rust-vs-osmium figures (HANDOFF/DESIGN) are not like-for-like.
 - **Measure, same files, warm and cold:** `fileinfo -e` and `extract -s smart` on a Europe clip (Docker: 19-20 s /
