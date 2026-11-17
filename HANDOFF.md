@@ -2395,7 +2395,19 @@ checked against a full count. Until then the world's published numbers can only 
     153.3 GiB from the AWS mirror, about 10 MB/s at the start, so done about 23:00. **If it dies, run the same
     command again: it resumes.** After it, about 57 GiB free until the store goes. **The Monday planet job
     (kk-SCOpenQuests-planet) would try to bring this file forward with diffs and stop on "not enough disk"**:
-    harmless, but delete the file once step 2 is done (before 11-23 07:30).
+    harmless. **Keep the file until the Europe polygon at 11-01T00Z is cut from it** (the seed's row-for-row oracle;
+    no Europe clip of 11-01 exists, the oldest kept is 11-02). Not with osm-extracts `recut` (it would add an older
+    dated file to the live Europe clip): with this repo's history tools, as `backfill_history.py` cuts regions.
+  - **Step 2's script: `.scratch/planet-cut/recut1101.sh`** (log `logs/recut1101.log`; start line in its header;
+    every step skips what is done). It waits until `history-261109.osm.pbf` and its meta exist (MD5 matched), writes
+    HOLD, waits out RUNNING, disables kk-SCOpenQuests-planetstore, **deletes `.scratch/planet-cut/store` (11-17,
+    generation 15) and `.scratch/planet-day/planet.loc`**, runs `scut --at 2026-11-01T00:00:00Z --day 2026-11-01
+    --nodes` (the flags of 11-16's cut, binary pinned as `tilestore-recut1101.exe`), deletes the cut's node file,
+    then `loc build --at` the same instant. **Between the delete and "scut done" there is no store.** A stop at the
+    disk floor (exit 101) leaves `store/work` and `cut-1101.nodes`: delete both, rerun. 11-16's cut: 6,136 s, peak
+    working set 70 GiB, about 287 GiB of disk at the peak: **no engines or large writes beside it.** After it: the
+    seed at 11-01 (step 3), checked against every region's published 11-01 snapshots; the store's first day (diff
+    5164, hard-linked in `.scratch/planet/diffs-keep`) checked by the loop against `europe-2026-11-02`.
 
 ## The place page: merged (2026-11-16, evening; owner: "pick from handoff ui work", then "merge it now")
 
