@@ -2153,3 +2153,10 @@ clipped questions and `app.js:1506`'s stale "no history yet" line.
   is behind (osm-extracts keeps what a pass needs), a few GB a month. Open: what a repin recounts now (the owner asked
   for a suggestion: only back to the previous major version, or another sane rule), and whether
   `history-261102.osh.pbf` (171 GB) and `europe-history-261029.osh.pbf` (8 GB) can go.
+- **History files deleted (11-16, evening; owner: "sure go ahead"):** `~/Code/.osm-data/planet/history-261102.osh.pbf`
+  (171 GB) and `europe/europe-history-261029.osh.pbf` (8 GB). Their `.meta.json` and `planet/latest.json` stay as
+  records, so `osm_extracts.py path planet` names a missing file and anything needing the history fails loudly; a
+  new history is downloaded on demand (hours). C: 140 GB free to 306 GB. Nothing scheduled reads them: the daily run
+  counts from extracts, the planet store from daily diffs, the monthly job is disabled. Consequences: a recount from
+  history (`backfill_history.py`, the clips' months, `recut`) needs a fresh history first; name-ru-repair downloads
+  its own when it becomes operational.
