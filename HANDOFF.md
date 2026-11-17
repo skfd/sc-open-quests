@@ -2325,11 +2325,11 @@ wording and tab structure as a first draft open to change, not as decided design
   1.19.1 (the latest on every platform; the Docker image is 1.18). Not on MSYS2; osmcode's GitHub releases ship no
   binaries. No conda, mamba, micromamba or pixi is installed here: the install is one micromamba (single exe) or
   pixi, into its own env (no change to the Docker image). Not yet run: whether every command we use works there.
-- **Why:** every osmium time we have went through Docker's mount (reads 4.5x slower, a pass 1.85x). Its real speed
-  here is unmeasured, so the Rust-vs-osmium figures (HANDOFF/DESIGN) are not like-for-like.
-- **Measure, same files, warm and cold:** `fileinfo -e` and `extract -s smart` on a Europe clip (Docker: 19-20 s /
-  74 s through the mount, 4.4 s / 40 s on container disk); `time-filter` of Berlin's history at a date (Docker about
-  20 s; Rust `tilestore at` 1.4 s); output checked equal to the Docker osmium's.
+- **Why (as asked):** every osmium time we had went through Docker's mount (reads 4.5x slower, a pass 1.85x), so
+  the Rust-vs-osmium figures seemed unfair to osmium. For history work native turned out slower, not faster
+  (below); Rust `tilestore at` 1.4 s against native `time-filter` 21-24 s on Berlin.
+- **Still to measure:** `fileinfo -e` and `extract -s smart` on a Europe clip (Docker: 19-20 s / 74 s through the
+  mount, 4.4 s / 40 s on container disk), warm and cold, when the machine is quiet.
 - **Decides:** whether release 2's monthly backfill (`backfill_history.py` slices and cuts) stays on osmium, goes
   native, or moves to Rust. Not before release 1's catch-up.
 - **Switching, asked by the owner (11-16, about 22:40: "maybe we can look into switching to it now?").** The install was
@@ -2356,17 +2356,20 @@ wording and tab structure as a first draft open to change, not as decided design
     `apply-changes`, `apply-changes -H`, `sort`, `getid -r`, `cat -f osm`, `merge` (pbf + xml), `export
     geojsonseq` all equal by `osmium diff -q` or text; `check-refs -r` equal but for CRLF line ends (parse
     tolerantly if switched).
-  - **But native is 2-3x slower on any real decode** (the machine was busy, both sides alternating, so ratios
-    not absolutes): Bremen extracts 9.5/10.6 s Docker against 2.8/4.2 s native (Docker's start and mount dominate a
-    20 MB file); Berlin history extract 34 s against 97 s; `time-filter` 8-12 s against 21-24 s; `apply-changes`
-    15 s against 42 s; `apply-changes -H` 41 s against 113 s. Not the file write (to a pipe the same); fewer
-    threads slower (`OSMIUM_POOL_THREADS=1` 29-47 s, 4 and 8 the same as default); not zlib (uncompressed, native
-    reads in about 19 s, the same as compressed, while Docker reads compressed in 9 s): it is native osmium's own
-    per-object work. Likely the Windows heap (the Rust store had the same: mimalloc took Berlin's read from 25-35 s
-    to 1.4 s), not shown. `.scratch/osmium-native/threads.sh`, `zlib.sh`.
-  - **So nothing switched.** At planet size Docker's mount costs about 1.85x a pass, native's compute about 2-3x:
-    the weekly `apply-changes -H` and the clips would get slower. Native wins only where a container's start
-    outweighs the work (files of tens of MB). Next, if wanted: mimalloc injected into a copy of the native exe
-    (conda-forge `mimalloc` 3.6.1 has win-64; its install was refused by auto mode, needs the owner's yes), or
-    osmium built natively with mimalloc. Otherwise stay on Docker; remove with `pixi global uninstall
-    osmium-tool` and `winget uninstall prefix-dev.pixi`.
+  - **But native is 2-3x slower on history decodes and diff applies** (the machine was busy, both sides
+    alternating, so ratios not absolutes; Docker's times include its mount): Berlin history extract 34 s against
+    97 s; `time-filter` 8-12 s against 21-24 s; `apply-changes` 15 s against 42 s; `apply-changes -H` 41 s against
+    113 s. Native was faster on the only snapshot extracts run (Bremen, 20 MB: 9.5/10.6 s Docker against 2.8/4.2 s,
+    where Docker's start and mount may dominate). Not the file write (to a pipe the same); thread count barely
+    matters (`OSMIUM_POOL_THREADS=1` 29-47 s, 4 and 8 about the default); not zlib (uncompressed, native reads
+    Berlin's history in about 19 s, the same as compressed; Docker reads it compressed in 9 s). Only round 2 of
+    the zlib rerun is clean (a Docker run overlapped round 1). `.scratch/osmium-native/threads.sh`, `zlib.sh`.
+  - **Cause unknown.** Three things differ: version (1.18.0 / libosmium 2.22 against 1.19.1 / 2.23.1), platform
+    and compiler, allocator. The Rust store's heap problem looked different (there one thread was faster).
+    Cheapest discriminator: conda-forge's native `osmium-tool=1.18.0` in a second pixi env, same files.
+  - **Not measured:** snapshot work at size (`fileinfo -e`, `extract -s smart` on the 1.75 GB Europe clip) and
+    anything planet-sized; "the weekly planet update would get slower" is a projection from Berlin, not shown.
+    The earlier "native osmium might be 5-10 s on Berlin" (this evening's Rust-vs-osmium answer) was wrong: 21-24 s.
+  - **So nothing switched**, owner's call (asked). Test outputs deleted (5 GB); the three scripts kept. To remove
+    the install: `pixi global uninstall osmium-tool`, `winget uninstall prefix-dev.pixi`. A mimalloc build of
+    osmium (conda-forge `mimalloc` 3.6.1 has win-64) was refused by auto mode and is not the next step.
