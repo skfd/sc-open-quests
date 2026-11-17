@@ -2145,3 +2145,11 @@ clipped questions and `app.js:1506`'s stale "no history yet" line.
     the 12-07 file. The world stream (tier 1), if taken up again, could read the store's node file
     (`.scratch/planet-day/planet.loc`, the same layout and `.state` form) only if it never writes it; not designed.
   - Still on 12-07 as before: the batch engine's canary on polar and antimeridian cells, when a world count runs.
+- **The monthly planet job: disabled (11-16, evening; owner: the Europe clips' re-cut "lets avoid unless critical",
+  name-ru-repair "let that project download on demand, it is not yet operational").** `kk-SCOpenQuests-planet` is
+  `Disable-ScheduledTask`d, still registered (`Enable-ScheduledTask -TaskName kk-SCOpenQuests-planet` brings it
+  back). So nothing runs on 12-07 and **the owner does not need to free 75 GB for it**. The daily run (`run.py
+  update`) does not read the planet history. The diffs since 11-02 stay in the shared store while the history file
+  is behind (osm-extracts keeps what a pass needs), a few GB a month. Open: what a repin recounts now (the owner asked
+  for a suggestion: only back to the previous major version, or another sane rule), and whether
+  `history-261102.osh.pbf` (171 GB) and `europe-history-261029.osh.pbf` (8 GB) can go.
