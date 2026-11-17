@@ -2132,7 +2132,11 @@ clipped questions and `app.js:1506`'s stale "no history yet" line.
   `.scratch/planet/diffs-keep` (hard links). Log `logs/planet-store.log` (stdout of the task in `planet-store.out`).
   - **Task `kk-SCOpenQuests-planetstore`, daily 14:45** (from 11-17; waits for the 12:15 run, and up to 8 h for the
     monthly planet job, then leaves the day to the next run). Registered with the owner's yes.
-  - **Catch-up running since 20:16** (hidden, the same script): 11-06 to 11-16, diffs 5168-5178, about 20 min a day.
+  - **Caught up (11-16 20:16 to 11-17 00:41): eleven days, 11-06 to 11-16, each exact** (generation 14 at 11-16;
+    node file equal to each clip, 37 differing tiles a day all explained, no STOPPED). DESIGN.md, "The planet store
+    caught up". One slow punch (generation 13, 25 min, the machine busy with other sessions' work), the rest seconds.
+    **For the world loop: D-1 is readable only between the store's `update` and its `compact`** (compact and punch
+    mark older generations unreadable), so the world day goes between them. C: 258 GB free after.
 - **12-07, the plan rewritten (owner: keep the store going):**
   - **No fresh cut and no node-file rebuild.** The planet store and its node file move by daily diffs and never read
     `history-261102` again; the monthly job retiring that file does not touch them.

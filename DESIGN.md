@@ -5210,6 +5210,26 @@ maps a pack (`npy.rs` maps pair indexes, `update.rs` the node file; both flush f
 seconds, not hours**, unless something maps a pack first; any new reader of packs must not use a mapping. Not
 shown at planet size yet: the next planet punch (a day's new dead ranges) is the test.
 
+### The planet store caught up, 11-06 to 11-16: eleven days, each exact (11-16 20:16 to 11-17 00:41)
+
+`tools/stream/planet_store_day.py`, hidden, diffs 5168-5178 on generations 3 to 14, about 19-30 min a day.
+**Every day the same result:** the node file equal to that day's Europe clip (`loc check`, exit 0); the new
+generation against a cut of the clip at 2 km: 13,968 equal, 32 differ, 5 only in the planet, 0 only in the clip, all
+37 explained by the same four ways the clip's extract drops. No STOPPED. With days 1-3 that is fourteen days in a row.
+- **Update** 561-935 s a day; each day's pack 6.1-8.5 GiB.
+- **Compaction** (`--min-dead 0.25`) copies forward every two or three days: 20-52 GiB of files removed on those days
+  (the copied packs and the older generations' indexes), about 1 GiB on the others.
+- **Punch** (the planet test the section above left open): 0.9-2.3 GiB of pack-0000 zeroed a day, every live tile the
+  same, the punch phase itself 2.1-13.7 s; the hash passes (155-209 s each) are most of its cost. **One exception:
+  generation 13 (23:41-00:13), 1,482 s**, while free space fell 21 GiB from other sessions' work (a Europe re-cut,
+  planet counts, a benchmark writing a 1.9 GB log). No reader of packs uses a mapping (`grep` of `tilestore/src` and
+  `tools/`), so contention is the likely cause, not proven; generation 14 was back to 13.7 s.
+- **D-1 is not kept past compaction** (the release-1 plan's "not checked"): `compact` and `punch` both mark every
+  older generation `"readable": false` before touching a file, `compact` removes their indexes, and the punch zeroes
+  the units only D-1's tiles held. Between `update` and `compact` generation g-1 is whole (its index is still on
+  disk, its packs untouched). **So a world day reads D-1 after the store's update and before its compaction**, or the
+  store run takes the world day as a step between the two.
+
 ## The place page: one page for a city and each of its parts (2026-11-16, evening; owner: "the place page comes first")
 
 **Status: preliminary (owner, 11-16 late evening).** Accepted and merged, but the design itself has not been reviewed by
