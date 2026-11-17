@@ -178,10 +178,10 @@ fun count(opts: CountOptions): CountResult {
         }
     }
 
-    // with parts, each record's place set too (<file>.places, StateDump)
+    // each record's place set too (<file>.places, StateDump): its parts and its cities as `city:<id>`
     engine.state = opts.dumpState?.let { f ->
         f.absoluteFile.parentFile.mkdirs()
-        StateDump(f, places = engine.parts.isNotEmpty(), partIds = engine.parts.map { it.id })
+        StateDump(f, places = true, partIds = engine.parts.map { it.id } + engine.cities.map { "city:" + it.id })
     }
     t0 = System.nanoTime()
     engine.run(pbf.dataBlobs)

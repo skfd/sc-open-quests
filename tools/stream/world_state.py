@@ -146,10 +146,11 @@ def merge(kept: np.ndarray, add: np.ndarray) -> np.ndarray:
     return np.insert(kept, np.searchsorted(order_code(kept), order_code(add), "right"), add)
 
 
-def replace_in_file(p: Path, drop: np.ndarray, quest_mask: np.ndarray, add: np.ndarray) -> tuple[int, int]:
+def replace_in_file(p: Path, drop: np.ndarray, quest_mask: np.ndarray, add: np.ndarray, dtype=REC,
+                    keys_name: str = "state-keys.npy") -> tuple[int, int]:
     """drop the rows of these keys whose quest is in quest_mask, add these rows, keep the file sorted; written only
-    when it changes. Returns (rows dropped, rows added)."""
-    r = np.fromfile(p, REC)
+    when it changes. Returns (rows dropped, rows added). dtype WREC for the world day's files (world.bin)."""
+    r = np.fromfile(p, dtype)
     gone = in_keys(r["key"], drop) & quest_mask[r["quest"]]
     if not gone.any() and not len(add):
         return 0, 0
@@ -158,7 +159,7 @@ def replace_in_file(p: Path, drop: np.ndarray, quest_mask: np.ndarray, add: np.n
     r.tofile(tmp)
     os.replace(tmp, p)
     k = r["key"]
-    np.save(p.with_name("state-keys.npy"), k[np.concatenate([[True], k[1:] != k[:-1]])] if len(k) else k)  # sorted: no np.unique sort
+    np.save(p.with_name(keys_name), k[np.concatenate([[True], k[1:] != k[:-1]])] if len(k) else k)  # sorted: no np.unique sort
     return int(gone.sum()), int(len(add))
 
 
@@ -248,6 +249,141 @@ def apply(w: Path, nodes_dir: Path, diff: Path, today: str):
     np.save(tf, np.union1d(np.load(tf), touched) if tf.exists() else touched)
 
 
+# --- the world day's files: WREC rows with their places (placesets.py, place_counts.py) -------------------------
+
+WORLD_BIN, WORLD_KEYS, WORLD_META = "world.bin", "world-keys.npy", "world.json"
+
+
+def renumber(rows: np.ndarray, own: list[str], names: list[str]) -> np.ndarray:
+    """rows' quest numbers from a dump's own list (its sidecar) to `names`, extended in place"""
+    for q in own:
+        if q not in names:
+            names.append(q)
+    rows["quest"] = np.array([names.index(q) for q in own], np.uint16)[rows["quest"]]
+    return rows
+
+
+def write_rows(p: Path, rows: np.ndarray, keys_name: str = WORLD_KEYS):
+    tmp = p.with_suffix(".bin.writing")
+    rows.tofile(tmp)
+    os.replace(tmp, p)
+    k = rows["key"]
+    np.save(p.with_name(keys_name), k[np.concatenate([[True], k[1:] != k[:-1]])] if len(k) else k)
+
+
+def seed_w(w: Path, dump_name: str = "state.bin"):
+    """every plan file's count dump (`world_cells.py count --state` with parts: files/<f>/state.bin and its .places)
+    as files/<f>/world.bin, WREC rows with world place sets, sorted by (key, quest, kind); WORLD/place-sets.json; and
+    WORLD/world.json (clock = the dumps' asOf, the quests, the days applied)"""
+    import placesets as P
+    t = time.time()
+    sets = P.PlaceSets(w / "place-sets.json")
+    names: list[str] = []
+    clock = None
+    total = 0
+    for f in files_of(w):
+        d = w / "files" / f["id"]
+        dump = d / dump_name
+        side = json.loads(Path(str(dump) + ".json").read_text(encoding="utf-8"))
+        clock = clock or side["asOf"]
+        if side["asOf"] != clock:
+            sys.exit(f"{dump}: asOf {side['asOf']}, the others {clock}")
+        if not Path(str(dump) + ".places").exists():
+            sys.exit(f"{dump}: no place sets (count it with an engine that writes <state>.places)")
+        rows = renumber(P.ingest(dump, sets), side["quests"], names)
+        rows = np.sort(np.unique(rows), order=ORDER)
+        write_rows(d / WORLD_BIN, rows)
+        total += len(rows)
+        print(f"[{time.time() - t:6.0f} s] {f['id']}: {len(rows):,} rows", flush=True)
+    sets.save()
+    meta = {"clock": clock, "quests": names, "applied": [], "days": [], "record": "placesets.WREC",
+            "placeSets": "place-sets.json"}
+    (w / WORLD_META).write_text(json.dumps(meta, indent=1), encoding="utf-8")
+    print(f"world seed: {total:,} rows, {len(sets.sets):,} place sets, {len(sets.parts):,} places; {time.time() - t:.0f} s")
+
+
+def world_parts(w: Path) -> Path:
+    """every cell's parts file in one directory (hard links), as the engine's --parts reads them by city id"""
+    out = w / "work" / "parts"
+    out.mkdir(parents=True, exist_ok=True)
+    for f in files_of(w):
+        for src in (w / "files" / f["id"] / "parts").glob("*.json"):
+            if not (out / src.name).exists():
+                os.link(src, out / src.name)
+    return out
+
+
+def apply_w(w: Path, nodes_dir: Path, diff: Path, today: str, readonly: bool = False, heap_gb: int = 16):
+    """apply (tier 1) on the WREC files: the engine run on the touched elements has every cell as a city and their
+    parts, so its rows come with their place sets; the planet store's node file opened read-only with `readonly`"""
+    import placesets as P
+    import stream as S
+    meta = json.loads((w / WORLD_META).read_text(encoding="utf-8"))
+    if diff.name in meta["applied"]:
+        print(f"{diff.name} applied before")
+        return
+    t0 = time.time()
+    last_node, last_way, _, _ = S.read_diff(diff)
+    S.log(f"{diff.name}: {len(last_node):,} nodes, {len(last_way):,} ways with a version")
+    locs = S.DenseLocations(nodes_dir, readonly=readonly) if nodes_dir.is_file() else S.Locations(nodes_dir)
+    for nid, (_, _, alive, _, loc) in last_node.items():
+        locs.overlay[nid] = loc if alive else None
+    work = w / "work"
+    work.mkdir(exist_ok=True)
+    unplaced: list[int] = []
+    stats = S.write_small_pbf(work / "touched.osm.pbf", today, last_node, last_way, locs, unplaced)
+    S.log(f"small PBF: {dict(stats)}")
+    dump = S.engine(work / "touched.osm.pbf", work, today, world_cities(w), "UTC", None, area_pass=False,
+                    heap_gb=heap_gb, base=S.ROOT, parts=world_parts(w))
+    sets = P.PlaceSets(w / "place-sets.json")
+    names = meta["quests"]
+    n0 = len(names)
+    side = json.loads(Path(str(dump) + ".json").read_text(encoding="utf-8"))
+    new = renumber(P.ingest(dump, sets), side["quests"], names)
+    if len(names) != n0:
+        sys.exit("the engine's quests are not the seed's")
+    new = np.unique(new)
+    tier1 = tier1_mask(names)
+    new = new[tier1[new["quest"]]]
+    touched = np.unique(np.concatenate([np.fromiter(last_node, np.int64, len(last_node)) * 4,
+                                        np.fromiter(last_way, np.int64, len(last_way)) * 4 + 1]))
+    files = files_of(w)
+    parts, unrouted = route(new, files)
+    dropped = added = 0
+    for f, idx in zip(files, parts):
+        d_, a_ = replace_in_file(w / "files" / f["id"] / WORLD_BIN, touched, tier1, new[idx], dtype=P.WREC,
+                                 keys_name=WORLD_KEYS)
+        dropped, added = dropped + d_, added + a_
+    sets.save()
+    locs.save()
+    S.log(f"files: {dropped:,} tier-1 rows of touched elements dropped, {added:,} added; {unrouted:,} in no file's rect")
+    meta["clock"] = today
+    meta["applied"].append(diff.name)
+    meta["days"].append({"diff": diff.name, "today": today, "rowsDropped": dropped, "rowsAdded": added,
+                         "unrouted": unrouted, "waysNotPlaced": len(unplaced), "seconds": round(time.time() - t0, 1)})
+    (w / WORLD_META).write_text(json.dumps(meta, indent=1), encoding="utf-8")
+
+
+def counts_w(w: Path, clock: str | None = None, out: Path | None = None):
+    """the counts per place and per cell (`city:<id>`) at the clock (default: the state's), into out (default
+    WORLD/counts/): place_counts.write"""
+    import place_counts as C
+    import placesets as P
+    import stream as S
+    meta = json.loads((w / WORLD_META).read_text(encoding="utf-8"))
+    sets = P.PlaceSets(w / "place-sets.json")
+    clock = clock or meta["clock"]
+    names = meta["quests"]
+    t = time.time()
+    paths = [w / "files" / f["id"] / WORLD_BIN for f in files_of(w)]
+    rows = sum(p.stat().st_size for p in paths) // P.WREC.itemsize
+    codes, sums = C.count_files(paths, P.WREC, S.minute(clock), sets.sets, len(names))
+    C.write(out or w / "counts", codes, sums, len(names), clock, names, sets.parts)
+    secs = time.time() - t
+    print(f"counts at {clock}: {rows:,} rows, {len(codes):,} (place, quest) pairs; {secs:.1f} s "
+          f"({secs / max(rows, 1) * 1e6:.2f} s per million rows)")
+
+
 def check(w: Path, dump: Path) -> int:
     """tier 1 against a whole count of the same instant, every field (the note bit aside), as stream.rows_check
     compares a region's state, on the dump's elements inside the files' rects and the files' elements
@@ -335,6 +471,15 @@ def main():
     p.add_argument("--nodes", type=Path, required=True)
     p.add_argument("--diff", type=Path, required=True)
     p.add_argument("--today", required=True)
+    p.add_argument("--places", action="store_true", help="the WREC files (world.bin) and their place sets")
+    p.add_argument("--readonly-nodes", action="store_true", help="never write the node file (the planet store's)")
+    sd = sub.add_parser("seed")
+    sd.add_argument("world", type=Path)
+    sd.add_argument("--dump", default="state.bin", help="each file's dump name under files/<f>/")
+    ct = sub.add_parser("counts")
+    ct.add_argument("world", type=Path)
+    ct.add_argument("--clock", help="ISO instant; default the state's")
+    ct.add_argument("--out", type=Path)
     c = sub.add_parser("check")
     c.add_argument("world", type=Path)
     c.add_argument("--dump", type=Path, required=True)
@@ -347,7 +492,14 @@ def main():
     elif a.cmd == "subset":
         subset(a.world, a.test, a.ids.split(","), a.link)
     elif a.cmd == "apply":
-        apply(a.world, a.nodes, a.diff, a.today)
+        if a.places:
+            apply_w(a.world, a.nodes, a.diff, a.today, a.readonly_nodes)
+        else:
+            apply(a.world, a.nodes, a.diff, a.today)
+    elif a.cmd == "seed":
+        seed_w(a.world, a.dump)
+    elif a.cmd == "counts":
+        counts_w(a.world, a.clock, a.out)
     else:
         sys.exit(1 if check(a.world, a.dump) else 0)
 

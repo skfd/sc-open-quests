@@ -31,9 +31,9 @@ import kotlin.time.Instant
  * is not open at FAR either); the area quests' at the default setting only and only up to [AREA_DUE_DAYS] ahead
  * (the sidecar's `areaDueDays`), on a small map data round each (AreaPass.dateCandidates).
  *
- * With [places] (the run has parts), `<file>.places` holds a u32 per record, in the same order: the record's place
- * set, the parts holding its position as the engine found them (the counted parts, from the exact position, not
- * the record's rounded one); set 0 is no part. `<file>.places.json` lists the sets as indices into its `parts`,
+ * With [places] (every --dump-state run), `<file>.places` holds a u32 per record, in the same order: the record's
+ * place set, the parts holding its position as the engine found them (the counted parts, from the exact position,
+ * not the record's rounded one) and the cities holding it as `city:<id>`; set 0 is none. `<file>.places.json` lists the sets as indices into its `parts`,
  * the part ids (DESIGN.md, "Release 1: the world day", step 5).
  */
 class StateDump(private val file: File, val places: Boolean = false, private val partIds: List<String> = emptyList()) : Closeable {

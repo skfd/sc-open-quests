@@ -267,7 +267,8 @@ def write_small_pbf(path: Path, stamp: str, last_node, last_way, locs: Locations
 
 
 def engine(pbf: Path, out: Path, today: str, cities: Path, zone: str, notes: Path | None, area_pass: bool,
-           heap_gb: int = 8, quests: Path | None = None, base: Path | None = None, extra_opts: str = "") -> Path:
+           heap_gb: int = 8, quests: Path | None = None, base: Path | None = None, extra_opts: str = "",
+           parts: Path | None = None) -> Path:
     # the engine runs where the cities file's data is (its boundaries are relative paths; data/ is not all in git)
     pbf, out, cities = pbf.resolve(), out.resolve(), cities.resolve()
     notes = notes.resolve() if notes else None
@@ -279,6 +280,8 @@ def engine(pbf: Path, out: Path, today: str, cities: Path, zone: str, notes: Pat
             "--out", str(out / "out"), "--today", today, "--dump-state", str(dump)]
     if notes:
         args += ["--notes", str(notes)]
+    if parts:  # a parts directory: the records then carry their place sets (StateDump, placesets.py)
+        args += ["--parts", str(parts.resolve())]
     env = dict(os.environ, JAVA_HOME=os.environ.get("JAVA_HOME", r"C:\Program Files\Android\Android Studio\jbr"),
                JAVA_OPTS=f"-Duser.timezone={zone} -Duser.language=en -Duser.country=CA -Xmx{heap_gb}g"
                          + ("" if area_pass else " -Dopenquests.areaPass=false") + (" " + extra_opts if extra_opts else ""))
