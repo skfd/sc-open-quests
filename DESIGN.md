@@ -5192,6 +5192,10 @@ shown at planet size yet: the next planet punch (a day's new dead ranges) is the
 
 ## The place page: one page for a city and each of its parts (2026-11-16, evening; owner: "the place page comes first")
 
+**Status: preliminary (owner, 11-16 late evening).** Accepted and merged, but the design itself has not been reviewed by
+the owner; the direction (one page per place, places processed down to neighbourhoods) is confirmed as right and
+valuable, the details below are a first draft.
+
 Built on branch `place-page` from the product review's answers (`design/product-review-2026-11-16.md`).
 The city view is now the place page of "A neighbourhood is a place", for the 147 cities and their 4,214 parts.
 

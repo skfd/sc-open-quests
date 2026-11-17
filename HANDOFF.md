@@ -2164,6 +2164,11 @@ clipped questions and `app.js:1506`'s stale "no history yet" line.
 
 ## The place page: merged (2026-11-16, evening; owner: "pick from handoff ui work", then "merge it now")
 
+**Owner, 11-16 late evening: accepted, but the design is preliminary and not reviewed by the owner.** The direction
+is right, and processing places (city down to neighbourhood) is genuinely valuable. So treat the layout, tiles,
+wording and tab structure as a first draft open to change, not as decided design; build on the direction.
+
+
 - **Merged into main from branch `place-page`; the next scheduled run publishes it.** DESIGN.md, "The place page".
   One page for a counted city and each of its parts, reading the part series; the chart opens on 90 days ("All since
   2017" in the link), steps marked (Toronto's 2026 import named), density tiles replaced by the 4-week change
