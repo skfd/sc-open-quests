@@ -2386,3 +2386,23 @@ wording and tab structure as a first draft open to change, not as decided design
   - **So nothing switched**, owner's call (asked). Test outputs deleted (5 GB); the three scripts kept. To remove
     the install: `pixi global uninstall osmium-tool`, `winget uninstall prefix-dev.pixi`. A mimalloc build of
     osmium (conda-forge `mimalloc` 3.6.1 has win-64) was refused by auto mode and is not the next step.
+- **The owner's answer (11-16, 23:35): "we will have to retest on quiet machine. also please research reports about
+  it on github or wherever they host".** The retest is open: `smoke.sh`, `threads.sh`, `zlib.sh` again with no
+  store run, catch-up or release-1 job going (check `Get-Process tilestore*,python,java` first), plus the Europe clip
+  (`fileinfo -e`, `extract -s smart`) and, if the owner allows its install, native `osmium-tool=1.18.0` beside 1.19.1.
+- **Research (11-16, 23:30-23:45): no report anywhere of osmium being slower on Windows**, and no benchmark of it.
+  - Searched osmcode/osmium-tool, libosmium and pyosmium issues, both conda-forge feedstocks, all of GitHub and the
+    web. Rate-limited partway through GitHub's search, but the later broad searches returned nothing relevant.
+  - **Windows is built, not tuned:** the maintainer, in osmium-tool#59, "I personally don't know anything about
+    Windows"; Windows issues there are about compiling (#263, #59), never speed.
+  - **conda-forge's build is a plain CMake Release build** (`recipe/build.bat`, Ninja, MSVC); no allocator choice,
+    so it runs on the default Windows heap.
+  - **One concrete lead, for diff applies only:** libosmium 2.23.1 `osm/timestamp.hpp` parses XML timestamps with
+    `_mkgmtime` on Windows (`timegm` elsewhere). libosmium#363 found the same call (`timegm`) made XML parsing
+    1000x slower on iOS and was closed as the vendor's problem. `.osc` diffs are XML, so `apply-changes` could pay
+    this. PBF timestamps are integers, so it cannot explain `time-filter` or `fileinfo -e` on PBF.
+  - **General Windows heap evidence, not osmium's:** an LLVM RFC measured the CRT allocator at 38 min against
+    mimalloc's 2 min 22 s on a 36-core link; GDAL users reported `free()` of many small allocations slowing more
+    than linearly. libosmium allocates per block in its pool threads, so it fits, but is still not shown.
+  - libosmium's changelog 2.22 to 2.23.1 names no speed change, so a version regression is unlikely but not ruled
+    out (that is what native 1.18.0 would test).
