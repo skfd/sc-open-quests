@@ -134,6 +134,184 @@ def hidden_step(rows: np.ndarray, clip: Path | tuple, clock: str, prev_clock: st
             "flagsChanged": changed}
 
 
+# --- planet-sized: the clip as a table, the files in parallel, flags written in place -----------------
+#
+# A world day's hidden step (world_day.py) at Europe size took 165-185 s for 50M rows, nearly none of it work (about
+# 40,000 rows looked at, 70-85 flags changed): 46 s parsing the 1.4 GB clip's JSON, 8 s of open_at in Python, and
+# five passes over every row in numpy (one of them a sort of every row's code against the day's new rows). Here the
+# clip is parsed once into a table (cached beside it, in parallel), notes open at a clock are worked out on arrays,
+# a file is opened only if a position that gained or lost an open note lies in its box or it got new rows, its rows
+# are looked up in the small sorted sets of those positions and codes (no sort of the rows), the files run in
+# parallel, and only changed flags are written back, in place. Same rule as hidden_step, row for row.
+
+ACTION_CODE = {"opened": 0, "closed": 1, "reopened": 2, "hidden": 3}  # anything else (commented, ...): 4
+TABLE_VERSION = 1
+
+
+def _parse_range(args) -> tuple:
+    """the notes of one byte range of the clip (lines that start in it): their keys, created ms, and comments"""
+    path, start, end = args
+    keys, created, ev_note, ev_ts, ev_act = [], [], [], [], []
+    with open(path, "rb") as f:
+        if start:
+            f.seek(start - 1)
+            f.readline()  # to the end of the line holding byte start-1: a line that starts before start is not ours
+        else:
+            f.seek(0)
+        pos = f.tell()
+        while pos < end:
+            line = f.readline()
+            if not line:
+                break
+            pos += len(line)
+            if not line.strip():
+                continue
+            o = json.loads(line)
+            if "schema" in o:  # the header
+                continue
+            i = len(keys)
+            keys.append((trunc6(o["lat"]), trunc6(o["lon"])))
+            created.append(ms(o["created"]))
+            for c in o["comments"]:
+                ev_note.append(i)
+                ev_ts.append(ms(c["timestamp"]))
+                ev_act.append(ACTION_CODE.get(c["action"], 4))
+    k = np.array(keys, np.int64).reshape(-1, 2)
+    return (key(k[:, 0], k[:, 1]) if len(k) else np.zeros(0, np.int64), np.array(created, np.int64),
+            np.array(ev_note, np.int64), np.array(ev_ts, np.int64), np.array(ev_act, np.int8))
+
+
+def notes_table(clip: Path, workers: int = 16) -> dict:
+    """the clip as arrays: per note `key` (its truncated position) and `created` (ms); per comment, in the clip's
+    order, `ev_note`, `ev_ts` (ms) and `ev_act` (ACTION_CODE). Cached as <clip>.table.npz, rebuilt when the clip's
+    size or modification time changes."""
+    clip = Path(clip)
+    cache = clip.with_name(clip.name + ".table.npz")
+    st = clip.stat()
+    stamp = np.array([TABLE_VERSION, st.st_size, st.st_mtime_ns], np.int64)
+    if cache.exists():
+        z = np.load(cache)
+        if (z["stamp"] == stamp).all():
+            return {k: z[k] for k in ("key", "created", "ev_note", "ev_ts", "ev_act")}
+    size = st.st_size
+    n = max(1, min(workers, size // (8 << 20) + 1))
+    bounds = [size * i // n for i in range(n + 1)]
+    if n == 1:
+        parts = [_parse_range((str(clip), 0, size))]
+    else:
+        from concurrent.futures import ProcessPoolExecutor
+        with ProcessPoolExecutor(n) as ex:
+            parts = list(ex.map(_parse_range, [(str(clip), bounds[i], bounds[i + 1]) for i in range(n)]))
+    off = np.cumsum([0] + [len(p[0]) for p in parts])[:-1]
+    t = {"key": np.concatenate([p[0] for p in parts]), "created": np.concatenate([p[1] for p in parts]),
+         "ev_note": np.concatenate([p[2] + o for p, o in zip(parts, off)]),
+         "ev_ts": np.concatenate([p[3] for p in parts]), "ev_act": np.concatenate([p[4] for p in parts])}
+    tmp = cache.with_name(cache.name + ".writing.npz")
+    np.savez(tmp, stamp=stamp, **t)
+    import os
+    os.replace(tmp, cache)
+    return t
+
+
+def open_keys(t: dict, clock_ms: int) -> np.ndarray:
+    """open_at and note_keys on the table: the sorted, distinct truncated positions of the notes open at the clock"""
+    n = len(t["key"])
+    by = t["ev_ts"] <= clock_ms
+    has_comment = np.zeros(n, bool)
+    has_comment[t["ev_note"][by]] = True
+    status = by & (t["ev_act"] < 4)
+    sn, sa = t["ev_note"][status], t["ev_act"][status]
+    last = np.full(n, -1, np.int8)  # the last status action by the clock, in the clip's order (events are in it)
+    if len(sn):
+        u, first_from_end = np.unique(sn[::-1], return_index=True)
+        last[u] = sa[::-1][first_from_end]
+    ok = (t["created"] <= clock_ms) & has_comment & ((last == -1) | (last == 0) | (last == 2))
+    return np.unique(t["key"][ok])
+
+
+def in_sorted(x: np.ndarray, s: np.ndarray) -> np.ndarray:
+    """x in s, s sorted and distinct: searchsorted, no sort of x"""
+    if not len(s) or not len(x):
+        return np.zeros(len(x), bool)
+    i = np.searchsorted(s, x)
+    i[i == len(s)] = 0
+    return s[i] == x
+
+
+def key_degrees(keys: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """a key's truncated latitude and longitude in degrees (the inverse of key())"""
+    keys = np.asarray(keys, np.int64)
+    return (keys >> 32) / 1e6, ((keys & 0xFFFFFFFF) - (1 << 31)) / 1e6
+
+
+def _hidden_file(args) -> dict:
+    """one file's part of hidden_files (a worker)"""
+    import os
+    path, dtype, moved, now, fresh, chunk = args
+    out = {"rowsTouched": 0, "flagsChanged": 0, "opened": 0}
+    if not len(moved) and not len(fresh) or not os.path.getsize(path):
+        return out
+    out["opened"] = 1
+    rows = np.memmap(path, dtype=dtype, mode="r")
+    hit = []
+    for s in range(0, len(rows), chunk):
+        r = rows[s:s + chunk]
+        m = in_sorted(row_keys(r), moved) if len(moved) else np.zeros(len(r), bool)
+        if len(fresh):
+            m |= in_sorted(r["key"] * 1024 + r["quest"].astype(np.int64), fresh)
+        idx = np.flatnonzero(m)
+        if len(idx):
+            sub = r[idx]
+            hid = in_sorted(row_keys(sub), now)
+            old = sub["flags"]
+            new = np.where(hid, old | HIDDEN, old & ~np.uint8(HIDDEN)).astype(np.uint8)
+            out["rowsTouched"] += len(idx)
+            ch = new != old
+            if ch.any():
+                hit.append((idx[ch] + s, new[ch]))
+    del rows
+    if hit:
+        w = np.memmap(path, dtype=dtype, mode="r+")
+        for idx, new in hit:
+            w["flags"][idx] = new
+            out["flagsChanged"] += len(idx)
+        w.flush()
+        del w
+    return out
+
+
+def hidden_files(paths: list[Path], rects: list, dtype, table: dict, clock: str, prev_clock: str,
+                 fresh: list | None = None, workers: int = 8, chunk: int = 8 << 20) -> dict:
+    """hidden_step's day path over a world's files: HIDDEN set at the clock on every row whose truncated position
+    gained or lost an open note since prev_clock, and on the rows whose (key * 1024 + quest) is in that file's
+    `fresh` (sorted, distinct; the day's recounted rows). `rects` are the files' [s, w, n, e] boxes: a file is opened
+    only if such a position lies in its box (padded 0.01 degree: rows sit in their file's rect, a few on its edge by
+    rounding) or it has fresh rows. Flags change in place; no other byte of a file is written."""
+    now = open_keys(table, ms(clock))
+    moved = np.setxor1d(open_keys(table, ms(prev_clock)), now)
+    mlat, mlon = key_degrees(moved)
+    jobs = []
+    for i, (p, (s, w, n, e)) in enumerate(zip(paths, rects)):
+        pad = 0.01
+        sel = (mlat >= s - pad) & (mlat <= n + pad) & (mlon >= w - pad) & (mlon <= e + pad)
+        fr = fresh[i] if fresh is not None and fresh[i] is not None else np.zeros(0, np.int64)
+        jobs.append((str(p), dtype, moved[sel], now, fr, chunk))
+    work = [j for j in jobs if len(j[2]) or len(j[4])]
+    tot = {"openNotePositions": int(len(now)), "positionsChanged": int(len(moved)), "files": len(paths),
+           "filesOpened": 0, "rowsTouched": 0, "flagsChanged": 0}
+    if workers > 1 and len(work) > 1:
+        from concurrent.futures import ProcessPoolExecutor
+        with ProcessPoolExecutor(min(workers, len(work))) as ex:
+            res = list(ex.map(_hidden_file, work))
+    else:
+        res = [_hidden_file(j) for j in work]
+    for r in res:
+        tot["filesOpened"] += r["opened"]
+        tot["rowsTouched"] += r["rowsTouched"]
+        tot["flagsChanged"] += r["flagsChanged"]
+    return tot
+
+
 # --- the note quests, by the engine ---------------------------------------------------------------
 
 def empty_pbf(path: Path, clock: str) -> Path:

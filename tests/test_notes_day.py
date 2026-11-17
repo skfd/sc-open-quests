@@ -112,6 +112,73 @@ class Hidden(unittest.TestCase):
             self.assertTrue((b["flags"][:100] == full["flags"][:100]).all())
 
 
+def _clip(path: Path, notes):
+    path.write_text("\n".join([json.dumps({"schema": 1})] + [json.dumps({
+        "id": i, "lat": lat, "lon": lon, "created": _iso(created),
+        "comments": [{"action": a, "timestamp": _iso(t), "text": "x\ny"} for t, a in cs]})
+        for i, (lat, lon, created, cs) in enumerate(notes)]) + "\n", encoding="utf-8")
+
+
+def _random_notes(rnd, n):
+    acts = ["opened", "closed", "reopened", "hidden", "commented"]
+    out = []
+    for _ in range(n):
+        created = N.ms("2026-01-01T00:00:00Z") + rnd.randrange(0, 86400 * 60) * 1000
+        cs = sorted((created + rnd.randrange(0, 86400 * 60) * 1000, rnd.choice(acts)) for _ in range(rnd.randrange(0, 5)))
+        out.append((f"{rnd.uniform(52, 52.01):.7f}", f"{rnd.uniform(13, 13.01):.7f}", created, cs))
+    return out
+
+
+class Table(unittest.TestCase):
+    def test_open_keys_equal_open_at(self):
+        rnd = random.Random(11)
+        ns = _random_notes(rnd, 3000)
+        with tempfile.TemporaryDirectory() as d:
+            clip = Path(d) / "c.jsonl"
+            _clip(clip, ns)
+            for workers in (1, 7):  # several byte ranges: lines across a range edge go to one range only
+                (Path(d) / "c.jsonl.table.npz").unlink(missing_ok=True)
+                tab = N.notes_table(clip, workers=workers)
+                self.assertEqual(len(tab["key"]), len(ns))
+                for day in range(0, 125, 7):
+                    c = N.ms("2026-01-01T00:00:00Z") + day * 86400 * 1000
+                    want = N.note_keys(N.open_at(N.load_clip(clip)[1], c))
+                    self.assertTrue(np.array_equal(N.open_keys(tab, c), want), f"day {day}, {workers} workers")
+
+
+class HiddenFiles(unittest.TestCase):
+    def test_equals_hidden_step(self):
+        rnd = random.Random(5)
+        ns = _random_notes(rnd, 400)
+        spots = [(float(a), float(b)) for a, b, _, _ in ns] + [(52.005, 13.005)] * 3
+        with tempfile.TemporaryDirectory() as d:
+            clip = Path(d) / "c.jsonl"
+            _clip(clip, ns)
+            prev, now = "2026-02-01T00:00:00Z", "2026-02-20T00:00:00Z"
+            paths, fresh, want = [], [], []
+            for k in range(3):  # three files; the third far from every note and with no fresh rows: not opened
+                pts = [spots[rnd.randrange(len(spots))] for _ in range(3000)] if k < 2 else [(10.0, 10.0)] * 50
+                r = rows_at(pts)
+                r["key"] += k * 100000
+                r["flags"] = np.array([rnd.choice([0, 1, N.HIDDEN, N.HIDDEN | 1]) for _ in range(len(r))], np.uint8)
+                codes = r["key"] * 1024 + r["quest"].astype(np.int64)
+                fr = np.unique(codes[:200]) if k == 0 else None
+                ref = r.copy()
+                N.hidden_step(ref, clip, now, prev_clock=prev,
+                              fresh=np.isin(codes, fr) if fr is not None else None)
+                p = Path(d) / f"f{k}.bin"
+                r.tofile(p)
+                paths.append(p)
+                fresh.append(fr)
+                want.append(ref)
+            rects = [[52, 13, 52.01, 13.01], [52, 13, 52.01, 13.01], [9.9, 9.9, 10.1, 10.1]]
+            st = N.hidden_files(paths, rects, REC, N.notes_table(clip), now, prev, fresh, workers=2)
+            for p, ref in zip(paths, want):
+                self.assertEqual(np.fromfile(p, REC).tobytes(), ref.tobytes())
+            self.assertEqual(st["filesOpened"], 2)
+            self.assertGreater(st["flagsChanged"], 0)
+
+
 def _iso(ms):
     import datetime as dt
     return dt.datetime.fromtimestamp(ms / 1000, dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")

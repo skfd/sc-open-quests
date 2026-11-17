@@ -480,18 +480,12 @@ def finish(day: Day) -> dict:
     # notes at D: hidden flags (only rows at notes that opened or closed, and the day's new rows), note quests
     t = time.time()
     clip = world_notes(w)
-    cd = N.load_clip(clip)
-    nst = Counter()
-    for f in files:
-        p = w / "files" / f["id"] / WS.WORLD_BIN
-        r = np.fromfile(p, P.WREC)
-        fresh = np.isin(codes_of(r), np.fromiter(added[f["id"]], np.int64, len(added[f["id"]]))) if added[f["id"]] else None
-        before = r["flags"].copy()
-        s = N.hidden_step(r, cd, day.today, prev_clock=day.prev, fresh=fresh)
-        nst["flagsChanged"] += s["flagsChanged"]
-        nst["rowsTouched"] += s["rowsTouched"]
-        if (r["flags"] != before).any():
-            WS.write_rows(p, r)
+    # notes_day.hidden_files: the clip as a cached table, only files a changed note position or new rows reach,
+    # in parallel, flags written in place (the same rule and result as hidden_step file by file)
+    fresh = [np.unique(np.fromiter(added[f["id"]], np.int64, len(added[f["id"]]))) if added[f["id"]] else None
+             for f in files]
+    nst = Counter(N.hidden_files([w / "files" / f["id"] / WS.WORLD_BIN for f in files], [f["rect"] for f in files],
+                                 P.WREC, N.notes_table(clip), day.today, day.prev, fresh))
     T["notes"] = time.time() - t
     t = time.time()
     counts_at(w, day.today, sets, names, day.work / "notes", day.engine, day.heap_gb)
