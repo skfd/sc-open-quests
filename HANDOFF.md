@@ -2387,6 +2387,13 @@ checked against a full count. Until then the world's published numbers can only 
   - **Step 2's history file (owner, 18:20): add a download to osm-extracts** (`fetch planet-history` cannot start
     without a file; the newest weekly dump is `history-261109.osm.pbf`, about 155 GB). Then delete the store, cut at
     11-01T00Z. Disk: 216 GB free now; the store is 292 GB, `.scratch/planet-day` 115 GB.
+    **Built and running (18:35):** osm-extracts `fetch planet-history --download [YYMMDD]` (bd2137e: resumable
+    from `planet/history-YYMMDD.osm.pbf.download`, MD5 against the published one, meta written; no diffs). Started
+    hidden (pid 42016), log `logs/history-download.log` (a progress line every 10 min): `history-261109.osm.pbf`,
+    153.3 GiB from the AWS mirror, about 10 MB/s at the start, so done about 23:00. **If it dies, run the same
+    command again: it resumes.** After it, about 57 GiB free until the store goes. **The Monday planet job
+    (kk-SCOpenQuests-planet) would try to bring this file forward with diffs and stop on "not enough disk"**:
+    harmless, but delete the file once step 2 is done (before 11-23 07:30).
 
 ## The place page: merged (2026-11-16, evening; owner: "pick from handoff ui work", then "merge it now")
 
