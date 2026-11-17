@@ -2286,7 +2286,7 @@ wording and tab structure as a first draft open to change, not as decided design
   its objects deleted by API. `sc-open-quests-data` is empty again. Nothing open from this step: `sc-data` is ready
   for the place publish (DESIGN.md, "Place statistics for the whole world").
 
-## Parked: retire the Python tile store (owner, 2026-11-17, 03:40: "write down to return to this cleanup at some point")
+## Parked: retire the Python tile store (owner, 2026-11-16, about 22:25: "write down to return to this cleanup at some point")
 
 - **What:** `tools/stream/tilestore.py` and `tiles.py` (about 1,400 lines). The Rust `tilestore/` replaced their cut,
   update and read; the live paths (`planet_store_day.py`, `world_cells.py storecut`, `storecheck_cities.py`) already
@@ -2300,9 +2300,9 @@ wording and tab structure as a first draft open to change, not as decided design
 - **When:** not before release 1's loop is caught up and checked (subcmp/why are its diagnosis tools); early
   December at the earliest. Not while the release-1 agents' worktrees are open.
 
-## Parked: benchmark a native Windows osmium (owner, 2026-11-17, 04:00: "lets put benchmarking it into todo")
+## Parked: benchmark a native Windows osmium (owner, 2026-11-16, about 22:30: "lets put benchmarking it into todo")
 
-- **It exists (checked 11-17, 04:10):** conda-forge builds `osmium-tool` for win-64, versions 1.18.0, 1.19.0 and
+- **It exists (checked 11-16, about 22:35):** conda-forge builds `osmium-tool` for win-64, versions 1.18.0, 1.19.0 and
   1.19.1 (the latest on every platform; the Docker image is 1.18). Not on MSYS2; osmcode's GitHub releases ship no
   binaries. No conda, mamba, micromamba or pixi is installed here: the install is one micromamba (single exe) or
   pixi, into its own env (no change to the Docker image). Not yet run: whether every command we use works there.
@@ -2313,9 +2313,9 @@ wording and tab structure as a first draft open to change, not as decided design
   20 s; Rust `tilestore at` 1.4 s); output checked equal to the Docker osmium's.
 - **Decides:** whether release 2's monthly backfill (`backfill_history.py` slices and cuts) stays on osmium, goes
   native, or moves to Rust. Not before release 1's catch-up.
-- **Switching, asked by the owner (11-17, 04:15: "maybe we can look into switching to it now?").** The install was
+- **Switching, asked by the owner (11-16, about 22:40: "maybe we can look into switching to it now?").** The install was
   refused by auto mode (downloading and running micromamba): it needs the owner's explicit yes. Timings wait for a
-  quiet machine (at 04:15 the store's catch-up and two release-1 jobs held about 46 GB). Every Docker osmium caller:
+  quiet machine (at 22:40 the store's catch-up and two release-1 jobs held about 46 GB). Every Docker osmium caller:
   - **osm-extracts** (`osm_extracts.py`, `OSMIUM_IMAGE`; shared with the other projects): `apply-changes -H` (the
     planet history kept current: 2-3 h a week through the mount, the biggest gain), clips' `extract -s smart`,
     `check-refs`, `merge`, `extract --with-history`, `time-filter`. Its own change, its own repo, all projects' runs.
