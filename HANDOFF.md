@@ -2294,6 +2294,15 @@ checked against a full count. Until then the world's published numbers can only 
     (one world day in the store's order) and its rehearsal on the Europe clip, 11-09 seed, days 11-10..11-14 each
     against a whole count (`.scratch/r1/eu/`), running its own engine build; no engine above 8 GB until
     `logs/storecut-filesize.log` says "filesize exit".
+  - **Step 1's checks passed (00:41-01:02).** The store caught up to 11-16 (generation 14; 11 days; the 11-15 punch
+    took 32 min, slowed by the agents' disk use). `storecheck_cities.py` on 11-16: **all four Europe regions equal row
+    for row and city for city, store read against clip** (europe-west 6,845,829 rows, central 17,913,185, east
+    4,054,829, msk 6,600,379; 0 different). File size (`.scratch/planet/storecut-test/cut/storecut.json`): f0, 93.6M
+    nodes, read in 67 s, peak 20.8 GiB; f19, the widest box (760,744 tiles), 97 s, **peak 39.4 GiB** (long ways copied
+    into many tiles): the read is fine for one file at a time, too big beside a 30 GB engine. A world read is about
+    2.5 h for 128 files. **The merged engine is installed (e3a4e656):** place sets, `city:<id>` in each set, `e7`
+    positions. Found by G: a notes-only engine run is 120 s of loading 63,353 part outlines and 0.2 s of counting;
+    loading outlines needs to be faster for a million places.
 
 ## The place page: merged (2026-11-16, evening; owner: "pick from handoff ui work", then "merge it now")
 
