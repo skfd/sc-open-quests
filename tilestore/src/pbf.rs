@@ -8,6 +8,29 @@ use std::collections::HashMap;
 use std::io::Write;
 
 pub const PER_BLOCK: usize = 8000;
+/// a block's payload at most this many bytes, estimated before encoding (a blob must stay under 32 MiB raw, which
+/// 8,000 large relations can pass); `blob` refuses anything over the format's limit
+pub const BLOCK_BYTES: usize = 16 << 20;
+const BLOB_MAX: usize = 32 << 20;
+
+/// ranges of at most PER_BLOCK items and, by `size`, about BLOCK_BYTES each (an item alone may be larger)
+pub fn block_ranges(n: usize, size: impl Fn(usize) -> usize) -> Vec<std::ops::Range<usize>> {
+    let mut out = Vec::new();
+    let (mut start, mut bytes) = (0usize, 0usize);
+    for i in 0..n {
+        let b = size(i);
+        if i > start && (i - start >= PER_BLOCK || bytes + b > BLOCK_BYTES) {
+            out.push(start..i);
+            start = i;
+            bytes = 0;
+        }
+        bytes += b;
+    }
+    if start < n {
+        out.push(start..n);
+    }
+    out
+}
 
 fn varint(out: &mut Vec<u8>, mut v: u64) {
     while v >= 0x80 {
@@ -230,6 +253,7 @@ pub fn header_block(stamp: Option<i64>) -> Vec<u8> {
 
 /// one blob of the file: the length, the blob header, the blob with its payload deflated
 pub fn blob(kind: &str, payload: &[u8]) -> Vec<u8> {
+    assert!(payload.len() < BLOB_MAX, "a {kind} block of {} bytes: over the PBF format's 32 MiB", payload.len());
     let mut z = ZlibEncoder::new(Vec::with_capacity(payload.len() / 3), Compression::new(6));
     z.write_all(payload).unwrap();
     let z = z.finish().unwrap();

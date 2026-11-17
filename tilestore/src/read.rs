@@ -229,7 +229,26 @@ pub fn read(a: &Args) {
     let t_merge = t.elapsed().as_secs_f64();
 
     let t = Instant::now();
-    let node_blobs = nodes.par_chunks(pbf::PER_BLOCK).map(|ch| {
+    // blocks by count and by an estimate of their size (refs and members as varints, tags as bytes)
+    let node_ranges = pbf::block_ranges(nodes.len(), |k| {
+        let (_, _, s, i) = nodes[k];
+        let p = &parts[s as usize];
+        let j = p.tag_of[i as usize];
+        24 + if j < 0 { 0 } else { p.n_toff[j as usize + 1] - p.n_toff[j as usize] }
+    });
+    let way_ranges = pbf::block_ranges(ways.len(), |k| {
+        let (_, s, j) = ways[k];
+        let (p, j) = (&parts[s as usize], j as usize);
+        32 + 5 * (p.w_roff[j + 1] - p.w_roff[j]) + (p.w_toff[j + 1] - p.w_toff[j])
+    });
+    let rel_ranges = pbf::block_ranges(rels.len(), |k| {
+        let (_, s, j) = rels[k];
+        let (p, j) = (&parts[s as usize], j as usize);
+        let (m0, m1) = (p.r_moff[j], p.r_moff[j + 1]);
+        32 + 8 * (m1 - m0) + (p.r_rloff[m1] - p.r_rloff[m0]) + (p.r_toff[j + 1] - p.r_toff[j])
+    });
+    let node_blobs = node_ranges.into_par_iter().map(|r| {
+        let ch = &nodes[r];
         let v: Vec<pbf::Node> = ch
             .iter()
             .map(|&(id, _, s, i)| {
@@ -246,7 +265,8 @@ pub fn read(a: &Args) {
             .collect();
         pbf::blob("OSMData", &pbf::node_block(&v))
     });
-    let way_blobs = ways.par_chunks(pbf::PER_BLOCK).map(|ch| {
+    let way_blobs = way_ranges.into_par_iter().map(|r| {
+        let ch = &ways[r];
         let v: Vec<pbf::Way> = ch
             .iter()
             .map(|&(id, s, j)| {
@@ -256,7 +276,8 @@ pub fn read(a: &Args) {
             .collect();
         pbf::blob("OSMData", &pbf::way_block(&v))
     });
-    let rel_blobs = rels.par_chunks(pbf::PER_BLOCK).map(|ch| {
+    let rel_blobs = rel_ranges.into_par_iter().map(|r| {
+        let ch = &rels[r];
         let v: Vec<pbf::Relation> = ch
             .iter()
             .map(|&(id, s, j)| {
