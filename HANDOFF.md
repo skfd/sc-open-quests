@@ -2312,7 +2312,10 @@ checked against a full count. Until then the world's published numbers can only 
     hands the cover its hooks. Europe day with the store: 0 rule-justified cells outside the rectangles; 55,631 km2
     against 61,200 without. Inside Europe on day 5172 it resolves every one of E's flagged cases. **Left:** a container
     wider than about 7 km around a point is not found (`--around` widens); `route=hiking` relations are not in the
-    store (it keeps only relations the app keeps), so whether the summit quests can read hiking routes at all is open;
+    store, **and that is right: SC ignores every route relation but ferries on download (`ApplicationConstants.
+    ignoreRelation`; `tilestore.py` `ignore_relation`, the engine's IgnoreRelation.kt), so the summit quests' relation
+    branch never sees a hiking route in the app either; they read hiking paths (ways with `sac_scale`) only. E's
+    "`route=hiking` is a gap" is not one: the cover's marking of hiking routes only adds area and can be dropped;
     the planet store's daily run must call `DayContext.before` before its update and `after` before `compact`.
 
 ## The place page: merged (2026-11-16, evening; owner: "pick from handoff ui work", then "merge it now")
