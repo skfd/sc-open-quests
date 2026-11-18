@@ -98,6 +98,11 @@ ported its filter language elsewhere.
     of open errors could be snapshotted.
   - **OSM Inspector**: no history found. **MapRoulette**: the UI is rendered by JavaScript, so this is
     unverified. It tracks how far a challenge has got, not how many issues are open in the map.
+  - No third party was found tracking another validator's backlog per city over time. Nearest:
+    - the subway validator's weekly historical reports (listed on the OSM wiki's Quality assurance page);
+    - Neis's notes statistics: opened and closed notes per country;
+    - OSM Tag History and ohsome: tag counts such as `fixme=*` over time, globally or in a boundary;
+    - studies of OSM history as an intrinsic quality signal (for example "Is OSM up-to-date?", 2019).
 
 ## Sibling projects to borrow from (~/Code)
 
