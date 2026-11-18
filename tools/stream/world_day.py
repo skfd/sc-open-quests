@@ -326,6 +326,18 @@ def rect_groups(cities: Path, out: Path, cap_km2: float = T2_GROUP_KM2, ring_m: 
     return res
 
 
+# A group's map data goes once its engine has run (a planet day's is about 8 GB a date); WORLD_T2_KEEP_PBF=1 keeps it
+# for a diagnosis (an engine run again on the same read).
+T2_KEEP_PBF = os.environ.get("WORLD_T2_KEEP_PBF") == "1"
+
+
+def _engine_then_drop(day: Day, pbf: Path, out: Path, clock: str, cities: Path, parts: Path, opts: str) -> Path:
+    dump = engine_dump(day, pbf, out, clock, cities, parts, True, opts)
+    if not T2_KEEP_PBF:
+        pbf.unlink()
+    return dump
+
+
 def rect_rows(day: Day, cities: Path, parts: Path, gen: int, clock: str, stamp: str, which: str, out: Path,
               sets: P.PlaceSets, names: list[str], opts: str, workers: int = T2_WORKERS,
               cap_km2: float = T2_GROUP_KM2) -> tuple[np.ndarray, dict]:
@@ -343,7 +355,7 @@ def rect_rows(day: Day, cities: Path, parts: Path, gen: int, clock: str, stamp: 
                       f"{RING_M:.0f}", "--out", pbf, "--stamp", stamp, log=day.log)
             st["read s"] += time.time() - t
             st["pbf MB"] += pbf.stat().st_size / 1e6
-            futs.append(ex.submit(engine_dump, day, pbf, cf.parent / which, clock, cf, parts, True, opts))
+            futs.append(ex.submit(_engine_then_drop, day, pbf, cf.parent / which, clock, cf, parts, opts))
         dumps = [f.result() for f in futs]
     rows = [dump_rows(d, sets, names, rects=True) for d in dumps]
     st = {k: round(v, 1) if isinstance(v, float) else v for k, v in st.items()}
