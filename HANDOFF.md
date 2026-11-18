@@ -2592,3 +2592,14 @@ wording and tab structure as a first draft open to change, not as decided design
   compare text without regard to CR. `engine/sync-sc.ps1` records the raw-byte sha256 of each vendored file, which
   depends on the SC clone's own line endings. Under LF those hashes describe CRLF bytes the repo no longer has.
   Nothing re-checks them, but normalize them on the next sync.
+
+## Parked, distant future: other validators' backlogs (owner, 2026-11-17, about 00:10: "an expansion sort of feature for distant future")
+
+- **Idea:** chart other QA tools' open issues per city over time, the same way we chart open quests. Searched
+  2026-11-17 and found nobody doing it. Details in PRIOR-ART.md, under "Validators charting their own counts
+  over time".
+- **Possible sources:** Osmose's daily count per check (`/en/issues/graph.json?item=&country=`; it splits by its
+  own regions, so it would need its issue points clipped to our polygons instead); KeepRight's daily dump of
+  open errors for the whole planet, downloaded every day (but KeepRight is unmaintained since April 2024);
+  `fixme=*` and similar tags counted from our own extracts.
+- **When:** not on any release's path. Pick it up only after open quests over time have shipped.
