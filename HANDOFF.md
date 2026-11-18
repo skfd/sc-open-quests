@@ -2438,8 +2438,10 @@ checked against a full count. Until then the world's published numbers can only 
     `counts --clock 2026-11-01`, `report --archive 2026-11-01`. **The report is not the gate:** the published 11-01
     snapshots are v64.0 and the seed counts v64.1. The like-for-like gate, to run after: the world's `osm-<city>`
     counts against storecheck's `clip` snapshots for the 32 cities (`.scratch/storecheck/1101/<region>/clip`).
-    Canary by hand first (`.scratch/planet/canary1101.sh`, log `logs/canary1101.log`): a planet file's dump with place
-    sets and `city:<id>` at 30 GB has not run before.
+    **Canary passed (23:17-23:26):** f47 store read 23 s (0.52 GiB), notes clipped from `planet-notes-261117` (129
+    clips), count `--state` 69 s at 30 GB: clock 2026-11-01T00:00:00Z, 13,422 outlines from the parts cache (0 parsed),
+    `.places` written, area dates in every cell (f47c1: 160 candidates, 160 dated; the 11-08 world's log has none),
+    18,602,511 rows (the 11-08 world's f47: 18,633,926). **`seed1101.sh` running since 23:27.**
   - **Step 2's script: `.scratch/planet-cut/recut1101.sh`, running since 19:22** (log `logs/recut1101.log`; start line in its header, **one quoted `-c "..."` argument: `-ArgumentList '-c','...'` starts a bash that does nothing**;
     every step skips what is done). It waits until `history-261109.osm.pbf` and its meta exist (MD5 matched), **then a gate:
     `tilestore at` over the whole file at 11-01T00Z (about 30 min) must give `notIncreasing` 0 and nodes and ways within
