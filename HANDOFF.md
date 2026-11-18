@@ -2383,39 +2383,46 @@ checked against a full count. Until then the world's published numbers can only 
     10,286 rectangles) 28,507 km2, median file 1,603. **Planet parts cache built:** `.scratch/planet/world-places/
     parts.cache`, 1,069,679 outlines, 5.8 GB, 870 s. **Measuring:** `.scratch/rectgroups/measure.py f116` (log
     `.scratch/rectgroups/planet.log`, results `planet/results.json`), from the planet store's generation 15 under a
-    HOLD. **Measured (18:44), blocker 4 gone:** all 127 groups, one date, 4 engines at a time: 1,220 s wall time,
+    HOLD. **Measured (18:44), blocker 4's size question answered (one date, 5172's rule cover read from
+    generation 15; `finish` has not yet run with grouping end to end, nor its D-1 read):** all 127 groups, one date, 4 engines at a time: 1,220 s wall time,
     reads 643 s (8.0 GB of map data), peak heap 6.7 GB, every group OK at 8 GB. **About 40 min of tier 2 a planet
     day** (DESIGN.md, "Tier 2 per plan file, measured on the planet"). Set `WORLD_T2_WORKERS=4` for planet days.
   - **Checked before the re-cut (19:00-19:10; the advisor's three):** the pinned `tilestore-recut1101.exe` (main's
     release build, b9f682fc) cut Germany through a dense node file equal to `store-rs-germany` (`gsmoke-recut.sh`,
     storecmp equal); its history reader at 2026-10-01 on Berlin's history equals osmium `time-filter` (9,305,598
-    objects, 0 different); the script's flags are 11-16's. **The 11-01 Europe oracle, open (owner's call):** the
-    Europe clip of 11-01 is pruned and a clip cannot go back; a fresh cut from the planet history (osmium extract
-    `--with-history` of Europe's box, then `tilestore at`) needs tens of GB beyond the about 80 GiB free after the cut.
-    Proposed: day one checked against every region's published 11-01 snapshots (the plan's check), row for row from
-    11-02 on (`europe-2026-11-02`, pinned).
+    objects, 0 different); the script's flags are 11-16's. The Europe clip of 11-01 is pruned (a clip cannot go
+    back), so the oracle is cut from the history file (below); the Europe clip is about 1.7 GB, so its history cut
+    is a few GB.
   - **Step 2's history file (owner, 18:20): add a download to osm-extracts** (`fetch planet-history` cannot start
     without a file; the newest weekly dump is `history-261109.osm.pbf`, about 155 GB). Then delete the store, cut at
     11-01T00Z. Disk: 216 GB free now; the store is 292 GB, `.scratch/planet-day` 115 GB.
     **Built and running (18:35):** osm-extracts `fetch planet-history --download [YYMMDD]` (bd2137e: resumable
     from `planet/history-YYMMDD.osm.pbf.download`, MD5 against the published one, meta written; no diffs). Started
     hidden (pid 42016), log `logs/history-download.log` (a progress line every 10 min): `history-261109.osm.pbf`,
-    153.3 GiB from the AWS mirror, about 10 MB/s at the start, so done about 23:00. **If it dies, run the same
-    command again: it resumes.** After it, about 57 GiB free until the store goes. **The Monday planet job
-    (kk-SCOpenQuests-planet) would try to bring this file forward with diffs and stop on "not enough disk"**:
-    harmless. **Keep the file until the Europe polygon at 11-01T00Z is cut from it** (the seed's row-for-row oracle;
+    153.3 GiB from the AWS mirror at about 25 MB/s; restarted at 19:19 on c5f399c (a cut-short body resumes; a
+    minutely header's sequence is not taken for a daily one), log `logs/history-download2.log`, so it lands about
+    20:05. **If it dies, run the same command again: it resumes.** The weekly planet task (kk-SCOpenQuests-planet,
+    the only caller of `fetch planet-history` and `recut`) is **disabled**, so nothing scheduled touches the file. **Keep the file until the Europe polygon at 11-01T00Z is cut from it** (the seed's row-for-row oracle;
     no Europe clip of 11-01 exists, the oldest kept is 11-02). Not with osm-extracts `recut` (it would add an older
     dated file to the live Europe clip): with this repo's history tools, as `backfill_history.py` cuts regions.
-  - **Step 2's script: `.scratch/planet-cut/recut1101.sh`, running since 19:11** (log `logs/recut1101.log`; start line in its header, **one quoted `-c "..."` argument: `-ArgumentList '-c','...'` starts a bash that does nothing**;
-    every step skips what is done). It waits until `history-261109.osm.pbf` and its meta exist (MD5 matched), writes
-    HOLD, waits out RUNNING, disables kk-SCOpenQuests-planetstore, **deletes `.scratch/planet-cut/store` (11-17,
+  - **Step 2's script: `.scratch/planet-cut/recut1101.sh`, running since 19:22** (log `logs/recut1101.log`; start line in its header, **one quoted `-c "..."` argument: `-ArgumentList '-c','...'` starts a bash that does nothing**;
+    every step skips what is done). It waits until `history-261109.osm.pbf` and its meta exist (MD5 matched), **then a gate:
+    `tilestore at` over the whole file at 11-01T00Z (about 30 min) must give `notIncreasing` 0 and nodes and ways within
+    0.2% of the old file's at 11-02, or it stops with nothing deleted** (`recut1101.gate.log`); then it writes HOLD, waits out RUNNING, disables kk-SCOpenQuests-planetstore, **deletes `.scratch/planet-cut/store` (11-17,
     generation 15) and `.scratch/planet-day/planet.loc`**, runs `scut --at 2026-11-01T00:00:00Z --day 2026-11-01
     --nodes` (the flags of 11-16's cut, binary pinned as `tilestore-recut1101.exe`), deletes the cut's node file,
     then `loc build --at` the same instant. **Between the delete and "scut done" there is no store.** A stop at the
     disk floor (exit 101) leaves `store/work` and `cut-1101.nodes`: delete both, rerun. 11-16's cut: 6,136 s, peak
-    working set 70 GiB, about 287 GiB of disk at the peak: **no engines or large writes beside it.** After it: the
-    seed at 11-01 (step 3), checked against every region's published 11-01 snapshots; the store's first day (diff
-    5164, hard-linked in `.scratch/planet/diffs-keep`) checked by the loop against `europe-2026-11-02`.
+    working set 70 GiB, about 287 GiB of disk at the peak: **no engines or large writes beside it.** **Then the 11-01
+    oracle, automated:** the Europe clip made from the history file as osm-extracts makes a clip on a recut (Docker
+    osmium: `extract --with-history -s complete_ways` to `europe/ring.geojson`, `time-filter`, `extract -s smart` to
+    the polygon) into `.scratch/planet-cut/oracle-1101/`, then `loc check` and `subcmp --gp 0` at 2 and 0.5 km
+    against the new store. Expected timeline: gate about 20:35, delete about 20:40, cut to about 22:30, node file
+    about 22:50, oracle hours after (one osmium pass over 153 GB through Docker's mount). **No engines or large
+    writes on C: until `logs/recut1101.log` says "recut1101 ended".** After it: one rehearsal day through `finish`
+    (grouping has not run end to end), then the seed at 11-01 (step 3), checked against the oracle and every
+    region's published 11-01 snapshots; the store's first day (diff 5164, hard-linked in
+    `.scratch/planet/diffs-keep`) checked by the loop against `europe-2026-11-02`. `europe-2026-11-17` pinned.
 
 ## The place page: merged (2026-11-16, evening; owner: "pick from handoff ui work", then "merge it now")
 
