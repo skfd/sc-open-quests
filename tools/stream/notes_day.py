@@ -288,14 +288,16 @@ def _hidden_file(args) -> dict:
 
 
 def hidden_files(paths: list[Path], rects: list, dtype, table: dict, clock: str, prev_clock: str,
-                 fresh: list | None = None, workers: int = 8, chunk: int = 8 << 20) -> dict:
+                 fresh: list | None = None, workers: int = 8, chunk: int = 8 << 20, prev_table: dict | None = None) -> dict:
     """hidden_step's day path over a world's files: HIDDEN set at the clock on every row whose truncated position
     gained or lost an open note since prev_clock, and on the rows whose (key * 1024 + quest) is in that file's
     `fresh` (sorted, distinct; the day's recounted rows). `rects` are the files' [s, w, n, e] boxes: a file is opened
     only if such a position lies in its box (padded 0.01 degree: rows sit in their file's rect, a few on its edge by
     rounding) or it has fresh rows. Flags change in place; no other byte of a file is written."""
     now = open_keys(table, ms(clock))
-    moved = np.setxor1d(open_keys(table, ms(prev_clock)), now)
+    # prev_table: the clip the flags at prev_clock came from, when the clip was cut again from a newer dump since
+    # (a note the newer dump lacks was open at prev_clock: its positions are among the moved)
+    moved = np.setxor1d(open_keys(table if prev_table is None else prev_table, ms(prev_clock)), now)
     mlat, mlon = key_degrees(moved)
     jobs = []
     for i, (p, (s, w, n, e)) in enumerate(zip(paths, rects)):

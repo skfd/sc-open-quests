@@ -178,6 +178,25 @@ class HiddenFiles(unittest.TestCase):
             self.assertEqual(st["filesOpened"], 2)
             self.assertGreater(st["flagsChanged"], 0)
 
+    def test_newer_dump_drops_a_note(self):
+        """a refresh to a newer dump that no longer holds a note (hidden by a moderator): with the old clip as
+        prev_table its rows are unhidden at D; with only the new clip they would keep the flag"""
+        keep = (52.001, 13.001, N.ms("2026-01-01T00:00:00Z"), [(N.ms("2026-01-01T00:00:00Z"), "opened")])
+        gone = (52.002, 13.002, N.ms("2026-01-01T00:00:00Z"), [(N.ms("2026-01-01T00:00:00Z"), "opened")])
+        with tempfile.TemporaryDirectory() as d:
+            old, new = Path(d) / "old.jsonl", Path(d) / "new.jsonl"
+            _clip(old, [keep, gone])
+            _clip(new, [keep])
+            prev, now = "2026-02-01T00:00:00Z", "2026-02-02T00:00:00Z"
+            r = rows_at([(52.001, 13.001), (52.002, 13.002), (52.003, 13.003)])
+            r["flags"] = [N.HIDDEN | 1, N.HIDDEN | 1, 1]  # at D-1, from the old clip
+            rect = [[52, 13, 52.01, 13.01]]
+            for prev_table, want in ((None, [N.HIDDEN | 1, N.HIDDEN | 1, 1]), (N.notes_table(old), [N.HIDDEN | 1, 1, 1])):
+                p = Path(d) / "f.bin"
+                r.tofile(p)
+                N.hidden_files([p], rect, REC, N.notes_table(new), now, prev, None, workers=1, prev_table=prev_table)
+                self.assertEqual(np.fromfile(p, REC)["flags"].tolist(), want)
+
 
 def _iso(ms):
     import datetime as dt

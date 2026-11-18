@@ -2487,9 +2487,12 @@ checked against a full count. Until then the world's published numbers can only 
     tier 1's and the note quests' 128 engine runs go `WORLD_T2_WORKERS` (4) at a time, ingested in file order.
     **The gate on the seed (11:15-11:21):** `world_gate.py` on the 11-01 oracle reproduces `gate1101`: 21 of 32
     equal, +9 of 19,239,746, worst city 0.0016% (`world-1101/gate-test/`). The recut's stale HOLD was removed at launch.
-    **Not built: notes after 11-17T05:37Z.** The world's notes clips are of `planet-notes-261117`; the driver stops
-    before day 11-18 ("needs a newer notes dump"). Needed before then: a newer dump clipped into every file's
-    `notes.jsonl`, `notes-all.jsonl` and `gate-notes/` rebuilt. **Also not yet:** the task `kk-SCOpenQuests-planetstore`
+    **Notes past the world's dump (11-18, 11:40):** when D passes the clips' `until` (261117: 11-17T05:37Z, so first
+    at 11-18), the driver cuts the newest dump into every plan file (`world_day.refresh_notes`, one `clip_notes`
+    pass over the files' `bbox.poly`), rebuilds `notes-all.jsonl`, drops `gate-notes/`, and keeps the old union clip
+    as `notes-prev.jsonl` for that day's D-1 side of the hidden flags (`hidden_files(prev_table=)`: a note the newer
+    dump lacks still counts as open at D-1, so its rows are unhidden at D); removed when the day is done. No newer
+    dump yet: "done for now", not a stop. **Also not yet:** the task `kk-SCOpenQuests-planetstore`
     stays disabled until 11-02 passes; `files/*/state.bin*` (56 GB, the seed's dumps) is the disk reserve, to delete
     once the store has moved past 11-01 (it cannot go back, so they can only reseed a world no store matches).
   - **Step 2's script: `.scratch/planet-cut/recut1101.sh`, running since 19:22** (log `logs/recut1101.log`; start line in its header, **one quoted `-c "..."` argument: `-ArgumentList '-c','...'` starts a bash that does nothing**;

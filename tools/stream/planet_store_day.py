@@ -274,6 +274,7 @@ def store_tail(dd: Path, nxt: str, seq: int, osc: Path, oracle: Path, g: int) ->
         if src.exists():
             shutil.copy2(src, keep / src.name)
     pins_edit(drop=[oracle.name])
+    (WORLD / WD.NOTES_PREV).unlink(missing_ok=True)  # the day after a notes refresh is done: D-1's clip not needed
     shutil.rmtree(dd, ignore_errors=True)
     log(f"== day {nxt} done: generation {g}; the world at {world_clock()}")
 
@@ -332,10 +333,16 @@ def one_day():
     if seq is None:
         log(f"store and world at {day}, generation {gen}: no diff to {nxt} on disk yet; done for now")
         return False
-    until = WG.notes_until(WORLD)
-    if f"{nxt}T00:00:00Z" > until:
-        stop(f"the world's notes clips end at {until}; day {nxt} needs a newer notes dump clipped into the world's "
-             f"files (not built yet)")
+    if f"{nxt}T00:00:00Z" > WD.notes_until(WORLD):  # the world's notes end before D: cut them from a newer dump
+        dump = run_notes_dump()
+        if dump is None or dump.name == WG.world_dump(WORLD).name:
+            log(f"day {nxt}: the world's notes end at {WD.notes_until(WORLD)} and no newer notes dump is in the store "
+                f"yet; done for now")
+            return False
+        guarded(f"notes refresh from {dump.name}", WD.refresh_notes, WORLD, dump, log)
+        if f"{nxt}T00:00:00Z" > WD.notes_until(WORLD):
+            log(f"day {nxt}: the newest notes dump ends at {WD.notes_until(WORLD)}; done for now")
+            return False
     if run_quests().name != QUESTS:
         stop(f"the newest quests file is {run_quests().name}, the world's is {QUESTS}: a new StreetComplete release "
              f"means a reseed (DESIGN.md, 'Before release 1, two rules')")
@@ -381,6 +388,11 @@ def run_quests() -> Path:
     sys.path.insert(0, str(ROOT))
     import run as runmod
     return runmod.newest_quests_file()
+
+
+def run_notes_dump() -> Path | None:
+    import run as runmod
+    return runmod.notes_dump()
 
 
 def main():

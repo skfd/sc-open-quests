@@ -532,6 +532,46 @@ def world_notes(w: Path) -> Path:
     return out
 
 
+NOTES_PREV = "notes-prev.jsonl"  # the union clip of the dump before a refresh: the day's D-1 side of the hidden flags
+
+
+def notes_until(w: Path) -> str:
+    """the newest comment of the dump the world's notes clips were cut from: notes are known up to then"""
+    with open(w / "files" / files_of(w)[0]["id"] / "notes.jsonl", encoding="utf-8") as fh:
+        return json.loads(fh.readline())["until"]
+
+
+def refresh_notes(w: Path, dump: Path, log=_log) -> None:
+    """every plan file's notes clip cut again from a newer dump (each file's bbox.poly, one pass), the union clip
+    rebuilt. The old union clip is kept as NOTES_PREV until the day is done: a note the newer dump no longer holds
+    (hidden by a moderator) must still count as open at D-1, or its rows keep their hidden flag. The gate's clips go
+    too (world_gate makes them again from the newer dump)."""
+    files = files_of(w)
+    cfg = w / "notes-refresh.json"
+    cfg.write_text(json.dumps({"clips": [{"poly": str(w / "files" / f["id"] / "bbox.poly"),
+                                          "out": str(w / "files" / f["id"] / "notes.jsonl.new")} for f in files]}),
+                   encoding="utf-8")
+    t = time.time()
+    subprocess.run([sys.executable, str(ROOT / "tools/clip_notes.py"), str(dump), "--config", str(cfg)], check=True,
+                   cwd=ROOT)
+    for f in files:
+        d = w / "files" / f["id"]
+        with open(d / "notes.jsonl.new", encoding="utf-8") as fh:
+            if json.loads(fh.readline())["source"] != dump.name:
+                raise SystemExit(f"{d / 'notes.jsonl.new'} is not from {dump.name}")
+    allc = w / "notes-all.jsonl"
+    if allc.exists() and not (w / NOTES_PREV).exists():
+        os.replace(allc, w / NOTES_PREV)
+    for f in files:  # all clips cut: now put in place
+        d = w / "files" / f["id"]
+        os.replace(d / "notes.jsonl.new", d / "notes.jsonl")
+    for p in [allc, allc.with_name(allc.name + ".table.npz"), *(w / "gate-notes").glob("*.jsonl")]:
+        p.unlink(missing_ok=True)
+    cfg.unlink()
+    world_notes(w)
+    log(f"notes: the world's clips cut again from {dump.name} (until {notes_until(w)}) in {time.time() - t:.0f} s")
+
+
 def counts_at(w: Path, clock: str, sets: P.PlaceSets, names: list[str], work: Path, engine: Path | None = None,
               heap_gb: int = 8) -> Path:
     """the counts per place and per cell at the clock (W/counts/<day>/): the state's rows through place_counts, the
@@ -678,8 +718,10 @@ def finish(day: Day) -> dict:
     # in parallel, flags written in place (the same rule and result as hidden_step file by file)
     fresh = [np.unique(np.fromiter(added[f["id"]], np.int64, len(added[f["id"]]))) if added[f["id"]] else None
              for f in files]
+    prev_clip = w / NOTES_PREV  # the clip of the dump before a refresh, if this is the day after one
     nst = Counter(N.hidden_files([w / "files" / f["id"] / WS.WORLD_BIN for f in files], [f["rect"] for f in files],
-                                 P.WREC, N.notes_table(clip), day.today, day.prev, fresh))
+                                 P.WREC, N.notes_table(clip), day.today, day.prev, fresh,
+                                 prev_table=N.notes_table(prev_clip) if prev_clip.exists() else None))
     T["notes"] = time.time() - t
     t = time.time()
     counts_at(w, day.today, sets, names, day.work / "notes", day.engine, day.heap_gb)
