@@ -2584,10 +2584,13 @@ wording and tab structure as a first draft open to change, not as decided design
 - Fixed in `.gitattributes`: `* text=auto eol=lf` first, `*.bat`/`*.cmd` CRLF, `docs/vendor/**` untouched. Plus
   `.editorconfig`. The index was already LF, so that commit changed no file.
 - **Still to do, once no other session or long run is live:** rewrite the files still CRLF on disk (about 5,450).
-  This skips anything with uncommitted changes:
-  `L=$(mktemp); git ls-files --eol | awk -F'\t' '$1 ~ /w\/crlf/ && $1 !~ /-text|eol=crlf/ {print $2}' | grep -vxFf <(git status --porcelain | cut -c4-) > $L; xargs -d '\n' rm -f < $L; git checkout --pathspec-from-file=$L`
-  Then `git ls-files --eol | grep -c w/crlf` should print 1 (`gradlew.bat`) plus the two vendor files.
-  Worktrees made before the fix need the same command or a fresh checkout.
+  This skips anything with uncommitted changes (dry run without `--apply`):
+  `python ~/.claude/skills/kk-line-endings/rewrite.py . --apply`
+  Afterwards `git ls-files --eol | grep -c w/crlf` should print 3: `gradlew.bat` and the two vendor files.
+  Worktrees made before the fix need the same command run inside each one.
+- The owner's lazy recipe for any repo that trips on this is the `kk-line-endings` skill; a hook asks for it
+  (2026-11-17). This repo has had it applied: `.vscode/settings.json` sets `files.eol` to LF, and CLAUDE.md
+  carries the rule for program output.
 - Not covered by attributes: output a program writes (untracked, `.scratch`). Write it with `newline="\n"`, and
   compare text without regard to CR. `engine/sync-sc.ps1` records the raw-byte sha256 of each vendored file, which
   depends on the SC clone's own line endings. Under LF those hashes describe CRLF bytes the repo no longer has.
