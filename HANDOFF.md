@@ -2442,6 +2442,10 @@ checked against a full count. Until then the world's published numbers can only 
     clips), count `--state` 69 s at 30 GB: clock 2026-11-01T00:00:00Z, 13,422 outlines from the parts cache (0 parsed),
     `.places` written, area dates in every cell (f47c1: 160 candidates, 160 dated; the 11-08 world's log has none),
     18,602,511 rows (the 11-08 world's f47: 18,633,926). **`seed1101.sh` running since 23:27.**
+    **Storecheck against the oracle (23:27-23:37): all four Europe regions EQUAL**, city for city and row for row
+    (`.scratch/storecheck/1101.log`; the cities' clip snapshots under `.scratch/storecheck/1101/<region>/clip` are the
+    seed's gate later). Then `history-261109.osm.pbf` and the oracle's Europe history were deleted (222 GB free); the
+    oracle clip itself (1.75 GB, both copies) stays. storecut started 23:37.
   - **Step 2's script: `.scratch/planet-cut/recut1101.sh`, running since 19:22** (log `logs/recut1101.log`; start line in its header, **one quoted `-c "..."` argument: `-ArgumentList '-c','...'` starts a bash that does nothing**;
     every step skips what is done). It waits until `history-261109.osm.pbf` and its meta exist (MD5 matched), **then a gate:
     `tilestore at` over the whole file at 11-01T00Z (about 30 min) must give `notIncreasing` 0 and nodes and ways within
