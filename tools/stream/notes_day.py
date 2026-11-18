@@ -269,7 +269,14 @@ def _hidden_file(args) -> dict:
             ch = new != old
             if ch.any():
                 hit.append((idx[ch] + s, new[ch]))
-    del rows
+    rows = r = sub = None  # noqa: F841 (no view of the map left: Windows will not replace a mapped file)
+    if hit and os.stat(path).st_nlink > 1:
+        # another name holds this file (a world day's hard-link copy of the state before the day): write a new file
+        # and put it in place, so that copy keeps its bytes
+        import shutil
+        tmp = path + ".flags"
+        shutil.copyfile(path, tmp)
+        os.replace(tmp, path)
     if hit:
         w = np.memmap(path, dtype=dtype, mode="r+")
         for idx, new in hit:

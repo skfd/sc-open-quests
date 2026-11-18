@@ -194,6 +194,31 @@ def prepare(w: Path, store: Path, diff: Path, today: str, nodes: Path, work: Pat
                new_places, rows, g0, ctx, heap_gb, engine, log, T, {"changedKeys": int(len(keys)), "oldRows": int(len(rows))})
 
 
+def save_day(day: Day, path: Path) -> None:
+    """the prepared day on disk, so `finish` can be run again after the store's update (which takes generation D-1's
+    way pairs away: `prepare` cannot run a second time). The node places are not saved (the planet's are a memmap of
+    the whole node file): `load_day` opens them again from `day.nodes` with the diff's overlay."""
+    import pickle
+    state = {k: v for k, v in day.__dict__.items() if k not in ("old_places", "new_places", "log")}
+    tmp = path.with_suffix(".writing")
+    with open(tmp, "wb") as f:
+        pickle.dump(state, f, protocol=pickle.HIGHEST_PROTOCOL)
+    os.replace(tmp, path)
+
+
+def load_day(path: Path, log=_log) -> Day:
+    import pickle
+    with open(path, "rb") as f:
+        state = pickle.load(f)
+    nodes = state["nodes"]
+    overlay = {n: (v[4] if v[2] else None) for n, v in state["last_node"].items()}
+    if nodes.is_file():
+        old_places, new_places = T2.NodeFile(nodes), T2.NodeFile(nodes, overlay=overlay)
+    else:
+        old_places, new_places = T2.SparsePlaces(nodes), T2.SparsePlaces(nodes, extra=overlay)
+    return Day(**state, old_places=old_places, new_places=new_places, log=log)
+
+
 def clip_keep(polygon: Path):
     """the part of a planet diff a clip's extract (osmium, complete ways) would hold: nodes inside the polygon at D-1
     or D; ways with a node inside at D, or that the clip store held at D-1, and all their nodes; relations with a kept
@@ -386,11 +411,61 @@ def groups(a: np.ndarray) -> dict[int, tuple]:
     return {c: tuple(sorted(v)) for c, v in g.items()}
 
 
+def _mix(x: np.ndarray) -> np.ndarray:
+    """splitmix64's finaliser, on uint64 arrays (wrapping)"""
+    x = x ^ (x >> np.uint64(30))
+    x = x * np.uint64(0xBF58476D1CE4E5B9)
+    x = x ^ (x >> np.uint64(27))
+    x = x * np.uint64(0x94D049BB133111EB)
+    return x ^ (x >> np.uint64(31))
+
+
+def group_prints(a: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """per (element, quest) code, in code order: the codes and a fingerprint of the group's rows as a multiset (row
+    count and two sums of a 64-bit hash of each row's bytes). Two groups with the same fingerprint hold the same rows
+    but for a hash collision (about 2**-128): `groups` without a Python object per row (a planet day's recount is
+    tens of millions of rows a date)"""
+    if not len(a):
+        return np.zeros(0, np.int64), np.zeros((0, 3), np.uint64)
+    n = len(a)
+    words = np.zeros((n, 32), np.uint8)
+    words[:, :a.dtype.itemsize] = np.ascontiguousarray(a).view(np.uint8).reshape(n, a.dtype.itemsize)
+    words = words.view(np.uint64)  # (n, 4)
+    with np.errstate(over="ignore"):
+        hs = []
+        for seed in (0x9E3779B97F4A7C15, 0xD1B54A32D192ED03):
+            h = np.full(n, seed, np.uint64)
+            for j in range(words.shape[1]):
+                h = _mix(h ^ words[:, j])
+            hs.append(h)
+    c = codes_of(a)
+    o = np.argsort(c, kind="stable")
+    cs = c[o]
+    starts = np.flatnonzero(np.concatenate([[True], cs[1:] != cs[:-1]]))
+    fp = np.zeros((len(starts), 3), np.uint64)
+    fp[:, 0] = np.diff(np.append(starts, n)).astype(np.uint64)
+    with np.errstate(over="ignore"):
+        for k, h in enumerate(hs):
+            fp[:, k + 1] = np.add.reduceat(h[o], starts)
+    return cs[starts], fp
+
+
+def changed_groups(old: np.ndarray, new: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """the (element, quest) codes whose rows differ between the two recounts, sorted; and for each, whether the old
+    and the new recount hold the group at all"""
+    co, fo = group_prints(old)
+    cn, fn = group_prints(new)
+    both, io, in_ = np.intersect1d(co, cn, assume_unique=True, return_indices=True)
+    differ = both[(fo[io] != fn[in_]).any(axis=1)]
+    cand = np.union1d(np.union1d(np.setdiff1d(co, cn, assume_unique=True), np.setdiff1d(cn, co, assume_unique=True)),
+                      differ)
+    return cand, np.isin(cand, co), np.isin(cand, cn)
+
+
 def delta_w(w: Path, old: np.ndarray, new: np.ndarray, files: list[dict], added: dict[str, set]) -> dict:
     """tier2.delta on the world's WREC files: per (element, quest), the recount's change from D-1 to D applied; a group
     the recount changed but the state lacks is kept out (a recount-vs-whole disagreement), as tier2.delta does"""
-    go, gn = groups(old), groups(new)
-    cand = np.array([c for c in go.keys() | gn.keys() if go.get(c) != gn.get(c)], np.int64)
+    cand, has_old, has_new = changed_groups(old, new)
     held: set[int] = set()
     if len(cand):
         for f in files:
@@ -398,13 +473,12 @@ def delta_w(w: Path, old: np.ndarray, new: np.ndarray, files: list[dict], added:
             held |= set(fc[np.isin(fc, cand)].tolist())
     st = Counter()
     put, gone = set(), set()
-    for c in cand.tolist():
-        o, n = go.get(c), gn.get(c)
-        if o is None:
+    for c, ho, hn in zip(cand.tolist(), has_old.tolist(), has_new.tolist()):
+        if not ho:
             put.add(c); st["added"] += 1
             if c in held:
                 st["added, the state had it"] += 1
-        elif n is None:
+        elif not hn:
             gone.add(c); st["removed"] += 1
             if c not in held:
                 st["removed, the state lacked it"] += 1
@@ -465,13 +539,18 @@ def counts_at(w: Path, clock: str, sets: P.PlaceSets, names: list[str], work: Pa
     # one engine run per plan file, its cells and its parts (all of a world's parts in one run do not fit: Europe
     # alone has 502,597 part entries); each note is in one cell, so the files' counts add up
     nq = {"cities": {}, "parts": Counter()}
-    for f in files_of(w):
+
+    def one(f):
         d = w / "files" / f["id"]
         quiet(5)
-        r = N.note_quests(d / "cities.json", d / "notes.jsonl", clock, work / f["id"], parts=d / "parts", engine=engine,
-                          heap_gb=heap_gb, parts_cache=P.parts_cache(w))
-        nq["cities"].update(r["cities"])
-        nq["parts"].update(r["parts"])
+        return N.note_quests(d / "cities.json", d / "notes.jsonl", clock, work / f["id"], parts=d / "parts",
+                             engine=engine, heap_gb=heap_gb, parts_cache=P.parts_cache(w))
+
+    from concurrent.futures import ThreadPoolExecutor
+    with ThreadPoolExecutor(max(1, T2_WORKERS)) as ex:
+        for r in ex.map(one, files_of(w)):  # in file order: the sums do not depend on which run ends first
+            nq["cities"].update(r["cities"])
+            nq["parts"].update(r["parts"])
     if NOTE_QUEST not in names:
         names.append(NOTE_QUEST)
     qi = names.index(NOTE_QUEST)
@@ -546,10 +625,15 @@ def finish(day: Day) -> dict:
     t1w = day.work / "t1"
     t1w.mkdir(parents=True, exist_ok=True)
     pst = S.write_small_pbf(t1w / "touched.osm.pbf", day.today, day.last_node, day.last_way, locs, unplaced)
-    # one engine run per plan file over the same small PBF (its cells and parts; elements outside them are skipped)
-    new1 = np.concatenate([engine_rows(day, t1w / "touched.osm.pbf", t1w / f["id"], day.today,
-                                       w / "files" / f["id"] / "cities.json", w / "files" / f["id"] / "parts", False,
-                                       sets, names) for f in files]) if files else np.zeros(0, P.WREC)
+    # one engine run per plan file over the same small PBF (its cells and parts; elements outside them are skipped),
+    # T2_WORKERS at a time; the dumps ingested in file order, so the place-set numbering does not depend on which
+    # engine ends first
+    from concurrent.futures import ThreadPoolExecutor
+    with ThreadPoolExecutor(max(1, T2_WORKERS)) as ex:
+        futs = [ex.submit(engine_dump, day, t1w / "touched.osm.pbf", t1w / f["id"], day.today,
+                          w / "files" / f["id"] / "cities.json", w / "files" / f["id"] / "parts", False) for f in files]
+        dumps1 = [f_.result() for f_ in futs]
+    new1 = (np.concatenate([dump_rows(d_, sets, names) for d_ in dumps1]) if files else np.zeros(0, P.WREC))
     new1 = np.unique(new1)
     tier1 = WS.tier1_mask(names)
     new1 = new1[tier1[new1["quest"]]]
