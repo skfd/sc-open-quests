@@ -2470,6 +2470,28 @@ checked against a full count. Until then the world's published numbers can only 
     `europe-2026-11-02` (pinned) as storecheck does; the store's HOLD and the disabled task stay until it exists.
     Worth tracing before the loop runs a month: the 11 cell-against-city differences (one or two cities, e.g.
     Bratislava's AddCycleway +4).
+  - **Step 4, the world-day loop: built (11-18, 10:00-11:20; 0c8e8d63), day 11-02 running since 11:21** (`--max-days 1`,
+    detached; `logs/planet-store.log`, stdout in `logs/planet-store.out`). `planet_store_day.py` now moves the world
+    (`.scratch/planet/world-1101`) with the store; there is no flag to move the store alone. Per day D: the world's
+    `world.bin` files hard-linked into `.scratch/planet-day/world-days/<D>/before/` (0 s; every world write replaces
+    a file, and `notes_day._hidden_file` now copies a linked file before setting flags), `prepare`, the prepared day
+    saved as `day.pkl` and read back (the update takes D-1's way pairs: `prepare` cannot run twice), `update`,
+    `finish`, **the gate** (`tools/stream/world_gate.py`: the 32 cities' `osm-<city>` counts against the engine on
+    `europe-D` with the same quests and the world's own notes dump, clipped once into `W/gate-notes/`; bar 0.1% in
+    total and per city), then `loc advance`, `loc check`, subcmp/why, `compact`, `punch`, D's clip unpinned, the
+    day's work deleted (`day.json`, `gate.json` kept in `W/days/<D>/`). Every Europe clip past the world's clock is
+    pinned on sight. **Resume:** store at D, node file at D-1: the world put back from `before/` and `finish` rerun
+    from `day.pkl`, or on from the gate if `finished` is there. A failed gate stops; to accept a day by hand, set
+    `"ok": true` in its `gate/gate.json` and remove STOPPED. Also in 0c8e8d63: tier 2's delta compares groups by
+    fingerprint (34M rows in 6 s; the per-row Python dict would have been minutes and GBs on a planet day), and
+    tier 1's and the note quests' 128 engine runs go `WORLD_T2_WORKERS` (4) at a time, ingested in file order.
+    **The gate on the seed (11:15-11:21):** `world_gate.py` on the 11-01 oracle reproduces `gate1101`: 21 of 32
+    equal, +9 of 19,239,746, worst city 0.0016% (`world-1101/gate-test/`). The recut's stale HOLD was removed at launch.
+    **Not built: notes after 11-17T05:37Z.** The world's notes clips are of `planet-notes-261117`; the driver stops
+    before day 11-18 ("needs a newer notes dump"). Needed before then: a newer dump clipped into every file's
+    `notes.jsonl`, `notes-all.jsonl` and `gate-notes/` rebuilt. **Also not yet:** the task `kk-SCOpenQuests-planetstore`
+    stays disabled until 11-02 passes; `files/*/state.bin*` (56 GB, the seed's dumps) is the disk reserve, to delete
+    once the store has moved past 11-01 (it cannot go back, so they can only reseed a world no store matches).
   - **Step 2's script: `.scratch/planet-cut/recut1101.sh`, running since 19:22** (log `logs/recut1101.log`; start line in its header, **one quoted `-c "..."` argument: `-ArgumentList '-c','...'` starts a bash that does nothing**;
     every step skips what is done). It waits until `history-261109.osm.pbf` and its meta exist (MD5 matched), **then a gate:
     `tilestore at` over the whole file at 11-01T00Z (about 30 min) must give `notIncreasing` 0 and nodes and ways within
