@@ -2410,6 +2410,11 @@ checked against a full count. Until then the world's published numbers can only 
     nodes, 1,228,807,341 ways, 15,045,483 relations, `notIncreasing` 0 (850 backwards timestamps in the whole file);
     the old file at 11-02 had 10,975,350,797 and 1,229,012,042. kk-SCOpenQuests-planetstore disabled; **the 11-17 store
     and its node file deleted at 20:19; `scut` at 11-01 running since 20:19** (476 GB free at its start).
+  - **The store is at 11-01 (22:17):** `scut` 6,402 s (to 22:06), 32,109,393 tiles (11-02's cut: 32,110,824), pack
+    232.59 GiB, 268 GB on disk, peak working set 66.5 GiB; node file `loc build` 686 s, 10,974,021,977 nodes (equal
+    to the gate's count), 0 ids not increasing, holds 2026-11-01T00:00:00Z. 91 GB free. HOLD kept, the store task
+    disabled (both until step 4). The oracle (Docker osmium over the history file) is running from 22:17; with the
+    cut's memory peak over, engine runs beside it are fine (the e2e grouping check runs now).
   - **Step 2's script: `.scratch/planet-cut/recut1101.sh`, running since 19:22** (log `logs/recut1101.log`; start line in its header, **one quoted `-c "..."` argument: `-ArgumentList '-c','...'` starts a bash that does nothing**;
     every step skips what is done). It waits until `history-261109.osm.pbf` and its meta exist (MD5 matched), **then a gate:
     `tilestore at` over the whole file at 11-01T00Z (about 30 min) must give `notIncreasing` 0 and nodes and ways within
