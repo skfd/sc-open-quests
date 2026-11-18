@@ -5592,3 +5592,37 @@ So **tier 2 on a planet day is about 40 minutes for both dates at 4 workers**, a
 engine's cost follows map data and rectangle count, not area: f116 is 10% of the padded area and 0.5% of the map
 data. Not measured: 6 or 8 workers (the engines already use every thread each, so 4 to 1,220 s is close to the
 summed time over 4), or the cover's extra P3 boxes the planet would add outside Europe.
+
+### The world day on the planet (2026-11-18; release 1, step 4)
+
+`tools/stream/planet_store_day.py` moves the planet store and the world state (`.scratch/planet/world-1101`, the
+seed at 11-01) together; the store never moves alone. A day D, the store, its node file and the world at D-1:
+
+1. **D-1 kept.** Every plan file's `world.bin` hard-linked into the day's `before/` (no bytes copied). Every write
+   the day makes to a world file replaces it (`replace_in_file`, `write_rows`), and `notes_day._hidden_file`, which
+   sets flags in place, first copies a file another name holds; so `before/` keeps D-1's rows until the day is done.
+   `world-keys.npy` is not linked (`np.save` writes into the file); a restore derives it from the rows.
+2. **prepare**, then the prepared day saved (`world_day.save_day`, without the node file's memmap) and read back.
+   The update's `--prune-pairs` takes D-1's way pairs away, so after it `prepare` cannot run again: the saved day is
+   what makes the rest of the day repeatable.
+3. **update** (`tilestore update --world --prune-pairs`).
+4. **finish**, the node file still at D-1. A finish that begins again first puts the world back from `before/`.
+5. **The gate** (`tools/stream/world_gate.py`): the 32 European cities' own outlines (`osm-<city>`) from the world's
+   counts at D against the engine on the Europe clip of D, the same quests file and the world's own notes dump
+   (clipped once per region into `W/gate-notes/`: the daily run deletes its older clips). The bar: 0.1% of open
+   quests over the 32 and in each city. On the 11-01 oracle it reproduces the seed's gate exactly (21 of 32 equal,
+   +9 of 19,239,746).
+6. **The store's own day** as before (loc advance and check, subcmp and why, compact, punch), then D's Europe clip
+   unpinned and the day's work deleted, its `day.json` and `gate.json` kept in `W/days/<D>/`. Every clip of a day the
+   world has not reached is pinned on sight.
+
+**Notes.** The world's clips hold every note's history up to their dump's `until`. A day past it cuts the newest dump
+into every plan file again; the old union clip stays as that day's D-1 side of the hidden flags
+(`hidden_files(prev_table=)`), since a note the newer dump lacks (hidden by a moderator) was open at D-1 and its rows
+must be unhidden at D.
+
+**Two costs moved for the planet.** Tier 2's delta compared recounts with a Python tuple per row (`groups`); a planet
+date is about 34M rows. It now compares each (element, quest) group's fingerprint (row count and two 64-bit hash
+sums), the same candidates as before on random cases, 6 s for 34M rows. Tier 1's and the note quests' engine runs
+(one per plan file, 128) go `WORLD_T2_WORKERS` at a time, ingested in file order so the place-set numbering does
+not change.
