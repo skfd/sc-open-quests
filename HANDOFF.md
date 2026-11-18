@@ -2418,6 +2418,28 @@ checked against a full count. Until then the world's published numbers can only 
     to the gate's count), 0 ids not increasing, holds 2026-11-01T00:00:00Z. 91 GB free. HOLD kept, the store task
     disabled (both until step 4). The oracle (Docker osmium over the history file) is running from 22:17; with the
     cut's memory peak over, engine runs beside it are fine (the e2e grouping check runs now).
+  - **The 11-01 store checked against the oracle (23:13-23:20): it holds.** The oracle (`oracle-1101/europe-2026-11-01
+    .osm.pbf`, 1.75 GB; its Europe history cut in 50 min, 7.9 GB) is made like a recut clip. `loc check`: 127,686,642
+    nodes, 0 differ. `subcmp` at 2 km: 13,964 of 14,001 interior tiles the same (32 differ, 5 store-only); at 0.5 km
+    58 not the same. These are exactly 11-16's numbers, and `why3.py` explains all 58 by the same four ways the clip lacks
+    (153021227, 172152780, 1091714367, 1117929203), with none left. The engine refuses a file without a replication
+    timestamp (`--today` or not), so `europe-2026-11-01.stamped.osm.pbf` is the oracle with osm-extracts' headers
+    (`osmium cat --output-header`, sequence 5163).
+  - **Step 3, the seed at 11-01, prepared (23:15).** `.scratch/planet/setup1101.py` made `.scratch/planet/world-1101`
+    (the 11-08 world's plan, places, parts cache, each file's cities, bbox, parts and cells; **its `cities.json` points
+    into `world-places`' cells, so `world-places` must stay**). Notes at 11-01 come from today's dump: the engine
+    keeps the notes open at its clock from each note's whole history (`Notes.kt`, `created > asOf` skipped); notes
+    hidden by moderators since 11-01 are not in it. `storecheck_cities.py --clip` (7190f4bd) holds a store against an
+    oracle with the clock given to both runs. **Chain: `.scratch/planet/seed1101.sh`** (log `logs/seed1101.log`, start
+    line in its header): storecheck against the stamped oracle (the seed goes on only if every region is EQUAL); then,
+    **with `loccheck.ok` and storecheck equal, it deletes `history-261109.osm.pbf` and the oracle's Europe history**
+    (the cut, about 75-80 GB, and the state, about 48 GB, do not fit beside them); storecut at 11-01, notes, count
+    `--state` (canary f47, then two engines at 30 GB, a failed file at 40 GB), the cut deleted, `world_state seed`,
+    `counts --clock 2026-11-01`, `report --archive 2026-11-01`. **The report is not the gate:** the published 11-01
+    snapshots are v64.0 and the seed counts v64.1. The like-for-like gate, to run after: the world's `osm-<city>`
+    counts against storecheck's `clip` snapshots for the 32 cities (`.scratch/storecheck/1101/<region>/clip`).
+    Canary by hand first (`.scratch/planet/canary1101.sh`, log `logs/canary1101.log`): a planet file's dump with place
+    sets and `city:<id>` at 30 GB has not run before.
   - **Step 2's script: `.scratch/planet-cut/recut1101.sh`, running since 19:22** (log `logs/recut1101.log`; start line in its header, **one quoted `-c "..."` argument: `-ArgumentList '-c','...'` starts a bash that does nothing**;
     every step skips what is done). It waits until `history-261109.osm.pbf` and its meta exist (MD5 matched), **then a gate:
     `tilestore at` over the whole file at 11-01T00Z (about 30 min) must give `notIncreasing` 0 and nodes and ways within
