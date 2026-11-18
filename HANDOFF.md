@@ -2446,6 +2446,22 @@ checked against a full count. Until then the world's published numbers can only 
     (`.scratch/storecheck/1101.log`; the cities' clip snapshots under `.scratch/storecheck/1101/<region>/clip` are the
     seed's gate later). Then `history-261109.osm.pbf` and the oracle's Europe history were deleted (222 GB free); the
     oracle clip itself (1.75 GB, both copies) stays. storecut started 23:37.
+  - **Step 3, the seed at 11-01: built (23:27-03:49; `logs/seed1101.log`).** storecut 128 files 23:37-00:23; notes
+    00:23-00:27; count `--state` 8,564 s, two engines at 30 GB (it waited for memory near the end, one engine at a
+    time); cut deleted; `world_state seed`: **2,009,244,544 rows, 1,078,189 place sets, 1,020,138 places** (3,239 s);
+    counts at 11-01: 27,680,263 (place, quest) pairs (294 s); report 1,016,874 of 1,069,532 places numbered. 110 GB
+    free at the end. **Report against the published 11-01 snapshots (context, not the gate):** 147 cities, median
+    |diff| 0.017%, 90th percentile 0.11%, worst Fredericton +0.79% (Canada's and Germany's snapshots are as of
+    21:21Z, and v64.0 against v64.1).
+  - **The seed's like-for-like gate (09:40, `.scratch/planet/gate1101.py`, `world-1101/gate1101.json`):** the world's
+    `osm-<city>` counts against the engine on the 11-01 oracle for the 32 European cities, default-setting measures.
+    **The seed's `world_state counts` has no note quests** (the day's `counts_at` adds them; the seed path never
+    did). Without them: 21 of 32 cities equal in every quest and measure; the other 11 differ by 1-4 in one to three
+    quests (AddHousenumber in 8, Athens' AddMaxSpeed/AddRoadSmoothness/AddRoadWidth +1 each, Bratislava AddCycleway
+    +4 and AddBarrierOnRoad -1, Helsinki AddMaxHeight +2, Kobenhavn AddCrossing -1); in all 19 open quests of
+    19,235,901 (0.0001%), far inside the 0.1% bar. Not traced: cells against a whole city (the world counts each city
+    as cells; the clip run counts it whole). The note quests: `.scratch/planet/notes1101.py` runs `counts_at` on the
+    seed (W/counts/2026-11-01/), then the gate again on those.
   - **Step 2's script: `.scratch/planet-cut/recut1101.sh`, running since 19:22** (log `logs/recut1101.log`; start line in its header, **one quoted `-c "..."` argument: `-ArgumentList '-c','...'` starts a bash that does nothing**;
     every step skips what is done). It waits until `history-261109.osm.pbf` and its meta exist (MD5 matched), **then a gate:
     `tilestore at` over the whole file at 11-01T00Z (about 30 min) must give `notIncreasing` 0 and nodes and ways within
