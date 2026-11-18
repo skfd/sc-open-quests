@@ -2405,6 +2405,11 @@ checked against a full count. Until then the world's published numbers can only 
     the only caller of `fetch planet-history` and `recut`) is **disabled**, so nothing scheduled touches the file. **Keep the file until the Europe polygon at 11-01T00Z is cut from it** (the seed's row-for-row oracle;
     no Europe clip of 11-01 exists, the oldest kept is 11-02). Not with osm-extracts `recut` (it would add an older
     dated file to the live Europe clip): with this repo's history tools, as `backfill_history.py` cuts regions.
+  - **Step 2 under way (20:02-20:19):** download done (0.6 h, MD5 matches; header timestamp 2026-11-09T01:00:03Z,
+    no replication feed named, writer planet-dump-ng 1.2.4). **Gate passed** in 739 s: at 11-01T00Z 10,974,021,977
+    nodes, 1,228,807,341 ways, 15,045,483 relations, `notIncreasing` 0 (850 backwards timestamps in the whole file);
+    the old file at 11-02 had 10,975,350,797 and 1,229,012,042. kk-SCOpenQuests-planetstore disabled; **the 11-17 store
+    and its node file deleted at 20:19; `scut` at 11-01 running since 20:19** (476 GB free at its start).
   - **Step 2's script: `.scratch/planet-cut/recut1101.sh`, running since 19:22** (log `logs/recut1101.log`; start line in its header, **one quoted `-c "..."` argument: `-ArgumentList '-c','...'` starts a bash that does nothing**;
     every step skips what is done). It waits until `history-261109.osm.pbf` and its meta exist (MD5 matched), **then a gate:
     `tilestore at` over the whole file at 11-01T00Z (about 30 min) must give `notIncreasing` 0 and nodes and ways within
