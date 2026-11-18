@@ -2488,6 +2488,11 @@ checked against a full count. Until then the world's published numbers can only 
     **Day 11-02 so far:** prepare 525 s (diff read 89, old ways 90, rows 94, store context 215; `day.pkl` 665 MB),
     update 620 s (11:30-11:40): **the store is at 11-02, generation 1; no way back.** `finish` read the day back
     and waits out the daily run's window (to 14:15). If the run dies from here, rerun the same command: it resumes.
+    **Stuck 14:21-15:41 in `store_context.crossing_box`** (every changed road against every bridge in Python: 115,667
+    roads x 8,260 bridges on 11-02); stopped by hand, fixed with a box prefilter (981d284a: hooks 11 s, 0 of 2,000
+    sampled roads differ). The day's cover then took 107 s (12,656,909 cells; 548,092 extra lines, 64,099 container
+    boxes from the store context). **Resumed 15:53** by the same command: the resume path put back 0 files (the stop
+    came before tier 1) and reran `finish` from `day.pkl`.
     **The gate on the seed (11:15-11:21):** `world_gate.py` on the 11-01 oracle reproduces `gate1101`: 21 of 32
     equal, +9 of 19,239,746, worst city 0.0016% (`world-1101/gate-test/`). The recut's stale HOLD was removed at launch.
     **Notes past the world's dump (11-18, 11:40):** when D passes the clips' `until` (261117: 11-17T05:37Z, so first
