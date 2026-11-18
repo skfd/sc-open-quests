@@ -2497,8 +2497,15 @@ checked against a full count. Until then the world's published numbers can only 
     recount rows 49.0M / 49.2M, the delta 10 min (its "added, the state had it" 240,481 of 289,723 is the
     rehearsal's ratio too). **Disk:** C: fell to 31 GB free during the day (the D-1 links hold about 56 GB until
     the day ends); the seed's dumps `files/*/state.bin*` (56 GB) were deleted at the owner's word (18:15): 83 GB free.
-    **To do: a day's `counts/<D>/counts.npz` is 2.2 GB, stored uncompressed: 30 days is about 66 GB.** Compress
-    (`savez_compressed`) or keep only what publishing needs before the catch-up has run long.
+    Counts are now written compressed (8bd4e23b; 11-02's is still 2.2 GB raw).
+    **The gate for 11-02 passed (18:23):** 21 of 32 cities equal in every quest and measure, open 19,243,558 against
+    19,243,549 on the clip (+9), worst city 0.0016%: **the same 11 cities with the same differences as the seed**, so
+    the first streamed planet day added nothing of its own. `finish` 8,703 s (tier 2 engines 4,742, tier 2 reads
+    1,251, tier 1 812, delta 589, counts and note quests 503, engine files 304, store context 415, notes 118, cover
+    70); `loc check` 0 of 127,715,680 nodes differ. A day is about 3 hours end to end, plus the daily window's wait
+    (11:55-14:15) when it falls inside one. `punch` after the first day took over 20 min (one thread over the 250 GB
+    pack). **RUNNING now carries the pid** and a run refuses to start beside a live one: the scheduled task kills a run
+    after 6 h, so a catch-up is started by hand and the task can stay enabled beside it.
     **The gate on the seed (11:15-11:21):** `world_gate.py` on the 11-01 oracle reproduces `gate1101`: 21 of 32
     equal, +9 of 19,239,746, worst city 0.0016% (`world-1101/gate-test/`). The recut's stale HOLD was removed at launch.
     **Notes past the world's dump (11-18, 11:40):** when D passes the clips' `until` (261117: 11-17T05:37Z, so first
