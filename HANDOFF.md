@@ -2386,6 +2386,14 @@ checked against a full count. Until then the world's published numbers can only 
     HOLD. **Measured (18:44), blocker 4 gone:** all 127 groups, one date, 4 engines at a time: 1,220 s wall time,
     reads 643 s (8.0 GB of map data), peak heap 6.7 GB, every group OK at 8 GB. **About 40 min of tier 2 a planet
     day** (DESIGN.md, "Tier 2 per plan file, measured on the planet"). Set `WORLD_T2_WORKERS=4` for planet days.
+  - **Checked before the re-cut (19:00-19:10; the advisor's three):** the pinned `tilestore-recut1101.exe` (main's
+    release build, b9f682fc) cut Germany through a dense node file equal to `store-rs-germany` (`gsmoke-recut.sh`,
+    storecmp equal); its history reader at 2026-10-01 on Berlin's history equals osmium `time-filter` (9,305,598
+    objects, 0 different); the script's flags are 11-16's. **The 11-01 Europe oracle, open (owner's call):** the
+    Europe clip of 11-01 is pruned and a clip cannot go back; a fresh cut from the planet history (osmium extract
+    `--with-history` of Europe's box, then `tilestore at`) needs tens of GB beyond the about 80 GiB free after the cut.
+    Proposed: day one checked against every region's published 11-01 snapshots (the plan's check), row for row from
+    11-02 on (`europe-2026-11-02`, pinned).
   - **Step 2's history file (owner, 18:20): add a download to osm-extracts** (`fetch planet-history` cannot start
     without a file; the newest weekly dump is `history-261109.osm.pbf`, about 155 GB). Then delete the store, cut at
     11-01T00Z. Disk: 216 GB free now; the store is 292 GB, `.scratch/planet-day` 115 GB.
@@ -2398,7 +2406,7 @@ checked against a full count. Until then the world's published numbers can only 
     harmless. **Keep the file until the Europe polygon at 11-01T00Z is cut from it** (the seed's row-for-row oracle;
     no Europe clip of 11-01 exists, the oldest kept is 11-02). Not with osm-extracts `recut` (it would add an older
     dated file to the live Europe clip): with this repo's history tools, as `backfill_history.py` cuts regions.
-  - **Step 2's script: `.scratch/planet-cut/recut1101.sh`** (log `logs/recut1101.log`; start line in its header;
+  - **Step 2's script: `.scratch/planet-cut/recut1101.sh`, running since 19:11** (log `logs/recut1101.log`; start line in its header, **one quoted `-c "..."` argument: `-ArgumentList '-c','...'` starts a bash that does nothing**;
     every step skips what is done). It waits until `history-261109.osm.pbf` and its meta exist (MD5 matched), writes
     HOLD, waits out RUNNING, disables kk-SCOpenQuests-planetstore, **deletes `.scratch/planet-cut/store` (11-17,
     generation 15) and `.scratch/planet-day/planet.loc`**, runs `scut --at 2026-11-01T00:00:00Z --day 2026-11-01
