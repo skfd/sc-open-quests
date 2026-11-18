@@ -2460,8 +2460,16 @@ checked against a full count. Until then the world's published numbers can only 
     quests (AddHousenumber in 8, Athens' AddMaxSpeed/AddRoadSmoothness/AddRoadWidth +1 each, Bratislava AddCycleway
     +4 and AddBarrierOnRoad -1, Helsinki AddMaxHeight +2, Kobenhavn AddCrossing -1); in all 19 open quests of
     19,235,901 (0.0001%), far inside the 0.1% bar. Not traced: cells against a whole city (the world counts each city
-    as cells; the clip run counts it whole). The note quests: `.scratch/planet/notes1101.py` runs `counts_at` on the
-    seed (W/counts/2026-11-01/), then the gate again on those.
+    as cells; the clip run counts it whole). **With the note quests (09:45-09:55):** `.scratch/planet/notes1101.py` ran `world_day.counts_at` on
+    the seed (578 s, 128 notes-only engine runs; `W/counts/2026-11-01/`, the counts a world day writes): note quests
+    equal in all 32 cities; open quests 19,239,755 in the world against 19,239,746 on the clip (+9); 21 of 32 cities
+    equal in every quest and measure, the same 11 small differences as above. **Step 3 is done: the seed at 11-01 is
+    `.scratch/planet/world-1101` (counts per place in `counts/2026-11-01/`).** Next, step 4: a planet driver for the
+    world day (`world_day.prepare` before the store's update, `finish` after it, inside `planet_store_day.py`'s run;
+    `WORLD_T2_WORKERS=4`), its first day diff 5164 (11-01 to 11-02, in `.scratch/planet/diffs-keep`) checked against
+    `europe-2026-11-02` (pinned) as storecheck does; the store's HOLD and the disabled task stay until it exists.
+    Worth tracing before the loop runs a month: the 11 cell-against-city differences (one or two cities, e.g.
+    Bratislava's AddCycleway +4).
   - **Step 2's script: `.scratch/planet-cut/recut1101.sh`, running since 19:22** (log `logs/recut1101.log`; start line in its header, **one quoted `-c "..."` argument: `-ArgumentList '-c','...'` starts a bash that does nothing**;
     every step skips what is done). It waits until `history-261109.osm.pbf` and its meta exist (MD5 matched), **then a gate:
     `tilestore at` over the whole file at 11-01T00Z (about 30 min) must give `notIncreasing` 0 and nodes and ways within
