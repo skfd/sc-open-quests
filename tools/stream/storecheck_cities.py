@@ -34,10 +34,11 @@ REGIONS = ["europe-west", "europe-central", "europe-east", "europe-msk"]
 KIND = {0: "n", 1: "w", 2: "r"}
 
 
-def engine(pbf: Path, cities: Path, out: Path, notes: Path, tz: str, quests: Path) -> float:
+def engine(pbf: Path, cities: Path, out: Path, notes: Path, tz: str, quests: Path, today: str) -> float:
+    """the clock given, not taken from the file's header: an oracle cut from a history file keeps the history's"""
     out.mkdir(parents=True, exist_ok=True)
     cmd = [str(run.ENGINE_BAT), "count", "--pbf", str(pbf), "--quests", str(quests), "--cities", str(cities),
-           "--out", str(out / "out"), "--notes", str(notes), "--dump-state", str(out / "state.bin")]
+           "--out", str(out / "out"), "--notes", str(notes), "--dump-state", str(out / "state.bin"), "--today", today]
     t = time.time()
     with open(out / "log.txt", "w", encoding="utf-8") as f:
         subprocess.run(cmd, cwd=ROOT, env=run.engine_env(tz, heap=True), stdout=f, stderr=subprocess.STDOUT, check=True)
@@ -95,14 +96,17 @@ def main() -> None:
     ap.add_argument("--regions", default=",".join(REGIONS))
     ap.add_argument("--ring", type=float, default=2000.0)
     ap.add_argument("--store", type=Path, default=store_lock.STORE)
+    ap.add_argument("--clip", type=Path, help="the Europe clip of the store's day, when .osm-data keeps none (an oracle "
+                    "cut from a history file at that instant); its day is then not checked against a meta file")
     a = ap.parse_args()
     meta = json.loads((a.store / "store.json").read_text())
     day = meta["generations"][-1]["day"]
-    clip_pbf = EUROPE / f"europe-{day}.osm.pbf"
+    clip_pbf = a.clip or EUROPE / f"europe-{day}.osm.pbf"
     assert clip_pbf.exists(), f"no Europe clip of the store's day {day}"
     stamp = f"{day}T00:00:00Z"
-    cmeta = json.loads((EUROPE / f"europe-{day}.meta.json").read_text())
-    assert cmeta["replication_timestamp"] == stamp, (cmeta["replication_timestamp"], stamp)
+    if not a.clip:
+        cmeta = json.loads((EUROPE / f"europe-{day}.meta.json").read_text())
+        assert cmeta["replication_timestamp"] == stamp, (cmeta["replication_timestamp"], stamp)
     quests = run.newest_quests_file()
     print(f"store day {day} (generation {meta['generations'][-1]['gen']}), clip {clip_pbf.name}, quests {quests.name}")
     total = 0
@@ -113,7 +117,7 @@ def main() -> None:
         d = a.out / rid
         d.mkdir(parents=True, exist_ok=True)
         if not (d / "clip" / "state.bin").exists():
-            s = engine(clip_pbf, cities, d / "clip", notes, region["timeZone"], quests.relative_to(ROOT))
+            s = engine(clip_pbf, cities, d / "clip", notes, region["timeZone"], quests.relative_to(ROOT), stamp)
             print(f"{rid}: clip counted in {s:.0f} s", flush=True)
         read_pbf = d / "read.osm.pbf"
         if not read_pbf.exists():
@@ -126,7 +130,7 @@ def main() -> None:
             Path(str(read_pbf) + ".part").rename(read_pbf)
             print(f"{rid}: read {read_pbf.stat().st_size / 2**20:.0f} MiB in {time.time() - t:.0f} s", flush=True)
         if not (d / "store" / "state.bin").exists():
-            s = engine(read_pbf, cities, d / "store", notes, region["timeZone"], quests.relative_to(ROOT))
+            s = engine(read_pbf, cities, d / "store", notes, region["timeZone"], quests.relative_to(ROOT), stamp)
             print(f"{rid}: store read counted in {s:.0f} s", flush=True)
         print(f"{rid}:", flush=True)
         n = compare(d / "clip", d / "store")
