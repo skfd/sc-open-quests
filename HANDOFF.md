@@ -2485,6 +2485,9 @@ checked against a full count. Until then the world's published numbers can only 
     `"ok": true` in its `gate/gate.json` and remove STOPPED. Also in 0c8e8d63: tier 2's delta compares groups by
     fingerprint (34M rows in 6 s; the per-row Python dict would have been minutes and GBs on a planet day), and
     tier 1's and the note quests' 128 engine runs go `WORLD_T2_WORKERS` (4) at a time, ingested in file order.
+    **Day 11-02 so far:** prepare 525 s (diff read 89, old ways 90, rows 94, store context 215; `day.pkl` 665 MB),
+    update 620 s (11:30-11:40): **the store is at 11-02, generation 1; no way back.** `finish` read the day back
+    and waits out the daily run's window (to 14:15). If the run dies from here, rerun the same command: it resumes.
     **The gate on the seed (11:15-11:21):** `world_gate.py` on the 11-01 oracle reproduces `gate1101`: 21 of 32
     equal, +9 of 19,239,746, worst city 0.0016% (`world-1101/gate-test/`). The recut's stale HOLD was removed at launch.
     **Notes past the world's dump (11-18, 11:40):** when D passes the clips' `until` (261117: 11-17T05:37Z, so first
