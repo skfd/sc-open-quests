@@ -5572,6 +5572,10 @@ the place-set numbering does not depend on which engine ends first.
 5,668,905 rows as the one run, with 0 different (`.scratch/rectgroups/exact.py`). Grouping took 145 s at 4 workers,
 the one run 157 s.
 
+**End to end:** the rehearsal's day 11-10 through `world_day.run` with grouping (16 groups, 4 workers, both
+reads), from the same 11-09 seed, against the ungrouped run of that day: every state row and all 628,364 counts per
+place and quest equal (`.scratch/rectgroups/e2e.py`). Tier 2's engine time there: 245 s.
+
 **The planet, one date** (`.scratch/rectgroups/measure.py all --workers 4 --heap 8`): planet day 5172's rectangles
 under the big-polygon rule (128,544 in 127 files, 101,651 km2, 289,864 km2 padded by the 300 m ring), read from
 the planet store's generation 15 (11-17) with the planet parts cache (1,069,679 outlines, 5.8 GB, built in 870 s).
