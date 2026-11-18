@@ -420,10 +420,21 @@ def main():
             return
         time.sleep(60)
         waited += 1
+    if RUNNING.exists():  # another run (the scheduled task beside a catch-up started by hand) is moving the store
+        try:
+            pid = int(RUNNING.read_text(encoding="utf-8").split()[1])
+        except (IndexError, ValueError):
+            pid = None
+        alive = pid is not None and str(pid) in subprocess.run(["tasklist", "/FI", f"PID eq {pid}", "/NH"],
+                                                                capture_output=True, text=True).stdout
+        if alive or pid is None:
+            log(f"another run holds {RUNNING} ({RUNNING.read_text(encoding='utf-8').strip()}): not starting")
+            return
+        log(f"{RUNNING} left by a run that is gone (pid {pid}): taking over")
     shutil.copy2(EXE_SRC, EXE)  # a rebuild of tilestore/ while this runs does not touch the binary in use
     log(f"planet store run started; binary {EXE_SRC} copied")
     n = 0
-    RUNNING.write_text(f"{dt.datetime.now().isoformat(timespec='seconds')}\n", encoding="utf-8")
+    RUNNING.write_text(f"{dt.datetime.now().isoformat(timespec='seconds')} {os.getpid()}\n", encoding="utf-8")
     try:
         while n < a.max_days and one_day():
             n += 1

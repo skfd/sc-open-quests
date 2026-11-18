@@ -114,7 +114,7 @@ def count_files(paths: list[Path], dtype, clock_min: int, sets: list[tuple[int, 
 
 def write(out: Path, codes: np.ndarray, sums: np.ndarray, n_quests: int, clock: str, quests: list[str], parts: list[str]):
     out.mkdir(parents=True, exist_ok=True)
-    np.savez(out / "counts.npz", part=(codes // n_quests).astype(np.uint32), quest=(codes % n_quests).astype(np.uint16), m=sums)
+    np.savez_compressed(out / "counts.npz", part=(codes // n_quests).astype(np.uint32), quest=(codes % n_quests).astype(np.uint16), m=sums)
     (out / "counts.json").write_text(json.dumps({"clock": clock, "measures": MEASURES, "quests": quests, "parts": parts}),
                                      encoding="utf-8")
 
