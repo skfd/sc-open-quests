@@ -1,6 +1,25 @@
-docs/data/** text eol=lf
-docs/places/** text eol=lf
+# Every text file is LF, in the repo and in every checkout on every machine. This overrides
+# core.autocrlf=true (set globally here), which checked tracked files out as CRLF while every
+# tool we run (Python newline="\n", the engine, osmium, Claude's Write) writes LF.
+# The rule must stay first: later lines win, so the exceptions below still apply.
+* text=auto eol=lf
+
+# Windows batch files need CRLF.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Binary, never converted (text=auto detects most of these; spelled out so it never guesses).
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.jar binary
+*.ser binary
+*.pbf binary
+*.gz binary
+*.zip binary
+
+# Third-party files kept byte for byte as published.
 docs/vendor/** -text
-docs/_headers text eol=lf
-docs/_redirects text eol=lf
-*.sh text eol=lf
