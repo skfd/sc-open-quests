@@ -2438,6 +2438,10 @@ checked against a full count. Until then the world's published numbers can only 
     G's whole-count oracle went with G's worktree), then the seed at 11-01 (step 3), checked against the oracle and every
     region's published 11-01 snapshots; the store's first day (diff 5164, hard-linked in
     `.scratch/planet/diffs-keep`) checked by the loop against `europe-2026-11-02`. `europe-2026-11-17` pinned.
+  - **Line endings on disk (23:10, skill kk-line-endings):** the repo already says LF (`.gitattributes`, `.vscode`,
+    CLAUDE.md); `rewrite.py --apply` rewrote the 5,452 tracked files still CRLF in main's checkout (only
+    `engine/gradlew.bat` stays CRLF, by its rule); 207 Python tests pass. `cloud_publish.py check` compares local
+    `docs/` bytes with the site: a file last deployed as CRLF reads as different until the next publish uploads it.
 
 ## The place page: merged (2026-11-16, evening; owner: "pick from handoff ui work", then "merge it now")
 
