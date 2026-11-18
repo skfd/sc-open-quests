@@ -146,3 +146,29 @@ class SnapshotTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class CrossingBoxTest(unittest.TestCase):
+    def test_prefilter_gives_the_same_boxes(self):
+        import store_context as SC
+        rng = np.random.default_rng(11)
+
+        def line(k):
+            start = rng.uniform([52.0, 13.0], [52.05, 13.05])
+            return np.cumsum(np.vstack([start, rng.normal(0, 0.002, (k - 1, 2))]), axis=0)
+
+        bridges = [line(int(rng.integers(2, 5))) for _ in range(300)]
+        bridges[5][1] = np.nan  # a place the payload lacked
+        boxes = SC.line_boxes(bridges)
+        hit = 0
+        for _ in range(400):
+            road = line(int(rng.integers(2, 12)))
+            want = SC.crossing_box(road, bridges)
+            self.assertEqual(SC.crossing_box(road, bridges, boxes), want)
+            hit += want is not None
+        self.assertGreater(hit, 20)
+        # a road crossing a bridge exactly at the bridge's end point (touching counts)
+        b = [np.array([[0.0, 0.0], [1.0, 1.0]])]
+        r = np.array([[1.0, 0.0], [1.0, 2.0]])
+        self.assertEqual(SC.crossing_box(r, b, SC.line_boxes(b)), SC.crossing_box(r, b))
+        self.assertIsNotNone(SC.crossing_box(r, b))

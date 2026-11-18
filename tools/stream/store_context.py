@@ -96,9 +96,32 @@ def _quest_points(g: np.ndarray) -> np.ndarray:
     return W._quest_points([g])
 
 
-def crossing_box(road: np.ndarray, others: list[np.ndarray]) -> tuple | None:
+BOX_PAD = 1e-7  # degrees: a crossing found by _cross_points lies on both segments, so on both lines' boxes
+
+
+def line_boxes(lines: list[np.ndarray]) -> np.ndarray:
+    """(n, 4) min lat, min lon, max lat, max lon of each line's known places; NaN for a line with fewer than two"""
+    out = np.full((len(lines), 4), np.nan)
+    for i, g in enumerate(lines):
+        g = g[np.isfinite(g).all(axis=1)]
+        if len(g) >= 2:
+            out[i] = (g[:, 0].min(), g[:, 1].min(), g[:, 0].max(), g[:, 1].max())
+    return out
+
+
+def crossing_box(road: np.ndarray, others: list[np.ndarray], boxes: np.ndarray | None = None) -> tuple | None:
     """the box of a road's quest point(s) and every point where it crosses one of `others`: one rectangle city holding
-    both, so its area pass's map data (ways with a node in its padded box) holds the crossing bridge (AddMaxHeight)"""
+    both, so its area pass's map data (ways with a node in its padded box) holds the crossing bridge (AddMaxHeight).
+    `boxes` (line_boxes(others)) leaves out the others whose box does not meet the road's: the same answer, without
+    testing every road against every bridge (a planet day has about 10^5 changed roads and 10^4 bridges)"""
+    if boxes is not None and len(others):
+        rb = line_boxes([road])[0]
+        if not np.isfinite(rb).all():
+            return None
+        with np.errstate(invalid="ignore"):
+            near = ((boxes[:, 0] <= rb[2] + BOX_PAD) & (boxes[:, 2] >= rb[0] - BOX_PAD) &
+                    (boxes[:, 1] <= rb[3] + BOX_PAD) & (boxes[:, 3] >= rb[1] - BOX_PAD))
+        others = [others[i] for i in np.flatnonzero(near)]
     pts = [x for o in others for x in _cross_points(road, o)]
     if not pts:
         return None
@@ -351,15 +374,18 @@ class DayContext:
         out = []
         for when, cx, cxb in (("b", self.bx, self.bxb), ("a", self.ax, self.axb)):
             if cx:  # roads crossing a changed bridge
+                changed = self.bridges.get(when, [])
+                cboxes = line_boxes(changed)
                 for w, v in cx.crossing.items():
-                    b = crossing_box(v["line"], self.bridges.get(when, []))
+                    b = crossing_box(v["line"], changed, cboxes)
                     if b is not None:
                         out.append((b, "way", ROAD_UNDER, True, ("way", w)))
             if cxb:  # bridges crossing a changed road
                 bridges = [v["line"] for v in cxb.crossing.values() if self.over_road(v["tags"])]
                 if bridges:
+                    bboxes = line_boxes(bridges)
                     for w, g in self.roads.get(when, {}).items():
-                        b = crossing_box(g, bridges)
+                        b = crossing_box(g, bridges, bboxes)
                         if b is not None:
                             out.append((b, "way", ROAD_UNDER, True, ("way", w)))
         return out
