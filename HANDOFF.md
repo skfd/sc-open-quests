@@ -2492,7 +2492,13 @@ checked against a full count. Until then the world's published numbers can only 
     roads x 8,260 bridges on 11-02); stopped by hand, fixed with a box prefilter (981d284a: hooks 11 s, 0 of 2,000
     sampled roads differ). The day's cover then took 107 s (12,656,909 cells; 548,092 extra lines, 64,099 container
     boxes from the store context). **Resumed 15:53** by the same command: the resume path put back 0 files (the stop
-    came before tier 1) and reran `finish` from `day.pkl`.
+    came before tier 1) and reran `finish` from `day.pkl`. Tier 1 16:00-16:18 (517,095 rows dropped, 775,989 added);
+    tier 2 16:18-18:08: 181,341 rectangles (181,886 km2), 128 groups, 8.4 GB map data a date, engines 1 h 40 min,
+    recount rows 49.0M / 49.2M, the delta 10 min (its "added, the state had it" 240,481 of 289,723 is the
+    rehearsal's ratio too). **Disk:** C: fell to 31 GB free during the day (the D-1 links hold about 56 GB until
+    the day ends); the seed's dumps `files/*/state.bin*` (56 GB) were deleted at the owner's word (18:15): 83 GB free.
+    **To do: a day's `counts/<D>/counts.npz` is 2.2 GB, stored uncompressed: 30 days is about 66 GB.** Compress
+    (`savez_compressed`) or keep only what publishing needs before the catch-up has run long.
     **The gate on the seed (11:15-11:21):** `world_gate.py` on the 11-01 oracle reproduces `gate1101`: 21 of 32
     equal, +9 of 19,239,746, worst city 0.0016% (`world-1101/gate-test/`). The recut's stale HOLD was removed at launch.
     **Notes past the world's dump (11-18, 11:40):** when D passes the clips' `until` (261117: 11-17T05:37Z, so first
