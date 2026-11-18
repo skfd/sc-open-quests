@@ -2420,7 +2420,9 @@ checked against a full count. Until then the world's published numbers can only 
     against the new store. Expected timeline: gate about 20:35, delete about 20:40, cut to about 22:30, node file
     about 22:50, oracle hours after (one osmium pass over 153 GB through Docker's mount). **No engines or large
     writes on C: until `logs/recut1101.log` says "recut1101 ended".** After it: one rehearsal day through `finish`
-    (grouping has not run end to end), then the seed at 11-01 (step 3), checked against the oracle and every
+    (grouping has not run end to end; ready: `.scratch/rectgroups/e2e.py setup`, `day`, `check`: P3's 11-09 seed
+    rebuilt in main's `.scratch/r1/eu/`, day 11-10 at 4 workers, every row and count against P3's ungrouped 11-10;
+    G's whole-count oracle went with G's worktree), then the seed at 11-01 (step 3), checked against the oracle and every
     region's published 11-01 snapshots; the store's first day (diff 5164, hard-linked in
     `.scratch/planet/diffs-keep`) checked by the loop against `europe-2026-11-02`. `europe-2026-11-17` pinned.
 
