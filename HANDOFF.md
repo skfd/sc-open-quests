@@ -2522,6 +2522,13 @@ checked against a full count. Until then the world's published numbers can only 
     tier 2 had 352,597 rectangles (357,771 km2, twice 11-02's; 142 boxes over the 5,000 km2 cap drawn by outline),
     its engines 9,693 s, recount rows 62.5M / 62.8M. **Days run 3 to 5 h**, so the catch-up to 11-18 ends about
     11-21 or 11-22. Tier 2's engines are the cost to cut after release 1 (4 workers already use every core).
+    **The daily punch is slow too (11-19, 01:31-03:31):** about 16,600 ranges in 2 h at 2-4 calls a second (the 100 GiB
+    test ran while D-1's links still held 56 GB, so it fired every day). Stopped by hand (STOPPED mine, removed);
+    **the punch is now decided after the day's work is deleted, under 60 GiB free** (c9ceb761): 11-03 closed at 03:38
+    with 158 GiB free, punch skipped. The 0.5 s a call is not only a first-punch effect; open, for after release 1
+    (`DESIGN.md`, "Why the punch was slow": a mapping of pack-0000 was the cause then; check whether `subcmp.py` or
+    `why.py`, which read the store in Python just before, map it). Dead ranges pile up until a punch runs.
+    11-04 started 03:38.
     **The gate on the seed (11:15-11:21):** `world_gate.py` on the 11-01 oracle reproduces `gate1101`: 21 of 32
     equal, +9 of 19,239,746, worst city 0.0016% (`world-1101/gate-test/`). The recut's stale HOLD was removed at launch.
     **Notes past the world's dump (11-18, 11:40):** when D passes the clips' `until` (261117: 11-17T05:37Z, so first
