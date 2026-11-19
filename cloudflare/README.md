@@ -20,6 +20,9 @@ against Workers Free's 100,000 a day. DESIGN.md, "Hosting on Cloudflare", says w
   304 when its copy is current.
 - **Limits:** 20,000 files in one deployed version and 25 MiB a file on Workers Free;
   `cloud_publish.py` refuses to deploy past the first.
+- **Spend breaker:** `python tools/spend_breaker.py` (hourly, task `kk-SCOpenQuests-spend`) prices this
+  month's R2 use and at $40 turns off `sc-data.comentality.com` and refuses R2 writes until
+  `--reset`. `--status` shows the latch and the estimate. DESIGN.md, "Spend breaker".
 - **Check:** `python tools/cloud_publish.py --check` fetches every file through the site and compares
   bytes. Cloudflare Web Analytics, which is on for the zone, adds a beacon script to HTML; the check
   takes it out before comparing.

@@ -124,6 +124,14 @@ def sync(dry_run: bool = False, docs: Path = DOCS) -> None:
     files = local_files(docs)
     count = remote_count(env)
     check_source(files, count)
+    if not dry_run:
+        import spend_breaker   # here, not at the top: it imports this module
+        try:
+            spend_breaker.gate(planned_class_a=len(files) + 100)   # at most every file, plus listings
+        except spend_breaker.Tripped as e:
+            # the bucket is only the way back; the site's static assets cost nothing, so deploy still runs
+            log(f"R2 sync SKIPPED, {e}; the site still deploys")
+            return
     log(f"docs/ {len(files)} files, bucket {count} objects; syncing")
     args = ["sync", str(docs), f"r2:{BUCKET}", "--checksum", "--transfers", "16", "--checkers", "32",
             "--max-delete", str(MAX_DELETE), "--stats-one-line", "--stats", "0", "-v",

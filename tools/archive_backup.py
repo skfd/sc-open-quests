@@ -75,6 +75,9 @@ def check_source(archive: Path, bucket: str) -> int:
 def backup(dry_run: bool = False, archive: Path = ARCHIVE, bucket: str = BUCKET, prefix: str = "archive") -> None:
     n = check_source(archive, bucket)
     cf = cloud_publish.read_env()
+    if not dry_run:
+        import spend_breaker
+        spend_breaker.gate(planned_class_a=2 * n + 100, env=cf)   # each file and its replaced/ copy, at most
     if not dry_run and ensure_bucket(cf, bucket):
         log(f"made bucket {bucket}")
     env = cloud_publish.rclone_env(cf)
