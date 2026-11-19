@@ -2557,6 +2557,38 @@ checked against a full count. Until then the world's published numbers can only 
     `engine/gradlew.bat` stays CRLF, by its rule); 207 Python tests pass. `cloud_publish.py check` compares local
     `docs/` bytes with the site: a file last deployed as CRLF reads as different until the next publish uploads it.
 
+## World places publisher: built, not merged (2026-11-19, night; owner: "when is it sane to publish world stuff?", then "Yes, build it")
+
+- **When it is sane:** release 1's rule, 30 gated days from 11-01, so the day 11-30 is counted: about **12-01**. The
+  catch-up is not what limits it (about 3-3.5 h a day; caught up about 11-21 or 11-22); the calendar is.
+- **Built on branch `world-publish`** (worktree `../sc-open-quests-worldpub`), three commits: the format (DESIGN.md,
+  "World places published: the files"), `tools/world_publish.py` with `tests/test_world_publish.py`, and the place
+  page (`docs/app.js`, `tests/fixtures/world/` with `check_world.py`, 45 checks). **Not merged:** merging is
+  publishing; but the page is inert until release: `WORLD_HOST = ""` in `app.js`, so it asks the world nothing
+  unless `?world=` is given (pages without it read text-identical to main's, checked).
+- **The files:** `latest.json` (max-age 300), `place/<base>/<id[:2]>/<id>.json` (written when `base`, the newest
+  1st, moves) and `latest/<date>/<parent[:2]>/<parent>.json` (daily); both dated folders immutable. A quest's
+  series is change points `[i, open, aged]`. Only 12-hex places the name layer has, only `open`/`agedOnly`, only
+  gated days, no gaps. A parent is the name-layer parent; a country's is `world`; a country with no Overture id
+  (AC, EA, EH, IC, PS, TA) is addressed by its lower-case code, as the page's `countryId`.
+- **Run on the real world, 11-01 and 11-02** (output `../sc-open-quests-worldpub/.scratch/world-publish/site/`,
+  cache `.../work/`): 1,018,472 place files in 19 min (once a month), 110,413 parent files in 4.5 min (daily; each
+  new day reads one counts file, about 60 s). `verify --sample 3000`: **0 mismatches** reading the files back as
+  the page does against `counts.npz` on both days. Headless on the real files: Germany 20,095,288 open (−2,458 on
+  11-02), Ontario, Plauen and a neighbourhood draw tiles, chart, quest table and children, no console errors.
+- **Not done, in order:**
+  1. **Daily build after each world day.** `python tools/world_publish.py build` once the loop has closed a day
+     (it reads only gated days). Wire it into `planet_store_day.py` after the day's cleanup **only once the
+     catch-up has ended** (never edit the running script). Until then run it by hand.
+  2. **At release (owner's go):** the bucket's CORS rule (GET, HEAD from the site's origin); then
+     `world_publish.py upload` (`--print` shows the rclone commands; never run yet, credentials untouched): the
+     first upload is about 1.13M PUTs, hours at 64 transfers; then `WORLD_HOST = "https://sc-data.comentality.com/"`,
+     merge, and the next run publishes the page.
+  3. Whether a counted city's own page should also show the world's numbers is not decided: counted cities keep
+     their own data (DESIGN, same section).
+- **Disk:** the local site is about 1.13M small files (several GB with cluster overhead); `place/` is rebuilt when
+  `base` moves (12-01) and the previous kept (`KEEP_PLACE`), `latest/` keeps three days.
+
 ## The place page: merged (2026-11-16, evening; owner: "pick from handoff ui work", then "merge it now")
 
 **Owner, 11-16 late evening: accepted, but the design is preliminary and not reviewed by the owner.** The direction
