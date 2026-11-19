@@ -2518,6 +2518,10 @@ checked against a full count. Until then the world's published numbers can only 
     **11-02 done 20:49:** subcmp 13,964 same, 32 differ, 5 only planet, all 37 explained by the usual four ways; the
     disk was at 84 GiB (D-1's links still held) so the punch ran after all and finished the rest: 5,991 ranges in
     2,990 s, every live tile the same, +13 GiB. C: 165 GB free after the day. 11-03 started 20:49.
+    **11-03's gate passed (01:28):** the same 11 cities, the same differences, +9 of 19,248,190. `finish` 15,032 s:
+    tier 2 had 352,597 rectangles (357,771 km2, twice 11-02's; 142 boxes over the 5,000 km2 cap drawn by outline),
+    its engines 9,693 s, recount rows 62.5M / 62.8M. **Days run 3 to 5 h**, so the catch-up to 11-18 ends about
+    11-21 or 11-22. Tier 2's engines are the cost to cut after release 1 (4 workers already use every core).
     **The gate on the seed (11:15-11:21):** `world_gate.py` on the 11-01 oracle reproduces `gate1101`: 21 of 32
     equal, +9 of 19,239,746, worst city 0.0016% (`world-1101/gate-test/`). The recut's stale HOLD was removed at launch.
     **Notes past the world's dump (11-18, 11:40):** when D passes the clips' `until` (261117: 11-17T05:37Z, so first
