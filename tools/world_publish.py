@@ -44,6 +44,7 @@ SCHEMA = 1
 WINDOW_DAYS = 28
 BUCKET = "sc-open-quests-data"
 KEEP_LATEST = 3  # the newest latest/<date>/ folders kept (local and in the bucket)
+MAX_UPLOAD = 1_500_000  # files one upload may plan: a month's place/ (about 1M) plus a day's latest/
 KEEP_PLACE = 2   # place/<base>/ folders kept
 CACHE_IMMUTABLE = "public, max-age=31536000, immutable"
 CACHE_LATEST_JSON = "public, max-age=300"
@@ -555,6 +556,17 @@ def upload(out: Path, print_only: bool) -> int:
         return 0
     sys.path.insert(0, str(ROOT / "tools"))
     import cloud_publish as cp
+    import spend_breaker
+    # Every file of both folders counts as a write (--size-only skips the unchanged, so this errs high).
+    planned = sum(1 for f in ("place", "latest") for p in (out / latest[f]).rglob("*") if p.is_file()) + 2
+    if planned > MAX_UPLOAD:
+        log(f"FAILED: {planned:,} files is past MAX_UPLOAD {MAX_UPLOAD:,}; a run this big is a bug, not a day")
+        return 1
+    try:
+        spend_breaker.gate(planned_class_a=planned, strict=True)
+    except spend_breaker.Tripped as e:
+        log(f"FAILED: {e}")
+        return 1
     env = cp.rclone_env(cp.read_env())
     for c in cmds:
         log("rclone " + " ".join(c[:3]))

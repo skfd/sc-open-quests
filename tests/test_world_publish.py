@@ -153,3 +153,36 @@ class WorldPublishTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class UploadGuards(unittest.TestCase):
+    """upload asks the spend breaker before any rclone runs, and refuses a run past MAX_UPLOAD."""
+    OUT = Path(__file__).resolve().parent / "fixtures" / "world"
+
+    def setUp(self):
+        import spend_breaker
+        self.sb = spend_breaker
+        self.saved = (spend_breaker.gate, wp.subprocess.run, wp.MAX_UPLOAD)
+        self.ran = []
+        wp.subprocess.run = lambda *a, **k: self.ran.append(a) or (_ for _ in ()).throw(AssertionError("rclone ran"))
+
+    def tearDown(self):
+        self.sb.gate, wp.subprocess.run, wp.MAX_UPLOAD = self.saved
+
+    def test_tripped_breaker_stops_upload(self):
+        seen = {}
+
+        def gate(planned_class_a=0, strict=False, **k):
+            seen.update(planned=planned_class_a, strict=strict)
+            raise self.sb.Tripped("test trip")
+        self.sb.gate = gate
+        self.assertEqual(wp.upload(self.OUT, print_only=False), 1)
+        self.assertEqual(self.ran, [])
+        self.assertTrue(seen["strict"])
+        self.assertEqual(seen["planned"], 7 + 2)   # 3 place + 4 latest files, plus latest.json and listings
+
+    def test_past_max_upload_refused_before_the_breaker(self):
+        wp.MAX_UPLOAD = 3
+        self.sb.gate = lambda **k: (_ for _ in ()).throw(AssertionError("gate asked"))
+        self.assertEqual(wp.upload(self.OUT, print_only=False), 1)
+        self.assertEqual(self.ran, [])
