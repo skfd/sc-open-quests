@@ -93,3 +93,23 @@ def test_check_fails_when_the_root_is_not_the_page(tmp_path, monkeypatch):
 
     monkeypatch.setattr(cp, "_fetch_md5", fetch)
     assert cp.check(docs=docs, workers=2) == 1
+
+
+def test_tripped_breaker_skips_the_r2_sync_but_not_the_deploy(tmp_path, monkeypatch):
+    """sync() returns without running rclone sync, so main() goes on to the (free) deploy."""
+    import spend_breaker
+    for rel in WHOLE:
+        (tmp_path / rel).parent.mkdir(parents=True, exist_ok=True)
+        (tmp_path / rel).write_text("x", encoding="utf-8")
+    ran = []
+    monkeypatch.setattr(cp, "read_env", lambda *a: {"CLOUDFLARE_API_TOKEN": "t", "CLOUDFLARE_ACCOUNT_ID": "a"})
+    monkeypatch.setattr(cp, "rclone_env", lambda env: {})
+    monkeypatch.setattr(cp, "remote_count", lambda env: 5)
+    monkeypatch.setattr(cp, "rclone", lambda args, env: ran.append(args))
+
+    def gate(planned_class_a=0, **k):
+        assert planned_class_a == len(WHOLE) + 100
+        raise spend_breaker.Tripped("test trip")
+    monkeypatch.setattr(spend_breaker, "gate", gate)
+    cp.sync(docs=tmp_path)
+    assert ran == []

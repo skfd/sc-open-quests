@@ -4,6 +4,7 @@
     python tools/spend_breaker.py --dry-run  estimate and say what a trip would do; change nothing
     python tools/spend_breaker.py --status   print the latch and the estimate
     python tools/spend_breaker.py --reset    owner only: clear the latch and turn the data domain back on
+    python tools/spend_breaker.py --reset --force   the same while the estimate is still past the line
     python tools/spend_breaker.py --dry-run --simulate-class-a 12000000   pretend extra operations happened
 
 What costs money here is R2 alone. The site is Workers static assets on Workers Free (free and unlimited,
@@ -196,7 +197,7 @@ def gate(planned_class_a: int = 0, strict: bool = False, env: dict | None = None
                       f"({held.get('reason', '')}); the owner clears it: python tools/spend_breaker.py --reset")
     try:
         p = estimator(env or cloud_publish.read_env(), extra_a=planned_class_a)
-    except (RuntimeError, OSError, urllib.error.URLError, ValueError, KeyError) as e:
+    except Exception as e:   # noqa: BLE001  lenient callers must never lose a day's publish to this
         if strict:
             raise Tripped(f"spend unknown (R2 analytics failed: {e}); a strict publisher does not write blind")
         log(f"WARNING: spend unknown (R2 analytics failed: {e}); going on, this run cannot reach the line alone")
@@ -248,13 +249,14 @@ def check(dry_run: bool = False, extra_a: int = 0, extra_b: int = 0, env: dict |
     return 0
 
 
-def reset(env: dict, latch: Path = LATCH) -> None:
+def reset(env: dict, latch: Path = LATCH, force: bool = False) -> None:
     held = latched(latch)
     p = estimate(env)
     log(f"now {describe(p)}")
-    if p["usd"] >= TRIP_USD:
-        log(f"still at or past ${TRIP_USD:.0f}; resetting anyway would trip again within the hour. "
-            "Raise TRIP_USD in tools/spend_breaker.py if that is the intent.")
+    if p["usd"] >= TRIP_USD and not force:
+        # the trailing 30 days can stay over the line into a new billing period
+        log(f"still at or past ${TRIP_USD:.0f}; the next hourly check would trip again. If the bill says "
+            "otherwise (a new period), --reset --force, and raise TRIP_USD to keep it from re-tripping.")
         raise SystemExit(2)
     set_domain(env, True)
     if latch.exists():
@@ -267,6 +269,7 @@ def main() -> int:
     p.add_argument("--dry-run", action="store_true")
     p.add_argument("--status", action="store_true")
     p.add_argument("--reset", action="store_true", help="owner: clear the latch, turn the data domain on")
+    p.add_argument("--force", action="store_true", help="with --reset: even if the estimate is past the line")
     p.add_argument("--simulate-class-a", type=int, default=0, help="add pretend Class A ops (needs --dry-run)")
     p.add_argument("--simulate-class-b", type=int, default=0, help="add pretend Class B ops (needs --dry-run)")
     a = p.parse_args()
@@ -275,7 +278,7 @@ def main() -> int:
     try:
         env = cloud_publish.read_env()
         if a.reset:
-            reset(env)
+            reset(env, force=a.force)
             return 0
         if a.status:
             held = latched()
