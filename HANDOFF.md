@@ -2518,6 +2518,18 @@ checked against a full count. Until then the world's published numbers can only 
     **11-02 done 20:49:** subcmp 13,964 same, 32 differ, 5 only planet, all 37 explained by the usual four ways; the
     disk was at 84 GiB (D-1's links still held) so the punch ran after all and finished the rest: 5,991 ranges in
     2,990 s, every live tile the same, +13 GiB. C: 165 GB free after the day. 11-03 started 20:49.
+    **11-03's gate passed (01:28):** the same 11 cities, the same differences, +9 of 19,248,190. `finish` 15,032 s:
+    tier 2 had 352,597 rectangles (357,771 km2, twice 11-02's; 142 boxes over the 5,000 km2 cap drawn by outline),
+    its engines 9,693 s, recount rows 62.5M / 62.8M. **Days run 3 to 5 h**, so the catch-up to 11-18 ends about
+    11-21 or 11-22. Tier 2's engines are the cost to cut after release 1 (4 workers already use every core).
+    **The daily punch is slow too (11-19, 01:31-03:31):** about 16,600 ranges in 2 h at 2-4 calls a second (the 100 GiB
+    test ran while D-1's links still held 56 GB, so it fired every day). Stopped by hand (STOPPED mine, removed);
+    **the punch is now decided after the day's work is deleted, under 60 GiB free** (c9ceb761): 11-03 closed at 03:38
+    with 158 GiB free, punch skipped. The 0.5 s a call is not only a first-punch effect; open, for after release 1
+    (`DESIGN.md`, "Why the punch was slow": a mapping of pack-0000 was the cause then; check whether `subcmp.py` or
+    `why.py`, which read the store in Python just before, map it). Dead ranges pile up until a punch runs.
+    11-04 started 03:38; **its gate passed (08:16)**, the same 11 cities, +9 of 19,252,865; `finish` 14,930 s (tier 2
+    engines 10,287). Gates so far: 11-01 (seed), 11-02, 11-03, 11-04, each +9 with the same differences.
     **The gate on the seed (11:15-11:21):** `world_gate.py` on the 11-01 oracle reproduces `gate1101`: 21 of 32
     equal, +9 of 19,239,746, worst city 0.0016% (`world-1101/gate-test/`). The recut's stale HOLD was removed at launch.
     **Notes past the world's dump (11-18, 11:40):** when D passes the clips' `until` (261117: 11-17T05:37Z, so first
@@ -2552,6 +2564,61 @@ checked against a full count. Until then the world's published numbers can only 
     CLAUDE.md); `rewrite.py --apply` rewrote the 5,452 tracked files still CRLF in main's checkout (only
     `engine/gradlew.bat` stays CRLF, by its rule); 207 Python tests pass. `cloud_publish.py check` compares local
     `docs/` bytes with the site: a file last deployed as CRLF reads as different until the next publish uploads it.
+
+## Spend breaker on hosting: built (2026-11-19, 10:00-10:45; owner: "make sure there is a spent breaker on hosting. 50 bucks a month max")
+
+DESIGN.md "Spend breaker" has the why. `tools/spend_breaker.py` prices R2 (the only billable part) from
+GraphQL analytics, trips at $40: latch file plus `sc-data.comentality.com` public access off, publishers
+refuse R2 writes until `python tools/spend_breaker.py --reset`. Hourly task `kk-SCOpenQuests-spend`
+(`logs/spend.log`); `cloud_publish.py` and `archive_backup.py` call `gate()` before writing. The world
+publisher on `world-publish` got a strict gate and a per-run file cap. Tests: `tests/test_spend_breaker.py`.
+- **Owner, in the dashboard (no API for these, and the token has no billing access):** Manage Account,
+  Billing, Billable Usage, Create budget alert at $10, $25 and $40, so a trip also reaches email. If the
+  account is ever moved to Workers Paid, set a Workers spending limit there too (Billing, Spend Management).
+
+## World places publisher: built, not merged (2026-11-19, night; owner: "when is it sane to publish world stuff?", then "Yes, build it")
+
+- **When it is sane:** release 1's rule, 30 gated days from 11-01, so the day 11-30 is counted: about **12-01**. The
+  catch-up is not what limits it (about 3-3.5 h a day; caught up about 11-21 or 11-22); the calendar is.
+- **Built on branch `world-publish`** (worktree `../sc-open-quests-worldpub`), three commits: the format (DESIGN.md,
+  "World places published: the files"), `tools/world_publish.py` with `tests/test_world_publish.py`, and the place
+  page (`docs/app.js`, `tests/fixtures/world/` with `check_world.py`, 45 checks). **Not merged:** merging is
+  publishing; but the page is inert until release: `WORLD_HOST = ""` in `app.js`, so it asks the world nothing
+  unless `?world=` is given (pages without it read text-identical to main's, checked).
+- **The files:** `latest.json` (max-age 300), `place/<base>/<id[:2]>/<id>.json` (written when `base`, the newest
+  1st, moves) and `latest/<date>/<parent[:2]>/<parent>.json` (daily); both dated folders immutable. A quest's
+  series is change points `[i, open, aged]`. Only 12-hex places the name layer has, only `open`/`agedOnly`, only
+  gated days, no gaps. A parent is the name-layer parent; a country's is `world`; a country with no Overture id
+  (AC, EA, EH, IC, PS, TA) is addressed by its lower-case code, as the page's `countryId`.
+- **Run on the real world, 11-01 and 11-02** (output `../sc-open-quests-worldpub/.scratch/world-publish/site/`,
+  cache `.../work/`): 1,018,472 place files in 19 min (once a month, 0.91 GB raw), 110,413 parent files in 3.5-4.5
+  min (daily, 0.82 GB raw; each new day reads one counts file, about 60 s). `verify --sample 3000`: **0
+  mismatches** reading the files back as the page does (place file plus parent file, and every parent's file over
+  its whole window) against `counts.npz` on both days. That proves the files equal the world's counts, not that
+  the world's 12-hex places are right: see the crosscheck below. Headless on the real files: Germany 20,095,288 open (−2,458 on
+  11-02), Ontario, Plauen and a neighbourhood draw tiles, chart, quest table and children, no console errors.
+- **Not done, in order:**
+  1. **Daily build after each world day.** `python tools/world_publish.py build` once the loop has closed a day
+     (it reads only gated days). Wire it into `planet_store_day.py` after the day's cleanup **only once the
+     catch-up has ended** (never edit the running script). Until then run it by hand.
+  2. **At release (owner's go):** the bucket's CORS rule (GET, HEAD from the site's origin); then
+     `world_publish.py upload` (`--print` shows the rclone commands; never run yet, credentials untouched): the
+     first upload is about 1.13M PUTs, hours at 64 transfers; then `WORLD_HOST = "https://sc-data.comentality.com/"`,
+     merge, and the next run publishes the page.
+  3. Whether a counted city's own page should also show the world's numbers is not decided: counted cities keep
+     their own data (DESIGN, same section). Visible effect: Ontario's children table lists Toronto with the
+     world's number, and its link opens the city page with the city's own (different polygon, different count).
+  4. **Before release, the independent check:** once day 11-08 has passed its gate,
+     `python tools/world_publish.py crosscheck --day 2026-11-08 --json .scratch/world-publish/cross-1108.json`
+     (worktree: add `--world ../sc-open-quests/.scratch/planet/world-1101`). It compares every published place,
+     per quest, with the 11-08 whole planet count with places (`.scratch/planet/world-places/report.json`, kept
+     for this; v64.1, same instant), reads 644 MB, about 2 min. Expect near-equal, not exact (notes layers differ,
+     as the gate's 11 cities). Exercised on 11-02 against it (six days apart): world -0.081%, 89.2% of places equal
+     in every quest, the largest gap a building import in Azumino (Japan, +109,523 by 11-08): plausible change.
+  5. After the first upload: fetch one `place/` file and `world.json` (1.16 MB raw) from `sc-data` and check
+     `Content-Type: application/json`, a compressed encoding, and `cf-cache-status` HIT on the second fetch.
+- **Disk:** the local site is 1.13M small files, 1.73 GB raw (about 4.5 GB with 4 KB clusters); `place/` is rebuilt when
+  `base` moves (12-01) and the previous kept (`KEEP_PLACE`), `latest/` keeps three days.
 
 ## The place page: merged (2026-11-16, evening; owner: "pick from handoff ui work", then "merge it now")
 
