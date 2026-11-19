@@ -2530,6 +2530,10 @@ checked against a full count. Until then the world's published numbers can only 
     `why.py`, which read the store in Python just before, map it). Dead ranges pile up until a punch runs.
     11-04 started 03:38; **its gate passed (08:16)**, the same 11 cities, +9 of 19,252,865; `finish` 14,930 s (tier 2
     engines 10,287). Gates so far: 11-01 (seed), 11-02, 11-03, 11-04, each +9 with the same differences.
+    **11-05's gate passed (16:37) with a first new difference:** 20 of 32 equal, +10; Zagreb AddHousenumber +1 (a way:
+    17,958 against 17,957). Inside the bar; to trace if such rows pile up (the rehearsal left AddHousenumber rows of
+    the same kind, DESIGN "The one tier-2 row left, traced"). `finish` 27,945 s, of which about 2 h 20 min the daily
+    window's pause and tier 2's engines 22,986 s (one group alone 2,616 s).
     **The scheduled task at 14:45 on 11-19 exited 1 with no output:** the catch-up started by hand writes to the same
     `logs/planet-store.out`, and the task's `cmd /c ... >> planet-store.out` cannot open it while that run holds it, so
     the task never reached Python (it stepped aside, but not through the RUNNING guard). Harmless; once the catch-up
