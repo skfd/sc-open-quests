@@ -2506,6 +2506,16 @@ checked against a full count. Until then the world's published numbers can only 
     (11:55-14:15) when it falls inside one. `punch` after the first day took over 20 min (one thread over the 250 GB
     pack). **RUNNING now carries the pid** and a run refuses to start beside a live one: the scheduled task kills a run
     after 6 h, so a catch-up is started by hand and the task can stay enabled beside it.
+    **The first punch after the cut was slow again (18:25-19:48):** hash before 233 GB, then 15,654 dead ranges
+    (3.70 GiB) to zero at about 0.5 s a call, the same rate as 11-16's first punch, although no tile-store command maps a
+    pack now (the 11-17 daily punch took 1.7 s). Stopped by hand after about 9,700 ranges (STOPPED was mine and
+    removed). **`punch` now runs only when the store's disk has under 100 GiB free** (521838d9); about 6,000 ranges,
+    roughly 1.5 GiB, are left for a later punch. Cause not understood: a first punch on a freshly cut pack.
+    **The catch-up runs since 19:48** (`--max-days 20`, by hand, pid in RUNNING): 11-02's store checks again
+    (without the punch), then 11-03 to 11-18, about 3 h a day, so into 11-20 or 11-21; 11-18 cuts the 261118 notes
+    dump into the world first. **To do for the owner: re-enable `kk-SCOpenQuests-planetstore`** (`schtasks /change
+    /tn kk-SCOpenQuests-planetstore /enable`; my attempt was refused by the permission check). It steps aside while a
+    live run holds RUNNING, so enabling it now is safe; it is needed once the catch-up ends.
     **The gate on the seed (11:15-11:21):** `world_gate.py` on the 11-01 oracle reproduces `gate1101`: 21 of 32
     equal, +9 of 19,239,746, worst city 0.0016% (`world-1101/gate-test/`). The recut's stale HOLD was removed at launch.
     **Notes past the world's dump (11-18, 11:40):** when D passes the clips' `until` (261117: 11-17T05:37Z, so first
