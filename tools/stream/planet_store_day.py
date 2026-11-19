@@ -54,7 +54,7 @@ EXE_SRC = ROOT / "tilestore/target/release/tilestore.exe"
 EXE = WORK / "tilestore-daily.exe"
 WORLD = ROOT / ".scratch/planet/world-1101"  # the world state seeded at 2026-11-01 (HANDOFF, "Release goals", step 3)
 WDAYS = WORK / "world-days"  # per day: day.pkl, before/, work/, gate/
-PUNCH_BELOW_GB = 100  # free GiB on the store's disk under which a day ends with `punch`
+PUNCH_BELOW_GB = 60  # free GiB on the store's disk under which a day ends with `punch`
 QUESTS = "v64.1.json"  # the seed's quests file; a new StreetComplete release means a reseed, not a day
 PINS = EUROPE / "pins.json"
 PIN_REASON = ("sc-open-quests release 1: oracle for the world's daily backfill from 11-02 (HANDOFF, Release goals); "
@@ -267,14 +267,6 @@ def store_tail(dd: Path, nxt: str, seq: int, osc: Path, oracle: Path, g: int) ->
         stop(f"day {nxt}: tiles not explained by ways the clip lacks: {w['notExplained']}")
     shutil.rmtree(clip, ignore_errors=True)
     run([EXE, "compact", "--store", STORE, "--min-dead", "0.25"], "compact")
-    # punch only gives dead space in pack-0000 back to the disk. The first one after a fresh cut zeroes every range the
-    # day freed at about 0.5 s a range (11-02: 80 min for about 10,000 ranges, stopped by hand), so it runs only when
-    # the disk is short, and a run that ends by itself is caught up later in one go
-    free_gb = shutil.disk_usage(STORE).free / 2**30
-    if free_gb < PUNCH_BELOW_GB:
-        run([EXE, "punch", "--store", STORE], f"punch ({free_gb:.0f} GiB free, under {PUNCH_BELOW_GB})")
-    else:
-        log(f"punch skipped: {free_gb:.0f} GiB free (it runs under {PUNCH_BELOW_GB})")
     # the day's record kept with the world; its work (both dates' map data, the dumps, D-1's rows) given back
     keep = WORLD / "days" / nxt
     keep.mkdir(parents=True, exist_ok=True)
@@ -284,6 +276,14 @@ def store_tail(dd: Path, nxt: str, seq: int, osc: Path, oracle: Path, g: int) ->
     pins_edit(drop=[oracle.name])
     (WORLD / WD.NOTES_PREV).unlink(missing_ok=True)  # the day after a notes refresh is done: D-1's clip not needed
     shutil.rmtree(dd, ignore_errors=True)
+    # punch only gives dead space in pack-0000 back to the disk, at about 0.5 s a dead range on the planet (11-02's first:
+    # 15,654 ranges; 11-03's daily one: over 16,000 in 2 h, both stopped by hand), so it runs only when the disk is
+    # short, measured after the day's work (D-1's links, about 56 GB) is given back
+    free_gb = shutil.disk_usage(STORE).free / 2**30
+    if free_gb < PUNCH_BELOW_GB:
+        run([EXE, "punch", "--store", STORE], f"punch ({free_gb:.0f} GiB free, under {PUNCH_BELOW_GB})")
+    else:
+        log(f"punch skipped: {free_gb:.0f} GiB free (it runs under {PUNCH_BELOW_GB})")
     log(f"== day {nxt} done: generation {g}; the world at {world_clock()}")
 
 
