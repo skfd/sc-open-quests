@@ -2572,9 +2572,11 @@ checked against a full count. Until then the world's published numbers can only 
   gated days, no gaps. A parent is the name-layer parent; a country's is `world`; a country with no Overture id
   (AC, EA, EH, IC, PS, TA) is addressed by its lower-case code, as the page's `countryId`.
 - **Run on the real world, 11-01 and 11-02** (output `../sc-open-quests-worldpub/.scratch/world-publish/site/`,
-  cache `.../work/`): 1,018,472 place files in 19 min (once a month), 110,413 parent files in 4.5 min (daily; each
-  new day reads one counts file, about 60 s). `verify --sample 3000`: **0 mismatches** reading the files back as
-  the page does against `counts.npz` on both days. Headless on the real files: Germany 20,095,288 open (−2,458 on
+  cache `.../work/`): 1,018,472 place files in 19 min (once a month, 0.91 GB raw), 110,413 parent files in 3.5-4.5
+  min (daily, 0.82 GB raw; each new day reads one counts file, about 60 s). `verify --sample 3000`: **0
+  mismatches** reading the files back as the page does (place file plus parent file, and every parent's file over
+  its whole window) against `counts.npz` on both days. That proves the files equal the world's counts, not that
+  the world's 12-hex places are right: see the crosscheck below. Headless on the real files: Germany 20,095,288 open (−2,458 on
   11-02), Ontario, Plauen and a neighbourhood draw tiles, chart, quest table and children, no console errors.
 - **Not done, in order:**
   1. **Daily build after each world day.** `python tools/world_publish.py build` once the loop has closed a day
@@ -2585,8 +2587,18 @@ checked against a full count. Until then the world's published numbers can only 
      first upload is about 1.13M PUTs, hours at 64 transfers; then `WORLD_HOST = "https://sc-data.comentality.com/"`,
      merge, and the next run publishes the page.
   3. Whether a counted city's own page should also show the world's numbers is not decided: counted cities keep
-     their own data (DESIGN, same section).
-- **Disk:** the local site is about 1.13M small files (several GB with cluster overhead); `place/` is rebuilt when
+     their own data (DESIGN, same section). Visible effect: Ontario's children table lists Toronto with the
+     world's number, and its link opens the city page with the city's own (different polygon, different count).
+  4. **Before release, the independent check:** once day 11-08 has passed its gate,
+     `python tools/world_publish.py crosscheck --day 2026-11-08 --json .scratch/world-publish/cross-1108.json`
+     (worktree: add `--world ../sc-open-quests/.scratch/planet/world-1101`). It compares every published place,
+     per quest, with the 11-08 whole planet count with places (`.scratch/planet/world-places/report.json`, kept
+     for this; v64.1, same instant), reads 644 MB, about 2 min. Expect near-equal, not exact (notes layers differ,
+     as the gate's 11 cities). Exercised on 11-02 against it (six days apart): world -0.081%, 89.2% of places equal
+     in every quest, the largest gap a building import in Azumino (Japan, +109,523 by 11-08): plausible change.
+  5. After the first upload: fetch one `place/` file and `world.json` (1.16 MB raw) from `sc-data` and check
+     `Content-Type: application/json`, a compressed encoding, and `cf-cache-status` HIT on the second fetch.
+- **Disk:** the local site is 1.13M small files, 1.73 GB raw (about 4.5 GB with 4 KB clusters); `place/` is rebuilt when
   `base` moves (12-01) and the previous kept (`KEEP_PLACE`), `latest/` keeps three days.
 
 ## The place page: merged (2026-11-16, evening; owner: "pick from handoff ui work", then "merge it now")
