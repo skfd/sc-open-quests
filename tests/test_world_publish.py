@@ -123,6 +123,23 @@ class WorldPublishTest(unittest.TestCase):
         for k, v in b.items():
             self.assertEqual(a.get(k), v, k)
 
+    def test_window_after_the_first_day(self):
+        # a one-day window: start is 11-01 (index 2), so each pair's value there is its index-0 point
+        old = wp.WINDOW_DAYS
+        wp.WINDOW_DAYS = 1
+        try:
+            self.build()
+        finally:
+            wp.WINDOW_DAYS = old
+        world = json.loads((self.out / "latest/2026-11-02/world.json").read_text(encoding="utf-8"))
+        self.assertEqual(world["dates"], ["2026-11-01", "2026-11-02"])
+        self.assertEqual(world["places"][C], {"AddLit": [[0, 7, 0], [1, 8, 1]]})
+        la = json.loads((self.out / "latest/2026-11-02/cc/cc0000000003.json").read_text(encoding="utf-8"))
+        self.assertEqual(la["places"], {B: {"AddBench": [[1, 6, 0]]}})  # 0 at start: no index-0 point
+        ra = json.loads((self.out / "latest/2026-11-02/bb/bb0000000002.json").read_text(encoding="utf-8"))
+        self.assertEqual(ra["places"][A], {"AddBench": [[0, 4, 2]], "OsmNoteQuestType": [[0, 1, 0], [1, 0, 0]]})
+        self.assertEqual(wp.verify(self.world, self.out, self.places, sample=10), 0)
+
     def test_window_starts_at_base_or_28_days(self):
         self.assertEqual(wp.start_of("2026-12-20", "2026-12-01", "2026-11-01"), "2026-11-22")
         self.assertEqual(wp.start_of("2026-12-31", "2026-12-01", "2026-11-01"), "2026-12-01")

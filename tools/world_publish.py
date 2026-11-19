@@ -16,6 +16,7 @@ day before; the first day against nothing), so a new day reads one counts file, 
 
     python tools/world_publish.py build  [--world W] [--out O] [--work K]
     python tools/world_publish.py verify [--world W] [--out O] [--sample N]
+    python tools/world_publish.py crosscheck [--world W] [--report R] [--day 2026-11-08]
     python tools/world_publish.py upload [--out O] [--print]
 """
 from __future__ import annotations
@@ -46,6 +47,7 @@ KEEP_LATEST = 3  # the newest latest/<date>/ folders kept (local and in the buck
 KEEP_PLACE = 2   # place/<base>/ folders kept
 CACHE_IMMUTABLE = "public, max-age=31536000, immutable"
 CACHE_LATEST_JSON = "public, max-age=300"
+JSON_TYPE = ["--header-upload", "Content-Type: application/json"]  # not left to rclone's guess (Windows' registry)
 SUBTYPES = ["country", "dependency", "region", "county", "localadmin", "locality",
             "borough", "macrohood", "neighborhood", "microhood"]  # tools/places.py SUBTYPES
 QBITS = 8  # a key is (place id as a 48-bit int) << QBITS | quest index
@@ -355,10 +357,21 @@ def build(world: Path, out: Path, work: Path, places: Path, first: str, through:
     k, d, o, a, counted = load_events(world, work, days, quests, names)
     log(f"{len(k):,} change points, {len(counted):,} published places")
     ev = (k, d, o, a)
+    # place/<base>/ is rebuilt when it is missing, or when what it was built from changed (the quests, the name
+    # layer, the days up to base): the stamp sits in the work folder, since the output is uploaded. Not the places:
+    # the counted set grows by a few on later days (11-01 1,018,465, 11-02 1,018,472), and such a place has no
+    # place file until base moves; the page then shows its days after base from the parent's file only
+    pstamp = work / f"place-{base}.key"
+    want = dumps({"quests": quests, "overture": names.overture, "names": len(names.meta),
+                  "days": days[:days.index(base) + 1]})
+    if (out / "place" / base).exists() and pstamp.exists() and pstamp.read_text(encoding="utf-8") != want:
+        log(f"place/{base}/ was built from other inputs: rebuilt")
+        shutil.rmtree(out / "place" / base)
     if not (out / "place" / base).exists():
         t = time.time()
         n = write_places(out, base, days, ev, quests, names, counted)
         log(f"place/{base}/: {n:,} files ({time.time() - t:.0f} s)")
+    write_text(pstamp, want)
     t = time.time()
     n = write_latest(out, day, start, days, ev, quests, names, counted)
     log(f"latest/{day}/: {n:,} parent files ({time.time() - t:.0f} s)")
@@ -411,6 +424,19 @@ def read_place(out: Path, latest: dict, pid: str, names: NameLayer) -> dict[str,
     return seen
 
 
+def read_window(out: Path, latest: dict, pid: str, parent: str) -> dict[str, dict[str, tuple[int, int]]]:
+    """the place as its parent's latest file gives it, over the file's whole window (the children table's view)"""
+    lf = json.loads((out / latest["latest"] / shard(parent)).read_text(encoding="utf-8"))
+    if pid not in lf["places"]:
+        raise SystemExit(f"{pid} missing from its parent's latest file {parent}")
+    seen: dict[str, dict[str, tuple[int, int]]] = {dt: {} for dt in lf["dates"]}
+    for q, pts in lf["places"][pid].items():
+        o, a = decode(pts, len(lf["dates"]))
+        for t, dt in enumerate(lf["dates"]):
+            seen[dt][q] = (o[t], a[t])
+    return seen
+
+
 def verify(world: Path, out: Path, places: Path, sample: int, seed: int = 1) -> int:
     latest = json.loads((out / "latest.json").read_text(encoding="utf-8"))
     names = NameLayer(places)
@@ -419,6 +445,9 @@ def verify(world: Path, out: Path, places: Path, sample: int, seed: int = 1) -> 
     rng = np.random.default_rng(seed)
     pick = [files[i].stem for i in rng.choice(len(files), size=min(sample, len(files)), replace=False)]
     seen = {pid: read_place(out, latest, pid, names) for pid in pick}
+    # every parent's file too, over its whole window (a place in two region files is under both)
+    views = [(f"{pid} in {par}", pid, read_window(out, latest, pid, par))
+             for pid in pick for par in names.parents[pid]]
     want = set(hexkey(pick).tolist())
     bad = 0
     shown = [d for d in latest["dates"] if d <= latest["base"]] + \
@@ -438,9 +467,66 @@ def verify(world: Path, out: Path, places: Path, sample: int, seed: int = 1) -> 
                 if bad <= 5:
                     diff = {q: (exp.get(q), got.get(q)) for q in set(exp) | set(got) if exp.get(q) != got.get(q)}
                     log(f"MISMATCH {day} {pid}: {list(diff.items())[:5]}")
-        log(f"verify {day}: {len(pick)} places checked")
-    log(f"verify: {bad} (place, day) mismatches over {len(pick)} places and {len(shown)} days")
+        for label, pid, view in views:
+            if day not in view:
+                continue
+            got = {q: v for q, v in view[day].items() if v != (0, 0)}
+            exp = truth.get(pid, {})
+            if got != exp:
+                bad += 1
+                if bad <= 5:
+                    log(f"MISMATCH {day} {label} (latest window): {exp} != {got}")
+        log(f"verify {day}: {len(pick)} places checked, and {len(views)} parent views")
+    log(f"verify: {bad} mismatches over {len(pick)} places and {len(shown)} days")
     return 1 if bad else 0
+
+
+# --- crosscheck: the streamed world against a whole planet count of the same instant -----------------------------
+
+def crosscheck(world: Path, places: Path, report: Path, day: str, out_json: Path | None) -> int:
+    """the world's day `day` (streamed from the seed) against an independent whole count at that instant: the
+    11-08 planet count with places (`.scratch/planet/world-places/report.json`, its `places`: id -> quest -> open,
+    the default setting). Every published place both have, per quest `open`. Reports, does not gate: the notes
+    layers differ (the whole count's notes dump against the world's), as the daily gate's 11 cities show."""
+    names = NameLayer(places)
+    log(f"reading {report} ...")
+    rep = json.loads(report.read_text(encoding="utf-8"))["places"]
+    quests = json.loads((world / "counts" / day / "counts.json").read_text(encoding="utf-8"))["quests"]
+    k, o, _, counted = day_state(world, day, quests, names)
+    ours: dict[str, dict[str, int]] = {}
+    for kk, vo in zip(k.tolist(), o.tolist()):
+        if vo:
+            ours.setdefault(idstr(kk >> QBITS), {})[quests[kk & 255]] = vo
+    both = sorted(set(idstr(x) for x in counted.tolist()) & set(rep))
+    exact, tot_w, tot_r, rows = 0, 0, 0, []
+    qdiff: dict[str, int] = {}
+    for pid in both:
+        a = ours.get(pid, {})
+        b = {q: n for q, n in rep[pid].items() if n and q in quests}
+        sa, sb = sum(a.values()), sum(b.values())
+        tot_w += sa; tot_r += sb
+        if a == b:
+            exact += 1
+            continue
+        for q in set(a) | set(b):
+            dq = a.get(q, 0) - b.get(q, 0)
+            if dq:
+                qdiff[q] = qdiff.get(q, 0) + dq
+        rows.append((abs(sa - sb), pid, sa, sb))
+    rows.sort(reverse=True)
+    rel = (tot_w - tot_r) / tot_r if tot_r else 0.0
+    log(f"crosscheck {day}: {len(both):,} places in both ({len(counted):,} published, {len(rep):,} in the report)")
+    log(f"  equal in every quest: {exact:,} ({exact / max(1, len(both)):.4%}); open world {tot_w:,}, "
+        f"report {tot_r:,} ({rel:+.5%})")
+    for d, pid, sa, sb in rows[:10]:
+        log(f"  {pid} {names.meta[pid][0]!r} ({names.meta[pid][1]}): world {sa:,}, report {sb:,} ({sa - sb:+,})")
+    top = sorted(qdiff.items(), key=lambda x: -abs(x[1]))[:10]
+    log(f"  by quest (world minus report): {top}")
+    if out_json:
+        write_text(out_json, json.dumps({"day": day, "places": len(both), "equal": exact, "openWorld": tot_w,
+                                         "openReport": tot_r, "rel": rel, "worst": rows[:100],
+                                         "byQuest": dict(top)}, indent=1) + "\n")
+    return 0
 
 
 # --- upload ------------------------------------------------------------------------------------------------------
@@ -453,11 +539,11 @@ def upload(out: Path, print_only: bool) -> int:
               "--stats", "60s"]
     cmds = [
         ["copy", str(out / latest["place"]), f"{remote}/{latest['place']}",
-         "--header-upload", f"Cache-Control: {CACHE_IMMUTABLE}", *common],
+         "--header-upload", f"Cache-Control: {CACHE_IMMUTABLE}", *JSON_TYPE, *common],
         ["copy", str(out / latest["latest"]), f"{remote}/{latest['latest']}",
-         "--header-upload", f"Cache-Control: {CACHE_IMMUTABLE}", *common],
+         "--header-upload", f"Cache-Control: {CACHE_IMMUTABLE}", *JSON_TYPE, *common],
         ["copyto", str(out / "latest.json"), f"{remote}/latest.json",
-         "--header-upload", f"Cache-Control: {CACHE_LATEST_JSON}"],
+         "--header-upload", f"Cache-Control: {CACHE_LATEST_JSON}", *JSON_TYPE],
     ]
     local_latest = {p.name for p in (out / "latest").iterdir() if p.is_dir()}
     local_place = {p.name for p in (out / "place").iterdir() if p.is_dir()}
@@ -490,7 +576,7 @@ def upload(out: Path, print_only: bool) -> int:
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("cmd", choices=["build", "verify", "upload"])
+    ap.add_argument("cmd", choices=["build", "verify", "crosscheck", "upload"])
     ap.add_argument("--world", type=Path, default=WORLD)
     ap.add_argument("--out", type=Path, default=OUT)
     ap.add_argument("--work", type=Path, default=WORK)
@@ -499,12 +585,20 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--through", help="build as of this day (default: the newest gated day)")
     ap.add_argument("--sample", type=int, default=2000)
     ap.add_argument("--print", action="store_true", help="upload: print the rclone commands, run nothing")
+    ap.add_argument("--report", type=Path, default=ROOT.parent / "sc-open-quests" / ".scratch" / "planet"
+                    / "world-places" / "report.json", help="crosscheck: the whole count's report.json")
+    ap.add_argument("--day", default="2026-11-08", help="crosscheck: the report's instant")
+    ap.add_argument("--json", type=Path, help="crosscheck: write the result here too")
     a = ap.parse_args(argv)
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # place names; python -I ignores PYTHONIOENCODING
     if a.cmd == "build":
         build(a.world, a.out, a.work, a.places, a.first, a.through)
         return 0
     if a.cmd == "verify":
         return verify(a.world, a.out, a.places, a.sample)
+    if a.cmd == "crosscheck":
+        return crosscheck(a.world, a.places, a.report, a.day, a.json)
     return upload(a.out, a.print)
 
 
