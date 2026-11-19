@@ -123,3 +123,11 @@ def test_failed_cut_keeps_the_latch_and_is_retried(tmp_path):
     cut = Cut()
     assert sb.check(env=ENV, estimator=fake_estimator(), latch=latch, cut=cut) == 2
     assert cut.calls == [False] and sb.latched(latch)["domain_disabled"] is True
+
+
+def test_lenient_gate_survives_any_analytics_error(tmp_path):
+    def broken(env, extra_a=0, extra_b=0):
+        return [][0]          # an IndexError, as from an empty accounts list
+    sb.gate(env=ENV, estimator=broken, latch=tmp_path / "l.json")
+    with pytest.raises(sb.Tripped):
+        sb.gate(env=ENV, estimator=broken, latch=tmp_path / "l.json", strict=True)

@@ -2919,7 +2919,8 @@ assets on Workers Free (no bill), egress is free, and r2.dev access is off on al
   `sc-data.comentality.com`, the one public R2 surface (the bucket keeps its files; readers get a 401,
   which is not billed). Checked live on 11-19 while the bucket was empty: off gave 401 "public access
   disabled", on gave the 404 of a missing key again. The latch holds until the owner runs `--reset`,
-  even into a new month.
+  even into a new month. `--reset` refuses while the estimate is still past the line; the trailing 30 days
+  can stay there into a new billing period, so `--reset --force` is the owner's override.
 - **Publishers ask first:** `gate(planned_class_a=N)` refuses when latched or when the estimate plus N
   more writes reaches the line. `cloud_publish.py` then skips its R2 sync but still deploys the site
   (static assets cost nothing); `archive_backup.py` fails as it does on any error; the world publisher
