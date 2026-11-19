@@ -2513,9 +2513,8 @@ checked against a full count. Until then the world's published numbers can only 
     roughly 1.5 GiB, are left for a later punch. Cause not understood: a first punch on a freshly cut pack.
     **The catch-up runs since 19:48** (`--max-days 20`, by hand, pid in RUNNING): 11-02's store checks again
     (without the punch), then 11-03 to 11-18, about 3 h a day, so into 11-20 or 11-21; 11-18 cuts the 261118 notes
-    dump into the world first. **To do for the owner: re-enable `kk-SCOpenQuests-planetstore`** (`schtasks /change
-    /tn kk-SCOpenQuests-planetstore /enable`; my attempt was refused by the permission check). It steps aside while a
-    live run holds RUNNING, so enabling it now is safe; it is needed once the catch-up ends.
+    dump into the world first. **`kk-SCOpenQuests-planetstore` re-enabled by the owner (11-18 evening)**, next run
+    11-19 14:45; it steps aside while a live run holds RUNNING and takes over once the catch-up ends.
     **11-02 done 20:49:** subcmp 13,964 same, 32 differ, 5 only planet, all 37 explained by the usual four ways; the
     disk was at 84 GiB (D-1's links still held) so the punch ran after all and finished the rest: 5,991 ranges in
     2,990 s, every live tile the same, +13 GiB. C: 165 GB free after the day. 11-03 started 20:49.
