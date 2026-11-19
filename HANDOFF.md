@@ -2516,6 +2516,9 @@ checked against a full count. Until then the world's published numbers can only 
     dump into the world first. **To do for the owner: re-enable `kk-SCOpenQuests-planetstore`** (`schtasks /change
     /tn kk-SCOpenQuests-planetstore /enable`; my attempt was refused by the permission check). It steps aside while a
     live run holds RUNNING, so enabling it now is safe; it is needed once the catch-up ends.
+    **11-02 done 20:49:** subcmp 13,964 same, 32 differ, 5 only planet, all 37 explained by the usual four ways; the
+    disk was at 84 GiB (D-1's links still held) so the punch ran after all and finished the rest: 5,991 ranges in
+    2,990 s, every live tile the same, +13 GiB. C: 165 GB free after the day. 11-03 started 20:49.
     **The gate on the seed (11:15-11:21):** `world_gate.py` on the 11-01 oracle reproduces `gate1101`: 21 of 32
     equal, +9 of 19,239,746, worst city 0.0016% (`world-1101/gate-test/`). The recut's stale HOLD was removed at launch.
     **Notes past the world's dump (11-18, 11:40):** when D passes the clips' `until` (261117: 11-17T05:37Z, so first
