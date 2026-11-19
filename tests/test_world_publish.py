@@ -12,6 +12,7 @@ import world_publish as wp  # noqa: E402
 MEASURES = ["open", "nodes", "ways", "relations", "agedOnly", "open05", "aged05", "open2", "aged2"]
 QUESTS = ["OsmNoteQuestType", "AddBench", "AddLit"]
 C, R, A, B, X = "aa0000000001", "bb0000000002", "cc0000000003", "cd0000000004", "dd0000000005"
+E = "ee0000000006"
 
 
 def write_json(p: Path, obj) -> None:
@@ -23,7 +24,11 @@ def name_layer(root: Path) -> Path:
     places = root / "places"
     write_json(places / "index.json", {"schema": 1, "overture": "test", "countries": [
         {"id": C, "cc": "DE", "en": "Testland", "bbox": [0, 0, 1, 1],
-         "regions": [{"id": R, "name": "Region", "file": "de/r.json", "n": 3}]}]})
+         "regions": [{"id": R, "name": "Region", "file": "de/r.json", "n": 3}]},
+        {"id": None, "cc": "PS", "en": "Headless", "bbox": [0, 0, 1, 1],
+         "regions": [{"id": "_", "name": "-", "file": "ps/_.json", "n": 1}]}]})
+    write_json(places / "ps" / "_.json", {"schema": 1, "region": "_", "places": [
+        [E, "Village", 5, -1, 0, 0, 1, 1, None, None]]})
     # rows: [id, name, st, parentIdx, xmin, ymin, xmax, ymax, en, counted]; A under the region, B under A
     write_json(places / "de" / "r.json", {"schema": 1, "region": R, "places": [
         [R, "Region", 2, -1, 0, 0, 1, 1, None, None],
@@ -34,7 +39,7 @@ def name_layer(root: Path) -> Path:
 
 def world_day(world: Path, day: str, rows: dict, compressed: bool, gate: str = "days") -> None:
     """rows: (part, quest) -> (open, aged); X is counted but not in the name layer, `city:` a cell"""
-    parts = [C, R, A, B, X, "city:f0", "osm-town"]
+    parts = [C, R, A, B, X, E, "city:f0", "osm-town"]
     d = world / "counts" / day
     write_json(d / "counts.json", {"clock": day + "T00:00:00Z", "measures": MEASURES, "quests": QUESTS,
                                    "parts": parts})
@@ -59,7 +64,7 @@ DAYS = {
                    ("city:f0", "AddBench"): (9, 9), (X, "AddBench"): (3, 0)},
     "2026-10-31": {(A, "AddBench"): (5, 1), (B, "AddBench"): (1, 0), (C, "AddLit"): (7, 0), (A, "AddLit"): (0, 0)},
     "2026-11-01": {(A, "AddBench"): (4, 2), (C, "AddLit"): (7, 0), (A, "OsmNoteQuestType"): (1, 0)},
-    "2026-11-02": {(A, "AddBench"): (4, 2), (B, "AddBench"): (6, 0), (C, "AddLit"): (8, 1)},
+    "2026-11-02": {(A, "AddBench"): (4, 2), (B, "AddBench"): (6, 0), (C, "AddLit"): (8, 1), (E, "AddLit"): (2, 0)},
     "2026-11-03": {(A, "AddBench"): (0, 0)},
 }
 
@@ -93,7 +98,10 @@ class WorldPublishTest(unittest.TestCase):
         self.assertEqual(place["quests"]["OsmNoteQuestType"], [[2, 1, 0]])
         self.assertNotIn("AddLit", place["quests"])  # (0, 0) rows are not published
         self.assertFalse((self.out / "place/2026-11-01/dd").exists())  # not in the name layer
-        self.assertEqual(len(list((self.out / "place/2026-11-01").glob("*/*.json"))), 4)
+        self.assertEqual(len(list((self.out / "place/2026-11-01").glob("*/*.json"))), 5)
+        # a country with no Overture id is addressed by its code, as the page's countryId does
+        ps = json.loads((self.out / "latest/2026-11-02/ps/ps.json").read_text(encoding="utf-8"))
+        self.assertEqual(ps["places"], {E: {"AddLit": [[3, 2, 0]]}})
         # B's parent is A: A's latest file holds B, from the window's start (the first day) to the date
         la = json.loads((self.out / "latest/2026-11-02/cc/cc0000000003.json").read_text(encoding="utf-8"))
         self.assertEqual(la["dates"], ["2026-10-30", "2026-10-31", "2026-11-01", "2026-11-02"])

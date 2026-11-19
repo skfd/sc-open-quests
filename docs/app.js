@@ -3,6 +3,12 @@
 "use strict";
 
 const DATA = (new URLSearchParams(location.search).get("data") || "data").replace(/\/$/, "");
+// Every other place's numbers, from the world's daily count (DESIGN.md, "World places published: the files");
+// ?world=<url> points it at another folder, relative allowed (the test fixture uses this). WORLD_HOST stays "" until
+// release 1 is uploaded and the bucket has its CORS rule; then "https://sc-data.comentality.com/". While it is "",
+// the page asks nothing of the world unless ?world= is given.
+const WORLD_HOST = "";
+const WORLD = (new URLSearchParams(location.search).get("world") || WORLD_HOST).replace(/\/?$/, "/");
 const MAX_PINNED = 6;
 const nf = new Intl.NumberFormat("en-CA");
 const nf1 = new Intl.NumberFormat("en-CA", { maximumFractionDigits: 1, minimumFractionDigits: 1 });
@@ -149,6 +155,8 @@ function queryString(s = state) {
   const p = new URLSearchParams();
   const data = new URLSearchParams(location.search).get("data");
   if (data) p.set("data", data);
+  const world = new URLSearchParams(location.search).get("world");
+  if (world) p.set("world", world);
   if (s.view === "places" && s.place) {
     p.set("place", s.place);
     if (s.placeIn) p.set("in", s.placeIn);
@@ -742,7 +750,8 @@ function offeredWhere(e, cityId) {
   if (!e || !e.codes || !e.codes.length) return null;
   const names = e.codes.map(countryName).sort((a, b) => a.localeCompare(b));
   const only = e.type === "NoCountriesExcept";
-  const c = cityById(cityId), codes = (c && c.countryCodes) || [];
+  // a world place passes its country's code itself: [cc]
+  const c = !Array.isArray(cityId) && cityById(cityId), codes = Array.isArray(cityId) ? cityId : (c && c.countryCodes) || [];
   const country = codes.find((x) => !x.includes("-"));
   // an only-list naming some of the country's provinces lacks the city's province, not its country
   const lacks = country && e.codes.some((x) => x.startsWith(country + "-")) ? codes.find((x) => x.includes("-")) : country;
@@ -760,7 +769,7 @@ function questRows(h) {
   const n = h.dates.length;
   return quests.quests.map((q) => {
     const s = h.quests[q.name];
-    const status = (q.status && q.status[h.city]) || "unsupported";
+    const status = h.world ? worldStatus(q, h) : (q.status && q.status[h.city]) || "unsupported";
     const open = s ? s.open[n - 1] : null;
     const prev = s && n > 1 ? s.open[n - 2] : null;
     const aged = s ? s.agedOnly[n - 1] : null;
@@ -842,7 +851,7 @@ function questRow(h, r) {
   const sel = selected(r.q.name), pinned = state.pinned.includes(r.q.name);
   const name = questTitle(r.q.name);
   const link = r.q.wikiLink ? el("a", { href: `https://wiki.openstreetmap.org/wiki/${r.q.wikiLink}` }, name) : el("span", {}, name);
-  const where = r.group === "not-in-region" ? offeredWhere(r.q.enabledInCountries, h.city) : null;
+  const where = r.group === "not-in-region" ? offeredWhere(r.q.enabledInCountries, h.world ? [h.cc] : h.city) : null;
   // An uncounted quest's tick does nothing here, so it is shown but locked; it still counts where the quest is.
   return el("tr", { class: [r.counted ? "" : "off", sel ? "" : "unselected", pinned ? "pinned" : ""].join(" ").trim() || null },
       el("td", { class: "c-pick" }, el("input", { type: "checkbox", checked: sel, disabled: !r.counted,
@@ -901,6 +910,7 @@ function selectionChanged() {
 
 let pageSeq = 0;   // the newest renderCity call; older ones stop where they are
 async function renderCity() {
+  if (state.view === "places") return renderPlaces();   // a world place's page (pins, range) is drawn from there
   const seq = ++pageSeq;
   if (!hist || hist.city !== state.city || (hist.part || "") !== state.part) {
     placeHeadText();
@@ -1323,6 +1333,7 @@ function setCity(id, part = "") {
 function chooseCity(id) {
   $("#city-sheet").close();
   setCity(id);
+  if (state.view === "places") state.view = "city";   // from a world place's page ("Change place")
   writeURL();
   renderFooter();
   render();
@@ -1521,6 +1532,7 @@ async function runSearch() {
 
 async function renderPlaces() {
   const seq = ++placeSeq;
+  if (worldShown()) { await renderWorld(seq); return; }   // the same world place again: a tick, a pin, the range
   const page = $("#place-page");
   const idx = await placesIndex();
   if (seq !== placeSeq) return;
@@ -1550,6 +1562,14 @@ async function renderPlaces() {
     return;
   }
   if (state.placeScope !== ref.country.cc) { state.placeScope = ref.country.cc; $("#place-scope").value = ref.country.cc; }
+  const wh = await worldPlace(ref).catch(() => null);   // counted by the world: numbers; else as before
+  if (seq !== placeSeq) return;
+  if (wh) {
+    hist = wh;
+    showDone = false;
+    await renderWorld(seq);
+    return;
+  }
   const head = placeHead(ref);
   const slot = el("div", {}, el("p", { class: "notice" }, ref.kind === "country" ? `Loading ${enName(ref.country)}'s places…` : "Loading…"));
   page.replaceChildren(head, slot);
@@ -1740,6 +1760,162 @@ async function partsCard(cityId, current) {
         el("td", { class: "num" }, open == null ? "—" : nf.format(open))))))));
 }
 
+// ---- world places ----
+// Any place of the name layer the world counts, beyond the counted cities (DESIGN.md, "World places
+// published: the files"): latest.json, the place's own file (dates up to `base`) and its parent's latest file
+// (its dates after `base`), joined into a series the shape of a city's, so the place page draws it as it
+// draws a city. Its children's numbers come from latest/<self>. The files under a dated path never change,
+// so they take the browser's cache; latest.json is asked afresh. A file that is missing, or a host that
+// does not answer, is null: the place then shows as it did before, "Not counted yet".
+
+const worldCache = new Map();   // path -> promise of JSON or null
+function worldJSON(path, fresh = false) {
+  if (WORLD === "/") return Promise.resolve(null);  // no world host yet (WORLD_HOST), and no ?world=
+  if (!worldCache.has(path)) {
+    const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 8000);
+    const p = fetch(WORLD + path, { cache: fresh ? "no-cache" : "default", signal: ctl.signal })
+      .then((r) => (r.status === 404 ? null : r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
+      // a 404 is kept; a failure is tried again next time, latest.json's after 5 minutes (each try logs an error)
+      .catch(() => { setTimeout(() => worldCache.delete(path), fresh ? 300000 : 0); return null; })
+      .finally(() => clearTimeout(timer));
+    worldCache.set(path, p);
+  }
+  return worldCache.get(path);
+}
+const worldShard = (id) => `${id.slice(0, 2)}/${id}.json`;
+const worldParentPath = (latest, parent) => latest.latest + (parent === "world" ? "world.json" : worldShard(parent));
+
+// Change points [[i, open, aged], ...]: the values hold from date index i until the next point, 0 before the first.
+function pointAt(points, k) {
+  let v = [0, 0];
+  for (const [i, open, aged] of points || []) { if (i > k) break; v = [open, aged]; }
+  return v;
+}
+
+// Does the app offer a quest in country cc? null when its rule names only some of the country's provinces or
+// states: the world gates by position, so a quest can be on in one place of the country and off in another.
+function offeredIn(e, cc) {
+  const only = e && e.type === "NoCountriesExcept";
+  const codes = (e && e.codes) || [];
+  if (codes.includes(cc)) return only;
+  if (codes.some((c) => c.startsWith(cc + "-"))) return null;
+  return !only;
+}
+
+// A quest for a world place: counted where the world counts it and the app offers it in the place's country
+// (or the place's files hold it), not offered where the app leaves the country out, else not counted.
+function worldStatus(q, h) {
+  if (!h.worldQuests.has(q.name)) return "unsupported";
+  if (h.quests[q.name]) return "counted";   // worldSeries holds every quest counted here
+  // on in some of the country's provinces only: "No count", not "Not offered", since it may be offered here
+  return offeredIn(q.enabledInCountries, h.cc) === null ? "counted" : "not-in-region";
+}
+
+// The series: the place file's dates up to base, then the parent file's dates after base. A quest a file
+// leaves out is 0 there if the world counts it in this place (it is in latest.json's quests and the app offers
+// it in the country, or the other file holds it); else the quest stays out. lf is null when the parent's file
+// is missing or does not hold the place: the series then ends at base.
+function worldSeries(latest, pf, lf, id, cc) {
+  const own = pf.dates.filter((d) => d <= latest.base);
+  const later = lf ? lf.dates.map((d, j) => [d, j]).filter(([d]) => d > latest.base) : [];
+  const dates = [...own, ...later.map(([d]) => d)];
+  const mine = lf ? lf.places[id] : {};
+  const counted = new Set(latest.quests);
+  const names = new Set([...latest.quests.filter((q) => offeredIn(questByName.get(q)?.enabledInCountries, cc) === true),
+                         ...Object.keys(pf.quests), ...Object.keys(mine)]);
+  const quests = {};
+  for (const q of names) {
+    const a = pf.quests[q], b = mine[q];
+    const zero = a || b || (counted.has(q) && offeredIn(questByName.get(q)?.enabledInCountries, cc) === true) ? [0, 0] : [null, null];
+    const at = [...own.map((_, k) => (a ? pointAt(a, k) : zero)), ...later.map(([, j]) => (b ? pointAt(b, j) : zero))];
+    quests[q] = { open: at.map((v) => v[0]), agedOnly: at.map((v) => v[1]) };
+  }
+  const meta = { scVersion: latest.scVersion, resurveyMultiplier: latest.resurveyMultiplier ?? 1, notes: true };
+  return { world: true, dates, meta: dates.map(() => meta), quests, worldQuests: counted };
+}
+
+// A place's world series, or null when the world does not count it (or its files cannot be had).
+async function worldPlace(ref) {
+  const id = refId(ref);
+  if (!/^[0-9a-f]{12}$/.test(id)) return null;   // a country addressed by its code has no world file
+  const latest = await worldJSON("latest.json", true);
+  if (!latest || !latest.place || !latest.latest || !latest.base || !Array.isArray(latest.quests)) return null;
+  const up = chain(ref)[1];
+  const [pf, lf] = await Promise.all([worldJSON(latest.place + worldShard(id)),
+                                      worldJSON(worldParentPath(latest, up ? refId(up) : "world"))]);
+  if (!pf || !Array.isArray(pf.dates) || !pf.dates.length || !pf.quests) return null;
+  const cc = (pf.cc || ref.country.cc).toUpperCase();
+  const s = worldSeries(latest, pf, lf && lf.places && lf.places[id] && Array.isArray(lf.dates) ? lf : null, id, cc);
+  if (!s.dates.length) return null;
+  return { ...s, id, placeIn: state.placeIn, ref, cc, latest, name: refName(ref) };
+}
+
+// Is the page showing the world place the state names?
+const worldShown = () => state.view === "places" && !!state.place && !!hist && !!hist.world &&
+  hist.id === state.place && hist.placeIn === state.placeIn;
+
+// The place page for a world place: the head, tiles, chart and table from its series, then its children.
+async function renderWorld(seq) {
+  const h = hist;
+  const page = ++pageSeq;    // a city page still loading stops where it is, and this one if a city follows
+  childWatch?.disconnect();
+  $("#view-places").hidden = true;
+  $("#view-city").hidden = false;
+  const up = chain(h.ref).reverse();
+  $("#place-crumbs").replaceChildren(placeLink(null, "All countries"), ...up.slice(0, -1).flatMap((r) => [crumbSep(), placeLink(r)]));
+  $("#place-name").textContent = h.name;
+  $("#place-kind").textContent = SUBTYPE[refSt(h.ref)] || "";
+  $("#place-asof").textContent = `As of ${shortDate(h.latest.date)}, ${h.latest.date.slice(0, 4)}, from the daily count of the whole world.`;
+  renderCityCharts(h);
+  renderQuestTable(shownSeries(h));
+  const box = $("#place-children");
+  box.replaceChildren();
+  const items = await worldChildItems(h.ref).catch(() => []);
+  const lf = items.length ? await worldJSON(h.latest.latest + worldShard(h.id)) : null;
+  if (seq !== placeSeq || page !== pageSeq) return;
+  box.replaceChildren(...[lf && worldKidsCard(h, items, lf), childrenCard(h.ref, items)].filter(Boolean));
+}
+
+// The name layer's places inside a place; a country's are its regions, and the places of its "_" file.
+async function worldChildItems(ref) {
+  if (ref.kind !== "country") return childRows(ref).map((i) => ({ ref: rowRef(ref.shard, i) }));
+  const out = ref.country.regions.filter((r) => r.id !== "_").map((r) => ({ ref: { kind: "region", country: ref.country, region: r }, n: r.n }));
+  const loose = ref.country.regions.find((r) => r.id === "_");
+  const sh = loose && await loadShard(ref.country, loose).catch(() => null);
+  if (sh) out.push(...sh.top.map((i) => ({ ref: rowRef(sh, i) })));
+  return out;
+}
+
+// The children the world counts, with their open quests (the ticked ones) on the newest date and the change
+// from 4 weeks before, or from the file's first date when it is younger.
+function worldKidsCard(h, items, lf) {
+  const n = lf.dates.length, i = n - 1;
+  let j = -1;
+  for (let k = 0; k < i; k++) if (lf.dates[k] <= addDays(lf.dates[i], -WEEKS4)) j = k;
+  const young = j < 0;
+  if (young) j = 0;
+  const total = (qs, k) => Object.entries(qs).reduce((s, [q, pts]) => s + (selected(q) ? pointAt(pts, k)[0] : 0), 0);
+  const rows = items.filter((it) => lf.places[refId(it.ref)]).map((it) => {
+    const qs = lf.places[refId(it.ref)];
+    const open = total(qs, i);
+    return { ref: it.ref, open, change: n > 1 ? open - total(qs, j) : null };
+  }).sort((a, b) => b.open - a.open || refName(a.ref).localeCompare(refName(b.ref)));
+  if (!rows.length) return null;
+  const since = young ? `Since ${shortDate(lf.dates[j])}` : "Last 4 weeks";
+  return el("article", { class: "card" },
+    el("h2", {}, `Counted places inside ${h.name}`),
+    el("p", { class: "sub" }, `Open quests in each on ${shortDate(lf.dates[i])}, counting ${selectionText()}. ` +
+      "Places overlap and leave gaps, so they need not add up to the place they are in."),
+    el("div", { class: "table-wrap" }, el("table", { class: "data parts" },
+      el("thead", {}, el("tr", {}, el("th", { scope: "col" }, "Place"), el("th", { scope: "col" }, "Kind"),
+        el("th", { scope: "col", class: "num" }, "Open"), el("th", { scope: "col", class: "num" }, since))),
+      el("tbody", {}, rows.map((r) => el("tr", {},
+        el("td", {}, placeLink(r.ref)),
+        el("td", {}, SUBTYPE[refSt(r.ref)] || ""),
+        el("td", { class: "num" }, nf.format(r.open)),
+        el("td", { class: "num" }, r.change == null ? "—" : signed(r.change))))))));
+}
+
 // ---------- map view ----------
 // What is counted, on a map: each city's boundary from coverage.json (DATA-FORMAT.md), joined by id to
 // cities.json for its name and count. Everything not coloured is not counted. A city is a few pixels at
@@ -1868,9 +2044,10 @@ async function render() {
     if (t.dataset.view === (state.view === "places" ? "city" : state.view)) t.setAttribute("aria-current", "page");
     else t.removeAttribute("aria-current");
   }
-  $("#view-city").hidden = state.view !== "city";
+  const world = worldShown();   // a world place's numbers use the place page's layout
+  $("#view-city").hidden = state.view !== "city" && !world;
   $("#view-compare").hidden = state.view !== "compare";
-  $("#view-places").hidden = state.view !== "places";
+  $("#view-places").hidden = state.view !== "places" || world;
   $("#view-map").hidden = state.view !== "map";
   $("#city-filters").style.display = state.view === "compare" ? "" : "none";   // the place page has its own in its head
   setStatus("");

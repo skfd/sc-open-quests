@@ -88,15 +88,21 @@ class NameLayer:
 
         for c in idx["countries"]:
             cc = c["cc"]
-            add(c["id"], "world", c.get("en") or cc, "country", cc)
+            # a country no Overture division heads (PS, EH, ...) is addressed by its code in lower case, as the
+            # page's countryId does; it has no place file of its own, only a latest file for its children
+            cid = c["id"] or cc.lower()
+            if c["id"]:
+                add(cid, "world", c.get("en") or cc, "country", cc)
             for r in c["regions"]:
-                add(r["id"], c["id"], r["name"], "region", cc)
+                rid = r["id"] if r["id"] and r["id"] != "_" else cid  # "_": rows straight under the country
+                if rid != cid:
+                    add(rid, cid, r["name"], "region", cc)
                 rows = json.loads((places / r["file"]).read_text(encoding="utf-8"))["places"]
                 for row in rows:
                     pid, name, st, pi = row[0], row[1], row[2], row[3]
-                    parent = rows[pi][0] if pi >= 0 else r["id"]
+                    parent = rows[pi][0] if pi >= 0 else rid
                     if parent == pid:
-                        parent = c["id"]
+                        parent = cid
                     add(pid, parent, name, SUBTYPES[st] if 0 <= st < len(SUBTYPES) else str(st), cc)
 
 
