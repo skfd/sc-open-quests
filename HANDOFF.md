@@ -2530,6 +2530,12 @@ checked against a full count. Until then the world's published numbers can only 
     `why.py`, which read the store in Python just before, map it). Dead ranges pile up until a punch runs.
     11-04 started 03:38; **its gate passed (08:16)**, the same 11 cities, +9 of 19,252,865; `finish` 14,930 s (tier 2
     engines 10,287). Gates so far: 11-01 (seed), 11-02, 11-03, 11-04, each +9 with the same differences.
+    **The scheduled task at 14:45 on 11-19 exited 1 with no output:** the catch-up started by hand writes to the same
+    `logs/planet-store.out`, and the task's `cmd /c ... >> planet-store.out` cannot open it while that run holds it, so
+    the task never reached Python (it stepped aside, but not through the RUNNING guard). Harmless; once the catch-up
+    ends the task runs normally. **Start future runs by hand with their own output file.**
+    **The daily city run failed on 11-19 at 12:20** (`logs/scheduler.log`): `osm_extracts.py fetch quebec` hit a read
+    timeout from Geofabrik, so no city snapshot that day. Not touched; the next run (11-20 13:15) should catch up.
     **The gate on the seed (11:15-11:21):** `world_gate.py` on the 11-01 oracle reproduces `gate1101`: 21 of 32
     equal, +9 of 19,239,746, worst city 0.0016% (`world-1101/gate-test/`). The recut's stale HOLD was removed at launch.
     **Notes past the world's dump (11-18, 11:40):** when D passes the clips' `until` (261117: 11-17T05:37Z, so first
