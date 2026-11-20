@@ -2536,7 +2536,8 @@ checked against a full count. Until then the world's published numbers can only 
     window's pause and tier 2's engines 22,986 s (one group alone 2,616 s). **11-06 passed (21:50)**, unchanged: 20 of
     32, +10 (Zagreb's +1 stays, no new one); `finish` 16,461 s. **11-07 passed (02:58 on 11-20)**, unchanged: 20 of
     32, +10 (clip 19,261,639, world 19,261,649), the same 12 cities and quests differing, no new one; `finish`
-    16,392 s (tier 2's engines 11,429 s). 11-08 started 03:04.
+    16,392 s (tier 2's engines 11,429 s). **11-08 passed (06:54)**, unchanged: 20 of 32, +10 (clip 19,264,474,
+    world 19,264,484), the same 12 cities and quests; `finish` 12,132 s (tier 2's engines 7,205 s). 11-09 started 07:01.
     **The scheduled task at 14:45 on 11-19 exited 1 with no output:** the catch-up started by hand writes to the same
     `logs/planet-store.out`, and the task's `cmd /c ... >> planet-store.out` cannot open it while that run holds it, so
     the task never reached Python (it stepped aside, but not through the RUNNING guard). Harmless; once the catch-up
