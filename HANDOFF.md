@@ -2588,6 +2588,17 @@ publisher on `world-publish` got a strict gate and a per-run file cap. Tests: `t
   owner, 2026-11-19. If the
   account is ever moved to Workers Paid, set a Workers spending limit there too (Billing, Spend Management).
 
+## World vs the daily run's cities: they agree (2026-11-19, late evening; side session)
+
+`tools/world_compare.py` (read-only, ~15 s) held the world's `osm-<city>` counts and each city's name-layer place
+against the published snapshots for 11-02 to 11-06; report in `.scratch/world-compare/report.md` (verdict on top,
+from `findings.md`). Aligned on the clock (Europe's snapshot D = world D; Canada/Germany's D ~21:21Z = world D+1),
+473 pairs: median 0.000%, p90 0.003%, +2,591 of 138.3 M, 289 exact. Gaps: 11-02 Europe was SC v64.0 (+0.6%,
+AddAcceptsCards); 2.6 h of edits for Canada/Germany (Sarnia 11-05 +2.1%, 289 buildings); notes off by 1-11 in 5
+pairs. Overture places differ from the OSM outlines (Bratislava -13%, Halifax -2.4%, Cape Breton -2.2%), so
+counted cities keep `osm-<city>`. **The world can stand in for the daily run's numbers** once the owner picks a
+clock (midnight UTC, or cut the world at the extract time). Rerun after 11-07 lands for 11-06's Canadian cities.
+
 ## World places publisher: built, not merged (2026-11-19, night; owner: "when is it sane to publish world stuff?", then "Yes, build it")
 
 - **When it is sane:** release 1's rule, 30 gated days from 11-01, so the day 11-30 is counted: about **12-01**. The
