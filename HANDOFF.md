@@ -2648,6 +2648,10 @@ changes in the daily run until the world replaces it.
      for this; v64.1, same instant), reads 644 MB, about 2 min. Expect near-equal, not exact (notes layers differ,
      as the gate's 11 cities). Exercised on 11-02 against it (six days apart): world -0.081%, 89.2% of places equal
      in every quest, the largest gap a building import in Azumino (Japan, +109,523 by 11-08): plausible change.
+     **Done 11-20, 08:55 (11-08 gated 06:54): passed.** 1,018,508 places in both; **99.968% equal in every
+     quest**; open world 6,681,050,595 vs the report's 6,681,050,914 (−319, −0.000005%). Largest gaps: China −33
+     (Hanzhong, Shaanxi −13), GB −6 (England −6), Turku −6; by quest AddMaxHeight −162, AddHousenumber +38, the rest
+     under 40. Notes-layer noise, as expected. Output `.scratch/world-publish/cross-1108.json`.
   5. After the first upload: fetch one `place/` file and `world.json` (1.16 MB raw) from `sc-data` and check
      `Content-Type: application/json`, a compressed encoding, and `cf-cache-status` HIT on the second fetch.
 - **Disk:** the local site is 1.13M small files, 1.73 GB raw (about 4.5 GB with 4 KB clusters); `place/` is rebuilt when
