@@ -322,3 +322,11 @@ request"). Agreed before the work was split, so the builders, the engine and the
   `"bbox": null`; the site names every country from the browser's CLDR data. Under a country that is not
   its own, a dependency's or placeholder's places sit in a file whose root is that dependency or
   placeholder (`us/<Puerto Rico's id>.json`, `ps/<Gaza Strip's id>.json`).
+
+## World places (the page reads them; 2026-11-19)
+
+Any place of the name layer the world counts, other than the counted cities, gets its numbers from
+`https://sc-data.comentality.com/` (`?world=<url>` points the page elsewhere; `tests/fixtures/world/` is a
+small example): `latest.json`, `place/<base>/<id[:2]>/<id>.json` and `latest/<date>/<parent[:2]>/<parent>.json`
+(`latest/<date>/world.json` for a country). The files, change points and the join are specified in DESIGN.md,
+"World places published: the files". A place with no `place/` file is not counted, and its page stays as before.
