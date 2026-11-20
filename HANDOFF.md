@@ -2594,8 +2594,9 @@ publisher on `world-publish` got a strict gate and a per-run file cap. Tests: `t
   catch-up is not what limits it (about 3-3.5 h a day; caught up about 11-21 or 11-22); the calendar is.
 - **Built on branch `world-publish`** (worktree `../sc-open-quests-worldpub`), three commits: the format (DESIGN.md,
   "World places published: the files"), `tools/world_publish.py` with `tests/test_world_publish.py`, and the place
-  page (`docs/app.js`, `tests/fixtures/world/` with `check_world.py`, 45 checks). **Not merged:** merging is
-  publishing; but the page is inert until release: `WORLD_HOST = ""` in `app.js`, so it asks the world nothing
+  page (`docs/app.js`, `tests/fixtures/world/` with `check_world.py`, 45 checks). **Merged into main 11-19, 23:05**
+  (it touches nothing the catch-up imports); the output and cache moved to main's `.scratch/world-publish/`, so
+  `python tools/world_publish.py build` from main needs no `--out`/`--work`/`--world`. The page is inert until release: `WORLD_HOST = ""` in `app.js`, so it asks the world nothing
   unless `?world=` is given (pages without it read text-identical to main's, checked).
 - **The files:** `latest.json` (max-age 300), `place/<base>/<id[:2]>/<id>.json` (written when `base`, the newest
   1st, moves) and `latest/<date>/<parent[:2]>/<parent>.json` (daily); both dated folders immutable. A quest's
