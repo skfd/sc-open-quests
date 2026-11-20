@@ -2612,7 +2612,10 @@ publisher on `world-publish` got a strict gate and a per-run file cap. Tests: `t
 - **Not done, in order:**
   1. **Daily build after each world day.** `python tools/world_publish.py build` once the loop has closed a day
      (it reads only gated days). Wire it into `planet_store_day.py` after the day's cleanup **only once the
-     catch-up has ended** (never edit the running script). Until then run it by hand.
+     catch-up has ended** (never edit the running script). Until then run it by hand. **Run by hand 11-19, 22:49, through
+     11-06** (the first compressed counts files, 113 MB each, about 37 s a day to read): 110,415 parent files in 135
+     s; `verify --sample 3000` 0 mismatches over 6 days. Places counted after `base` (1,018,472 at 11-02, 1,018,499
+     at 11-06) have no place file until 12-01, so the page shows them "Not counted yet" until then.
   2. **At release (owner's go):** the bucket's CORS rule (GET, HEAD from the site's origin); then
      `world_publish.py upload` (`--print` shows the rclone commands; never run yet, credentials untouched): the
      first upload is about 1.13M PUTs, hours at 64 transfers; then `WORLD_HOST = "https://sc-data.comentality.com/"`,
