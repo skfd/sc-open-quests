@@ -2597,7 +2597,8 @@ from `findings.md`). Aligned on the clock (Europe's snapshot D = world D; Canada
 AddAcceptsCards); 2.6 h of edits for Canada/Germany (Sarnia 11-05 +2.1%, 289 buildings); notes off by 1-11 in 5
 pairs. Overture places differ from the OSM outlines (Bratislava -13%, Halifax -2.4%, Cape Breton -2.2%), so
 counted cities keep `osm-<city>`. **The world can stand in for the daily run's numbers** once the owner picks a
-clock (midnight UTC, or cut the world at the extract time). Rerun after 11-07 lands for 11-06's Canadian cities.
+clock (midnight UTC, or cut the world at the extract time). Rerun after 11-07 lands for 11-06's Canadian cities. `--measure agedOnly` (11-20, `report-aged.md`): 434 of 473 exact,
+net +13 on 4.2 M. DESIGN.md now says counted cities take `osm-<city>`, never the Overture place.
 
 ## World places publisher: built, not merged (2026-11-19, night; owner: "when is it sane to publish world stuff?", then "Yes, build it")
 

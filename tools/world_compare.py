@@ -8,10 +8,10 @@ counts (W/counts/<day>/counts.npz) for two parts:
 - the city's name-layer place (cities.json `place`, an Overture boundary): what the world pages would show.
 
 Each against world day D (clock D 00:00Z, ~21 h before the snapshot) and D+1 (~2.6 h after it).
-Measure: `open` at the default resurvey setting. Read-only: the .npz files are stored uncompressed and are
+Measure: `open` (or `agedOnly`) at the default resurvey setting. Read-only: the .npz files are stored uncompressed and are
 memory-mapped, so only the 147 cities' rows are paged in.
 
-    python tools/world_compare.py --from 2026-11-02 --to 2026-11-06 --out .scratch/world-compare
+    python tools/world_compare.py --from 2026-11-02 --to 2026-11-06 --out .scratch/world-compare [--measure agedOnly]
 """
 from __future__ import annotations
 
@@ -76,12 +76,12 @@ def m_rows(path: Path, rows: np.ndarray, col: int) -> np.ndarray:
             return out
 
 
-def world_day(day: str, want: dict[str, str]) -> dict[str, dict[str, int]]:
-    """{key: {quest: open}} for the parts named in want ({part id: key})"""
+def world_day(day: str, want: dict[str, str], measure: str = "open") -> dict[str, dict[str, int]]:
+    """{key: {quest: measure}} for the parts named in want ({part id: key})"""
     d = W / "counts" / day
     meta = json.loads((d / "counts.json").read_text(encoding="utf-8"))
     pidx = {p: i for i, p in enumerate(meta["parts"]) if p in want}
-    oi = meta["measures"].index("open")
+    oi = meta["measures"].index(measure)
     part = npz_member(d / "counts.npz", "part.npy", mmap=False)
     rows = np.flatnonzero(np.isin(part, np.fromiter(pidx.values(), dtype=part.dtype)))
     partv = part[rows]
@@ -111,6 +111,7 @@ def main() -> None:
     a.add_argument("--from", dest="d0", default="2026-11-02")
     a.add_argument("--to", dest="d1", default="2026-11-06")
     a.add_argument("--out", type=Path, default=ROOT / ".scratch/world-compare")
+    a.add_argument("--measure", default="open", choices=["open", "agedOnly"])
     o = a.parse_args()
     o.out.mkdir(parents=True, exist_ok=True)
 
@@ -127,7 +128,7 @@ def main() -> None:
     world = {}
     for d in need:
         print("world", d, flush=True)
-        world[d] = world_day(d, want)
+        world[d] = world_day(d, want, o.measure)
 
     rows = []  # one per (city, snapshot day, world day, part kind)
     for D in days:
@@ -137,7 +138,7 @@ def main() -> None:
             if f.is_file():
                 s = json.loads(f.read_text(encoding="utf-8"))
                 for cid, c in s["cities"].items():
-                    snaps[cid] = (s["asOf"], {q: v["open"] for q, v in c["quests"].items()})
+                    snaps[cid] = (s["asOf"], {q: v.get(o.measure, 0) for q, v in c["quests"].items()})
         for wd in (D, str(dt.date.fromisoformat(D) + dt.timedelta(1))):
             if wd not in world:
                 continue
@@ -163,17 +164,18 @@ def main() -> None:
                                  "w": wt, "c": ct, "diff": wt - ct, "pct": pct(wt, ct),
                                  "onlyCity": {q: v for q, v in cq.items() if q not in wquests and v},
                                  "per": per})
-    (o.out / "rows.json").write_text(json.dumps(rows, separators=(",", ":")), encoding="utf-8", newline="\n")
-    write_report(o.out / "report.md", rows, name, days)
+    sfx = "" if o.measure == "open" else "-aged"
+    (o.out / f"rows{sfx}.json").write_text(json.dumps(rows, separators=(",", ":")), encoding="utf-8", newline="\n")
+    write_report(o.out / f"report{sfx}.md", rows, name, days, o.measure)
 
 
-def write_report(path: Path, rows: list, name: dict, days: list) -> None:
+def write_report(path: Path, rows: list, name: dict, days: list, measure: str = "open") -> None:
     def sel(kind, lag):
         return [r for r in rows if r["kind"] == kind and r["aligned"] == bool(lag)]
 
     L = ["# World vs the daily run's city counts", "",
          f"Snapshots {days[0]} to {days[-1]} (`data/archive/<region>/snapshots/<D>.json`, as of about D 21:21Z) "
-         "against the world's counts (`.scratch/planet/world-1101/counts/<day>/`, clock day 00:00Z), `open` at the "
+         f"against the world's counts (`.scratch/planet/world-1101/counts/<day>/`, clock day 00:00Z), `{measure}` at the "
          "default resurvey setting, over the quests both sides count. Made by `tools/world_compare.py`.", "",
          "- **osm**: the world's `osm-<city>` part, the city's own OSM outline (like for like).",
          "- **place**: the city's name-layer place (`cities.json` `place`, Overture boundary): what a world page shows.",
@@ -210,7 +212,7 @@ def write_report(path: Path, rows: list, name: dict, days: list) -> None:
 
     # per city table: osm lag1 and lag0, place lag1, averaged over days
     L += ["## Per city (mean over the days)", "",
-          "| city | city open | osm aligned % | osm off by a day % | place aligned % | biggest quest gaps (osm aligned, world−city, summed over days) |",
+          f"| city | city {measure} | osm aligned % | osm off by a day % | place aligned % | biggest quest gaps (osm aligned, world−city, summed over days) |",
           "|---|---|---|---|---|---|"]
     by = {}
     for r in rows:
@@ -250,7 +252,7 @@ def write_report(path: Path, rows: list, name: dict, days: list) -> None:
             only[q] = only.get(q, 0) + v
     L += ["", "Quests only the city snapshots count (open, summed over cities and days): "
           + (", ".join(f"{q} {v:,}" for q, v in sorted(only.items())) or "none") + ".", ""]
-    intro = path.parent / "findings.md"  # the hand-written verdict, kept on top across reruns
+    intro = path.parent / ("findings.md" if measure == "open" else f"findings-{measure}.md")  # the hand-written verdict, kept on top across reruns
     head = intro.read_text(encoding="utf-8") if intro.is_file() else ""
     path.write_text(head + "\n".join(L) + "\n", encoding="utf-8", newline="\n")
 

@@ -5675,7 +5675,9 @@ file is 0 open, provided the quest is in `latest.json` `quests` and enabled in t
 (`quests.json` `enabledInCountries`, as for cities).
 
 **Counted cities stay on their own data.** The page already turns a counted place into `?city=`; world data is
-for every other place.
+for every other place. If world numbers ever replace a counted city's, they come from the city's own OSM
+outline (the world's part `osm-<city>`), never from its name-layer place. The Overture outline differs:
+Bratislava −13%, Halifax −2.4%, Cape Breton −2.2% (`tools/world_compare.py`, 2026-11-19).
 
 **Change points, not columns.** A quest's series is a list of `[i, open, aged]`: from date index `i` the values
 are `open` and `aged` until the next point; before the first point both are 0. Most places change on few days, so
