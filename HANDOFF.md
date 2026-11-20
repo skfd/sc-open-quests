@@ -2599,6 +2599,8 @@ pairs. Overture places differ from the OSM outlines (Bratislava -13%, Halifax -2
 counted cities keep `osm-<city>`. **The world can stand in for the daily run's numbers** once the owner picks a
 clock (midnight UTC, or cut the world at the extract time). Rerun after 11-07 lands for 11-06's Canadian cities. `--measure agedOnly` (11-20, `report-aged.md`): 434 of 473 exact,
 net +13 on 4.2 M. DESIGN.md now says counted cities take `osm-<city>`, never the Overture place.
+**Clock decided (owner, 11-20): midnight UTC**, the world's own; recorded in DESIGN.md next to that rule. Nothing
+changes in the daily run until the world replaces it.
 
 ## World places publisher: built, not merged (2026-11-19, night; owner: "when is it sane to publish world stuff?", then "Yes, build it")
 

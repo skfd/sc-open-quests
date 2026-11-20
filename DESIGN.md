@@ -5679,6 +5679,11 @@ for every other place. If world numbers ever replace a counted city's, they come
 outline (the world's part `osm-<city>`), never from its name-layer place. The Overture outline differs:
 Bratislava −13%, Halifax −2.4%, Cape Breton −2.2% (`tools/world_compare.py`, 2026-11-19).
 
+**The clock is midnight UTC (owner, 2026-11-20: "go with midnight UTC").** When world numbers replace the daily
+run's, a city's count for D is the world's at D 00:00Z, for every city. Europe's snapshots already use that clock.
+Canada's and Germany's are Geofabrik's at about D 21:21Z, so their numbers move 2.6 h later; the comparison saw
+no gap bigger than that window's edits. The world is not cut at the extract time.
+
 **Change points, not columns.** A quest's series is a list of `[i, open, aged]`: from date index `i` the values
 are `open` and `aged` until the next point; before the first point both are 0. Most places change on few days, so
 this keeps a daily series small, and the same decoder reads both kinds of file.
