@@ -2534,7 +2534,9 @@ checked against a full count. Until then the world's published numbers can only 
     17,958 against 17,957). Inside the bar; to trace if such rows pile up (the rehearsal left AddHousenumber rows of
     the same kind, DESIGN "The one tier-2 row left, traced"). `finish` 27,945 s, of which about 2 h 20 min the daily
     window's pause and tier 2's engines 22,986 s (one group alone 2,616 s). **11-06 passed (21:50)**, unchanged: 20 of
-    32, +10 (Zagreb's +1 stays, no new one); `finish` 16,461 s.
+    32, +10 (Zagreb's +1 stays, no new one); `finish` 16,461 s. **11-07 passed (02:58 on 11-20)**, unchanged: 20 of
+    32, +10 (clip 19,261,639, world 19,261,649), the same 12 cities and quests differing, no new one; `finish`
+    16,392 s (tier 2's engines 11,429 s). 11-08 started 03:04.
     **The scheduled task at 14:45 on 11-19 exited 1 with no output:** the catch-up started by hand writes to the same
     `logs/planet-store.out`, and the task's `cmd /c ... >> planet-store.out` cannot open it while that run holds it, so
     the task never reached Python (it stepped aside, but not through the RUNNING guard). Harmless; once the catch-up
