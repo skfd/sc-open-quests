@@ -2583,7 +2583,8 @@ refuse R2 writes until `python tools/spend_breaker.py --reset`. Hourly task `kk-
 (`logs/spend.log`); `cloud_publish.py` and `archive_backup.py` call `gate()` before writing. The world
 publisher on `world-publish` got a strict gate and a per-run file cap. Tests: `tests/test_spend_breaker.py`.
 - **Owner, in the dashboard (no API for these, and the token has no billing access):** Manage Account,
-  Billing, Billable Usage, Create budget alert at $10, $25 and $40, so a trip also reaches email. If the
+  Billing, Billable Usage, Create budget alert at $10, $25 and $40, so a trip also reaches email. Done by the
+  owner, 2026-11-19. If the
   account is ever moved to Workers Paid, set a Workers spending limit there too (Billing, Spend Management).
 
 ## World places publisher: built, not merged (2026-11-19, night; owner: "when is it sane to publish world stuff?", then "Yes, build it")
