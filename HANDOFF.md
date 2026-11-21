@@ -2680,19 +2680,25 @@ changes in the daily run until the world replaces it.
      change on a day (`.scratch/world-publish/parents_changed.py`), and a country page downloaded `world.json`
      (2.1 MB) for its own entry (`.scratch/world-publish/page_open.txt`). The schema-1 text below describes
      the old layout; the new one is DESIGN.md "World places published: stable paths (schema 2)" on the branch.
-     **Progress, 11-21 13:50:** branch `world-stable` holds the publisher, its tests, the page, the fixtures
-     and the design (210 tests and the 61 browser checks pass). The bucket's orphans are purged (0 objects,
-     then the trial's 100). Built through 11-12 into `.scratch/world-publish/site2` (1,018,541 place and
-     110,421 children files, 29 min; `work/local.json`); `verify --sample 1500` 0 mismatches; `upload --trial
-     100` checked live (JSON type, max-age 86400, `?v=` MISS then HIT, CORS for the site only, bytes equal).
-     **The full upload through 11-12 started 13:45** (`upload --full`, log `.scratch/world-publish/upload-1112.log`,
-     about 2 h; it resumes from `work/bucket.json` if it dies: rerun the same command). All commands run from
-     the worktree with `--world`/`--out`/`--work` pointing at main's `.scratch` (see the log's first line).
-     **Do not build into `site2` while the upload runs.** Then, in order: (1) `build` (to 11-13) and `upload`
-     without `--full`, which proves the daily path and measures a day's changed files; (2) `check`; (3) the
-     page headless against the live bucket with `?world=https://sc-data.comentality.com/`; (4) `WORLD_HOST`
-     in `docs/app.js`, merge `world-stable` into main when `run.py update` is not running, deploy; (5) delete
-     `work/daily.lock`, enable the task; (6) remove `.scratch/world-publish/site` (schema 1, 1.7 GB).
+     **Live, 11-21 16:45: schema 2 is in the bucket through 11-13 and merged into main (433a40df).**
+     - Bucket: 1,128,975 files (`place/`, `children/`, `latest.json` v 20a53b131333); `check` 0 mismatches.
+       First upload 13:45-16:28 (the session's 2 h limit killed it at 800k; it resumed from
+       `work/bucket.json`). The day after went through `daily`: 34,612 place and 12,697 children files,
+       47,309 uploads in 5 min. DESIGN.md "World places published: stable paths (schema 2)" has the numbers.
+     - Page: `WORLD_HOST = "https://sc-data.comentality.com/"` in `docs/app.js`; checked headless against the
+       live bucket (`.scratch/world-publish/live_page.py`: Plauen, Germany, Thiergarten, Ontario). **Not
+       deployed until a city run finishes** (it deploys `docs/`).
+     - Task `kk-SCOpenQuests-worldpub` is enabled again (15:30 daily; `daily` now uses `site2`, never `--full`:
+       a plan past 200,000 files stops and wants a look, `upload --print` then `upload --full`).
+     - Publisher output is `.scratch/world-publish/site2`; manifests `work/local.json` (built) and
+       `work/bucket.json` (uploaded). Losing `bucket.json` means a full re-upload (about $5).
+     - **Left:** `.scratch/world-publish/site` (schema 1, 1.7 GB) can be deleted; worktree
+       `../sc-open-quests-stable` and branch `world-stable` can be removed; after 11-29 `back` starts to
+       slide, so watch the first days' upload counts in `logs/world-daily.log`.
+     **The city run failed 11-21 13:52** (`java.lang.OutOfMemoryError: Java heap space`, `AreaPass`, Europe's
+     11-21 file at `-Xmx14g`, "what the machine can spare", beside the catch-up and other runs). It left
+     `docs/data/*/snapshots/` empty mid-rotation (14 uncommitted deletes), so `docs/` must not be deployed by
+     hand. Rerun through its task at 16:50 (`schtasks /Run /TN kk-SCOpenQuests`); see `logs/scheduler.log`.
   1. **Daily build after each world day.** `python tools/world_publish.py build` once the loop has closed a day
      (it reads only gated days). Wire it into `planet_store_day.py` after the day's cleanup **only once the
      catch-up has ended** (never edit the running script). Until then run it by hand. **Run by hand 11-19, 22:49, through
