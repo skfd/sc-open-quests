@@ -2679,7 +2679,20 @@ changes in the daily run until the world replaces it.
      bucket holds. Why: 11-02..11-13 only about 12,500 of 110,423 parent files and 34,000 of 1,018,552 places
      change on a day (`.scratch/world-publish/parents_changed.py`), and a country page downloaded `world.json`
      (2.1 MB) for its own entry (`.scratch/world-publish/page_open.txt`). The schema-1 text below describes
-     the old layout until DESIGN.md gets the new section.
+     the old layout; the new one is DESIGN.md "World places published: stable paths (schema 2)" on the branch.
+     **Progress, 11-21 13:50:** branch `world-stable` holds the publisher, its tests, the page, the fixtures
+     and the design (210 tests and the 61 browser checks pass). The bucket's orphans are purged (0 objects,
+     then the trial's 100). Built through 11-12 into `.scratch/world-publish/site2` (1,018,541 place and
+     110,421 children files, 29 min; `work/local.json`); `verify --sample 1500` 0 mismatches; `upload --trial
+     100` checked live (JSON type, max-age 86400, `?v=` MISS then HIT, CORS for the site only, bytes equal).
+     **The full upload through 11-12 started 13:45** (`upload --full`, log `.scratch/world-publish/upload-1112.log`,
+     about 2 h; it resumes from `work/bucket.json` if it dies: rerun the same command). All commands run from
+     the worktree with `--world`/`--out`/`--work` pointing at main's `.scratch` (see the log's first line).
+     **Do not build into `site2` while the upload runs.** Then, in order: (1) `build` (to 11-13) and `upload`
+     without `--full`, which proves the daily path and measures a day's changed files; (2) `check`; (3) the
+     page headless against the live bucket with `?world=https://sc-data.comentality.com/`; (4) `WORLD_HOST`
+     in `docs/app.js`, merge `world-stable` into main when `run.py update` is not running, deploy; (5) delete
+     `work/daily.lock`, enable the task; (6) remove `.scratch/world-publish/site` (schema 1, 1.7 GB).
   1. **Daily build after each world day.** `python tools/world_publish.py build` once the loop has closed a day
      (it reads only gated days). Wire it into `planet_store_day.py` after the day's cleanup **only once the
      catch-up has ended** (never edit the running script). Until then run it by hand. **Run by hand 11-19, 22:49, through
