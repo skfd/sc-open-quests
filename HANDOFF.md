@@ -2929,3 +2929,23 @@ wording and tab structure as a first draft open to change, not as decided design
   each run its own output file (the 14:45 task exits 1 on the held `planet-store.out`); the task's 6 h limit
   against 11-13's 6 h 56 min; no log line for hours during tier 2; the untraced gate differences; the hiking-route
   marking that can go; a container wider than about 7 km not found.
+- **Owner, 14:05: "agree with your assessment, go ahead."** So: (a) cut the two missing clips from 11-18 plus a
+  diff each; (b) at the first swap: facts as a day's last step, an output file per run, the task's time limit,
+  a progress line in tier 2; the publisher's build follows schema 2; the state checkpoint at the same pause; (c)
+  tier 2's engine time investigated in a worktree while the loop runs; the slow punch, the gate differences and
+  the last row wait until the loop has caught up. **The last row (drop the hiking-route marking; find containers
+  wider than 7 km): when its time comes, first explain it to the owner and ask for the go-ahead. Do not build it
+  unasked.**
+- **(a) running since 14:15:** `../osm-extracts` has a new command, `python osm_extracts.py fill europe`
+  (`fill_clip`; uncommitted there until it has worked): for each sequence a clip lacks between two dated files, the
+  day before's file plus one diff, cut back to the polygon, stored as a dated file with `"filled_in": true` in its
+  meta; latest, the clip's last sequence and pruning untouched. It should leave `europe-2026-11-19.osm.pbf`
+  (sequence 5181) and `europe-2026-11-20.osm.pbf` (5182); the loop pins a clip past its clock on sight.
+- **(b) built, not merged: branch `world-swap`, worktree `.claude/worktrees/world-swap`, 6a153857.**
+  `planet_store_day.py`: `write_facts()` after `store_tail` (a process of its own, never a STOP);
+  `own_output()` sends a run's prints to `logs/planet-store-<started>-<pid>.out` unless `--console`.
+  `world_day.py` `rect_rows`: a log line per tier 2 group with its engine seconds. `archive_backup.py`: `data/facts`
+  is a source (`facts/` in the bucket). **Merge only between two days** (HOLD, wait for the day to end, merge,
+  remove HOLD, start): `world_day.py` is imported by the running loop. At the same pause, the task
+  `kk-SCOpenQuests-planetstore`: drop `>> ...planet-store.out 2>&1` from its command and raise its limit from
+  PT6H to PT12H; and the first state checkpoint.
