@@ -2643,6 +2643,17 @@ changes in the daily run until the world replaces it.
   the world's 12-hex places are right: see the crosscheck below. Headless on the real files: Germany 20,095,288 open (−2,458 on
   11-02), Ontario, Plauen and a neighbourhood draw tiles, chart, quest table and children, no console errors.
 - **Not done, in order:**
+  0. **Released early, 2026-11-21 (owner: "can we release now whatever we have, and while full back fill has not
+     completed keep pilot cities?", then "Go, all four" and "Once a day").** Pilot cities keep their own daily
+     numbers; every other place reads the world, "As of" its newest gated day (11-13 at release; the catch-up
+     reaches today about 11-23). Done: CORS rule set (`world_publish.py cors --set`: GET, HEAD from
+     `https://street-complete-statistics.comentality.com`, checked: a foreign origin gets no header); verify 0
+     mismatches (800 places, 13 days); the first upload started 12:23 through `world_publish.py daily` (1,128,897
+     files, about 160/s, about 2 h; log `logs/world-daily.log`); a place file checked live: `application/json`,
+     br, immutable, MISS then HIT. Task **kk-SCOpenQuests-worldpub** daily 15:30 local runs `daily` (build; if the
+     day is new, verify 2000 and upload; `work/uploaded.json`, `work/daily.lock`). Cost: about $4.50 this month,
+     then about $15 a month for the daily `latest/` plus $4.50 when `place/` moves on the 1st (the breaker's
+     estimate, trips at $40). **Left:** `WORLD_HOST` in `docs/app.js` once the upload has finished, then deploy.
   1. **Daily build after each world day.** `python tools/world_publish.py build` once the loop has closed a day
      (it reads only gated days). Wire it into `planet_store_day.py` after the day's cleanup **only once the
      catch-up has ended** (never edit the running script). Until then run it by hand. **Run by hand 11-19, 22:49, through
