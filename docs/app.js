@@ -3,11 +3,10 @@
 "use strict";
 
 const DATA = (new URLSearchParams(location.search).get("data") || "data").replace(/\/$/, "");
-// Every other place's numbers, from the world's daily count (DESIGN.md, "World places published: the files");
-// ?world=<url> points it at another folder, relative allowed (the test fixture uses this). WORLD_HOST stays "" until
-// release 1 is uploaded and the bucket has its CORS rule; then "https://sc-data.comentality.com/". While it is "",
-// the page asks nothing of the world unless ?world= is given.
-const WORLD_HOST = "";
+// Every other place's numbers, from the world's daily count (DESIGN.md, "World places published: stable paths
+// (schema 2)"); ?world=<url> points it at another folder, relative allowed (the test fixture uses this). With
+// WORLD_HOST "" the page asks nothing of the world unless ?world= is given.
+const WORLD_HOST = "https://sc-data.comentality.com/";
 const WORLD = (new URLSearchParams(location.search).get("world") || WORLD_HOST).replace(/\/?$/, "/");
 const MAX_PINNED = 6;
 const nf = new Intl.NumberFormat("en-CA");
