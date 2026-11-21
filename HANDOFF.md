@@ -2980,6 +2980,21 @@ wording and tab structure as a first draft open to change, not as decided design
   `.scratch/t2-probe/2026-11-14/`, and samples the java processes' cores into `probe.log` there. Read those
   before choosing; an offline rerun of f3 with `-Dopenquests.assembleTrace=true` only once the loop is not using
   every core.
+- **(c) measured on 11-14's live run (16:00), and the cause is the relations.** From the engines' own logs
+  (kept in `.scratch/t2-probe/2026-11-14/logs/`): f31 2,234 rectangles, 932 of 959 s in "map data"; f23 872 of
+  905 s; f24 498 of 565 s; f2 433 of 468 s; all of it in rectangles that hold a relation (0 s in those that hold
+  none), 1-6 s for a rectangle of two thousand nodes. Three engines sampled over 20 s used 0.95-1.29 cores each
+  (24 threads free). f3 was not slow on this day (pass 148 s), so the survey's "f3 every day" attribution, which
+  guessed group ids from start order, is not to be trusted; the skew itself is measured. The first probe hung on
+  `t2/parts` (308,583 files: never list or copy that folder whole) and hit its 2 h limit without sampling.
+- **(c) fix built, not merged: branch `t2-relcache`, worktree `.claude/worktrees/t2-relcache`, b7150976.**
+  `AreaPass.kt`: `relationWithGeometry` once per relation and run (`relationCache`, soft references,
+  `-Dopenquests.relationCache=false` turns it off) instead of once per city holding it; nothing of it depends on
+  the city. Built there (`installDist`, JDK 21). **A/B running since 16:10** (`.scratch/t2-probe/ab.sh`, results in
+  `.scratch/t2-probe/ab/<name>/`): f3's kept D-1 inputs through that engine with the cache off and on, the dumps
+  and snapshots compared byte for byte, and against the loop's own f3 dump. `.scratch/t2-probe/keep.sh` is
+  waiting to keep f31's and f23's D inputs (the slow ones) for the same A/B. It goes in at the swap with
+  `installDist` on main, **never while the loop runs** (the loop starts the installed engine).
 - **(b) built, not merged: branch `world-swap`, worktree `.claude/worktrees/world-swap`, 6a153857.**
   `planet_store_day.py`: `write_facts()` after `store_tail` (a process of its own, never a STOP);
   `own_output()` sends a run's prints to `logs/planet-store-<started>-<pid>.out` unless `--console`.
