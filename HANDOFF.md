@@ -2654,6 +2654,22 @@ changes in the daily run until the world replaces it.
      day is new, verify 2000 and upload; `work/uploaded.json`, `work/daily.lock`). Cost: about $4.50 this month,
      then about $15 a month for the daily `latest/` plus $4.50 when `place/` moves on the 1st (the breaker's
      estimate, trips at $40). **Left:** `WORLD_HOST` in `docs/app.js` once the upload has finished, then deploy.
+     **STOPPED 2026-11-21 13:03 (owner: "lets do the stable urls and proper fix. if you think we need to stop
+     upload you can do it"):** the first upload was killed about 39 minutes in. State left behind:
+     - the bucket holds orphans under `place/2026-11-01/` (roughly 375k objects, nothing else; no `latest.json`),
+       to be purged by that exact prefix;
+     - task `kk-SCOpenQuests-worldpub` is **disabled** (`schtasks /Change /TN kk-SCOpenQuests-worldpub /ENABLE`
+       once schema 2 is live);
+     - `.scratch/world-publish/work/daily.lock` is stale; `daily` refuses for 12 h while it exists, delete it;
+     - `WORLD_HOST` is still `""`, so the site reads nothing from the bucket.
+     **Schema 2 is being built on branch `world-stable` (worktree `../sc-open-quests-stable`), agreed 11-21:**
+     stable paths `place/<id[:2]>/<id>.json` (the whole series, change points by day number from `first`) and
+     `children/<p[:2]>/<parent>.json` (per child and quest: newest and four weeks before), each fetched with
+     `?v=<latest.json v>`, cached a day; only files whose bytes changed are uploaded, by a manifest of what the
+     bucket holds. Why: 11-02..11-13 only about 12,500 of 110,423 parent files and 34,000 of 1,018,552 places
+     change on a day (`.scratch/world-publish/parents_changed.py`), and a country page downloaded `world.json`
+     (2.1 MB) for its own entry (`.scratch/world-publish/page_open.txt`). The schema-1 text below describes
+     the old layout until DESIGN.md gets the new section.
   1. **Daily build after each world day.** `python tools/world_publish.py build` once the loop has closed a day
      (it reads only gated days). Wire it into `planet_store_day.py` after the day's cleanup **only once the
      catch-up has ended** (never edit the running script). Until then run it by hand. **Run by hand 11-19, 22:49, through
