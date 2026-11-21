@@ -2620,6 +2620,16 @@ it was): 1,419 aligned pairs, median 0.000%, p90 0.004%, 850 exact, the worst st
 **Clock decided (owner, 11-20): midnight UTC**, the world's own; recorded in DESIGN.md next to that rule. Nothing
 changes in the daily run until the world replaces it.
 
+## Daily city run: down 11-19 to 11-21, Geofabrik moved regions (fixed 2026-11-21, 13:10)
+
+- **The 12:15 run failed three days in a row** at its download step (11-19 Quebec, 11-20 and 11-21 Ontario), so
+  the pilot cities' newest count is 11-18 and nothing was pushed since 11-19. Geofabrik moved the Canadian
+  provinces and Berlin, Hamburg and Bremen into folders of their own (`north-america/canada/ontario/ontario-latest.osm.pbf`);
+  the old URLs redirect to a 404.
+- **Fixed in `../osm-extracts`** (its REGIONS table; and `fetch` now answers a Geofabrik 404 by asking
+  `index-v1-nogeom.json` where the region is and warns that REGIONS is stale). The run was restarted by hand
+  11-21 13:10; the missed days 11-19 and 11-20 are not backfilled (the extracts are only today's).
+
 ## World places publisher: built, not merged (2026-11-19, night; owner: "when is it sane to publish world stuff?", then "Yes, build it")
 
 - **When it is sane:** release 1's rule, 30 gated days from 11-01, so the day 11-30 is counted: about **12-01**. The
@@ -2660,7 +2670,7 @@ changes in the daily run until the world replaces it.
        to be purged by that exact prefix;
      - task `kk-SCOpenQuests-worldpub` is **disabled** (`schtasks /Change /TN kk-SCOpenQuests-worldpub /ENABLE`
        once schema 2 is live);
-     - `.scratch/world-publish/work/daily.lock` is stale; `daily` refuses for 12 h while it exists, delete it;
+     - `.scratch/world-publish/work/daily.lock` was stale; deleted 13:05 (the task stays disabled);
      - `WORLD_HOST` is still `""`, so the site reads nothing from the bucket.
      **Schema 2 is being built on branch `world-stable` (worktree `../sc-open-quests-stable`), agreed 11-21:**
      stable paths `place/<id[:2]>/<id>.json` (the whole series, change points by day number from `first`) and
