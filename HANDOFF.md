@@ -2904,4 +2904,28 @@ wording and tab structure as a first draft open to change, not as decided design
   on as its last step (each new gated day is about 140 MB). To restore: `rclone copy
   r2:sc-open-quests-archive/world .scratch/planet/world-1101`.
 - **Not started:** the state checkpoint (wait for the catch-up to end and a day to close: the loop replaces the
-  row files while it runs), and steps 2 to 6.
+  row files while it runs), and steps 3 to 6.
+- **Owner, 13:25 (wizard):** switch to Parquet; the backfill **keeps running** and pauses between two days only to
+  swap in the new code and the upgrades; the list of upgrades is dug out and proposed for the owner to confirm or
+  cut; **schema 2 lands first**, the publisher's input moves to facts after it.
+- **Step 2 built (13:33, 6e5d11c6): `tools/facts.py`**, tests `tests/test_facts.py`. `cities` and `world` write
+  `data/facts/{counts,places}/source=<S>/date=<D>/data.parquet` (not in git) from the archive's snapshots and the
+  world's gated days; `verify` rebuilds each snapshot (keys, values, order) and each world day (arrays) from its
+  facts and compares. Bremen: 148 days, 0 different, 3.5 MB against the snapshots' 13 MB. The run over everything
+  (2,282 snapshots, 13 world days, then `verify`) was started 13:34 beside the daily city run, so a snapshot that
+  run rewrites meanwhile may show as different: rerun `cities` and `verify` before reading that as a fault.
+  DESIGN's path (`facts/source=world/date=<D>.parquet`) is now a folder per day, so DuckDB reads source and date
+  off the path.
+- **The catch-up will stop at day 11-19 (found 13:40, checked).** `~/Code/.osm-data/europe/` has clips for 11-14 to
+  11-18 and 11-21 only: the daily city run was down 11-19 to 11-21, so no clip of 11-19 or 11-20 was made, and
+  `planet_store_day.py` (`diff_to`) writes STOPPED when a day has no clip to gate against. The loop is on 11-14,
+  so it gets there in about a day. Not acted on; put to the owner with the upgrade list.
+- **Do not edit `tools/stream/world_tier2.py` or `notes_day.py` on main while the loop runs:** they start
+  ProcessPoolExecutor workers, which on Windows import those files from disk again, so an edit reaches the running
+  day. The Rust binary is safe (the loop runs its own copy); `installDist` of the engine is not.
+- **Upgrade candidates for the loop, surveyed 13:40 (not decided):** tier 2's engines are 55-73% of a day's
+  `finish` (7,365 s on 11-12, 16,426 s on 11-13; DESIGN estimated 40 min); punch is slow, cause unknown, and is
+  skipped every day; `world_publish.py build` to be wired in after schema 2; facts written as a day's last step;
+  each run its own output file (the 14:45 task exits 1 on the held `planet-store.out`); the task's 6 h limit
+  against 11-13's 6 h 56 min; no log line for hours during tier 2; the untraced gate differences; the hiking-route
+  marking that can go; a container wider than about 7 km not found.
