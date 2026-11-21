@@ -18,6 +18,8 @@ day before; the first day against nothing), so a new day reads one counts file, 
     python tools/world_publish.py verify [--world W] [--out O] [--sample N]
     python tools/world_publish.py crosscheck [--world W] [--report R] [--day 2026-11-08]
     python tools/world_publish.py upload [--out O] [--print]
+    python tools/world_publish.py cors [--set]
+    python tools/world_publish.py daily [--sample N]   build; if the day is new, verify and upload (Task Scheduler)
 """
 from __future__ import annotations
 
@@ -586,9 +588,74 @@ def upload(out: Path, print_only: bool) -> int:
     return 0
 
 
+SITE_ORIGIN = "https://street-complete-statistics.comentality.com"  # cloudflare/wrangler.jsonc routes
+CORS_RULES = {"rules": [{"id": "site-reads", "allowed": {"origins": [SITE_ORIGIN], "methods": ["GET", "HEAD"]},
+                         "maxAgeSeconds": 86400}]}
+
+
+def cors(set_rule: bool) -> int:
+    """The bucket's CORS rule: the site reads the bucket from another origin. Prints it; --set writes CORS_RULES."""
+    import urllib.error
+    import urllib.request
+    sys.path.insert(0, str(ROOT / "tools"))
+    import cloud_publish as cp
+    env = cp.read_env()
+    url = (f"https://api.cloudflare.com/client/v4/accounts/{env['CLOUDFLARE_ACCOUNT_ID']}"
+           f"/r2/buckets/{BUCKET}/cors")
+
+    def call(method: str, body: dict | None = None) -> dict:
+        req = urllib.request.Request(url, method=method, data=json.dumps(body).encode() if body else None,
+                                     headers={"Authorization": f"Bearer {env['CLOUDFLARE_API_TOKEN']}",
+                                              "Content-Type": "application/json"})
+        try:
+            with urllib.request.urlopen(req, timeout=30) as r:
+                return json.load(r)
+        except urllib.error.HTTPError as e:
+            return {"success": False, "status": e.code, "body": e.read().decode(errors="replace")[:500]}
+
+    if set_rule:
+        r = call("PUT", CORS_RULES)
+        if not r.get("success"):
+            log(f"FAILED: {r}")
+            return 1
+        log("set")
+    r = call("GET")
+    log(json.dumps(r.get("result", r)))
+    return 0
+
+
+def daily(world: Path, out: Path, work: Path, places: Path, first: str, sample: int) -> int:
+    """Task Scheduler's run: build to the newest gated day; if that day is not uploaded yet, verify a sample and
+    upload. `work/uploaded.json` holds the last uploaded date; `work/daily.lock` keeps two runs apart."""
+    work.mkdir(parents=True, exist_ok=True)
+    lock = work / "daily.lock"
+    if lock.exists() and time.time() - lock.stat().st_mtime < 12 * 3600:
+        log(f"FAILED: {lock} is held (another build or upload); stale after 12 h")
+        return 1
+    lock.write_text(str(os.getpid()), encoding="utf-8")
+    try:
+        build(world, out, work, places, first, None)
+        latest = json.loads((out / "latest.json").read_text(encoding="utf-8"))
+        stamp = work / "uploaded.json"
+        done = json.loads(stamp.read_text(encoding="utf-8")) if stamp.exists() else {}
+        if done.get("date") == latest["date"] and done.get("place") == latest["place"]:
+            log(f"nothing new: {latest['date']} is uploaded")
+            return 0
+        if verify(world, out, places, sample):
+            log("FAILED: verify found mismatches; not uploading")
+            return 1
+        if upload(out, False):
+            return 1
+        stamp.write_text(json.dumps({"date": latest["date"], "place": latest["place"],
+                                     "at": time.strftime("%Y-%m-%d %H:%M:%S")}) + "\n", encoding="utf-8")
+        return 0
+    finally:
+        lock.unlink(missing_ok=True)
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("cmd", choices=["build", "verify", "crosscheck", "upload"])
+    ap.add_argument("cmd", choices=["build", "verify", "crosscheck", "upload", "cors", "daily"])
     ap.add_argument("--world", type=Path, default=WORLD)
     ap.add_argument("--out", type=Path, default=OUT)
     ap.add_argument("--work", type=Path, default=WORK)
@@ -597,6 +664,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--through", help="build as of this day (default: the newest gated day)")
     ap.add_argument("--sample", type=int, default=2000)
     ap.add_argument("--print", action="store_true", help="upload: print the rclone commands, run nothing")
+    ap.add_argument("--set", action="store_true", help="cors: write the rule (without: print it)")
     ap.add_argument("--report", type=Path, default=ROOT.parent / "sc-open-quests" / ".scratch" / "planet"
                     / "world-places" / "report.json", help="crosscheck: the whole count's report.json")
     ap.add_argument("--day", default="2026-11-08", help="crosscheck: the report's instant")
@@ -611,6 +679,10 @@ def main(argv: list[str] | None = None) -> int:
         return verify(a.world, a.out, a.places, a.sample)
     if a.cmd == "crosscheck":
         return crosscheck(a.world, a.places, a.report, a.day, a.json)
+    if a.cmd == "daily":
+        return daily(a.world, a.out, a.work, a.places, a.first, a.sample)
+    if a.cmd == "cors":
+        return cors(a.set)
     return upload(a.out, a.print)
 
 
