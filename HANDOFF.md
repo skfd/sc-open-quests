@@ -2699,6 +2699,13 @@ changes in the daily run until the world replaces it.
      11-21 file at `-Xmx14g`, "what the machine can spare", beside the catch-up and other runs). It left
      `docs/data/*/snapshots/` empty mid-rotation (14 uncommitted deletes), so `docs/` must not be deployed by
      hand. Rerun through its task at 16:50 (`schtasks /Run /TN kk-SCOpenQuests`); see `logs/scheduler.log`.
+     **The rerun failed the same way at 17:25** (Europe's 11-19 file for `europe-west`, `-Xmx13g`): the engine
+     needs more heap than the machine spares beside the planet catch-up (python 16 GB plus its java workers;
+     24 GB free of 88). Not retried again. The live site is unchanged (data through 11-18, the old `app.js`
+     with no world host), so nothing is broken, but **the world pages are not live until `docs/` deploys**.
+     Ways out, the owner's choice: wait for the catch-up to end and let the 12:15 run go; pause the catch-up
+     for one city run; or `git checkout -- docs/data` (back to the committed 11-18 files) and
+     `python tools/cloud_publish.py` to deploy only the page.
   1. **Daily build after each world day.** `python tools/world_publish.py build` once the loop has closed a day
      (it reads only gated days). Wire it into `planet_store_day.py` after the day's cleanup **only once the
      catch-up has ended** (never edit the running script). Until then run it by hand. **Run by hand 11-19, 22:49, through
