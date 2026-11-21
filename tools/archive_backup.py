@@ -15,7 +15,7 @@ To restore: rclone copy r2:sc-open-quests-archive/archive data/archive (and grid
 variables cloud_publish.rclone_env() builds from the token file.
 
 The world (DESIGN.md, "Storage: facts, serving, working state", step 1): of .scratch/planet/world-1101, each day
-whose gate passed: counts/<D>/ (counts.json, counts.npz, the seed's gate) and days/<D>/ (day.json, gate.json),
+whose gate passed: counts/<D>/ (counts.json, counts.npz, the seed's gate) and days/<D>/ (day.json, gate.json, engines.json),
 plus plan.json and world.json. A day without a passed gate is not copied: its counts may still be written. The
 row files, the node store and the tile store are working state and are not copied here. A checkout without the
 world folder skips it. --only names one of archive, grid, facts, world.
@@ -136,7 +136,7 @@ def world_files(world: Path = WORLD) -> tuple[list[str], list[str]]:
             continue
         days.append(d)
         files += [f"counts/{d}/{p.name}" for p in sorted((counts / d).iterdir()) if p.is_file()]
-        files += [f"days/{d}/{n}" for n in ("day.json", "gate.json") if (world / "days" / d / n).exists()]
+        files += [f"days/{d}/{n}" for n in ("day.json", "gate.json", "engines.json") if (world / "days" / d / n).exists()]
     if days:
         files += [n for n in WORLD_TOP if (world / n).exists()]
     return days, files

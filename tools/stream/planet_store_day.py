@@ -62,6 +62,7 @@ PIN_REASON = ("sc-open-quests release 1: oracle for the world's daily backfill f
               "unpin once that day is streamed and checked")
 
 sys.path.insert(0, str(ROOT / "tools/stream"))
+import day_metrics as DM  # noqa: E402
 import world_day as WD  # noqa: E402
 import world_gate as WG  # noqa: E402
 import world_state as WS  # noqa: E402
@@ -285,6 +286,10 @@ def store_tail(dd: Path, nxt: str, seq: int, osc: Path, oracle: Path, g: int) ->
     # the day's record kept with the world; its work (both dates' map data, the dumps, D-1's rows) given back
     keep = WORLD / "days" / nxt
     keep.mkdir(parents=True, exist_ok=True)
+    try:  # what each engine did, read off its log before the logs go (day_metrics.py); never a stop
+        DM.write(WORLD, nxt, dd / "work", log)
+    except Exception as e:  # noqa: BLE001
+        log(f"engines: not recorded ({type(e).__name__}: {e})")
     for src in (dd / "work" / "day.json", dd / "gate" / "gate.json"):
         if src.exists():
             shutil.copy2(src, keep / src.name)
