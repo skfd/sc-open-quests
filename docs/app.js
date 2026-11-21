@@ -1762,15 +1762,19 @@ async function partsCard(cityId, current) {
 
 // ---- world places ----
 // Any place of the name layer the world counts, beyond the counted cities (DESIGN.md, "World places
-// published: the files"): latest.json, the place's own file (dates up to `base`) and its parent's latest file
-// (its dates after `base`), joined into a series the shape of a city's, so the place page draws it as it
-// draws a city. Its children's numbers come from latest/<self>. The files under a dated path never change,
-// so they take the browser's cache; latest.json is asked afresh. A file that is missing, or a host that
-// does not answer, is null: the place then shows as it did before, "Not counted yet".
+// published: stable paths (schema 2)"): latest.json and the place's own file, its whole series, turned into a series the
+// shape of a city's, so the place page draws it as it draws a city. Its children's numbers come from
+// children/<self>. The paths are stable: every file but latest.json is asked with ?v=<latest.v>, the token
+// of the publish, so it takes the browser's cache until the next one; latest.json is asked afresh. A file
+// that is missing, or a host that does not answer, is null: the place then shows as it did before,
+// "Not counted yet".
 
-const worldCache = new Map();   // path -> promise of JSON or null
-function worldJSON(path, fresh = false) {
+const worldCache = new Map();   // path (with its ?v) -> promise of JSON or null
+// v is the publish token of the latest.json in hand; without it the file is latest.json itself, asked afresh.
+function worldJSON(path, v = null) {
   if (WORLD === "/") return Promise.resolve(null);  // no world host yet (WORLD_HOST), and no ?world=
+  const fresh = v == null;
+  if (!fresh) path += `?v=${encodeURIComponent(v)}`;
   if (!worldCache.has(path)) {
     const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 8000);
     const p = fetch(WORLD + path, { cache: fresh ? "no-cache" : "default", signal: ctl.signal })
@@ -1783,9 +1787,10 @@ function worldJSON(path, fresh = false) {
   return worldCache.get(path);
 }
 const worldShard = (id) => `${id.slice(0, 2)}/${id}.json`;
-const worldParentPath = (latest, parent) => latest.latest + (parent === "world" ? "world.json" : worldShard(parent));
 
-// Change points [[i, open, aged], ...]: the values hold from date index i until the next point, 0 before the first.
+// Change points [[day, open, aged], ...]: the values hold from day number `day` until the next point, 0 before
+// the first. Day 0 is latest.first. A point past k is not read, so a file newer than the latest.json in hand
+// gives the same numbers.
 function pointAt(points, k) {
   let v = [0, 0];
   for (const [i, open, aged] of points || []) { if (i > k) break; v = [open, aged]; }
@@ -1811,42 +1816,41 @@ function worldStatus(q, h) {
   return offeredIn(q.enabledInCountries, h.cc) === null ? "counted" : "not-in-region";
 }
 
-// The series: the place file's dates up to base, then the parent file's dates after base. A quest a file
-// leaves out is 0 there if the world counts it in this place (it is in latest.json's quests and the app offers
-// it in the country, or the other file holds it); else the quest stays out. lf is null when the parent's file
-// is missing or does not hold the place: the series then ends at base.
-function worldSeries(latest, pf, lf, id, cc) {
-  const own = pf.dates.filter((d) => d <= latest.base);
-  const later = lf ? lf.dates.map((d, j) => [d, j]).filter(([d]) => d > latest.base) : [];
-  const dates = [...own, ...later.map(([d]) => d)];
-  const mine = lf ? lf.places[id] : {};
+// The series: every day from the place's first counted day (`from`, 0 when absent) through latest.date, read
+// from the place file's change points. A quest the file leaves out is 0 if the world counts it in this place
+// (it is in latest.json's quests and the app offers it in the country); else the quest stays out. Null when
+// the place was first counted after latest.date.
+function worldSeries(latest, pf, cc) {
+  const last = Math.round((dayTs(latest.date) - dayTs(latest.first)) / 86400);
+  const from = Number.isInteger(pf.from) && pf.from > 0 ? pf.from : 0;
+  if (!(last >= from)) return null;
+  const days = Array.from({ length: last - from + 1 }, (_, k) => from + k);
   const counted = new Set(latest.quests);
   const names = new Set([...latest.quests.filter((q) => offeredIn(questByName.get(q)?.enabledInCountries, cc) === true),
-                         ...Object.keys(pf.quests), ...Object.keys(mine)]);
+                         ...Object.keys(pf.quests)]);
   const quests = {};
   for (const q of names) {
-    const a = pf.quests[q], b = mine[q];
-    const zero = a || b || (counted.has(q) && offeredIn(questByName.get(q)?.enabledInCountries, cc) === true) ? [0, 0] : [null, null];
-    const at = [...own.map((_, k) => (a ? pointAt(a, k) : zero)), ...later.map(([, j]) => (b ? pointAt(b, j) : zero))];
+    const at = days.map((k) => pointAt(pf.quests[q], k));
     quests[q] = { open: at.map((v) => v[0]), agedOnly: at.map((v) => v[1]) };
   }
   const meta = { scVersion: latest.scVersion, resurveyMultiplier: latest.resurveyMultiplier ?? 1, notes: true };
-  return { world: true, dates, meta: dates.map(() => meta), quests, worldQuests: counted };
+  return { world: true, dates: days.map((k) => addDays(latest.first, k)), meta: days.map(() => meta), quests, worldQuests: counted };
 }
 
+const DAY = /^\d{4}-\d\d-\d\d$/;
 // A place's world series, or null when the world does not count it (or its files cannot be had).
 async function worldPlace(ref) {
   const id = refId(ref);
   if (!/^[0-9a-f]{12}$/.test(id)) return null;   // a country addressed by its code has no world file
-  const latest = await worldJSON("latest.json", true);
-  if (!latest || !latest.place || !latest.latest || !latest.base || !Array.isArray(latest.quests)) return null;
-  const up = chain(ref)[1];
-  const [pf, lf] = await Promise.all([worldJSON(latest.place + worldShard(id)),
-                                      worldJSON(worldParentPath(latest, up ? refId(up) : "world"))]);
-  if (!pf || !Array.isArray(pf.dates) || !pf.dates.length || !pf.quests) return null;
+  const latest = await worldJSON("latest.json");
+  // a latest.json of another schema (the host mid-switch) is as good as none
+  if (!latest || latest.schema !== 2 || latest.v == null || !latest.place || !latest.children || !Array.isArray(latest.quests) ||
+      ![latest.date, latest.first, latest.back].every((d) => DAY.test(d))) return null;
+  const pf = await worldJSON(latest.place + worldShard(id), latest.v);
+  if (!pf || !pf.quests) return null;
   const cc = (pf.cc || ref.country.cc).toUpperCase();
-  const s = worldSeries(latest, pf, lf && lf.places && lf.places[id] && Array.isArray(lf.dates) ? lf : null, id, cc);
-  if (!s.dates.length) return null;
+  const s = worldSeries(latest, pf, cc);
+  if (!s) return null;
   return { ...s, id, placeIn: state.placeIn, ref, cc, latest, name: refName(ref) };
 }
 
@@ -1871,9 +1875,9 @@ async function renderWorld(seq) {
   const box = $("#place-children");
   box.replaceChildren();
   const items = await worldChildItems(h.ref).catch(() => []);
-  const lf = items.length ? await worldJSON(h.latest.latest + worldShard(h.id)) : null;
+  const cf = items.length ? await worldJSON(h.latest.children + worldShard(h.id), h.latest.v) : null;
   if (seq !== placeSeq || page !== pageSeq) return;
-  box.replaceChildren(...[lf && worldKidsCard(h, items, lf), childrenCard(h.ref, items)].filter(Boolean));
+  box.replaceChildren(...[cf && cf.places && worldKidsCard(h, items, cf), childrenCard(h.ref, items)].filter(Boolean));
 }
 
 // The name layer's places inside a place; a country's are its regions, and the places of its "_" file.
@@ -1886,25 +1890,23 @@ async function worldChildItems(ref) {
   return out;
 }
 
-// The children the world counts, with their open quests (the ticked ones) on the newest date and the change
-// from 4 weeks before, or from the file's first date when it is younger.
-function worldKidsCard(h, items, lf) {
-  const n = lf.dates.length, i = n - 1;
-  let j = -1;
-  for (let k = 0; k < i; k++) if (lf.dates[k] <= addDays(lf.dates[i], -WEEKS4)) j = k;
-  const young = j < 0;
-  if (young) j = 0;
-  const total = (qs, k) => Object.entries(qs).reduce((s, [q, pts]) => s + (selected(q) ? pointAt(pts, k)[0] : 0), 0);
-  const rows = items.filter((it) => lf.places[refId(it.ref)]).map((it) => {
-    const qs = lf.places[refId(it.ref)];
-    const open = total(qs, i);
-    return { ref: it.ref, open, change: n > 1 ? open - total(qs, j) : null };
+// The children the world counts, with their open quests (the ticked ones) on the newest day and the change
+// from latest.back: 4 weeks before, or the first published day when that is younger. In the children file a
+// child's keys index the file's own quests list; a value is [open, aged, open on back, aged on back].
+function worldKidsCard(h, items, cf) {
+  const { date, back } = h.latest;
+  const ticked = (cf.quests || []).map((q) => selected(q));
+  const total = (qs, n) => Object.entries(qs).reduce((s, [k, v]) => s + (ticked[k] ? v[n] || 0 : 0), 0);
+  const rows = items.filter((it) => cf.places[refId(it.ref)]).map((it) => {
+    const qs = cf.places[refId(it.ref)];
+    const open = total(qs, 0);
+    return { ref: it.ref, open, change: back === date ? null : open - total(qs, 2) };
   }).sort((a, b) => b.open - a.open || refName(a.ref).localeCompare(refName(b.ref)));
   if (!rows.length) return null;
-  const since = young ? `Since ${shortDate(lf.dates[j])}` : "Last 4 weeks";
+  const since = back === addDays(date, -WEEKS4) ? "Last 4 weeks" : `Since ${shortDate(back)}`;
   return el("article", { class: "card" },
     el("h2", {}, `Counted places inside ${h.name}`),
-    el("p", { class: "sub" }, `Open quests in each on ${shortDate(lf.dates[i])}, counting ${selectionText()}. ` +
+    el("p", { class: "sub" }, `Open quests in each on ${shortDate(date)}, counting ${selectionText()}. ` +
       "Places overlap and leave gaps, so they need not add up to the place they are in."),
     el("div", { class: "table-wrap" }, el("table", { class: "data parts" },
       el("thead", {}, el("tr", {}, el("th", { scope: "col" }, "Place"), el("th", { scope: "col" }, "Kind"),
