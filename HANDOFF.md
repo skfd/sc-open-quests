@@ -2542,6 +2542,15 @@ checked against a full count. Until then the world's published numbers can only 
     engines 10,816 s; the log was silent 09:59-11:54 through them). **11-10 passed (19:01)**, unchanged: 20 of 32,
     +10 (clip 19,270,040, world 19,270,050), the same 12 cities and quests; `finish` 16,099 s (tier 2's engines
     10,878 s), but the day took 7 h wall clock (12:05-19:08), the slowest yet. 11-11 started 19:08.
+    **11-11 passed (23:28)**: 20 of 32, +14 (clip 19,273,494, world 19,273,508): the same 15 rows plus one new,
+    Sofia MarkCompletedHighwayConstruction +4 (87 against 91), gone again the next day; `finish` about 14,500 s
+    (tier 2's engines 9,110 s). **11-12 passed (03:50 on 11-21)**: 20 of 32, +11 (clip 19,277,776, world
+    19,277,787), the 15 rows of 11-10 with London AddHousenumber −3 now −2; tier 2's engines 7,365 s. **11-13 passed
+    (10:41)**, unchanged from 11-12: 20 of 32, +11 (clip 19,282,742, world 19,282,753); tier 2's engines 16,426 s,
+    the day 03:56-10:52. 11-14 started 10:52 (pid 60100 alive, 142 GiB free, punch skipped every day). Five days
+    left to 11-18, at 4-7 h a day: caught up about 11-22 evening.
+    **The daily city run failed again on 11-20 at 12:15**: `osm_extracts.py fetch ontario` got HTTP 404 from
+    Geofabrik. Two days missed (the newest Canadian snapshot is 11-17, Europe's 11-18). Not touched.
     **The scheduled task at 14:45 on 11-19 exited 1 with no output:** the catch-up started by hand writes to the same
     `logs/planet-store.out`, and the task's `cmd /c ... >> planet-store.out` cannot open it while that run holds it, so
     the task never reached Python (it stepped aside, but not through the RUNNING guard). Harmless; once the catch-up
@@ -2605,7 +2614,9 @@ AddAcceptsCards); 2.6 h of edits for Canada/Germany (Sarnia 11-05 +2.1%, 289 bui
 pairs. Overture places differ from the OSM outlines (Bratislava -13%, Halifax -2.4%, Cape Breton -2.2%), so
 counted cities keep `osm-<city>`. **The world can stand in for the daily run's numbers** once the owner picks a
 clock (midnight UTC, or cut the world at the extract time). Rerun after 11-07 lands for 11-06's Canadian cities. `--measure agedOnly` (11-20, `report-aged.md`): 434 of 473 exact,
-net +13 on 4.2 M. DESIGN.md now says counted cities take `osm-<city>`, never the Overture place.
+net +13 on 4.2 M. **Rerun 11-21 for 11-02 to 11-13** (`.scratch/world-compare/to-1113/`, the first report left as
+it was): 1,419 aligned pairs, median 0.000%, p90 0.004%, 850 exact, the worst still Sarnia 11-05; days 11-07 to
+11-13 each within ±0.003% summed; `agedOnly` 1,284 of 1,419 exact. No Canadian snapshot for 11-04 and 11-09. DESIGN.md now says counted cities take `osm-<city>`, never the Overture place.
 **Clock decided (owner, 11-20): midnight UTC**, the world's own; recorded in DESIGN.md next to that rule. Nothing
 changes in the daily run until the world replaces it.
 
@@ -2638,6 +2649,8 @@ changes in the daily run until the world replaces it.
      11-06** (the first compressed counts files, 113 MB each, about 37 s a day to read): 110,415 parent files in 135
      s; `verify --sample 3000` 0 mismatches over 6 days. Places counted after `base` (1,018,472 at 11-02, 1,018,499
      at 11-06) have no place file until 12-01, so the page shows them "Not counted yet" until then.
+     **Run by hand again 11-21, 11:02, through 11-13** (beside the catch-up): 678 s, 110,423 parent files,
+     1,018,552 places at 11-13; `verify --sample 3000` 0 mismatches over 13 days.
   2. **At release (owner's go):** the bucket's CORS rule (GET, HEAD from the site's origin); then
      `world_publish.py upload` (`--print` shows the rclone commands; never run yet, credentials untouched): the
      first upload is about 1.13M PUTs, hours at 64 transfers; then `WORLD_HOST = "https://sc-data.comentality.com/"`,
