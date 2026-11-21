@@ -2896,8 +2896,9 @@ straight from the bucket with no Worker:
   (2026-11-17, the zone's first): `(http.host eq "sc-data.comentality.com")`; eligible for cache; Edge
   TTL "use cache-control header if present, bypass cache if not"; Browser TTL "respect origin TTL".
   Checked: a JSON uploaded with `max-age=120` went MISS, HIT, HIT and kept its 120 (no 4-hour
-  rewrite). So each upload's `Cache-Control` sets both: a week for `place/`, until the next publish
-  for `latest/<parent>`, minutes for `latest.json`. A file uploaded without one is not cached.
+  rewrite). So each upload's `Cache-Control` sets both: a day for `place/` and `children/` files (each
+  asked for under a new `?v=` address after every publish), five minutes for `latest.json` ("World places
+  published: stable paths (schema 2)"). A file uploaded without one is not cached.
 - **The test is cleaned up:** the test domain removed, the bucket `sc-open-quests-cachetest` and its
   three objects deleted. The script stays in `.scratch/r2-cachetest/`.
 
@@ -5658,6 +5659,11 @@ not change.
 
 ## World places published: the files (2026-11-19, night; owner: "Yes, build it")
 
+**The layout in this section (schema 1: dated folders, the parent's file read for the place itself) was replaced
+on 2026-11-21, before any page read it: "World places published: stable paths (schema 2)", at the end of this
+file.** What is published, the counted cities' rule, the clock and change points still hold; the file table, the
+`base` and `start` rules, the three-file read and the write count do not.
+
 Release 1's step 7 (above) puts place data on `sc-data.comentality.com` (bucket `sc-open-quests-data`), and
 "Place statistics for the whole world" fixed the plan: `place/` monthly, `latest/<parent>` daily, a tiny
 `latest.json`. That plan was written for a weekly world with monthly history behind it; release 1 is daily from
@@ -5711,3 +5717,64 @@ this keeps a daily series small, and the same decoder reads both kinds of file.
   paths are versioned; that buys the consistency above). Deletes are free: the upload keeps the previous two
   `latest/<date>/` folders and the previous `place/<base>/` (pages open over the switch), and deletes older ones.
 - **The bucket needs a CORS rule** for the site's origin (GET, HEAD); the owner's step, with the upload.
+
+## World places published: stable paths (schema 2) (2026-11-21; owner: "lets do the stable urls and proper fix")
+
+This replaces the file layout of "World places published: the files" above. What is published, the counted cities'
+rule, the midnight-UTC clock and change points are unchanged. Schema 1 was stopped 39 minutes into its first upload
+and no page ever read it.
+
+**Why.** Measured on the publisher's cached daily changes, 11-02 to 11-13: of 110,423 parent files 11,300 to 13,200
+hold a child that changed on a day (about 11%), and of 1,018,552 places 30,000 to 37,000 change (about 3%); 166,932
+places changed at all in the 12 days. Schema 1 rewrote every parent file daily because the date was in its path and
+its content (`date`, `dates`, a sliding 28-day start): about 3.3M writes a month, $15. And a page read its parent's
+file for its own last days: a country page downloaded `latest/<date>/world.json`, 2.09 MB, for one entry of 248
+(`.scratch/world-publish/page_open.txt`).
+
+**The files.** No path carries a date:
+
+| file | holds | uploaded | Cache-Control |
+|---|---|---|---|
+| `latest.json` | `schema` 2, `v`, `date`, `first`, `back`, the counted quests, `scVersion`, `overture`, and the two folders | each publish, last | `max-age=300` |
+| `place/<id[:2]>/<id>.json` | `id`, `name`, `subtype`, `cc`, `first`, `from` when not 0, and `quests`: the place's whole series as change points `[day, open, aged]` | when its bytes changed | `max-age=86400` |
+| `children/<p[:2]>/<parent>.json` | `quests`, the names this file uses, in the world's order; `places`: child id to `{<index into quests>: [open, aged, openBack, agedBack]}` | when its bytes changed | `max-age=86400` |
+
+- **Days are numbers.** The published days are every day from `first` through `date` with no gap, so day 0 is
+  `first` and a point's `day` needs no date list. The build stops if the gated days have a gap.
+- **`v` is the publish's token** (a hash of the date and every file's hash). The page asks for every file but
+  `latest.json` as `<path>?v=<v>`. Cloudflare's cache keys on the query string (checked on the bucket: MISS, then
+  HIT), so each publish is a new address and yesterday's cached copy is never served for today's `v`. The files
+  are cached for a day, not a year: a `v` lives a day, and somebody reading a bare path sees a copy at most a
+  day old.
+- **A place file is append-only, so the page clips it.** A point whose `day` is past `latest.json`'s `date` is
+  ignored. A file built through D+1 and read with D's `latest.json` therefore gives exactly D's numbers
+  (`test_a_newer_file_clipped_reads_as_the_older_day`), so files of two publishes can never show a mix.
+- **`from`** is the day number a place was first counted (11 to 90 places appear after the first day). Its series
+  starts there, so a place counted late no longer waits for the 1st of a month.
+- **A children file is a snapshot, not a series:** per child and quest, open and aged on `date` and on `back`
+  (`date` minus 28 days, not before `first`). The table needs nothing else, the file stops growing with the
+  window (`children/world.json` 0.67 MB against 2.09 MB), and no page reads it for the place itself. It is not
+  append-only: for the minutes between an upload's first file and `latest.json`'s five-minute cache running out,
+  a table can show the new day's numbers under the old date. Its bytes change when a child changed that day or
+  when a child's value 28 days back slid.
+- **`latest.json` goes up last.** It carries the new `v`, so no page asks for the new addresses before every file
+  is there.
+- **A place page reads two world files:** its own `place/` file and, if it has children, `children/<self>`.
+  Germany's page: 0.029 MB and 0.065 MB raw, against 2.09 MB and 0.27 MB.
+
+**Only changed files are written and uploaded.** `build` makes every file's text, hashes it, and writes the file
+only when the hash differs from the last build's (`work/local.json`); `out` mirrors what the bucket should hold.
+`upload` sends the files whose hash differs from `work/bucket.json` (what the bucket holds) with
+`rclone copy --files-from --no-traverse --no-check-dest`, so the bucket is never listed. It goes in batches of
+50,000 and saves the bucket manifest after each, so a failed upload resumes where it stopped. Files no longer
+built are deleted before `latest.json` is written.
+
+**Guards.** A plan past `DAY_CAP` (200,000 files) needs `--full`: a day changes far fewer, and a bigger plan means
+the format, the name layer or the quest list changed, or a manifest was lost. `daily` never passes `--full`.
+`MAX_UPLOAD` (1.5M) and the spend breaker (strict, with the planned count) stand as before. `check` reads
+`latest.json` and a sample of files back over HTTPS with `?v=` and compares bytes with the local files; the
+sample is drawn from every file the bucket manifest claims, most of which the last upload skipped, so it sees a
+manifest and a bucket that have drifted apart. `daily` runs it after each upload.
+
+**Rollback.** There is no previous folder to point back at. A bad day is undone by building `--through` the day
+before and uploading: the files that differ go up again and `latest.json` gets that build's `v`.
