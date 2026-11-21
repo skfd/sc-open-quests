@@ -16,3 +16,4 @@ data/overture/
 .backup/
 data/pipeline.lock
 .wrangler/
+data/facts/
