@@ -327,6 +327,7 @@ request"). Agreed before the work was split, so the builders, the engine and the
 
 Any place of the name layer the world counts, other than the counted cities, gets its numbers from
 `https://sc-data.comentality.com/` (`?world=<url>` points the page elsewhere; `tests/fixtures/world/` is a
-small example): `latest.json`, `place/<base>/<id[:2]>/<id>.json` and `latest/<date>/<parent[:2]>/<parent>.json`
-(`latest/<date>/world.json` for a country). The files, change points and the join are specified in DESIGN.md,
-"World places published: the files". A place with no `place/` file is not counted, and its page stays as before.
+small example): `latest.json`, the place's own `place/<id[:2]>/<id>.json` (its whole series) and, for its children
+table, `children/<id[:2]>/<id>.json`, each asked for with `?v=<latest.json v>`. The files, change points and the
+clip rule are specified in DESIGN.md, "World places published: stable paths (schema 2)". A place with no `place/`
+file is not counted, and its page stays as before.
