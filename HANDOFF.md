@@ -2896,8 +2896,12 @@ wording and tab structure as a first draft open to change, not as decided design
   "Storage: facts, serving, working state".
 - This is independent of schema 2 (`world-stable`): that changes a serving shape, this changes what serving is
   built from. The world publisher keeps reading `W/counts/<D>/` until step 4.
-- **Step 1 in progress (13:20):** `archive_backup.py` to copy the world's gated days (`counts/<D>/`,
-  `days/<D>/*.json`) to `sc-open-quests-archive`, built in a worktree because the daily run (restarted 13:10) runs
-  that script as its last step. Nothing of the world is in a backup until this is merged and has run once.
+- **Step 1, the counts: done (13:45, c8134f5e).** `archive_backup.py` also copies the world's gated days
+  (`counts/<D>/`, `days/<D>/day.json` and `gate.json`, plus `plan.json` and `world.json`) to
+  `sc-open-quests-archive` under `world/`; a day without a passed gate is left out, and a checkout without the
+  world folder skips it. `--only archive|grid|world`, `--world <folder>`. First run by hand: 13 days, 11-01 to
+  11-13, 53 files; `--check --only world`: 53 equal, 0 missing or different. The daily city run does it from now
+  on as its last step (each new gated day is about 140 MB). To restore: `rclone copy
+  r2:sc-open-quests-archive/world .scratch/planet/world-1101`.
 - **Not started:** the state checkpoint (wait for the catch-up to end and a day to close: the loop replaces the
   row files while it runs), and steps 2 to 6.
