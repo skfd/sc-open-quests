@@ -1,29 +1,34 @@
 """World places published: the world's daily counts per place, as files for the place-data bucket.
 
-DESIGN.md, "World places published: the files". Reads the world (`W`, `.scratch/planet/world-1101`): its gated days
-(`days/<D>/gate.json` ok; the first day by the seed's gate, `counts/<first>/gate1101.json`) and each day's
-`counts/<D>/counts.{json,npz}` (tools/stream/place_counts.py). Writes, under `--out`, the bucket's layout:
+DESIGN.md, "World places published: stable paths (schema 2)". Reads the world (`W`, `.scratch/planet/world-1101`):
+its gated days (`days/<D>/gate.json` ok; the first day by the seed's gate, `counts/<first>/gate1101.json`) and each
+day's `counts/<D>/counts.{json,npz}` (tools/stream/place_counts.py). Writes, under `--out`, the bucket's layout:
 
-    latest.json
-    place/<base>/<id[:2]>/<id>.json          when base moves, or when it is missing
-    latest/<date>/<parent[:2]>/<parent>.json every build (a country's parent: latest/<date>/world.json)
+    latest.json                          every publish: the date, and `v`, the token the page adds to each request
+    place/<id[:2]>/<id>.json             a place's whole series; rewritten only when its bytes change
+    children/<p[:2]>/<parent>.json       a parent's children, newest day and four weeks before (a country's
+                                         parent: children/world.json); rewritten only when its bytes change
 
 Only the 12-hex Overture places the name layer (docs/places) has; only `open` and `agedOnly`. A quest's series is a
-list of change points `[i, open, aged]`, i an index into the file's `dates`.
+list of change points `[day, open, aged]`, day counted from `first`. The paths never change, so only the files whose
+bytes differ from what the bucket holds are uploaded: `work/local.json` holds each built file's hash,
+`work/bucket.json` each uploaded one's.
 
 The day's changes are cached under `--work` (`events/<D>.npz`: every (place, quest) whose values differ from the
 day before; the first day against nothing), so a new day reads one counts file, not all of them.
 
-    python tools/world_publish.py build  [--world W] [--out O] [--work K]
+    python tools/world_publish.py build  [--world W] [--out O] [--work K] [--through D]
     python tools/world_publish.py verify [--world W] [--out O] [--sample N]
     python tools/world_publish.py crosscheck [--world W] [--report R] [--day 2026-11-08]
-    python tools/world_publish.py upload [--out O] [--print]
+    python tools/world_publish.py upload [--print] [--full] [--trial N]
+    python tools/world_publish.py check  [--sample N]     the bucket over HTTPS against the local files
     python tools/world_publish.py cors [--set]
-    python tools/world_publish.py daily [--sample N]   build; if the day is new, verify and upload (Task Scheduler)
+    python tools/world_publish.py daily [--sample N]   build; if anything is new, verify, upload, check (Task Scheduler)
 """
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import shutil
@@ -38,17 +43,20 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
 WORLD = ROOT / ".scratch" / "planet" / "world-1101"
-OUT = ROOT / ".scratch" / "world-publish" / "site"
+OUT = ROOT / ".scratch" / "world-publish" / "site2"
 WORK = ROOT / ".scratch" / "world-publish" / "work"
 PLACES = ROOT / "docs" / "places"
 FIRST = "2026-11-01"
-SCHEMA = 1
+SCHEMA = 2
 WINDOW_DAYS = 28
 BUCKET = "sc-open-quests-data"
-KEEP_LATEST = 3  # the newest latest/<date>/ folders kept (local and in the bucket)
-MAX_UPLOAD = 1_500_000  # files one upload may plan: a month's place/ (about 1M) plus a day's latest/
-KEEP_PLACE = 2   # place/<base>/ folders kept
-CACHE_IMMUTABLE = "public, max-age=31536000, immutable"
+HOST = "https://sc-data.comentality.com/"
+MAX_UPLOAD = 1_500_000  # files one upload may ever plan: every place and parent (about 1.13M), with room
+DAY_CAP = 200_000       # files a run may plan without --full: a day changes about 60k; more is a format or
+                        # name-layer change, or a lost manifest, and somebody should look first
+BATCH = 50_000          # files per rclone run; the bucket manifest is saved after each, so a failure resumes
+MAX_DELETE = 2_000
+CACHE_FILE = "public, max-age=86400"   # fetched as <path>?v=<latest.json v>, a new address each publish
 CACHE_LATEST_JSON = "public, max-age=300"
 JSON_TYPE = ["--header-upload", "Content-Type: application/json"]  # not left to rclone's guess (Windows' registry)
 SUBTYPES = ["country", "dependency", "region", "county", "localadmin", "locality",
@@ -200,19 +208,9 @@ def changes(prev: tuple, cur: tuple) -> tuple[np.ndarray, np.ndarray, np.ndarray
 
 # --- build -------------------------------------------------------------------------------------------------------
 
-def base_of(day: str, first: str) -> str:
-    b = day[:8] + "01"
-    return b if b >= first else first
-
-
-def start_of(day: str, base: str, first: str) -> str:
-    s = min(base, (date.fromisoformat(day) - timedelta(days=WINDOW_DAYS)).isoformat())
-    return max(s, first)
-
-
 def load_events(world: Path, work: Path, days: list[str], quests: list[str], names: NameLayer):
-    """every day's changes, cached: (keys, day index, open, aged) sorted by key then day, and the published places
-    counted on any of the days"""
+    """every day's changes, cached: (keys, day index, open, aged) sorted by key then day; and the published places
+    counted on any of the days (sorted keys) with the index of the first day each was counted"""
     ev = work / "events"
     ev.mkdir(parents=True, exist_ok=True)
     stamp = dumps({"quests": quests, "first": days[0], "overture": names.overture})
@@ -222,7 +220,7 @@ def load_events(world: Path, work: Path, days: list[str], quests: list[str], nam
         ev.mkdir(parents=True)
         write_text(sfile, stamp)
     prev = None
-    parts: list[np.ndarray] = []
+    ck, cf = np.zeros(0, np.int64), np.zeros(0, np.int32)
     out_k, out_d, out_o, out_a = [], [], [], []
     for di, day in enumerate(days):
         f = ev / f"{day}.npz"
@@ -242,22 +240,26 @@ def load_events(world: Path, work: Path, days: list[str], quests: list[str], nam
             prev = None
         with np.load(f) as z:
             out_k.append(z["keys"]); out_o.append(z["open"]); out_a.append(z["aged"])
-            out_d.append(np.full(len(z["keys"]), di, np.int32)); parts.append(z["counted"])
+            out_d.append(np.full(len(z["keys"]), di, np.int32))
+            new = np.setdiff1d(z["counted"], ck)
+        if len(new):
+            ck = np.concatenate([ck, new]); cf = np.concatenate([cf, np.full(len(new), di, np.int32)])
+            order = np.argsort(ck, kind="stable")
+            ck, cf = ck[order], cf[order]
     k = np.concatenate(out_k); d = np.concatenate(out_d)
     o = np.concatenate(out_o); a = np.concatenate(out_a)
     order = np.lexsort((d, k))
-    return k[order], d[order], o[order], a[order], np.unique(np.concatenate(parts))
+    return k[order], d[order], o[order], a[order], ck, cf
 
 
-def series_json(k: np.ndarray, d: np.ndarray, o: np.ndarray, a: np.ndarray, quests: list[str],
-                shift: int = 0) -> dict[int, str]:
-    """place key -> the JSON object of its quests' change points (rows sorted by key then day; i = day - shift)"""
+def series_json(k: np.ndarray, d: np.ndarray, o: np.ndarray, a: np.ndarray, quests: list[str]) -> dict[int, str]:
+    """place key -> the JSON object of its quests' change points (rows sorted by key then day)"""
     out: dict[int, str] = {}
     if not len(k):
         return out
     place = k >> QBITS
     qi = (k & ((1 << QBITS) - 1)).tolist()
-    pl = place.tolist(); dl = (d - shift).tolist(); ol = o.tolist(); al = a.tolist()
+    pl = place.tolist(); dl = d.tolist(); ol = o.tolist(); al = a.tolist()
     n = len(pl)
     i = 0
     while i < n:
@@ -274,6 +276,30 @@ def series_json(k: np.ndarray, d: np.ndarray, o: np.ndarray, a: np.ndarray, ques
     return out
 
 
+def newest_and_back(k: np.ndarray, d: np.ndarray, o: np.ndarray, a: np.ndarray, back: int) -> dict[int, list]:
+    """place key -> [(quest index, "[open,aged,openBack,agedBack]"), ...] in quest order: each pair's values on the
+    newest day (its last change) and on day `back` (its last change on or before it); pairs 0 in all four left out"""
+    out: dict[int, list] = {}
+    if not len(k):
+        return out
+    last = np.ones(len(k), bool)
+    last[:-1] = k[1:] != k[:-1]
+    kn, on, an = k[last], o[last], a[last]
+    m = d <= back
+    kb, ob, ab = k[m], o[m], a[m]
+    lastb = np.ones(len(kb), bool)
+    lastb[:-1] = kb[1:] != kb[:-1]
+    ob2, ab2 = np.zeros(len(kn), np.int32), np.zeros(len(kn), np.int32)
+    at = np.searchsorted(kn, kb[lastb])
+    ob2[at], ab2[at] = ob[lastb], ab[lastb]
+    keep = (on != 0) | (an != 0) | (ob2 != 0) | (ab2 != 0)
+    kn, on, an, ob2, ab2 = kn[keep], on[keep], an[keep], ob2[keep], ab2[keep]
+    pl = (kn >> QBITS).tolist(); ql = (kn & ((1 << QBITS) - 1)).tolist()
+    for p, q, vo, va, bo, ba in zip(pl, ql, on.tolist(), an.tolist(), ob2.tolist(), ab2.tolist()):
+        out.setdefault(p, []).append((q, f"[{vo},{va},{bo},{ba}]"))
+    return out
+
+
 def idstr(key: int) -> str:
     return f"{key:012x}"
 
@@ -282,111 +308,109 @@ def shard(pid: str) -> str:
     return "world.json" if pid == "world" else f"{pid[:2]}/{pid}.json"
 
 
-def write_places(out: Path, base: str, days: list[str], ev, quests: list[str], names: NameLayer,
-                 counted: np.ndarray) -> int:
-    k, d, o, a = ev
-    bi = days.index(base)
-    m = d <= bi
-    ser = series_json(k[m], d[m], o[m], a[m], quests)
-    dest = out / "place" / base
-    tmp = out / "place" / f".{base}.tmp"
-    shutil.rmtree(tmp, ignore_errors=True)
-    dates = dumps(days[:bi + 1])
-    n = 0
-    for key in counted.tolist():
-        pid = idstr(key)
-        name, subtype, cc = names.meta[pid]
-        text = (f'{{"schema":{SCHEMA},"id":"{pid}","name":{dumps(name)},"subtype":"{subtype}","cc":"{cc}",'
-                f'"dates":{dates},"quests":{ser.get(key, "{}")}}}\n')
-        write_text(tmp / shard(pid), text)
-        n += 1
-    shutil.rmtree(dest, ignore_errors=True)
-    os.replace(tmp, dest)
-    return n
+def rel(kind: str, pid: str) -> str:
+    """a file's path in the bucket; kind "p" a place's own file, "c" a parent's children file"""
+    return ("place/" if kind == "p" else "children/") + shard(pid)
 
 
-def write_latest(out: Path, day: str, start: str, days: list[str], ev, quests: list[str], names: NameLayer,
-                 counted: np.ndarray) -> int:
-    k, d, o, a = ev
-    si, di = days.index(start), days.index(day)
-    m = d <= di
-    k, d, o, a = k[m], d[m], o[m], a[m]
-    # each pair's value at start (its last change on or before it) as index 0, then its changes after start
-    le = d <= si
-    nxt_same = np.zeros(len(k), bool)
-    nxt_same[:-1] = (k[1:] == k[:-1]) & le[1:]
-    at_start = le & ~nxt_same & ((o != 0) | (a != 0))
-    keep = at_start | (d > si)
-    dd = np.where(at_start, si, d)
-    ser = series_json(k[keep], dd[keep], o[keep], a[keep], quests, shift=si)
-    children: dict[str, list[str]] = {}
-    for key in counted.tolist():
-        pid = idstr(key)
-        for p in names.parents.get(pid, []):
-            children.setdefault(p, []).append(pid)
-    dest = out / "latest" / day
-    tmp = out / "latest" / f".{day}.tmp"
-    shutil.rmtree(tmp, ignore_errors=True)
-    dates = dumps(days[si:di + 1])
-    for parent, kids in children.items():
-        body = ",".join(f'"{c}":{ser.get(int(c, 16), "{}")}' for c in sorted(kids))
-        text = (f'{{"schema":{SCHEMA},"parent":"{parent}","date":"{day}","dates":{dates},'
-                f'"places":{{{body}}}}}\n')
-        write_text(tmp / shard(parent), text)
-    shutil.rmtree(dest, ignore_errors=True)
-    os.replace(tmp, dest)
-    return len(children)
+def digest(text: str) -> str:
+    return hashlib.blake2b(text.encode("utf-8"), digest_size=8).hexdigest()
 
 
-def prune(folder: Path, keep: int) -> None:
-    if not folder.exists():
-        return
-    dirs = sorted(p for p in folder.iterdir() if p.is_dir() and not p.name.startswith("."))
-    for p in dirs[:-keep]:
-        shutil.rmtree(p, ignore_errors=True)
+def load_manifest(path: Path) -> dict:
+    if path.exists():
+        m = json.loads(path.read_text(encoding="utf-8"))
+        if m.get("schema") == SCHEMA:
+            return m
+    return {"schema": SCHEMA, "p": {}, "c": {}}
+
+
+def save_manifest(path: Path, m: dict) -> None:
+    tmp = path.with_suffix(".tmp")
+    write_text(tmp, dumps(m) + "\n")
+    os.replace(tmp, path)
+
+
+def place_text(pid: str, meta: tuple[str, str, str], first: str, frm: int, series: str) -> str:
+    name, subtype, cc = meta
+    return (f'{{"schema":{SCHEMA},"id":"{pid}","name":{dumps(name)},"subtype":"{subtype}","cc":"{cc}",'
+            f'"first":"{first}",' + (f'"from":{frm},' if frm else "") + f'"quests":{series}}}\n')
+
+
+def children_text(parent: str, kids: list[str], rows: dict[int, list], quests: list[str]) -> str:
+    """the file's quests are listed once, in the world's order, and a child's keys index that list"""
+    mine = [(c, rows.get(int(c, 16), [])) for c in sorted(kids)]
+    used = sorted({q for _, r in mine for q, _ in r})
+    at = {q: i for i, q in enumerate(used)}
+    body = ",".join('"%s":{%s}' % (c, ",".join(f'"{at[q]}":{s}' for q, s in r)) for c, r in mine)
+    return (f'{{"schema":{SCHEMA},"parent":"{parent}","quests":{dumps([quests[q] for q in used])},'
+            f'"places":{{{body}}}}}\n')
 
 
 def build(world: Path, out: Path, work: Path, places: Path, first: str, through: str | None) -> dict:
+    """every file's text is made, and a file is written only when its hash differs from the last build's
+    (`work/local.json`), so `out` mirrors what the bucket should hold"""
     t0 = time.time()
     days = gated_days(world, first)
     if through:
         days = [d for d in days if d <= through]
-    day = days[-1]
-    base = base_of(day, first)
-    start = start_of(day, base, first)
+    day, di = days[-1], len(days) - 1
+    if days != [(date.fromisoformat(days[0]) + timedelta(days=i)).isoformat() for i in range(len(days))]:
+        raise SystemExit("the gated days have a gap: a day number would not be a date")
+    back = max(0, di - WINDOW_DAYS)
     quests = json.loads((world / "counts" / day / "counts.json").read_text(encoding="utf-8"))["quests"]
     names = NameLayer(places)
-    log(f"{len(days)} gated days {days[0]}..{day}; base {base}, window from {start}; {len(names.meta):,} named places")
-    k, d, o, a, counted = load_events(world, work, days, quests, names)
-    log(f"{len(k):,} change points, {len(counted):,} published places")
-    ev = (k, d, o, a)
-    # place/<base>/ is rebuilt when it is missing, or when what it was built from changed (the quests, the name
-    # layer, the days up to base): the stamp sits in the work folder, since the output is uploaded. Not the places:
-    # the counted set grows by a few on later days (11-01 1,018,465, 11-02 1,018,472), and such a place has no
-    # place file until base moves; the page then shows its days after base from the parent's file only
-    pstamp = work / f"place-{base}.key"
-    want = dumps({"quests": quests, "overture": names.overture, "names": len(names.meta),
-                  "days": days[:days.index(base) + 1]})
-    if (out / "place" / base).exists() and pstamp.exists() and pstamp.read_text(encoding="utf-8") != want:
-        log(f"place/{base}/ was built from other inputs: rebuilt")
-        shutil.rmtree(out / "place" / base)
-    if not (out / "place" / base).exists():
-        t = time.time()
-        n = write_places(out, base, days, ev, quests, names, counted)
-        log(f"place/{base}/: {n:,} files ({time.time() - t:.0f} s)")
-    write_text(pstamp, want)
+    log(f"{len(days)} gated days {days[0]}..{day}; children against {days[back]}; {len(names.meta):,} named places")
+    k, d, o, a, ck, cf = load_events(world, work, days, quests, names)
+    log(f"{len(k):,} change points, {len(ck):,} published places")
+    old = load_manifest(work / "local.json")
+    if old.get("out") != str(out.resolve()) or not (out / "latest.json").exists():
+        old = {"p": {}, "c": {}}   # another folder, or an emptied one: every file is written
+    new = {"schema": SCHEMA, "out": str(out.resolve()), "p": {}, "c": {}}
+    wrote = {"p": 0, "c": 0}
+
+    def put(kind: str, pid: str, text: str) -> None:
+        h = digest(text)
+        new[kind][pid] = h
+        if old[kind].get(pid) != h:
+            write_text(out / rel(kind, pid), text)
+            wrote[kind] += 1
+
     t = time.time()
-    n = write_latest(out, day, start, days, ev, quests, names, counted)
-    log(f"latest/{day}/: {n:,} parent files ({time.time() - t:.0f} s)")
+    ser = series_json(k, d, o, a, quests)
+    children: dict[str, list[str]] = {}
+    for key, frm in zip(ck.tolist(), cf.tolist()):
+        pid = idstr(key)
+        if pid not in names.meta:   # the events cache is older than the name layer, which dropped the place
+            continue
+        put("p", pid, place_text(pid, names.meta[pid], days[0], frm, ser.get(key, "{}")))
+        for p in names.parents.get(pid, []):
+            children.setdefault(p, []).append(pid)
+    del ser
+    log(f"place/: {len(new['p']):,} files, {wrote['p']:,} written ({time.time() - t:.0f} s)")
+    t = time.time()
+    rows = newest_and_back(k, d, o, a, back)
+    for parent, kids in children.items():
+        put("c", parent, children_text(parent, kids, rows, quests))
+    log(f"children/: {len(new['c']):,} files, {wrote['c']:,} written ({time.time() - t:.0f} s)")
+    gone = [(kind, pid) for kind in ("p", "c") for pid in old[kind] if pid not in new[kind]]
+    for kind, pid in gone:
+        (out / rel(kind, pid)).unlink(missing_ok=True)
+    if gone:
+        log(f"{len(gone):,} files no longer published: removed")
+    v = hashlib.blake2b(digest_size=6)
+    v.update(day.encode())
+    for kind in ("p", "c"):
+        for pid in sorted(new[kind]):
+            v.update(pid.encode()); v.update(new[kind][pid].encode())
     sc = json.loads((world / "world.json").read_text(encoding="utf-8")) if (world / "world.json").exists() else {}
-    latest = {"schema": SCHEMA, "date": day, "first": days[0], "base": base, "dates": days,
+    latest = {"schema": SCHEMA, "v": v.hexdigest(), "date": day, "first": days[0], "back": days[back],
               "scVersion": sc.get("scVersion") or _sc_version(), "resurveyMultiplier": 1,
-              "overture": names.overture, "quests": quests,
-              "place": f"place/{base}/", "latest": f"latest/{day}/"}
+              "overture": names.overture, "quests": quests, "place": "place/", "children": "children/"}
     write_text(out / "latest.json", json.dumps(latest, ensure_ascii=False, indent=1) + "\n")
-    prune(out / "latest", KEEP_LATEST)
-    prune(out / "place", KEEP_PLACE)
-    log(f"built {out} for {day} in {time.time() - t0:.0f} s")
+    new["v"], new["date"] = latest["v"], day
+    save_manifest(work / "local.json", new)
+    log(f"built {out} for {day} (v {latest['v']}) in {time.time() - t0:.0f} s")
     return latest
 
 
@@ -398,9 +422,10 @@ def _sc_version() -> str | None:
 # --- verify: the published files read back, against counts.npz ---------------------------------------------------
 
 def decode(points: list, n: int) -> tuple[list[int], list[int]]:
-    """change points to columns of length n (the reader's rule, written apart from the writer)"""
+    """change points to columns of length n (the reader's rule, written apart from the writer): a point past
+    the last day is ignored, which is how a file newer than latest.json reads as the older day"""
     o, a = [0] * n, [0] * n
-    pts = sorted(points)
+    pts = sorted(p for p in points if p[0] < n)
     for j, (i, vo, va) in enumerate(pts):
         end = pts[j + 1][0] if j + 1 < len(pts) else n
         for t in range(i, end):
@@ -408,54 +433,51 @@ def decode(points: list, n: int) -> tuple[list[int], list[int]]:
     return o, a
 
 
-def read_place(out: Path, latest: dict, pid: str, names: NameLayer) -> dict[str, dict[str, tuple[int, int]]]:
-    """what the page sees for one place: date -> quest -> (open, aged), joined from its place file (to base) and
-    its parent's latest file (after base)"""
+def day_list(latest: dict) -> list[str]:
+    first, last = date.fromisoformat(latest["first"]), date.fromisoformat(latest["date"])
+    return [(first + timedelta(days=i)).isoformat() for i in range((last - first).days + 1)]
+
+
+def read_place(out: Path, latest: dict, pid: str) -> dict[str, dict[str, tuple[int, int]]]:
+    """what the page sees for one place: date -> quest -> (open, aged), from its own file alone, from the day it
+    was first counted to latest.json's date"""
     pf = json.loads((out / latest["place"] / shard(pid)).read_text(encoding="utf-8"))
-    parent = names.parents[pid][0]
-    lf = json.loads((out / latest["latest"] / shard(parent)).read_text(encoding="utf-8"))
-    seen: dict[str, dict[str, tuple[int, int]]] = {}
+    days = day_list(latest)
+    seen: dict[str, dict[str, tuple[int, int]]] = {dt: {} for dt in days[pf.get("from", 0):]}
     for q, pts in pf["quests"].items():
-        o, a = decode(pts, len(pf["dates"]))
-        for t, dt in enumerate(pf["dates"]):
-            seen.setdefault(dt, {})[q] = (o[t], a[t])
-    for q, pts in lf["places"].get(pid, {}).items():
-        o, a = decode(pts, len(lf["dates"]))
-        for t, dt in enumerate(lf["dates"]):
-            if dt > latest["base"]:
-                seen.setdefault(dt, {})[q] = (o[t], a[t])
+        o, a = decode(pts, len(days))
+        for t in range(pf.get("from", 0), len(days)):
+            seen[days[t]][q] = (o[t], a[t])
     return seen
 
 
-def read_window(out: Path, latest: dict, pid: str, parent: str) -> dict[str, dict[str, tuple[int, int]]]:
-    """the place as its parent's latest file gives it, over the file's whole window (the children table's view)"""
-    lf = json.loads((out / latest["latest"] / shard(parent)).read_text(encoding="utf-8"))
-    if pid not in lf["places"]:
-        raise SystemExit(f"{pid} missing from its parent's latest file {parent}")
-    seen: dict[str, dict[str, tuple[int, int]]] = {dt: {} for dt in lf["dates"]}
-    for q, pts in lf["places"][pid].items():
-        o, a = decode(pts, len(lf["dates"]))
-        for t, dt in enumerate(lf["dates"]):
-            seen[dt][q] = (o[t], a[t])
-    return seen
+def read_children(out: Path, latest: dict, pid: str, parent: str) -> tuple[dict, dict]:
+    """the place as its parent's children file gives it: quest -> (open, aged) on the date, and on `back`"""
+    cf = json.loads((out / latest["children"] / shard(parent)).read_text(encoding="utf-8"))
+    if pid not in cf["places"]:
+        raise SystemExit(f"{pid} missing from its parent's children file {parent}")
+    row = {cf["quests"][int(i)]: v for i, v in cf["places"][pid].items()}
+    return ({q: (v[0], v[1]) for q, v in row.items()}, {q: (v[2], v[3]) for q, v in row.items()})
 
 
-def verify(world: Path, out: Path, places: Path, sample: int, seed: int = 1) -> int:
+def verify(world: Path, out: Path, work: Path, places: Path, sample: int, seed: int = 1) -> int:
     latest = json.loads((out / "latest.json").read_text(encoding="utf-8"))
     names = NameLayer(places)
     quests = latest["quests"]
-    files = sorted((out / latest["place"]).glob("*/*.json"))
+    ids = sorted(load_manifest(work / "local.json")["p"])
     rng = np.random.default_rng(seed)
-    pick = [files[i].stem for i in rng.choice(len(files), size=min(sample, len(files)), replace=False)]
-    seen = {pid: read_place(out, latest, pid, names) for pid in pick}
-    # every parent's file too, over its whole window (a place in two region files is under both)
-    views = [(f"{pid} in {par}", pid, read_window(out, latest, pid, par))
+    pick = [ids[i] for i in rng.choice(len(ids), size=min(sample, len(ids)), replace=False)]
+    seen = {pid: read_place(out, latest, pid) for pid in pick}
+    # every parent's file too (a place in two region files is under both)
+    views = [(f"{pid} in {par}", pid, read_children(out, latest, pid, par))
              for pid in pick for par in names.parents[pid]]
     want = set(hexkey(pick).tolist())
     bad = 0
-    shown = [d for d in latest["dates"] if d <= latest["base"]] + \
-            [d for d in latest["dates"] if d > latest["base"]]
-    for day in shown:
+
+    def nz(row: dict) -> dict:
+        return {q: v for q, v in row.items() if v != (0, 0)}
+
+    for day in day_list(latest):
         k, o, a, _ = day_state(world, day, quests, names)
         place = k >> QBITS
         m = np.isin(place, list(want))
@@ -463,24 +485,26 @@ def verify(world: Path, out: Path, places: Path, sample: int, seed: int = 1) -> 
         for kk, vo, va in zip(k[m].tolist(), o[m].tolist(), a[m].tolist()):
             truth.setdefault(idstr(kk >> QBITS), {})[quests[kk & 255]] = (vo, va)
         for pid in pick:
-            got = {q: v for q, v in seen[pid].get(day, {}).items() if v != (0, 0)}
+            got = nz(seen[pid].get(day, {}))
             exp = truth.get(pid, {})
             if got != exp:
                 bad += 1
                 if bad <= 5:
                     diff = {q: (exp.get(q), got.get(q)) for q in set(exp) | set(got) if exp.get(q) != got.get(q)}
                     log(f"MISMATCH {day} {pid}: {list(diff.items())[:5]}")
-        for label, pid, view in views:
-            if day not in view:
+        for which, at in ((0, latest["date"]), (1, latest["back"])):
+            if day != at:
                 continue
-            got = {q: v for q, v in view[day].items() if v != (0, 0)}
-            exp = truth.get(pid, {})
-            if got != exp:
-                bad += 1
-                if bad <= 5:
-                    log(f"MISMATCH {day} {label} (latest window): {exp} != {got}")
-        log(f"verify {day}: {len(pick)} places checked, and {len(views)} parent views")
-    log(f"verify: {bad} mismatches over {len(pick)} places and {len(shown)} days")
+            for label, pid, view in views:
+                got, exp = nz(view[which]), truth.get(pid, {})
+                if got != exp:
+                    bad += 1
+                    if bad <= 5:
+                        log(f"MISMATCH {day} {label} (children file, {'back' if which else 'newest'}): "
+                            f"{exp} != {got}")
+        log(f"verify {day}: {len(pick)} places checked")
+    log(f"verify: {bad} mismatches over {len(pick)} places, {len(views)} children views "
+        f"and {len(day_list(latest))} days")
     return 1 if bad else 0
 
 
@@ -534,58 +558,125 @@ def crosscheck(world: Path, places: Path, report: Path, day: str, out_json: Path
 
 # --- upload ------------------------------------------------------------------------------------------------------
 
-def upload(out: Path, print_only: bool) -> int:
-    """the new folders first (immutable), latest.json last (it points at them), then old folders deleted"""
-    latest = json.loads((out / "latest.json").read_text(encoding="utf-8"))
+def plan(out: Path, work: Path) -> tuple[list[tuple[str, str]], list[tuple[str, str]], dict, dict]:
+    """the files to upload (their hash differs from the bucket's) and to delete (the bucket's, no longer built),
+    each (kind, id) sorted by path; and both manifests"""
+    local, bucket = load_manifest(work / "local.json"), load_manifest(work / "bucket.json")
+    if local.get("out") != str(out.resolve()):
+        raise SystemExit(f"{work / 'local.json'} was not built into {out}: build first")
+    todo = sorted(((kind, pid) for kind in ("p", "c") for pid, h in local[kind].items()
+                   if bucket[kind].get(pid) != h), key=lambda x: rel(*x))
+    gone = sorted(((kind, pid) for kind in ("p", "c") for pid in bucket[kind] if pid not in local[kind]),
+                  key=lambda x: rel(*x))
+    return todo, gone, local, bucket
+
+
+def upload(out: Path, work: Path, print_only: bool = False, full: bool = False, trial: int = 0) -> int:
+    """the changed files in batches (the bucket manifest saved after each), then the gone ones deleted, and
+    latest.json last: it carries the new `v`, so no page asks for the new files before all are there"""
+    todo, gone, local, bucket = plan(out, work)
     remote = f"r2:{BUCKET}"
-    common = ["--transfers", "64", "--checkers", "64", "--fast-list", "--size-only", "--stats-one-line",
-              "--stats", "60s"]
-    cmds = [
-        ["copy", str(out / latest["place"]), f"{remote}/{latest['place']}",
-         "--header-upload", f"Cache-Control: {CACHE_IMMUTABLE}", *JSON_TYPE, *common],
-        ["copy", str(out / latest["latest"]), f"{remote}/{latest['latest']}",
-         "--header-upload", f"Cache-Control: {CACHE_IMMUTABLE}", *JSON_TYPE, *common],
-        ["copyto", str(out / "latest.json"), f"{remote}/latest.json",
-         "--header-upload", f"Cache-Control: {CACHE_LATEST_JSON}", *JSON_TYPE],
-    ]
-    local_latest = {p.name for p in (out / "latest").iterdir() if p.is_dir()}
-    local_place = {p.name for p in (out / "place").iterdir() if p.is_dir()}
+    log(f"plan: {len(todo):,} files to upload of {len(local['p']) + len(local['c']):,}, {len(gone):,} to delete; "
+        f"bucket at {bucket.get('date')} (v {bucket.get('v')}), local {local.get('date')} (v {local.get('v')})")
     if print_only:
-        for c in cmds:
-            print("rclone " + " ".join(f'"{x}"' if " " in x else x for x in c))
-        print(f"then: purge {remote}/latest/<d> for d not in {sorted(local_latest)}, "
-              f"place/<b> for b not in {sorted(local_place)}")
+        for kind, pid in todo[:10]:
+            print(rel(kind, pid))
+        print(f"rclone copy {out} {remote} --files-from <list> --no-traverse --no-check-dest "
+              f'--header-upload "Cache-Control: {CACHE_FILE}"   (batches of {BATCH:,})')
         return 0
+    if len(todo) + 1 > MAX_UPLOAD:
+        log(f"FAILED: {len(todo):,} files is past MAX_UPLOAD {MAX_UPLOAD:,}; a run this big is a bug")
+        return 1
+    if len(todo) > DAY_CAP and not full and not trial:
+        log(f"FAILED: {len(todo):,} files is past DAY_CAP {DAY_CAP:,}; a day changes about 60,000. If the format, "
+            f"the name layer or the quest list changed, look at the plan (--print) and pass --full")
+        return 1
+    if len(gone) > MAX_DELETE:
+        log(f"FAILED: {len(gone):,} files to delete is past MAX_DELETE {MAX_DELETE:,}")
+        return 1
+    if trial:   # a few of each kind, and neither deletes nor latest.json: the bucket's pages see nothing
+        todo = ([x for x in todo if x[0] == "p"][:trial // 2] + [x for x in todo if x[0] == "c"][:trial - trial // 2])
     sys.path.insert(0, str(ROOT / "tools"))
     import cloud_publish as cp
     import spend_breaker
-    # Every file of both folders counts as a write (--size-only skips the unchanged, so this errs high).
-    planned = sum(1 for f in ("place", "latest") for p in (out / latest[f]).rglob("*") if p.is_file()) + 2
-    if planned > MAX_UPLOAD:
-        log(f"FAILED: {planned:,} files is past MAX_UPLOAD {MAX_UPLOAD:,}; a run this big is a bug, not a day")
-        return 1
     try:
-        spend_breaker.gate(planned_class_a=planned, strict=True)
+        spend_breaker.gate(planned_class_a=len(todo) + 1, strict=True)
     except spend_breaker.Tripped as e:
         log(f"FAILED: {e}")
         return 1
     env = cp.rclone_env(cp.read_env())
-    for c in cmds:
-        log("rclone " + " ".join(c[:3]))
-        r = subprocess.run(["rclone", *c], env=env, capture_output=True, text=True)
+    listing = work / "upload-list.txt"
+    for i in range(0, len(todo), BATCH):
+        batch = todo[i:i + BATCH]
+        write_text(listing, "".join(rel(kind, pid) + "\n" for kind, pid in batch))
+        log(f"rclone copy: files {i + 1:,} to {i + len(batch):,} of {len(todo):,}")
+        r = subprocess.run(["rclone", "copy", str(out), remote, "--files-from", str(listing), "--no-traverse",
+                            "--no-check-dest", "--header-upload", f"Cache-Control: {CACHE_FILE}", *JSON_TYPE,
+                            "--transfers", "64", "--stats-one-line", "--stats", "60s"],
+                           env=env, capture_output=True, text=True)
         if r.returncode:
             log(f"FAILED: {r.stderr.strip()[-1000:]}")
             return 1
-    for folder, keep in (("latest", local_latest), ("place", local_place)):
-        r = subprocess.run(["rclone", "lsf", "--dirs-only", f"{remote}/{folder}"], env=env,
+        for kind, pid in batch:
+            bucket[kind][pid] = local[kind][pid]
+        save_manifest(work / "bucket.json", bucket)
+    if trial:
+        log(f"trial: {len(todo):,} files uploaded; latest.json untouched")
+        return 0
+    for kind, pid in gone:
+        r = subprocess.run(["rclone", "deletefile", f"{remote}/{rel(kind, pid)}"], env=env,
                            capture_output=True, text=True)
-        for name in r.stdout.split():
-            name = name.rstrip("/")
-            if name and name not in keep:
-                log(f"purge {folder}/{name}")
-                subprocess.run(["rclone", "purge", f"{remote}/{folder}/{name}"], env=env, check=False)
-    log(f"uploaded {latest['date']}")
+        if r.returncode:
+            log(f"FAILED: delete {rel(kind, pid)}: {r.stderr.strip()[-300:]}")
+            return 1
+        del bucket[kind][pid]
+    log("rclone copyto latest.json")
+    r = subprocess.run(["rclone", "copyto", str(out / "latest.json"), f"{remote}/latest.json",
+                        "--header-upload", f"Cache-Control: {CACHE_LATEST_JSON}", *JSON_TYPE],
+                       env=env, capture_output=True, text=True)
+    if r.returncode:
+        log(f"FAILED: {r.stderr.strip()[-1000:]}")
+        return 1
+    bucket["v"], bucket["date"] = local.get("v"), local.get("date")
+    save_manifest(work / "bucket.json", bucket)
+    log(f"uploaded {local.get('date')} (v {local.get('v')})")
     return 0
+
+
+def check_live(out: Path, work: Path, sample: int, host: str = HOST, seed: int | None = None) -> int:
+    """the bucket as a page reads it, against the local files: latest.json's `v`, then a sample of the files the
+    bucket manifest says it holds (most of them skipped by the last upload as unchanged), byte for byte"""
+    import urllib.error
+    import urllib.request
+
+    def get(path: str) -> bytes | None:
+        req = urllib.request.Request(host + path, headers={"User-Agent": "curl/8.0"})
+        try:
+            with urllib.request.urlopen(req, timeout=30) as r:
+                return r.read()
+        except (urllib.error.URLError, TimeoutError) as e:
+            log(f"  {path}: {e}")
+            return None
+
+    bucket = load_manifest(work / "bucket.json")
+    v = bucket.get("v")
+    raw = get(f"latest.json?fresh={int(time.time())}")   # its own address, so not the edge's five-minute copy
+    live = json.loads(raw) if raw else {}
+    bad = 0
+    if live.get("v") != v:
+        log(f"MISMATCH latest.json: the bucket serves v {live.get('v')}, the manifest says {v}")
+        bad += 1
+    keys = [(kind, pid) for kind in ("p", "c") for pid in bucket[kind]]
+    rng = np.random.default_rng(seed)
+    for i in rng.choice(len(keys), size=min(sample, len(keys)), replace=False):
+        path = rel(*keys[i])
+        got = get(f"{path}?v={v}")
+        if got is None or got != (out / path).read_bytes():
+            bad += 1
+            if bad <= 5:
+                log(f"MISMATCH {path}: the bucket's copy is {'missing' if got is None else 'not the local file'}")
+    log(f"check: {bad} mismatches over latest.json and {min(sample, len(keys))} files at {host}")
+    return 1 if bad else 0
 
 
 SITE_ORIGIN = "https://street-complete-statistics.comentality.com"  # cloudflare/wrangler.jsonc routes
@@ -625,8 +716,9 @@ def cors(set_rule: bool) -> int:
 
 
 def daily(world: Path, out: Path, work: Path, places: Path, first: str, sample: int) -> int:
-    """Task Scheduler's run: build to the newest gated day; if that day is not uploaded yet, verify a sample and
-    upload. `work/uploaded.json` holds the last uploaded date; `work/daily.lock` keeps two runs apart."""
+    """Task Scheduler's run: build to the newest gated day; if the bucket is behind, verify a sample, upload the
+    changed files and read a sample back over HTTPS. `work/daily.lock` keeps two runs apart. Never --full: a plan
+    past DAY_CAP stops here and waits for somebody."""
     work.mkdir(parents=True, exist_ok=True)
     lock = work / "daily.lock"
     if lock.exists() and time.time() - lock.stat().st_mtime < 12 * 3600:
@@ -634,36 +726,34 @@ def daily(world: Path, out: Path, work: Path, places: Path, first: str, sample: 
         return 1
     lock.write_text(str(os.getpid()), encoding="utf-8")
     try:
-        build(world, out, work, places, first, None)
-        latest = json.loads((out / "latest.json").read_text(encoding="utf-8"))
-        stamp = work / "uploaded.json"
-        done = json.loads(stamp.read_text(encoding="utf-8")) if stamp.exists() else {}
-        if done.get("date") == latest["date"] and done.get("place") == latest["place"]:
+        latest = build(world, out, work, places, first, None)
+        todo, gone, _, bucket = plan(out, work)
+        if not todo and not gone and bucket.get("v") == latest["v"]:
             log(f"nothing new: {latest['date']} is uploaded")
             return 0
-        if verify(world, out, places, sample):
+        if verify(world, out, work, places, sample):
             log("FAILED: verify found mismatches; not uploading")
             return 1
-        if upload(out, False):
+        if upload(out, work):
             return 1
-        stamp.write_text(json.dumps({"date": latest["date"], "place": latest["place"],
-                                     "at": time.strftime("%Y-%m-%d %H:%M:%S")}) + "\n", encoding="utf-8")
-        return 0
+        return check_live(out, work, 40)
     finally:
         lock.unlink(missing_ok=True)
 
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("cmd", choices=["build", "verify", "crosscheck", "upload", "cors", "daily"])
+    ap.add_argument("cmd", choices=["build", "verify", "crosscheck", "upload", "check", "cors", "daily"])
     ap.add_argument("--world", type=Path, default=WORLD)
     ap.add_argument("--out", type=Path, default=OUT)
     ap.add_argument("--work", type=Path, default=WORK)
     ap.add_argument("--places", type=Path, default=PLACES)
     ap.add_argument("--first", default=FIRST)
     ap.add_argument("--through", help="build as of this day (default: the newest gated day)")
-    ap.add_argument("--sample", type=int, default=2000)
-    ap.add_argument("--print", action="store_true", help="upload: print the rclone commands, run nothing")
+    ap.add_argument("--sample", type=int, help="verify: places read back (default 2000); check: files fetched (40)")
+    ap.add_argument("--print", action="store_true", help="upload: print the plan, run nothing")
+    ap.add_argument("--full", action="store_true", help="upload: allow a plan past DAY_CAP (the first upload)")
+    ap.add_argument("--trial", type=int, default=0, help="upload: only this many files, and not latest.json")
     ap.add_argument("--set", action="store_true", help="cors: write the rule (without: print it)")
     ap.add_argument("--report", type=Path, default=ROOT.parent / "sc-open-quests" / ".scratch" / "planet"
                     / "world-places" / "report.json", help="crosscheck: the whole count's report.json")
@@ -676,14 +766,16 @@ def main(argv: list[str] | None = None) -> int:
         build(a.world, a.out, a.work, a.places, a.first, a.through)
         return 0
     if a.cmd == "verify":
-        return verify(a.world, a.out, a.places, a.sample)
+        return verify(a.world, a.out, a.work, a.places, a.sample or 2000)
     if a.cmd == "crosscheck":
         return crosscheck(a.world, a.places, a.report, a.day, a.json)
     if a.cmd == "daily":
-        return daily(a.world, a.out, a.work, a.places, a.first, a.sample)
+        return daily(a.world, a.out, a.work, a.places, a.first, a.sample or 2000)
     if a.cmd == "cors":
         return cors(a.set)
-    return upload(a.out, a.print)
+    if a.cmd == "check":
+        return check_live(a.out, a.work, a.sample or 40)
+    return upload(a.out, a.work, a.print, a.full, a.trial)
 
 
 if __name__ == "__main__":
