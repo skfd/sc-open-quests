@@ -2706,6 +2706,12 @@ changes in the daily run until the world replaces it.
      Ways out, the owner's choice: wait for the catch-up to end and let the 12:15 run go; pause the catch-up
      for one city run; or `git checkout -- docs/data` (back to the committed 11-18 files) and
      `python tools/cloud_publish.py` to deploy only the page.
+     **Owner, 17:30: "Page only, now". Done 17:40:** `git checkout -- docs/data` (the 14 snapshot files back),
+     `python tools/cloud_publish.py` (1 file copied, `app.js`; site version d716c438), `--check` 9,338 equal.
+     On the live site with CORS on (`.scratch/world-publish/live_site.py`): Germany and Plauen read
+     `latest.json`, `place/...?v=20a53b131333` and `children/...?v=...` from `sc-data`, "As of Nov 13", no
+     errors; Toronto asks the world nothing. **World pages are live.** City data stays at 11-17/11-18 until a
+     city run fits in memory; the 12:15 run on 11-22 may fail again while the catch-up runs.
   1. **Daily build after each world day.** `python tools/world_publish.py build` once the loop has closed a day
      (it reads only gated days). Wire it into `planet_store_day.py` after the day's cleanup **only once the
      catch-up has ended** (never edit the running script). Until then run it by hand. **Run by hand 11-19, 22:49, through
