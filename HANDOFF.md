@@ -3028,6 +3028,23 @@ wording and tab structure as a first draft open to change, not as decided design
   Kept inputs: `.scratch/t2-probe/2026-11-14/{f31,f23,f107}/` and `parts-f*`; results `.scratch/t2-probe/ab/`.
   `ab.sh` takes `MODES=on` for one run. So a day's tier 2 engines should fall from hours to minutes; the day then
   costs what the rest of `finish` does (about 1.5 h on 11-12 and 11-13).
+- **Why six rounds of engine speed-up missed it, and what watches for the next one (owner, 19:10: "why didn't
+  we do it when optimizing engine? ... keep collecting metric or at least observing").** Every round measured one
+  file, Germany f0: 18 large cells over 113M nodes, where a relation is made 18 times at most and the collector
+  and the quests' runs are the cost. Tier 2 is the other shape, thousands of small rectangles over one file, and
+  was never a benchmark; its design run (`.scratch/rectgroups`) happened to have no long relation in many
+  rectangles. In production the evidence existed but was thrown away: `engine.log` has a line per rectangle and
+  goes with the day's work, and the loop's log named no engine. **Built on `world-swap` (f0814ae6):
+  `tools/stream/day_metrics.py`**, test `tests/test_day_metrics.py`. At a day's end, before the work is deleted,
+  every engine's log becomes numbers in `W/days/<D>/engines.json` (per engine: areas, map data seconds, the
+  quests' seconds, main pass steps, heap, the three slowest areas; per phase: sum, median, longest, the five
+  longest's share), backed up with `day.json`; the loop's log gets a line per phase and a `watch:` line for an
+  engine over 120 s that is 10 times its phase's median with one step holding half of it. `python
+  tools/stream/day_metrics.py report` lists the kept days. **11-14 so far, the old engine** (harvest of the live
+  work at 19:15, the D pass not ended): t2 old 127 engines, 32,470 s summed, median 42 s, longest 4,287 s (f53),
+  map data 27,262 s (84%), quests 1,111 s, main pass 943 s; t1 128 engines, 1,062 s. `.scratch/t2-probe/baseline.sh`
+  (detached) harvests the whole day when its finish ends and puts `engines.json` beside 11-14's `day.json`: the
+  "before" to hold the first day with the cache against.
 - **(b) built, not merged: branch `world-swap`, worktree `.claude/worktrees/world-swap`, 6a153857.**
   `planet_store_day.py`: `write_facts()` after `store_tail` (a process of its own, never a STOP);
   `own_output()` sends a run's prints to `logs/planet-store-<started>-<pid>.out` unless `--console`.
