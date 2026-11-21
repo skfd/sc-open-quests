@@ -2990,7 +2990,12 @@ wording and tab structure as a first draft open to change, not as decided design
 - **(c) fix built, not merged: branch `t2-relcache`, worktree `.claude/worktrees/t2-relcache`, b7150976.**
   `AreaPass.kt`: `relationWithGeometry` once per relation and run (`relationCache`, soft references,
   `-Dopenquests.relationCache=false` turns it off) instead of once per city holding it; nothing of it depends on
-  the city. Built there (`installDist`, JDK 21). **A/B running since 16:10** (`.scratch/t2-probe/ab.sh`, results in
+  the city. Built there (`installDist`, JDK 21). **A/B on f3, 16:20: the same rows, twice as fast.** Cache off
+  pass 109.5 s, on 54.5 s (peak heap 5,286 against 4,752 MB); 695,396 rows each, none on one side only, between
+  off and on, and between each and the loop's own f3 dump; the snapshots equal but for `runSeconds`. Compare
+  dumps with `.scratch/t2-probe/samerows.py <dir> <dir>`, never by bytes: a dump numbers its place sets in the
+  order threads met them, so two runs of the same engine differ in bytes (`ab.sh`'s own `cmp` says DIFFERENT for
+  that reason). f3 is a fast group; the gain on a slow one is still to measure. **A/B started 16:10** (`.scratch/t2-probe/ab.sh`, results in
   `.scratch/t2-probe/ab/<name>/`): f3's kept D-1 inputs through that engine with the cache off and on, the dumps
   and snapshots compared byte for byte, and against the loop's own f3 dump. `.scratch/t2-probe/keep.sh` is
   waiting to keep f31's and f23's D inputs (the slow ones) for the same A/B. It goes in at the swap with
