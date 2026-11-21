@@ -2886,3 +2886,18 @@ wording and tab structure as a first draft open to change, not as decided design
   open errors for the whole planet, downloaded every day (but KeepRight is unmaintained since April 2024);
   `fixme=*` and similar tags counted from our own extracts.
 - **When:** not on any release's path. Pick it up only after open quests over time have shipped.
+
+## Storage redesign: facts, serving, working state (owner, 2026-11-21, 13:10)
+
+- Owner: "we store data in a shape too close to how we publish it, and do not publish/back it up. how should we do
+  it properly?" Proposal accepted in a wizard, all four as recommended: Parquet + DuckDB for the canonical counts;
+  a public copy under ODbL at `sc-data.comentality.com/facts/`; the world's row files checkpointed to R2 monthly,
+  two kept; `docs/data` out of git after the builders read facts. The design and the six steps are in DESIGN.md,
+  "Storage: facts, serving, working state".
+- This is independent of schema 2 (`world-stable`): that changes a serving shape, this changes what serving is
+  built from. The world publisher keeps reading `W/counts/<D>/` until step 4.
+- **Step 1 in progress (13:20):** `archive_backup.py` to copy the world's gated days (`counts/<D>/`,
+  `days/<D>/*.json`) to `sc-open-quests-archive`, built in a worktree because the daily run (restarted 13:10) runs
+  that script as its last step. Nothing of the world is in a backup until this is merged and has run once.
+- **Not started:** the state checkpoint (wait for the catch-up to end and a day to close: the loop replaces the
+  row files while it runs), and steps 2 to 6.
