@@ -3019,6 +3019,15 @@ wording and tab structure as a first draft open to change, not as decided design
   and snapshots compared byte for byte, and against the loop's own f3 dump. `.scratch/t2-probe/keep.sh` is
   waiting to keep f31's and f23's D inputs (the slow ones) for the same A/B. It goes in at the swap with
   `installDist` on main, **never while the loop runs** (the loop starts the installed engine).
+- **(c) the gain on slow groups, measured (18:30).** f31's D inputs of 11-14 (2,234 rectangles, kept by
+  `keep.sh`): cache off pass **1,191.0 s**, cache on **17.3 s**; 220,264 rows each, none on one side only
+  (`samerows.py`); "map data" 1,180 s against 1 s. f107, the day's slowest (4,955 rectangles; its D-1 pass took the
+  loop 4,050.9 s, peak heap 8,617 MB): D inputs with the cache on, pass **78.1 s**, peak heap 7,182 MB; its rows
+  are being compared with the loop's own f107 D dump when that engine ends (kept in
+  `.scratch/t2-probe/2026-11-14/loop-f107-new/`; no cache-off run of f107 was made, it would be over an hour).
+  Kept inputs: `.scratch/t2-probe/2026-11-14/{f31,f23,f107}/` and `parts-f*`; results `.scratch/t2-probe/ab/`.
+  `ab.sh` takes `MODES=on` for one run. So a day's tier 2 engines should fall from hours to minutes; the day then
+  costs what the rest of `finish` does (about 1.5 h on 11-12 and 11-13).
 - **(b) built, not merged: branch `world-swap`, worktree `.claude/worktrees/world-swap`, 6a153857.**
   `planet_store_day.py`: `write_facts()` after `store_tail` (a process of its own, never a STOP);
   `own_output()` sends a run's prints to `logs/planet-store-<started>-<pid>.out` unless `--console`.
