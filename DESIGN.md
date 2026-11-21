@@ -5778,3 +5778,12 @@ manifest and a bucket that have drifted apart. `daily` runs it after each upload
 
 **Rollback.** There is no previous folder to point back at. A bad day is undone by building `--through` the day
 before and uploading: the files that differ go up again and `latest.json` gets that build's `v`.
+
+**Measured, 2026-11-21.** The first build (through 11-12): 1,018,541 place files and 110,421 children files in
+29 minutes; `verify --sample 1500` 0 mismatches over 12 days. The first upload: 1,128,962 files in about 2 h 40 min
+at about 120 a second. The day after, through `daily` (11-13): build 6.5 minutes, 34,612 place files and 12,697
+children files written (the same counts the cached changes gave), 47,309 files uploaded in 5 minutes, `verify` and
+`check` 0 mismatches. So a day is about 47,000 writes, 1.4M a month: about $2 past R2's free million, against $15
+plus $4.50 for schema 1. `back` stays at `first` until 11-29; after that a child's value sliding out adds
+children files to a day, not yet measured. R2 counts one read per uploaded file as well (rclone checks each
+after writing it), far inside the free 10M a month.
