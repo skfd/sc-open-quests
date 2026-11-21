@@ -2958,6 +2958,23 @@ wording and tab structure as a first draft open to change, not as decided design
   day before's file plus one diff, cut back to the polygon, stored as a dated file with `"filled_in": true` in its
   meta; latest, the clip's last sequence and pruning untouched. It should leave `europe-2026-11-19.osm.pbf`
   (sequence 5181) and `europe-2026-11-20.osm.pbf` (5182); the loop pins a clip past its clock on sight.
+- **(c) tier 2's engine time, analysed 14:50 (read-only; nothing built).** Measured from the per-engine lines of
+  `logs/planet-store.out`: the time is skew, not volume. 11-13's D-1 pass: 128 engines, 30,055 s summed, 8,600 s
+  wall, median 34 s, and 11 engines over 600 s hold 72% of the sum; 11-12's wall (3,999 s) is one engine (f3,
+  3,971 s). The same files are slow every day: f3 (the Atlantic strip, about 4,000 s a day since 11-08), f53,
+  f107, f127, f47, f69, f109. D and D-1 cost the same. The design's fit predicts about 8,100 s for 11-13; f3 took
+  114 s in the design run. JVM start-up (about 5%) and the reads (1,100-1,300 s a day) are not the cost.
+  **Inferred, not measured:** `AreaPass.kt` (829-838) rebuilds a relation's whole geometry from all its member
+  ways for every rectangle holding it, and `areaCities` defaults to 1, so a slow engine probably runs its
+  rectangles on one core. Candidates, in order: cache a relation's geometry within an engine run (`AreaPass.kt`
+  only, exact by construction); `-Dopenquests.areaCities=4..6` for tier 2 (`world_day.py`, one line); one pool
+  for both dates, largest first (8-13%). Dropping the D-1 recount is not exact: not proposed. Not determined:
+  what the slow engines do inside, their cores, why f3 jumped on 11-08, why 11-13 had 11 slow groups against 5.
+  **A probe is waiting for 11-14's tier 2** (`.scratch/t2-probe/probe.sh`, started 14:55, reads only): it keeps
+  f3's `old.osm.pbf`, json and parts and its `engine.log` (per-rectangle seconds and relation counts) in
+  `.scratch/t2-probe/2026-11-14/`, and samples the java processes' cores into `probe.log` there. Read those
+  before choosing; an offline rerun of f3 with `-Dopenquests.assembleTrace=true` only once the loop is not using
+  every core.
 - **(b) built, not merged: branch `world-swap`, worktree `.claude/worktrees/world-swap`, 6a153857.**
   `planet_store_day.py`: `write_facts()` after `store_tail` (a process of its own, never a STOP);
   `own_output()` sends a run's prints to `logs/planet-store-<started>-<pid>.out` unless `--console`.
