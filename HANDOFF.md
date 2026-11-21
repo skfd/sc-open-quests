@@ -2953,8 +2953,13 @@ wording and tab structure as a first draft open to change, not as decided design
   the last row wait until the loop has caught up. **The last row (drop the hiking-route marking; find containers
   wider than 7 km): when its time comes, first explain it to the owner and ask for the go-ahead. Do not build it
   unasked.**
-- **(a) running since 14:15:** `../osm-extracts` has a new command, `python osm_extracts.py fill europe`
-  (`fill_clip`; uncommitted there until it has worked): for each sequence a clip lacks between two dated files, the
+- **(a) done (13:47 and 13:56 by the files' clock): both clips exist.** `europe-2026-11-19.osm.pbf` (sequence
+  5181, from 11-18) and `europe-2026-11-20.osm.pbf` (5182, from 11-19), nodes in ways missing 0 after the API fill
+  (34 to 0 on 11-20; those few nodes are the API's current ones, as on any day); `latest.json` still names 11-21,
+  the clip's last sequence still 5183, no work file left. About 7 min a day. So the loop has a clip for every
+  day through 11-21. Committed in `../osm-extracts` ("fill: the dated files a clip lacks between two it has").
+  How it works: `python osm_extracts.py fill europe`
+  (`fill_clip`): for each sequence a clip lacks between two dated files, the
   day before's file plus one diff, cut back to the polygon, stored as a dated file with `"filled_in": true` in its
   meta; latest, the clip's last sequence and pruning untouched. It should leave `europe-2026-11-19.osm.pbf`
   (sequence 5181) and `europe-2026-11-20.osm.pbf` (5182); the loop pins a clip past its clock on sight.
