@@ -2929,6 +2929,10 @@ wording and tab structure as a first draft open to change, not as decided design
   each run its own output file (the 14:45 task exits 1 on the held `planet-store.out`); the task's 6 h limit
   against 11-13's 6 h 56 min; no log line for hours during tier 2; the untraced gate differences; the hiking-route
   marking that can go; a container wider than about 7 km not found.
+- **The proof over everything passed (about 14:30):** `facts.py verify` rebuilt 2,295 days (2,282 snapshots, 13
+  world days) from their facts, 0 different or missing. On disk: the world's counts 2.0 GB (159 MB a day), all
+  the rest of `data/facts` 177 MB against the archive's 559 MB of JSON. Snapshots the daily run adds are picked up
+  by the next `python tools/facts.py cities` (nothing runs it daily yet: step 4).
 - **Owner, 14:05: "agree with your assessment, go ahead."** So: (a) cut the two missing clips from 11-18 plus a
   diff each; (b) at the first swap: facts as a day's last step, an output file per run, the task's time limit,
   a progress line in tier 2; the publisher's build follows schema 2; the state checkpoint at the same pause; (c)
