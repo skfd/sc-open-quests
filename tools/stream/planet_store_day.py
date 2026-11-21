@@ -23,7 +23,8 @@ Any failure writes STOPPED beside the store and every later run refuses until a 
 store (its text the reason) makes a run take no day, not a failure: a reader of the store
 (tools/stream/store_lock.py). While a run works it keeps RUNNING beside the store, so a reader waits. Waits while
 today's daily run (kk-SCOpenQuests) is still going; no engine or update starts in its window (world_day.quiet).
-Log: logs/planet-store.log. The store never moves without the world: there is no flag for that."""
+Log: logs/planet-store.log; each run's own prints go to logs/planet-store-<started>-<pid>.out (--console: here), so
+start it without a redirect. A day ends by writing its counts as facts (tools/facts.py). The store never moves without the world: there is no flag for that."""
 import argparse
 import datetime as dt
 import json
@@ -73,6 +74,20 @@ def log(msg):
     print(line, flush=True)
     with open(LOG, "a", encoding="utf-8") as f:
         f.write(line + "\n")
+
+
+def own_output() -> Path:
+    """This run's prints, tracebacks and its children's into logs/planet-store-<started>-<pid>.out. The task used to
+    append to one planet-store.out, which a second run cannot open while a run holds it (11-19: the scheduled task
+    exited 1 before Python started, beside the catch-up started by hand). The log stays one file."""
+    out = LOG.with_name(f"planet-store-{dt.datetime.now():%Y%m%d-%H%M%S}-{os.getpid()}.out")
+    f = open(out, "a", encoding="utf-8", buffering=1)
+    sys.stdout.flush()
+    sys.stderr.flush()
+    os.dup2(f.fileno(), 1)
+    os.dup2(f.fileno(), 2)
+    sys.stdout = sys.stderr = f
+    return out
 
 
 def stop(reason):
@@ -389,7 +404,23 @@ def one_day():
     (dd / "finished").write_text("", encoding="utf-8")
     guarded(f"world gate {nxt}", world_gate, dd, nxt, oracle)
     store_tail(dd, nxt, seq, osc, oracle, gen + 1)
+    write_facts()
     return True
+
+
+def write_facts() -> None:
+    """every gated day that has no facts yet, as Parquet (tools/facts.py, DESIGN.md "Storage: facts, serving, working
+    state"). A process of its own (a day's counts are GBs in memory), and never a stop: the facts are written from
+    counts/<D>/, which stays, so `python tools/facts.py world` makes up for a failure."""
+    t = time.time()
+    try:
+        p = subprocess.run([sys.executable, str(ROOT / "tools" / "facts.py"), "world", "--world", str(WORLD)],
+                           capture_output=True, text=True, cwd=ROOT, timeout=3600)
+        tail = " | ".join((p.stdout or "").strip().splitlines()[-2:])
+        log(f"facts: exit {p.returncode} in {time.time() - t:.0f} s; {tail}" +
+            (f"; {(p.stderr or '').strip()[-300:]}" if p.returncode else ""))
+    except (OSError, subprocess.TimeoutExpired) as e:
+        log(f"facts: not written ({e}); python tools/facts.py world makes up for it")
 
 
 def run_quests() -> Path:
@@ -407,7 +438,10 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--max-days", type=int, default=40)
     ap.add_argument("--no-wait", action="store_true")
+    ap.add_argument("--console", action="store_true", help="print here, not into an output file of this run's own")
     a = ap.parse_args()
+    if not a.console:
+        own_output()
     if STOPPED.exists():
         log(f"refusing: {STOPPED} says {STOPPED.read_text().strip()}")
         sys.exit(1)

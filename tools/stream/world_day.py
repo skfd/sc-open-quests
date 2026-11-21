@@ -380,11 +380,22 @@ def rect_rows(day: Day, cities: Path, parts: Path, gen: int, clock: str, stamp: 
                       f"{RING_M:.0f}", "--out", pbf, "--stamp", stamp, log=day.log)
             st["read s"] += time.time() - t
             st["pbf MB"] += pbf.stat().st_size / 1e6
-            futs.append(ex.submit(_engine_then_drop, day, pbf, cf.parent / which, clock, cf, parts, opts))
-        dumps = [f.result() for f in futs]
+            futs.append((gid, pbf.stat().st_size / 1e6,
+                         ex.submit(_engine_timed, day, pbf, cf.parent / which, clock, cf, parts, opts)))
+        dumps = []
+        for i, (gid, mb, f) in enumerate(futs, 1):  # a line per group: tier 2 was hours without one
+            d, s = f.result()
+            dumps.append(d)
+            if day.log:
+                day.log(f"tier 2 {which}: group {gid} ({mb:,.0f} MB) engine {s:.0f} s; {i} of {len(futs)} done")
     rows = [dump_rows(d, sets, names, rects=True) for d in dumps]
     st = {k: round(v, 1) if isinstance(v, float) else v for k, v in st.items()}
     return (np.unique(np.concatenate(rows)) if rows else np.zeros(0, P.WREC)), st
+
+
+def _engine_timed(*args) -> tuple[Path, float]:
+    t = time.time()
+    return _engine_then_drop(*args), time.time() - t
 
 
 def dump_rows(dump: Path, sets: P.PlaceSets, names: list[str], rects: bool = False) -> np.ndarray:

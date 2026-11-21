@@ -1,12 +1,12 @@
-"""Copy data/archive/ (every counted snapshot), data/grid/ (every z14 tile grid) and the world's gated days
-(its counts per place), which are not in git and exist only on this disk, to their own private R2 bucket.
+"""Copy data/archive/ (every counted snapshot), data/grid/ (every z14 tile grid), data/facts/ (every count as
+Parquet) and the world's gated days (its counts per place), which are not in git and exist only on this disk, to their own private R2 bucket.
 
     python tools/archive_backup.py            copy new and changed files up; never deletes
     python tools/archive_backup.py --dry-run  say what it would do
     python tools/archive_backup.py --check    compare every local file with the bucket, change nothing
 
 The bucket is sc-open-quests-archive, never the site's (tools/cloud_publish.py prunes that one to
-docs/ every day). Files land under archive/, grid/ and world/. It is a copy, not a sync: a file deleted here stays
+docs/ every day). Files land under archive/, grid/, facts/ and world/. It is a copy, not a sync: a file deleted here stays
 there. A file that a rerun rewrote is kept too: the bucket's old version moves to
 replaced/<today>/archive/... before the new one goes up, so a bad run cannot overwrite the backup.
 The per-region quests.json files are rewritten on every count, about 1.6 MB a day into replaced/.
@@ -18,7 +18,7 @@ The world (DESIGN.md, "Storage: facts, serving, working state", step 1): of .scr
 whose gate passed: counts/<D>/ (counts.json, counts.npz, the seed's gate) and days/<D>/ (day.json, gate.json),
 plus plan.json and world.json. A day without a passed gate is not copied: its counts may still be written. The
 row files, the node store and the tile store are working state and are not copied here. A checkout without the
-world folder skips it. --only names one of archive, grid, world.
+world folder skips it. --only names one of archive, grid, facts, world.
 
 Same token file and rclone as cloud_publish.py. The bucket is made on the first run.
 """
@@ -40,7 +40,8 @@ ROOT = Path(__file__).resolve().parent.parent
 ARCHIVE = ROOT / "data" / "archive"
 BUCKET = "sc-open-quests-archive"
 GRID = ROOT / "data" / "grid"
-SOURCES = [(ARCHIVE, "archive"), (GRID, "grid")]   # folder, its prefix in the bucket
+FACTS = ROOT / "data" / "facts"   # tools/facts.py: every count as Parquet, cities and world
+SOURCES = [(ARCHIVE, "archive"), (GRID, "grid"), (FACTS, "facts")]   # folder, its prefix in the bucket
 WORLD = ROOT / ".scratch" / "planet" / "world-1101"
 WORLD_TOP = ["plan.json", "world.json"]   # what a day's counts are read with: the cells, the world's clock
 MIN_FILES = 1000          # the archive held 1,497 files when it was split off; fewer is a broken checkout
@@ -212,7 +213,7 @@ def main() -> int:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--dry-run", action="store_true")
     p.add_argument("--check", action="store_true", help="compare with the bucket; change nothing")
-    p.add_argument("--only", choices=["archive", "grid", "world"], help="one source instead of all three")
+    p.add_argument("--only", choices=["archive", "grid", "facts", "world"], help="one source instead of all")
     p.add_argument("--world", type=Path, default=WORLD, help="the world folder (default: this checkout's)")
     a = p.parse_args()
     sources = [(f, x) for f, x in SOURCES if a.only in (None, x)]
