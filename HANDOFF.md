@@ -3148,6 +3148,14 @@ wording and tab structure as a first draft open to change, not as decided design
     11-21 about 23:30. So the owner's 18:00 has 11-18 for sure and 11-19 on the edge, not 11-20 or 11-21.
   - **Not built, worth having:** the loop taking no day when the disk has less free than a day needs (about
     75 GiB: `before/` and the work), instead of failing in the middle of one.
+- **11-16 closed 09:59:32 on 11-22, gate PASS** (20 of 32 equal, clip 19,294,535, world 19,294,546, +11, worst
+  city 0.00159%), after the 07:12 resume: `finish` 9,083 s (tier 2 engine 2,938, tier 2 reads 1,696, store
+  context after 831, tier 1 751). Disk: 51 GB free at the day's low (09:46), **142 GiB at its end**. 11-17 began
+  09:59:33. **The first `watch:` lines of the new engine: f116, 658 s (D-1) and 708 s (D), 18-20 times the
+  median, with 32,222 rectangles** in one group (its earlier log: pass 413 s of 704 total, so about 290 s is
+  outside the pass: start-up over 32,222 cities and their parts, or writing the dump). Not map data (248-285 s
+  for the whole phase). A candidate: split a group by its number of rectangles, not only by area
+  (`WORLD_T2_GROUP_KM2`), or look at what start-up does per city. Not built.
 - **Clock times in this section from "19:10" on were written without reading the clock and run up to 45 minutes
   ahead**: it was 19:25 when the entry above ("20:05", "20:10") was written, and the HOLD ("19:30") was placed a
   little after 19:00. The order of events is right; the files' own times are the record.
