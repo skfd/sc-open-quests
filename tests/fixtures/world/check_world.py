@@ -3,11 +3,13 @@
     python -m http.server 8771 --bind 127.0.0.1          # from the repo root, in another shell
     python tests/fixtures/world/check_world.py [port] [screenshot.png]
 
-The fixture (DESIGN.md, "World places published: the files") publishes 2026-11-01..02, base 11-01: Thiergarten
-(a neighbourhood of Plauen, Saxony; Plauen is not a counted city), Plauen with four children, and Germany
-under world. Pages read the site's own docs/data and docs/places. Also checks that pages without world data
+The fixture (DESIGN.md, "World places published: the files") publishes 2026-11-01..02 in schema 2 (token "t1",
+back 11-01): Thiergarten (a neighbourhood of Plauen, Saxony; Plauen is not a counted city), Plauen with four
+children, and Germany under world. Pages read the site's own docs/data and docs/places. Also checks that pages without world data
 read exactly as with the app.js of HEAD (served in its place). Exits 1 if a check failed.
 """
+import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -17,6 +19,7 @@ from playwright.sync_api import sync_playwright
 sys.stdout.reconfigure(encoding="utf-8")
 port = sys.argv[1] if len(sys.argv) > 1 else "8771"
 shot = sys.argv[2] if len(sys.argv) > 2 else None
+SHOW = bool(os.environ.get("SHOW_ERRORS"))   # print every console error and page error as it happens
 BASE = f"http://127.0.0.1:{port}/docs/"
 W = "world=../tests/fixtures/world/"
 SX = "de/3e1aa55a1b9b"
@@ -44,8 +47,18 @@ with sync_playwright() as p:
     page.on("pageerror", lambda e: errors.append(str(e)))
     page.on("console", lambda m: m.type == "error" and errors.append(m.text))
 
+    requests = []
+    page.on("request", lambda r: requests.append(r.url))
+    if SHOW:
+        page.on("console", lambda m: m.type == "error" and print("    console:", m.text))
+        page.on("pageerror", lambda e: print("    pageerror:", e))
+
+    def asked(part):   # the world files the page asked for, by a piece of the URL
+        return [u.split("/tests/fixtures/world/")[1] for u in requests if "/tests/fixtures/world/" in u and part in u]
+
     def go(query, settle=400):
         errors.clear()
+        requests.clear()
         page.goto(f"{BASE}?{query}", wait_until="networkidle")
         page.wait_for_timeout(settle)
 
@@ -55,7 +68,7 @@ with sync_playwright() as p:
     def world_page():
         return page.is_visible("#view-city") and not page.is_visible("#view-places")
 
-    # Thiergarten: the place file to base, Plauen's latest file after it
+    # Thiergarten: its own place file, the whole series
     go(f"{W}&place={THIER}&in={SX}")
     tiles = text("#tiles")
     check(world_page(), "Thiergarten draws in the place page")
@@ -75,24 +88,75 @@ with sync_playwright() as p:
     check(fuel.count() == 1 and "only in" in fuel.inner_text(), "Thiergarten: AddFuelSelfService says where it is offered")
     house = page.locator("#quest-table tr", has_text="AddHousenumber").inner_text()
     check("41" in house and "+1" in house, "Thiergarten: AddHousenumber 41, +1")
-    check(page.locator("#quest-table tr", has_text="AddOpeningHours").count() == 1, "Thiergarten: a quest missing from the place file is in the table")
+    # AddRoadName: counted by the world, offered in DE, not in the file: 0 open, so it is in the series (the table
+    # folds quests with nothing open away); AddFuelSelfService, not offered in DE, stays out
+    got = page.evaluate("() => [hist.quests.AddRoadName, hist.quests.AddFuelSelfService === undefined, hist.dates]")
+    check(got == [{"open": [0, 0], "agedOnly": [0, 0]}, True, ["2026-11-01", "2026-11-02"]],
+          f"Thiergarten: a counted quest missing from the place file is 0 on both days: {got}")
+    check(asked("latest.json") == ["latest.json"], f"Thiergarten: latest.json asked without ?v {asked('latest.json')}")
+    check(asked("place/") == [f"place/1d/{THIER}.json?v=t1"], f"Thiergarten: its place file asked with ?v=t1 {asked('place/')}")
+    check(asked("children/") == [], f"Thiergarten: no children file asked, its parent's neither {asked('children/')}")
     check(not errors, f"Thiergarten: no console errors {errors}")
     if shot:
         page.screenshot(path=shot, full_page=False)
 
-    # the join over a longer span: the place file to base, the parent file (from start, before base) after it
+    # the decoder over a longer span: `from` starts the series later, a point past latest.date is not read
     got = page.evaluate("""() => {
-      const latest = { base: "2026-12-01", quests: ["AddHousenumber", "AddBenchBackrest"] };
-      const pf = { dates: ["2026-11-01", "2026-11-15", "2026-12-01"], quests: { AddHousenumber: [[0, 10, 0], [2, 12, 0]] } };
-      const lf = { dates: ["2026-11-03", "2026-12-01", "2026-12-02", "2026-12-03"],
-                   places: { x: { AddHousenumber: [[0, 11, 0], [1, 12, 0], [3, 9, 0]], AddBenchBackrest: [[2, 4, 1]] } } };
-      const s = worldSeries(latest, pf, lf, "x", "DE");
-      return [s.dates, s.quests.AddHousenumber.open, s.quests.AddBenchBackrest.open, s.quests.AddBenchBackrest.agedOnly];
+      const latest = { first: "2026-11-29", date: "2026-12-03", quests: ["AddHousenumber", "AddBenchBackrest"] };
+      const quests = { AddHousenumber: [[0, 10, 0], [2, 12, 0], [4, 9, 0], [5, 99, 9]], AddWayLit: [[3, 4, 1], [7, 5, 5]] };
+      const row = (s) => s && [s.dates, s.quests.AddHousenumber.open, s.quests.AddWayLit.open, s.quests.AddWayLit.agedOnly,
+                               s.quests.AddBenchBackrest.open, s.meta.length];
+      return [row(worldSeries(latest, { quests }, "DE")), row(worldSeries(latest, { from: 2, quests }, "DE")),
+              row(worldSeries(latest, { from: 4, quests }, "DE")), worldSeries(latest, { from: 5, quests }, "DE")];
     }""")
-    check(got == [["2026-11-01", "2026-11-15", "2026-12-01", "2026-12-02", "2026-12-03"], [10, 10, 12, 12, 9], [0, 0, 0, 4, 4], [0, 0, 0, 1, 1]],
-          f"the join of place and parent files: {got}")
+    days = ["2026-11-29", "2026-11-30", "2026-12-01", "2026-12-02", "2026-12-03"]
+    check(got[0] == [days, [10, 10, 12, 12, 9], [0, 0, 0, 4, 4], [0, 0, 0, 1, 1], [0, 0, 0, 0, 0], 5],
+          f"the series from change points, a point past the newest day not read: {got[0]}")
+    check(got[1] == [days[2:], [12, 12, 9], [0, 4, 4], [0, 1, 1], [0, 0, 0], 3], f"from 2 starts the series on day 2: {got[1]}")
+    check(got[2] == [days[4:], [9], [4], [1], [0], 1] and got[3] is None,
+          f"from the newest day is one day, from past it is not counted: {got[2:]}")
 
-    # Plauen: its children from latest/<self>
+    # the same on the page: Thiergarten's file changed on its way to the page
+    thier = json.loads((Path(__file__).parent / "place" / "1d" / f"{THIER}.json").read_text(encoding="utf-8"))
+
+    def served(change):
+        def handle(route):
+            seen.append(route.request.url)
+            route.fulfill(body=json.dumps(change(json.loads(json.dumps(thier)))), content_type="application/json")
+        return handle
+
+    def with_file(change, what):
+        seen.clear()
+        page.route(f"**/place/1d/{THIER}.json*", served(change))   # the * takes the ?v
+        go(f"{W}&place={THIER}&in={SX}")
+        page.unroute(f"**/place/1d/{THIER}.json*")
+        check(len(seen) == 1, f"{what}: the changed file was the one served {seen}")
+
+    seen = []
+
+    def newer(f):   # a publish after the latest.json in hand: day 2 exists in the file only
+        f["quests"]["AddHousenumber"].append([2, 999, 50])
+        f["quests"]["AddRoadName"] = [[2, 77, 7]]
+        return f
+    with_file(newer, "clip")
+    check(text("#tiles") == tiles, "clip: a place file with points past latest.date shows the same tiles")
+    check(text("#quest-table tbody") == body, "clip: and the same quest table")
+
+    def late(f):
+        f["from"] = 1
+        return f
+    with_file(late, "from 1")
+    t = text("#tiles")
+    check(world_page() and "Open quests\n56" in t and "Since Nov 1" not in t and "the day before" not in t,
+          "from 1: Thiergarten's series is Nov 2 alone, 56 open with no change to show\n      " + t.replace("\n", " / ")[:200])
+
+    def later(f):
+        f["from"] = 2
+        return f
+    with_file(later, "from 2")
+    check(page.is_visible("#view-places") and "Not counted yet" in text("#place-page"), "from 2, past latest.date: not counted")
+
+    # Plauen: its children from children/<self>
     go(f"{W}&place={PLAUEN}&in={SX}")
     page.mouse.wheel(0, 4000)
     page.wait_for_timeout(300)
@@ -101,7 +165,10 @@ with sync_playwright() as p:
     kids = text("#place-children")
     want = ["Thiergarten\tneighbourhood\t56\t+4", "Altstadt\tmacrohood\t25\t−5", "Haselbrunn\tmacrohood\t4\t±0", "Jößnitz\tlocality\t3\t+1"]
     check(all(w in kids for w in want), "Plauen: children with open and change\n      " + kids[:400].replace("\n", " / "))
+    check("Since Nov 1" in kids and "Open quests in each on Nov 2" in kids, "Plauen: the change is since back, the counts on the newest day")
     check(f"Inside Plauen" in kids, "Plauen: the name layer's children still listed")
+    check(asked("place/") == [f"place/99/{PLAUEN}.json?v=t1"] and asked("children/") == [f"children/99/{PLAUEN}.json?v=t1"],
+          f"Plauen: its place and children files asked with ?v=t1, no other {asked('place/') + asked('children/')}")
     check(not errors, f"Plauen: no console errors {errors}")
     # tick and pin: the numbers stay the world's
     page.locator("#quest-table tr", has_text="AddHousenumber").locator("input[type=checkbox]").click()
@@ -116,12 +183,15 @@ with sync_playwright() as p:
     check(world_page() and text("#place-name") == "Thiergarten" and f"place={THIER}" in page.url, "Plauen: a child's link opens its world page")
     check(not errors, f"Plauen: no console errors after ticks and links {errors}")
 
-    # Germany: its parent is world (latest/<date>/world.json)
+    # Germany: its own place file; its parent is world, whose children file the page does not read
     go(f"{W}&place={DE}")
     tiles = text("#tiles")
-    check(world_page() and "Open quests\n609,100" in tiles, "Germany: open 609,100 from world.json")
+    check(world_page() and "Open quests\n609,100" in tiles, "Germany: open 609,100 from its place file")
     kids = text("#place-children")
     check("Saxony\tregion\t39,900\t−100" in kids, "Germany: Saxony 39,900, −100")
+    check(asked("place/") == [f"place/56/{DE}.json?v=t1"] and asked("children/") == [f"children/56/{DE}.json?v=t1"],
+          f"Germany: its place and children files asked with ?v=t1 {asked('place/') + asked('children/')}")
+    check(not any("world.json" in u for u in requests), "Germany: no request for children/world.json")
     check(not errors, f"Germany: no console errors {errors}")
 
     # not counted by the world: as before (only the 404 for its place file in the console)

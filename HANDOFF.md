@@ -2679,7 +2679,39 @@ changes in the daily run until the world replaces it.
      bucket holds. Why: 11-02..11-13 only about 12,500 of 110,423 parent files and 34,000 of 1,018,552 places
      change on a day (`.scratch/world-publish/parents_changed.py`), and a country page downloaded `world.json`
      (2.1 MB) for its own entry (`.scratch/world-publish/page_open.txt`). The schema-1 text below describes
-     the old layout until DESIGN.md gets the new section.
+     the old layout; the new one is DESIGN.md "World places published: stable paths (schema 2)" on the branch.
+     **Live, 11-21 16:45: schema 2 is in the bucket through 11-13 and merged into main (433a40df).**
+     - Bucket: 1,128,975 files (`place/`, `children/`, `latest.json` v 20a53b131333); `check` 0 mismatches.
+       First upload 13:45-16:28 (the session's 2 h limit killed it at 800k; it resumed from
+       `work/bucket.json`). The day after went through `daily`: 34,612 place and 12,697 children files,
+       47,309 uploads in 5 min. DESIGN.md "World places published: stable paths (schema 2)" has the numbers.
+     - Page: `WORLD_HOST = "https://sc-data.comentality.com/"` in `docs/app.js`; checked headless against the
+       live bucket (`.scratch/world-publish/live_page.py`: Plauen, Germany, Thiergarten, Ontario). **Not
+       deployed until a city run finishes** (it deploys `docs/`).
+     - Task `kk-SCOpenQuests-worldpub` is enabled again (15:30 daily; `daily` now uses `site2`, never `--full`:
+       a plan past 200,000 files stops and wants a look, `upload --print` then `upload --full`).
+     - Publisher output is `.scratch/world-publish/site2`; manifests `work/local.json` (built) and
+       `work/bucket.json` (uploaded). Losing `bucket.json` means a full re-upload (about $5).
+     - **Left:** `.scratch/world-publish/site` (schema 1, 1.7 GB) can be deleted; worktree
+       `../sc-open-quests-stable` and branch `world-stable` can be removed; after 11-29 `back` starts to
+       slide, so watch the first days' upload counts in `logs/world-daily.log`.
+     **The city run failed 11-21 13:52** (`java.lang.OutOfMemoryError: Java heap space`, `AreaPass`, Europe's
+     11-21 file at `-Xmx14g`, "what the machine can spare", beside the catch-up and other runs). It left
+     `docs/data/*/snapshots/` empty mid-rotation (14 uncommitted deletes), so `docs/` must not be deployed by
+     hand. Rerun through its task at 16:50 (`schtasks /Run /TN kk-SCOpenQuests`); see `logs/scheduler.log`.
+     **The rerun failed the same way at 17:25** (Europe's 11-19 file for `europe-west`, `-Xmx13g`): the engine
+     needs more heap than the machine spares beside the planet catch-up (python 16 GB plus its java workers;
+     24 GB free of 88). Not retried again. The live site is unchanged (data through 11-18, the old `app.js`
+     with no world host), so nothing is broken, but **the world pages are not live until `docs/` deploys**.
+     Ways out, the owner's choice: wait for the catch-up to end and let the 12:15 run go; pause the catch-up
+     for one city run; or `git checkout -- docs/data` (back to the committed 11-18 files) and
+     `python tools/cloud_publish.py` to deploy only the page.
+     **Owner, 17:30: "Page only, now". Done 17:40:** `git checkout -- docs/data` (the 14 snapshot files back),
+     `python tools/cloud_publish.py` (1 file copied, `app.js`; site version d716c438), `--check` 9,338 equal.
+     On the live site with CORS on (`.scratch/world-publish/live_site.py`): Germany and Plauen read
+     `latest.json`, `place/...?v=20a53b131333` and `children/...?v=...` from `sc-data`, "As of Nov 13", no
+     errors; Toronto asks the world nothing. **World pages are live.** City data stays at 11-17/11-18 until a
+     city run fits in memory; the 12:15 run on 11-22 may fail again while the catch-up runs.
   1. **Daily build after each world day.** `python tools/world_publish.py build` once the loop has closed a day
      (it reads only gated days). Wire it into `planet_store_day.py` after the day's cleanup **only once the
      catch-up has ended** (never edit the running script). Until then run it by hand. **Run by hand 11-19, 22:49, through
@@ -2929,3 +2961,95 @@ wording and tab structure as a first draft open to change, not as decided design
   each run its own output file (the 14:45 task exits 1 on the held `planet-store.out`); the task's 6 h limit
   against 11-13's 6 h 56 min; no log line for hours during tier 2; the untraced gate differences; the hiking-route
   marking that can go; a container wider than about 7 km not found.
+- **The proof over everything passed (about 14:30):** `facts.py verify` rebuilt 2,295 days (2,282 snapshots, 13
+  world days) from their facts, 0 different or missing. On disk: the world's counts 2.0 GB (159 MB a day), all
+  the rest of `data/facts` 177 MB against the archive's 559 MB of JSON. Snapshots the daily run adds are picked up
+  by the next `python tools/facts.py cities` (nothing runs it daily yet: step 4).
+- **Owner, 14:05: "agree with your assessment, go ahead."** So: (a) cut the two missing clips from 11-18 plus a
+  diff each; (b) at the first swap: facts as a day's last step, an output file per run, the task's time limit,
+  a progress line in tier 2; the publisher's build follows schema 2; the state checkpoint at the same pause; (c)
+  tier 2's engine time investigated in a worktree while the loop runs; the slow punch, the gate differences and
+  the last row wait until the loop has caught up. **The last row (drop the hiking-route marking; find containers
+  wider than 7 km): when its time comes, first explain it to the owner and ask for the go-ahead. Do not build it
+  unasked.**
+- **(a) done (13:47 and 13:56 by the files' clock): both clips exist.** `europe-2026-11-19.osm.pbf` (sequence
+  5181, from 11-18) and `europe-2026-11-20.osm.pbf` (5182, from 11-19), nodes in ways missing 0 after the API fill
+  (34 to 0 on 11-20; those few nodes are the API's current ones, as on any day); `latest.json` still names 11-21,
+  the clip's last sequence still 5183, no work file left. About 7 min a day. So the loop has a clip for every
+  day through 11-21. Committed in `../osm-extracts` ("fill: the dated files a clip lacks between two it has").
+  How it works: `python osm_extracts.py fill europe`
+  (`fill_clip`): for each sequence a clip lacks between two dated files, the
+  day before's file plus one diff, cut back to the polygon, stored as a dated file with `"filled_in": true` in its
+  meta; latest, the clip's last sequence and pruning untouched. It should leave `europe-2026-11-19.osm.pbf`
+  (sequence 5181) and `europe-2026-11-20.osm.pbf` (5182); the loop pins a clip past its clock on sight.
+- **(c) tier 2's engine time, analysed 14:50 (read-only; nothing built).** Measured from the per-engine lines of
+  `logs/planet-store.out`: the time is skew, not volume. 11-13's D-1 pass: 128 engines, 30,055 s summed, 8,600 s
+  wall, median 34 s, and 11 engines over 600 s hold 72% of the sum; 11-12's wall (3,999 s) is one engine (f3,
+  3,971 s). The same files are slow every day: f3 (the Atlantic strip, about 4,000 s a day since 11-08), f53,
+  f107, f127, f47, f69, f109. D and D-1 cost the same. The design's fit predicts about 8,100 s for 11-13; f3 took
+  114 s in the design run. JVM start-up (about 5%) and the reads (1,100-1,300 s a day) are not the cost.
+  **Inferred, not measured:** `AreaPass.kt` (829-838) rebuilds a relation's whole geometry from all its member
+  ways for every rectangle holding it, and `areaCities` defaults to 1, so a slow engine probably runs its
+  rectangles on one core. Candidates, in order: cache a relation's geometry within an engine run (`AreaPass.kt`
+  only, exact by construction); `-Dopenquests.areaCities=4..6` for tier 2 (`world_day.py`, one line); one pool
+  for both dates, largest first (8-13%). Dropping the D-1 recount is not exact: not proposed. Not determined:
+  what the slow engines do inside, their cores, why f3 jumped on 11-08, why 11-13 had 11 slow groups against 5.
+  **A probe is waiting for 11-14's tier 2** (`.scratch/t2-probe/probe.sh`, started 14:55, reads only): it keeps
+  f3's `old.osm.pbf`, json and parts and its `engine.log` (per-rectangle seconds and relation counts) in
+  `.scratch/t2-probe/2026-11-14/`, and samples the java processes' cores into `probe.log` there. Read those
+  before choosing; an offline rerun of f3 with `-Dopenquests.assembleTrace=true` only once the loop is not using
+  every core.
+- **(c) measured on 11-14's live run (16:00), and the cause is the relations.** From the engines' own logs
+  (kept in `.scratch/t2-probe/2026-11-14/logs/`): f31 2,234 rectangles, 932 of 959 s in "map data"; f23 872 of
+  905 s; f24 498 of 565 s; f2 433 of 468 s; all of it in rectangles that hold a relation (0 s in those that hold
+  none), 1-6 s for a rectangle of two thousand nodes. Three engines sampled over 20 s used 0.95-1.29 cores each
+  (24 threads free). f3 was not slow on this day (pass 148 s), so the survey's "f3 every day" attribution, which
+  guessed group ids from start order, is not to be trusted; the skew itself is measured. The first probe hung on
+  `t2/parts` (308,583 files: never list or copy that folder whole) and hit its 2 h limit without sampling.
+- **(c) fix built, not merged: branch `t2-relcache`, worktree `.claude/worktrees/t2-relcache`, b7150976.**
+  `AreaPass.kt`: `relationWithGeometry` once per relation and run (`relationCache`, soft references,
+  `-Dopenquests.relationCache=false` turns it off) instead of once per city holding it; nothing of it depends on
+  the city. Built there (`installDist`, JDK 21). **A/B on f3, 16:20: the same rows, twice as fast.** Cache off
+  pass 109.5 s, on 54.5 s (peak heap 5,286 against 4,752 MB); 695,396 rows each, none on one side only, between
+  off and on, and between each and the loop's own f3 dump; the snapshots equal but for `runSeconds`. Compare
+  dumps with `.scratch/t2-probe/samerows.py <dir> <dir>`, never by bytes: a dump numbers its place sets in the
+  order threads met them, so two runs of the same engine differ in bytes (`ab.sh`'s own `cmp` says DIFFERENT for
+  that reason). f3 is a fast group; the gain on a slow one is still to measure. **A/B started 16:10** (`.scratch/t2-probe/ab.sh`, results in
+  `.scratch/t2-probe/ab/<name>/`): f3's kept D-1 inputs through that engine with the cache off and on, the dumps
+  and snapshots compared byte for byte, and against the loop's own f3 dump. `.scratch/t2-probe/keep.sh` is
+  waiting to keep f31's and f23's D inputs (the slow ones) for the same A/B. It goes in at the swap with
+  `installDist` on main, **never while the loop runs** (the loop starts the installed engine).
+- **(c) the gain on slow groups, measured (18:30).** f31's D inputs of 11-14 (2,234 rectangles, kept by
+  `keep.sh`): cache off pass **1,191.0 s**, cache on **17.3 s**; 220,264 rows each, none on one side only
+  (`samerows.py`); "map data" 1,180 s against 1 s. f107, the day's slowest (4,955 rectangles; its D-1 pass took the
+  loop 4,050.9 s, peak heap 8,617 MB): D inputs with the cache on, pass **78.1 s**, peak heap 7,182 MB; its rows
+  are being compared with the loop's own f107 D dump when that engine ends (kept in
+  `.scratch/t2-probe/2026-11-14/loop-f107-new/`; no cache-off run of f107 was made, it would be over an hour).
+  Kept inputs: `.scratch/t2-probe/2026-11-14/{f31,f23,f107}/` and `parts-f*`; results `.scratch/t2-probe/ab/`.
+  `ab.sh` takes `MODES=on` for one run. So a day's tier 2 engines should fall from hours to minutes; the day then
+  costs what the rest of `finish` does (about 1.5 h on 11-12 and 11-13).
+- **Why six rounds of engine speed-up missed it, and what watches for the next one (owner, 19:10: "why didn't
+  we do it when optimizing engine? ... keep collecting metric or at least observing").** Every round measured one
+  file, Germany f0: 18 large cells over 113M nodes, where a relation is made 18 times at most and the collector
+  and the quests' runs are the cost. Tier 2 is the other shape, thousands of small rectangles over one file, and
+  was never a benchmark; its design run (`.scratch/rectgroups`) happened to have no long relation in many
+  rectangles. In production the evidence existed but was thrown away: `engine.log` has a line per rectangle and
+  goes with the day's work, and the loop's log named no engine. **Built on `world-swap` (f0814ae6):
+  `tools/stream/day_metrics.py`**, test `tests/test_day_metrics.py`. At a day's end, before the work is deleted,
+  every engine's log becomes numbers in `W/days/<D>/engines.json` (per engine: areas, map data seconds, the
+  quests' seconds, main pass steps, heap, the three slowest areas; per phase: sum, median, longest, the five
+  longest's share), backed up with `day.json`; the loop's log gets a line per phase and a `watch:` line for an
+  engine over 120 s that is 10 times its phase's median with one step holding half of it. `python
+  tools/stream/day_metrics.py report` lists the kept days. **11-14 so far, the old engine** (harvest of the live
+  work at 19:15, the D pass not ended): t2 old 127 engines, 32,470 s summed, median 42 s, longest 4,287 s (f53),
+  map data 27,262 s (84%), quests 1,111 s, main pass 943 s; t1 128 engines, 1,062 s. `.scratch/t2-probe/baseline.sh`
+  (detached) harvests the whole day when its finish ends and puts `engines.json` beside 11-14's `day.json`: the
+  "before" to hold the first day with the cache against.
+- **(b) built, not merged: branch `world-swap`, worktree `.claude/worktrees/world-swap`, 6a153857.**
+  `planet_store_day.py`: `write_facts()` after `store_tail` (a process of its own, never a STOP);
+  `own_output()` sends a run's prints to `logs/planet-store-<started>-<pid>.out` unless `--console`.
+  `world_day.py` `rect_rows`: a log line per tier 2 group with its engine seconds. `archive_backup.py`: `data/facts`
+  is a source (`facts/` in the bucket). **Merge only between two days** (HOLD, wait for the day to end, merge,
+  remove HOLD, start): `world_day.py` is imported by the running loop. At the same pause, the task
+  `kk-SCOpenQuests-planetstore`: drop `>> ...planet-store.out 2>&1` from its command and raise its limit from
+  PT6H to PT12H; and the first state checkpoint.
