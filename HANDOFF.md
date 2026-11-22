@@ -3045,6 +3045,52 @@ wording and tab structure as a first draft open to change, not as decided design
   map data 27,262 s (84%), quests 1,111 s, main pass 943 s; t1 128 engines, 1,062 s. `.scratch/t2-probe/baseline.sh`
   (detached) harvests the whole day when its finish ends and puts `engines.json` beside 11-14's `day.json`: the
   "before" to hold the first day with the cache against.
+- **Metrics for everything a day runs, not only the engines (owner, 20:05: "i want it collected for rust etc
+  but not necessarily in the same place. as long as we can then read it and find optimisations").** On
+  `world-swap` (0c897d6f; 21 tests pass): `day_metrics.py` also writes **`W/days/<D>/steps.json`**, read off
+  `logs/planet-store.log` after the day's `done` line: every step the loop times whatever ran it (the Rust tile
+  store's update, loc advance, loc check, cut, subcmp, compact, punch; prepare's and finish's own parts; the gate
+  per region; the reads' count and seconds; the update's own JSON; each pack's dead share), the day's wall
+  seconds and the seconds in no step (11-10: 7,434 s, the wait beside the daily run). A `watch:` line for a step
+  at twice its median over at least three earlier days and 300 s over it. `engines.json` also carries the tile
+  store's reads per tier 2 date (seconds of tiles, merge, write; bytes; the most memory; the three longest), from
+  the `<pbf>.json` each `tilestore read` leaves. **Backfilled 20:10 for 11-02 to 11-13** from the log (11-02 and
+  11-03 are partial: their days ran before this log's last run of them). `python tools/stream/day_metrics.py
+  report` prints both tables. What it already shows: without tier 2's engines a day is about 7,000-8,500 s (reads
+  about 1,200, prepare 750-950, tier 2 delta 600-870, tier 1 about 800, update about 700, counts and note quests
+  about 600, engine files 420-960, store context before 300-490 and **after 346-1,117, flagged on 11-09 and
+  11-12**). Not in it: what a Rust command does inside beyond the numbers it prints (the update's JSON is kept
+  whole), and Python steps the log does not time.
+- **f107, the last check before the swap (20:26 by the clock): the same rows.** The loop's own D pass of f107 on
+  11-14: 3,870.6 s, peak heap 8,444 MB. The same inputs with the cache: 78.1 s, 7,182 MB. 2,940,732 rows each, none
+  on one side only (`samerows.py 2026-11-14/loop-f107-new ab/f107-new/on`).
+- **Clock times in this section from "19:10" on were written without reading the clock and run up to 45 minutes
+  ahead**: it was 19:25 when the entry above ("20:05", "20:10") was written, and the HOLD ("19:30") was placed a
+  little after 19:00. The order of events is right; the files' own times are the record.
+- **THE SWAP IS TONIGHT (owner, relayed 19:25 by the catch-up status session: "place HOLD now so the loop stops
+  after day 11-14, then do the swap tonight"; goal: as many world days as possible published by 18:00 on
+  11-22).** `.scratch/planet-cut/HOLD` placed 19:30; the loop (pid 60100, `--max-days 20`) ends its run when 11-14
+  closes (guessed about 21:00). `world-swap` now holds everything: main and `t2-relcache` merged into it, plus
+  `tools/state_checkpoint.py` (5055f641; 19 tests pass). **Runbook, in this order, once RUNNING is gone and
+  there is no STOPPED:**
+  1. Check the day: `W/days/2026-11-14/gate.json` ok, the log's `== day 2026-11-14 done`. `baseline.sh` puts 11-14's
+     `engines.json` (the old engine's numbers) beside it.
+  2. On main: `git merge world-swap`; `cd engine; ./gradlew.bat installDist` (JAVA_HOME = Android Studio's jbr);
+     the tests of the files touched.
+  3. `python tools/state_checkpoint.py link` (seconds: hard links of the 128 `world.bin`).
+  4. `python tools/facts.py world` (11-14's facts; later days write their own).
+  5. Task `kk-SCOpenQuests-planetstore`: its command without `>> ...planet-store.out 2>&1`, its limit PT12H.
+  6. The city task (`schtasks /Run /TN kk-SCOpenQuests`) only if it would not hold the restart back by more than
+     about an hour (the loop waits up to 3 h on a daily run that is going; the peer's suggestion, not the owner's
+     words).
+  7. Remove HOLD; start the loop detached: `python tools\stream\planet_store_day.py --max-days 20` from the repo
+     root, no redirect (it writes `logs/planet-store-<started>-<pid>.out` itself; `WORLD_T2_WORKERS` is set by the
+     script).
+  8. Beside the running loop: `python tools/state_checkpoint.py upload` (48 GB or so; hours), then
+     `python tools/archive_backup.py --only facts`.
+  9. After the first day with the cache: `python tools/stream/day_metrics.py report`, 11-15 against 11-14; the
+     gate must pass as before. If a gate fails, `-Dopenquests.relationCache=false` is the way back without a build
+     (`world_day.py`, the tier 2 `opts`).
 - **(b) built, not merged: branch `world-swap`, worktree `.claude/worktrees/world-swap`, 6a153857.**
   `planet_store_day.py`: `write_facts()` after `store_tail` (a process of its own, never a STOP);
   `own_output()` sends a run's prints to `logs/planet-store-<started>-<pid>.out` unless `--console`.
