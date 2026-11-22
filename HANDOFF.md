@@ -3045,6 +3045,22 @@ wording and tab structure as a first draft open to change, not as decided design
   map data 27,262 s (84%), quests 1,111 s, main pass 943 s; t1 128 engines, 1,062 s. `.scratch/t2-probe/baseline.sh`
   (detached) harvests the whole day when its finish ends and puts `engines.json` beside 11-14's `day.json`: the
   "before" to hold the first day with the cache against.
+- **Metrics for everything a day runs, not only the engines (owner, 20:05: "i want it collected for rust etc
+  but not necessarily in the same place. as long as we can then read it and find optimisations").** On
+  `world-swap` (0c897d6f; 21 tests pass): `day_metrics.py` also writes **`W/days/<D>/steps.json`**, read off
+  `logs/planet-store.log` after the day's `done` line: every step the loop times whatever ran it (the Rust tile
+  store's update, loc advance, loc check, cut, subcmp, compact, punch; prepare's and finish's own parts; the gate
+  per region; the reads' count and seconds; the update's own JSON; each pack's dead share), the day's wall
+  seconds and the seconds in no step (11-10: 7,434 s, the wait beside the daily run). A `watch:` line for a step
+  at twice its median over at least three earlier days and 300 s over it. `engines.json` also carries the tile
+  store's reads per tier 2 date (seconds of tiles, merge, write; bytes; the most memory; the three longest), from
+  the `<pbf>.json` each `tilestore read` leaves. **Backfilled 20:10 for 11-02 to 11-13** from the log (11-02 and
+  11-03 are partial: their days ran before this log's last run of them). `python tools/stream/day_metrics.py
+  report` prints both tables. What it already shows: without tier 2's engines a day is about 7,000-8,500 s (reads
+  about 1,200, prepare 750-950, tier 2 delta 600-870, tier 1 about 800, update about 700, counts and note quests
+  about 600, engine files 420-960, store context before 300-490 and **after 346-1,117, flagged on 11-09 and
+  11-12**). Not in it: what a Rust command does inside beyond the numbers it prints (the update's JSON is kept
+  whole), and Python steps the log does not time.
 - **THE SWAP IS TONIGHT (owner, relayed 19:25 by the catch-up status session: "place HOLD now so the loop stops
   after day 11-14, then do the swap tonight"; goal: as many world days as possible published by 18:00 on
   11-22).** `.scratch/planet-cut/HOLD` placed 19:30; the loop (pid 60100, `--max-days 20`) ends its run when 11-14
