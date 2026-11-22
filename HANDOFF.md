@@ -3061,6 +3061,9 @@ wording and tab structure as a first draft open to change, not as decided design
   about 600, engine files 420-960, store context before 300-490 and **after 346-1,117, flagged on 11-09 and
   11-12**). Not in it: what a Rust command does inside beyond the numbers it prints (the update's JSON is kept
   whole), and Python steps the log does not time.
+- **f107, the last check before the swap (20:26 by the clock): the same rows.** The loop's own D pass of f107 on
+  11-14: 3,870.6 s, peak heap 8,444 MB. The same inputs with the cache: 78.1 s, 7,182 MB. 2,940,732 rows each, none
+  on one side only (`samerows.py 2026-11-14/loop-f107-new ab/f107-new/on`).
 - **Clock times in this section from "19:10" on were written without reading the clock and run up to 45 minutes
   ahead**: it was 19:25 when the entry above ("20:05", "20:10") was written, and the HOLD ("19:30") was placed a
   little after 19:00. The order of events is right; the files' own times are the record.
