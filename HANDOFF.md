@@ -3128,6 +3128,26 @@ wording and tab structure as a first draft open to change, not as decided design
   94% CPU on average during tier 2 (60 s of samples at 01:20: min 81, max 100; 24 threads; each engine runs its
   quests on all of them), with 21-28 GB of memory available. The engines' 12,807 s on 11-15 were not waiting for a
   worker but for cores. More workers would add memory pressure for no time. Told the owner.
+- **The loop stopped on a full disk at 01:43 on 11-22 and stood still until 07:12; the checkpoint's links did
+  it.** 11-16's tier 2 engine f116 failed with `IOException: There is not enough space on the disk`; STOPPED; the
+  restart helper rightly did nothing. Found at the 07:05 check: 8.5 GB free. Cause:
+  `.scratch/planet/checkpoint/2026-11-14/` held hard links to the 128 row files as they were at 11-14; each day the
+  loop replaces every file, so the links kept 54 GB of old rows alive, beside the day's own `before/` (another
+  54 GB once tier 1 has replaced the files). Free space at a day's end went 129 GiB (11-14) to 72 (11-15), and
+  11-16 ran out in tier 2. The upload had ended about 23:00; the links should have gone then.
+  - **Fixed by hand (07:10):** the bucket copy checked whole, the local links removed (62 GB free, 114 after the
+    loop put the world back), STOPPED and HOLD removed, **the loop restarted 07:12:26, pid 12048**: "day
+    2026-11-16: resuming (the store at generation 15, the world at 2026-11-15)", the documented resume (the world
+    from `before/`, `finish` again from `day.pkl`). The restart also picks up the paused-cities rule.
+  - **Fixed in the tool:** `state_checkpoint.py upload` removes the links it uploaded; `link` refuses unless the
+    disk has twice the rows and 40 GiB free (it does not today: 114-126 GiB at best); `upload --from-world` takes
+    the checkpoint with the loop held (HOLD, no run), from the world's own files, the loop standing still about
+    an hour and a half. On this disk the monthly checkpoint is that.
+  - **Cost:** 5 h 29 min of standstill and 11-16's finish done twice (about 1 h 45 min of it lost). At 2.8 h a day
+    from 11-16's close (about 09:30): 11-17 about 12:20, 11-18 about 15:05, 11-19 about 17:55, 11-20 about 20:45,
+    11-21 about 23:30. So the owner's 18:00 has 11-18 for sure and 11-19 on the edge, not 11-20 or 11-21.
+  - **Not built, worth having:** the loop taking no day when the disk has less free than a day needs (about
+    75 GiB: `before/` and the work), instead of failing in the middle of one.
 - **Clock times in this section from "19:10" on were written without reading the clock and run up to 45 minutes
   ahead**: it was 19:25 when the entry above ("20:05", "20:10") was written, and the HOLD ("19:30") was placed a
   little after 19:00. The order of events is right; the files' own times are the record.
