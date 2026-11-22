@@ -11,6 +11,7 @@ import state_checkpoint as sc  # noqa: E402
 
 
 def world(folder: Path) -> Path:
+    folder.mkdir(parents=True)
     (folder / "world.json").write_text(json.dumps({"clock": "2026-11-14T00:00:00Z"}), encoding="utf-8")
     (folder / "plan.json").write_text(json.dumps({"files": [{"id": "f0"}, {"id": "f1"}]}), encoding="utf-8")
     (folder / "place-sets.json").write_text("{}", encoding="utf-8")
