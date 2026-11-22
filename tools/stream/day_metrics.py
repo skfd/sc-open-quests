@@ -6,8 +6,14 @@ but `engine.log` went with the day's work, the batch engine's speed-up rounds me
 where a relation is made 18 times, and the loop's log named no engine. So: each engine's numbers are read off its
 log before the work goes, and anything lopsided is said in the loop's log (a line starting `watch:`).
 
+And the day's steps, W/days/<D>/steps.json: every step the loop's log times, whatever ran it (the Rust tile store's
+update, loc advance, loc check, cut, subcmp, compact, punch; the Python steps of prepare and finish; the gate; the
+store's own numbers for the update and the packs), with the day's wall time and what is left of it unaccounted
+(waits beside the daily run among it). Read from logs/planet-store.log, so days already run can be written too.
+
     python tools/stream/day_metrics.py harvest <work dir> [--out engines.json]   read a day's work as it stands
-    python tools/stream/day_metrics.py report [--world W]                         the kept days, one line each
+    python tools/stream/day_metrics.py steps [--day D | --all] [--world W] [--log L]   steps.json from the loop's log
+    python tools/stream/day_metrics.py report [--world W]                         the kept days: engines, then steps
 
 Reads text only; nothing here can stop a day (the loop calls `write` inside a try).
 """
@@ -126,7 +132,35 @@ def harvest(work: Path) -> dict:
                     why.append(f"{name} {s:.0f} s of it")
             if why and (len(why) > 1 or "times" in why[0]):
                 watch.append(f"{r}: {e['total s']:.0f} s, {e['areas']} areas; " + "; ".join(why))
-    return {"schema": SCHEMA, "phases": phases, "watch": watch, "unfinished": unfinished, "engines": engines}
+    return {"schema": SCHEMA, "phases": phases, "watch": watch, "unfinished": unfinished, "engines": engines,
+            "reads": store_reads(work)}
+
+
+def store_reads(work: Path) -> dict:
+    """the tile store's reads of the day's map data (`tilestore read` leaves <pbf>.json beside each file it writes,
+    and the json stays when the engine has dropped the pbf): per tier 2 date, the seconds of its steps summed, the
+    bytes, the most memory one read took, and the three longest"""
+    out: dict[str, dict] = {}
+    for f in sorted(work.rglob("*.osm.pbf.json")):
+        try:
+            r = json.loads(f.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        if not isinstance(r, dict) or "seconds" not in r:
+            continue
+        which = f.name.split(".")[0]                      # old / new
+        o = out.setdefault(which, {"reads": 0, "seconds": 0.0, "secondsTiles": 0.0, "secondsMerge": 0.0,
+                                   "secondsWrite": 0.0, "tiles": 0, "pbfBytes": 0, "peakPrivateGiB": 0.0, "longest": []})
+        o["reads"] += 1
+        for k in ("seconds", "secondsTiles", "secondsMerge", "secondsWrite"):
+            o[k] = round(o[k] + float(r.get(k, 0)), 2)
+        o["tiles"] += int(r.get("tiles", 0))
+        o["pbfBytes"] += int(r.get("pbfBytes", 0))
+        o["peakPrivateGiB"] = max(o["peakPrivateGiB"], float(r.get("peakPrivateGiB", 0)))
+        o["longest"].append((float(r["seconds"]), f.parent.relative_to(work).as_posix(), int(r.get("pbfBytes", 0))))
+    for o in out.values():
+        o["longest"] = [{"group": g, "s": sec, "pbfBytes": b} for sec, g, b in sorted(o["longest"], reverse=True)[:3]]
+    return out
 
 
 def write(world: Path, day: str, work: Path, log=None) -> Path:
@@ -164,6 +198,164 @@ def report(world: Path) -> None:
         print(f"no {NAME} under {world / 'days'} yet")
 
 
+# --- the day's steps, off the loop's log ---------------------------------------------------------------------------
+
+STEPS = "steps.json"
+STAMP = re.compile(r"^\[(\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d)\] (.*)$")
+EXIT = re.compile(r"^(.*?): exit (-?\d+) in ([\d.]+) s$")
+WORLD_STEP = re.compile(r"^world (snapshot|prepare|finish)(?: \S+)?: ([\d.]+) s(?:; (\{.*\}))?$")
+GATE = re.compile(r"^gate: (\S+) counted on \S+ in ([\d.]+) s$")
+READ = re.compile(r"^tilestore read: ([\d.]+) s$")
+UPDATE = re.compile(r"^update to \S+: (\{.*\})\s*$")
+PACK = re.compile(r"^(pack|rel) (\d+): ([\d.]+) GiB written, ([\d.]+) GiB live \(([\d.]+)% dead\)")
+# a step this many times its median over the earlier kept days, and this many seconds over it, is worth a look
+STEP_TIMES, STEP_SECONDS = 2.0, 300
+
+
+def step_name(what: str) -> str:
+    """'update 5175' -> 'update'; 'loc check against europe-...' -> 'loc check'; 'cut of europe-...' -> 'cut'"""
+    w = re.sub(r" (against|of|generation|\().*$", "", what)
+    return re.sub(r" \d+$", "", w).strip()
+
+
+def _seconds(a: str, b: str) -> float:
+    import datetime as dt
+    return (dt.datetime.fromisoformat(b) - dt.datetime.fromisoformat(a)).total_seconds()
+
+
+def day_steps(log_text: str, day: str) -> dict | None:
+    """the last run of `day` in the loop's log, as numbers; None when the log has no such day"""
+    lines = log_text.splitlines()
+    starts = [i for i, l in enumerate(lines) if f"] == day {day}: " in l]
+    if not starts:
+        return None
+    block = lines[starts[-1]:]
+    rec: dict = {"schema": SCHEMA, "day": day, "steps": {}, "gate": {}, "reads": {"n": 0, "s": 0.0}, "packs": []}
+    first = last = None
+    for l in block:
+        m = STAMP.match(l)
+        body = m[2] if m else l
+        if m:
+            first = first or m[1]
+            last = m[1]
+            if body.startswith(f"== day {day} done"):
+                rec["ended"] = m[1]
+                break
+            if body.startswith("== day ") and not body.startswith(f"== day {day}"):
+                break                                   # the next day began: this one never said done
+        x = EXIT.match(body)
+        if x:
+            name = step_name(x[1])
+            st = rec["steps"].setdefault(name, {"s": 0.0, "runs": 0, "exit": 0})
+            st["s"] = round(st["s"] + float(x[3]), 1)
+            st["runs"] += 1
+            st["exit"] = int(x[2])
+            continue
+        x = WORLD_STEP.match(body)
+        if x:
+            rec["steps"][f"world {x[1]}"] = {"s": float(x[2]), "runs": 1, "exit": 0}
+            if x[3]:
+                try:
+                    rec[x[1]] = json.loads(x[3])
+                except ValueError:
+                    pass
+            continue
+        x = GATE.match(body)
+        if x:
+            rec["gate"][x[1]] = float(x[2])
+            continue
+        x = READ.match(body)
+        if x:
+            rec["reads"]["n"] += 1
+            rec["reads"]["s"] = round(rec["reads"]["s"] + float(x[1]), 1)
+            continue
+        x = UPDATE.match(body)
+        if x:
+            try:
+                rec["update"] = json.loads(x[1])
+            except ValueError:
+                pass
+            continue
+        x = PACK.match(body)
+        if x:
+            rec["packs"].append({"file": f"{x[1]} {x[2]}", "GiB": float(x[3]), "live GiB": float(x[4]), "dead %": float(x[5])})
+    rec["started"] = first
+    if first and last:
+        rec["wall s"] = _seconds(first, rec.get("ended", last))
+        rec["unaccounted s"] = round(rec["wall s"] - sum(v["s"] for v in rec["steps"].values()) - sum(rec["gate"].values()), 1)
+    return rec
+
+
+def flat(rec: dict) -> dict[str, float]:
+    """every timed thing of a day by one name: the loop's steps, and finish's own parts under 'finish: '"""
+    out = {k: v["s"] for k, v in rec.get("steps", {}).items()}
+    out.update({f"finish: {k}": float(v) for k, v in (rec.get("finish") or {}).items()})
+    if rec.get("gate"):
+        out["gate"] = round(sum(rec["gate"].values()), 1)
+    return out
+
+
+def step_watch(rec: dict, earlier: list[dict]) -> list[str]:
+    out = []
+    now = flat(rec)
+    for name, s in sorted(now.items(), key=lambda kv: -kv[1]):
+        before = [f[name] for f in map(flat, earlier) if name in f]
+        if len(before) < 3:
+            continue
+        med = statistics.median(before)
+        if s >= STEP_TIMES * med and s - med >= STEP_SECONDS:
+            out.append(f"{name}: {s:,.0f} s, {s / med:.1f} times its median over {len(before)} earlier days ({med:,.0f} s)")
+    return out
+
+
+def kept_steps(world: Path, before: str | None = None) -> list[dict]:
+    out = []
+    for f in sorted((world / "days").glob(f"*/{STEPS}")):
+        if before is None or f.parent.name < before:
+            out.append(json.loads(f.read_text(encoding="utf-8")))
+    return out
+
+
+def write_steps(world: Path, day: str, log_file: Path, log=None) -> Path | None:
+    rec = day_steps(log_file.read_text(encoding="utf-8", errors="replace"), day)
+    if rec is None:
+        return None
+    rec["watch"] = step_watch(rec, kept_steps(world, before=day))
+    out = world / "days" / day / STEPS
+    out.parent.mkdir(parents=True, exist_ok=True)
+    tmp = out.with_suffix(".partial")
+    tmp.write_text(json.dumps(rec, separators=(",", ":")), encoding="utf-8", newline="\n")
+    tmp.replace(out)
+    if log:
+        top = sorted(flat(rec).items(), key=lambda kv: -kv[1])[:6]
+        log(f"steps: the day took {rec.get('wall s', 0):,.0f} s, {rec.get('unaccounted s', 0):,.0f} s of it in no step; "
+            + ", ".join(f"{k} {v:,.0f}" for k, v in top))
+        for w in rec["watch"]:
+            log(f"watch: {w}")
+    return out
+
+
+def report_steps(world: Path) -> None:
+    recs = kept_steps(world)
+    if not recs:
+        print(f"no {STEPS} under {world / 'days'} yet")
+        return
+    names: dict[str, float] = {}
+    for r in recs:
+        for k, v in flat(r).items():
+            names[k] = max(names.get(k, 0.0), v)
+    cols = [k for k, _ in sorted(names.items(), key=lambda kv: -kv[1]) if k != "world finish"][:14]
+    print()
+    print(f"{'day':10} {'wall s':>8} {'no step':>8}  " + "  ".join(f"{c.replace('finish: ', '')[:18]:>18}" for c in cols))
+    for r in recs:
+        f = flat(r)
+        print(f"{r['day']:10} {r.get('wall s', 0):>8,.0f} {r.get('unaccounted s', 0):>8,.0f}  "
+              + "  ".join(f"{f.get(c, 0):>18,.0f}" for c in cols))
+    for r in recs:
+        for w in r.get("watch", []):
+            print(f"watch {r['day']}: {w}")
+
+
 def main() -> int:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -172,9 +364,21 @@ def main() -> int:
     h.add_argument("--out", type=Path)
     r = sub.add_parser("report")
     r.add_argument("--world", type=Path, default=WORLD)
+    st = sub.add_parser("steps")
+    st.add_argument("--day")
+    st.add_argument("--all", action="store_true", help="every day the world keeps a record of")
+    st.add_argument("--world", type=Path, default=WORLD)
+    st.add_argument("--log", type=Path, default=ROOT / "logs" / "planet-store.log")
     a = p.parse_args()
     if a.cmd == "report":
         report(a.world)
+        report_steps(a.world)
+        return 0
+    if a.cmd == "steps":
+        days = sorted(d.name for d in (a.world / "days").iterdir() if d.is_dir()) if a.all else [a.day]
+        for d in days:                      # oldest first: a day's watch reads the days before it
+            out = write_steps(a.world, d, a.log, print)
+            print(f"{d}: {'written' if out else 'not in the log'}")
         return 0
     rec = harvest(a.work)
     if a.out:

@@ -50,3 +50,68 @@ def test_an_engine_and_the_lopsided_one(tmp_path):
     assert json.loads(out.read_text(encoding="utf-8"))["day"] == "2026-11-14"
     assert any(s.startswith("watch: t2/groups/f9/old") for s in said)
     assert any(s.startswith("engines, t2 old: 7 in") for s in said)
+
+
+LOG = """[2026-11-20T10:00:00] == day 2026-11-12: diff 5174 on generation 10; an earlier try of the same day
+[2026-11-20T10:05:00] update 5174: exit 1 in 300 s
+[2026-11-21T00:00:00] == day 2026-11-12: diff 5174 on generation 10; the world at 2026-11-11T00:00:00Z
+[2026-11-21T00:00:01] world snapshot: 0 s
+[2026-11-21T00:15:00] world prepare 2026-11-12: 896 s; {"read diff": 188, "store context before": 465}
+update to 2026-11-12: {"changedNodes":5, "reachedBy":{"node":{"tiles":7}}}
+[2026-11-21T00:27:00] update 5174: exit 0 in 736 s
+[2026-11-21T00:27:10] tilestore read: 6.5 s
+[2026-11-21T00:27:20] tilestore read: 3.5 s
+[2026-11-21T04:10:00] world finish 2026-11-12: 13366 s; {"tier 2 engine": 7365.0, "tier 1": 801.0}
+[2026-11-21T04:11:00] gate: europe-west counted on europe-2026-11-12.osm.pbf in 57 s
+[2026-11-21T04:13:00] gate: europe-east counted on europe-2026-11-12.osm.pbf in 43 s
+[2026-11-21T04:14:00] loc advance 5174: exit 0 in 45 s
+[2026-11-21T04:15:00] loc check against europe-2026-11-12.osm.pbf: exit 0 in 32 s
+[2026-11-21T04:16:00] subcmp generation 11: exit 1 in 104 s
+pack 0: 232.55 GiB written, 193.53 GiB live (16.8% dead), 30751965 rows
+[2026-11-21T04:20:00] compact: exit 0 in 157 s
+[2026-11-21T04:30:00] == day 2026-11-12 done: generation 11; the world at 2026-11-12T00:00:00Z
+[2026-11-21T04:30:00] == day 2026-11-13: diff 5175 on generation 11
+[2026-11-21T04:40:00] update 5175: exit 0 in 600 s
+"""
+
+
+def test_a_days_steps_off_the_log(tmp_path):
+    r = dm.day_steps(LOG, "2026-11-12")
+    assert r["started"] == "2026-11-21T00:00:00" and r["ended"] == "2026-11-21T04:30:00" and r["wall s"] == 16200
+    assert r["steps"]["update"] == {"s": 736.0, "runs": 1, "exit": 0}           # the last run of the day only
+    assert r["steps"]["loc check"]["s"] == 32.0 and r["steps"]["subcmp"]["exit"] == 1
+    assert r["steps"]["world finish"]["s"] == 13366.0 and r["finish"]["tier 2 engine"] == 7365.0
+    assert r["gate"] == {"europe-west": 57.0, "europe-east": 43.0} and r["reads"] == {"n": 2, "s": 10.0}
+    assert r["update"]["reachedBy"]["node"]["tiles"] == 7 and r["packs"][0]["dead %"] == 16.8
+    assert r["unaccounted s"] == 16200 - (896 + 736 + 13366 + 45 + 32 + 104 + 157) - 100
+    assert dm.day_steps(LOG, "2026-11-13")["steps"]["update"]["s"] == 600.0     # not done: what it has
+    assert dm.day_steps(LOG, "2026-11-01") is None
+    f = dm.flat(r)
+    assert f["finish: tier 2 engine"] == 7365.0 and f["gate"] == 100.0
+
+    earlier = [{"steps": {"update": {"s": 700.0}}, "finish": {"tier 2 engine": 7000.0}} for _ in range(3)]
+    slow = {"steps": {"update": {"s": 710.0}}, "finish": {"tier 2 engine": 16426.0}}
+    assert dm.step_watch(slow, earlier) == [
+        "finish: tier 2 engine: 16,426 s, 2.3 times its median over 3 earlier days (7,000 s)"]
+    assert dm.step_watch(slow, earlier[:2]) == []                               # too few days to say
+
+    log = tmp_path / "planet-store.log"
+    log.write_text(LOG, encoding="utf-8")
+    said = []
+    out = dm.write_steps(tmp_path / "world", "2026-11-12", log, said.append)
+    assert json.loads(out.read_text(encoding="utf-8"))["watch"] == [] and said[0].startswith("steps: the day took 16,200 s")
+    assert dm.write_steps(tmp_path / "world", "2026-11-01", log) is None
+
+
+def test_the_stores_reads(tmp_path):
+    for g, sec in (("f1", 9.0), ("f2", 3.0)):
+        d = tmp_path / "t2" / "groups" / g
+        d.mkdir(parents=True)
+        (d / "old.osm.pbf.json").write_text(json.dumps({"by": "tilestore (Rust)", "tiles": 10, "pbfBytes": 100,
+                                                         "secondsTiles": sec - 1, "secondsMerge": 0.5, "secondsWrite": 0.5,
+                                                         "seconds": sec, "peakPrivateGiB": sec / 2}), encoding="utf-8")
+    (tmp_path / "t2" / "groups" / "f1" / "cities.json").write_text("{}", encoding="utf-8")
+    r = dm.store_reads(tmp_path)
+    assert set(r) == {"old"}
+    assert (r["old"]["reads"], r["old"]["seconds"], r["old"]["tiles"], r["old"]["peakPrivateGiB"]) == (2, 12.0, 20, 4.5)
+    assert r["old"]["longest"][0] == {"group": "t2/groups/f1", "s": 9.0, "pbfBytes": 100}

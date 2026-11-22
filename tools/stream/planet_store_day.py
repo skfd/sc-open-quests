@@ -409,6 +409,10 @@ def one_day():
     (dd / "finished").write_text("", encoding="utf-8")
     guarded(f"world gate {nxt}", world_gate, dd, nxt, oracle)
     store_tail(dd, nxt, seq, osc, oracle, gen + 1)
+    try:  # the day's steps, whatever ran them, read off this log (day_metrics.py); never a stop
+        DM.write_steps(WORLD, nxt, LOG, log)
+    except Exception as e:  # noqa: BLE001
+        log(f"steps: not recorded ({type(e).__name__}: {e})")
     write_facts()
     return True
 
