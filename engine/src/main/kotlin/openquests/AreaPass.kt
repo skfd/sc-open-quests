@@ -828,14 +828,9 @@ class AreaPass(
         step("ways")
         val relationGeometries = each(areaRelations.size) { i ->
             val r = areaRelations[relationOrder[i]]
-            val relation = Relation(r.id, r.members, r.tags, r.version, r.timestamp)
-            val geometries = HashMap<Long, List<LatLon>>()
-            for (m in r.members) {
-                if (m.type != ElementType.WAY || m.ref in geometries) continue
-                val coords = memberWays[m.ref] ?: continue
-                geometries[m.ref] = coords.map { LatLon(unpackLat7(it) / 1e7, unpackLon7(it) / 1e7) }
+            relationCache?.get(r.id)?.get() ?: relationWithGeometry(r).also {
+                relationCache?.put(r.id, java.lang.ref.SoftReference(it))
             }
-            relation to if (geometries.isEmpty()) null else safeGeometry { geometryCreator.create(relation, geometries) }
         }
         step("relations")
         @Suppress("UNCHECKED_CAST")
@@ -848,6 +843,27 @@ class AreaPass(
             if (steps != null) log("area: map data of ${mapNodes.size} nodes, ${wayList.size} ways:$steps")
         }
     }
+
+    /** A relation and SC's geometry of it, from all its member ways (the main pass's [memberWays], whole, wherever
+     *  they lie): nothing of it depends on the city, so it is the same for every city that holds the relation. */
+    private fun relationWithGeometry(r: RelRec): Pair<Relation, ElementGeometry?> {
+        val relation = Relation(r.id, r.members, r.tags, r.version, r.timestamp)
+        val geometries = HashMap<Long, List<LatLon>>()
+        for (m in r.members) {
+            if (m.type != ElementType.WAY || m.ref in geometries) continue
+            val coords = memberWays[m.ref] ?: continue
+            geometries[m.ref] = coords.map { LatLon(unpackLat7(it) / 1e7, unpackLon7(it) / 1e7) }
+        }
+        return relation to if (geometries.isEmpty()) null else safeGeometry { geometryCreator.create(relation, geometries) }
+    }
+
+    /** Each relation's [relationWithGeometry], kept for the run. A world day's tier 2 runs thousands of small
+     *  rectangle cities over one file, and a long relation (a coastline, a boundary, a route) is in hundreds of them:
+     *  made anew for each, it was 96 to 100% of such a run (2026-11-14: f31, 2,234 rectangles, 932 of 959 s). Soft
+     *  references: the heap may take them back, and the relation is made again. -Dopenquests.relationCache=false
+     *  turns it off. */
+    private val relationCache: java.util.concurrent.ConcurrentHashMap<Long, java.lang.ref.SoftReference<Pair<Relation, ElementGeometry?>>>? =
+        if (System.getProperty("openquests.relationCache", "true").toBoolean()) java.util.concurrent.ConcurrentHashMap() else null
 
     private inline fun safeGeometry(create: () -> ElementGeometry?): ElementGeometry? =
         try { create() } catch (e: RuntimeException) { null }
