@@ -53,3 +53,21 @@ def test_prune_keeps_the_newest_whole_ones():
     assert sc.to_drop(found, 2) == ["2026-11-14"]
     assert sc.to_drop(found[:2], 2) == []
     assert sc.to_drop([("2026-11-14", False), ("2026-12-14", True)], 1) == []     # one not whole is never deleted
+
+
+def test_link_refused_on_a_disk_without_room(tmp_path, monkeypatch):
+    w = world(tmp_path / "w")
+    monkeypatch.setattr(sc, "LINK_SPARE_GIB", 10**6)                 # more than any disk has
+    with pytest.raises(RuntimeError, match="upload --from-world"):
+        sc.link(w, tmp_path / "cp", tmp_path / "RUNNING")
+    assert sc.link(w, tmp_path / "cp", tmp_path / "RUNNING", spare_check=False).name == "2026-11-14"
+
+
+def test_from_world_needs_the_loop_held(tmp_path):
+    w = world(tmp_path / "w")
+    with pytest.raises(RuntimeError, match="must stand still"):       # no HOLD
+        sc.upload(tmp_path / "cp", from_world=True, world=w, hold=tmp_path / "HOLD", running=tmp_path / "RUNNING")
+    (tmp_path / "HOLD").write_text("x")
+    (tmp_path / "RUNNING").write_text("x")
+    with pytest.raises(RuntimeError, match="must stand still"):       # a run going
+        sc.upload(tmp_path / "cp", from_world=True, world=w, hold=tmp_path / "HOLD", running=tmp_path / "RUNNING")
