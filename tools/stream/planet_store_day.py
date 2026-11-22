@@ -132,11 +132,12 @@ def europe_of(seq):
 
 
 def daily_run_going():
-    """today's kk-SCOpenQuests started (=== download) and has not logged update done"""
+    """today's kk-SCOpenQuests started (=== download) and has logged neither update done nor the ERROR it died of
+    (11-21: the 16:46 run ran out of heap at 17:25, and the loop restarted at 21:10 waited for it)"""
     today = dt.date.today().isoformat()
     lines = [x for x in SCHED.read_text(encoding="utf-8", errors="replace").splitlines() if x.startswith(f"[{today}")]
     started = any("=== download" in x for x in lines)
-    return started and not any("update done" in x for x in lines[-5:])
+    return started and not any("update done" in x or "] ERROR:" in x for x in lines[-5:])
 
 
 def monthly_going():
