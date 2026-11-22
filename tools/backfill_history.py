@@ -244,10 +244,17 @@ def in_quiet(now: datetime, ahead_minutes: int = 0) -> bool:
     return start - timedelta(minutes=ahead_minutes) <= now < end
 
 
+# While this file exists there is no scheduled update to keep clear of: the city task (kk-SCOpenQuests) is
+# disabled by hand, as on 2026-11-22 when the owner put the world's backfill before the cities. Whoever enables
+# the task again deletes the file.
+CITIES_PAUSED = run.ROOT / "data" / "cities.paused"
+
+
 def wait_for_quiet(ahead_minutes: int = 0) -> None:
-    """Wait out the scheduled update's window; with ahead_minutes, also a step that long would reach it."""
+    """Wait out the scheduled update's window; with ahead_minutes, also a step that long would reach it. No wait
+    while the city task is paused (CITIES_PAUSED)."""
     while True:
-        if not in_quiet(datetime.now(), ahead_minutes):
+        if CITIES_PAUSED.exists() or not in_quiet(datetime.now(), ahead_minutes):
             return
         run.log("waiting out the scheduled update window")
         time.sleep(300)
