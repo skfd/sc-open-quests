@@ -3161,6 +3161,16 @@ wording and tab structure as a first draft open to change, not as decided design
   11-16 and 11-17 written by the day's last step. 11-18 began 12:44:39; at 14:43 its second tier 2 pass was at 83
   of 128 groups, 49 GB free (the day's low), so it closes about 15:25; then 11-19 about 18:05, 11-20 about 20:50,
   11-21 about 23:30.
+- **11-18 closed 15:37:05 on 11-22, gate PASS**, 10,346 s: 20 of 32 equal, clip 19,304,285, world 19,304,300,
+  **+15** (every day before: +11), worst city 0.00177% (before: 0.00159%). Inside the bar (0.1%) by far, but the
+  first change of the margin since 11-02: 11-18 is the day the 261118 notes dump was cut into the world, the
+  likely reason; not traced. 11-19 began 15:37:22 (the first day gated against a filled-in clip); at 17:45 its
+  second tier 2 pass was at 110 of 128, 45 GB free (the day's low). So at the owner's 18:00: **11-15 to 11-18
+  closed, 11-19 closing about 18:10**; 11-20 about 20:55, 11-21 about 23:40. No new `watch:` line since f116.
+  - **When the loop reaches 11-21 it has no clip for 11-22** (the city task, which fetches Europe's clip and the
+    diffs, is paused), so it ends its run or stops for want of a clip: either is the sign to resume the cities.
+    After the city run has fetched, `python ../osm-extracts/osm_extracts.py fill europe` makes the days the fetch
+    skipped (it applies every missing diff at once), then start the loop again.
 - **Clock times in this section from "19:10" on were written without reading the clock and run up to 45 minutes
   ahead**: it was 19:25 when the entry above ("20:05", "20:10") was written, and the HOLD ("19:30") was placed a
   little after 19:00. The order of events is right; the files' own times are the record.
