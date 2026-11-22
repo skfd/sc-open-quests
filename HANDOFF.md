@@ -3061,6 +3061,9 @@ wording and tab structure as a first draft open to change, not as decided design
   about 600, engine files 420-960, store context before 300-490 and **after 346-1,117, flagged on 11-09 and
   11-12**). Not in it: what a Rust command does inside beyond the numbers it prints (the update's JSON is kept
   whole), and Python steps the log does not time.
+- **Clock times in this section from "19:10" on were written without reading the clock and run up to 45 minutes
+  ahead**: it was 19:25 when the entry above ("20:05", "20:10") was written, and the HOLD ("19:30") was placed a
+  little after 19:00. The order of events is right; the files' own times are the record.
 - **THE SWAP IS TONIGHT (owner, relayed 19:25 by the catch-up status session: "place HOLD now so the loop stops
   after day 11-14, then do the swap tonight"; goal: as many world days as possible published by 18:00 on
   11-22).** `.scratch/planet-cut/HOLD` placed 19:30; the loop (pid 60100, `--max-days 20`) ends its run when 11-14
