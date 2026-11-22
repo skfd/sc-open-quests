@@ -3064,6 +3064,33 @@ wording and tab structure as a first draft open to change, not as decided design
 - **f107, the last check before the swap (20:26 by the clock): the same rows.** The loop's own D pass of f107 on
   11-14: 3,870.6 s, peak heap 8,444 MB. The same inputs with the cache: 78.1 s, 7,182 MB. 2,940,732 rows each, none
   on one side only (`samerows.py 2026-11-14/loop-f107-new ab/f107-new/on`).
+- **THE SWAP IS DONE (21:08-21:12 by the log; the pause was 3 min 20 s).** 11-14 closed at 21:07:53, gate ok (20
+  of 32 equal, +11 of 19,288,012), the loop ended under HOLD after 11 days. Then: `world-swap` merged into main
+  (fast-forward; `t2-relcache` is in it) and both worktrees can go; `installDist` on main (the engine's source is
+  byte for byte b7150976's: `git diff b7150976 HEAD -- engine` is empty); 21 tests pass;
+  `state_checkpoint.py link`: 128 files, **52.5 GiB of rows**, `.scratch/planet/checkpoint/2026-11-14/`;
+  `facts.py world`: 11-14 written (27,747,364 rows, 159 MB); the task `kk-SCOpenQuests-planetstore` now runs
+  `python tools\stream\planet_store_day.py` with no redirect, limit PT12H (next 11-22 14:45; it steps aside while
+  a run holds RUNNING); HOLD removed; **the loop restarted 21:11:13, pid 13948, `--max-days 20`, on 11-15** (its
+  prints in `logs/planet-store-20261121-2111*-13948.out`; it pinned the clips of 11-19, 11-20, 11-21 on sight).
+  - **A first restart at 21:10 sat waiting "for today's daily run" and was killed (pid 19596, nothing begun).**
+    The city run of 16:46 died of `OutOfMemoryError` at 17:25 (`-Xmx13g`, beside the catch-up) and so never logged
+    `update done`; `daily_run_going()` took that for a run still going and would have waited 3 h. Fixed
+    (5651c2ce): an `] ERROR:` among the day's last lines ends the run too.
+  - **The city task was not run in the pause:** its download alone took 36 min today, over the hour allowed. The
+    cities are at 11-18. With tier 2's engines down to minutes the machine should have the heap for the
+    scheduled run on 11-22; if it fails again, run it by hand between two world days.
+  - **The installed engine was not smoke-run on the kept inputs:** the kept `cities.json` files point at the day's
+    cell outlines under `world-days/2026-11-14/work/t2/cells/`, which went with the day. The kept inputs under
+    `.scratch/t2-probe/2026-11-14/` can no longer be rerun; the A/B results stand. The first proof of the
+    installed engine is 11-15's gate.
+  - **Running beside the loop since 21:13, detached** (`logs/state-checkpoint.log`):
+    `state_checkpoint.py upload` (133 files to `r2:sc-open-quests-archive/state/2026-11-14/`, `done` last), then
+    `archive_backup.py --only facts`, then `--only world` (11-14 with its `engines.json`, and the backfilled
+    `steps.json` of every day).
+  - **To check when 11-15 closes:** its gate; `python tools/stream/day_metrics.py report` (11-15's engines against
+    11-14's: t2 old was 32,470 s summed, 84% map data); the `facts:` and `steps:` lines in the log; the `watch:`
+    lines. If the gate fails: `-Dopenquests.relationCache=false` in tier 2's `opts` (`world_day.py`), under HOLD.
 - **Clock times in this section from "19:10" on were written without reading the clock and run up to 45 minutes
   ahead**: it was 19:25 when the entry above ("20:05", "20:10") was written, and the HOLD ("19:30") was placed a
   little after 19:00. The order of events is right; the files' own times are the record.
