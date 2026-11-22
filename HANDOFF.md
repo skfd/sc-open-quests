@@ -3091,6 +3091,26 @@ wording and tab structure as a first draft open to change, not as decided design
   - **To check when 11-15 closes:** its gate; `python tools/stream/day_metrics.py report` (11-15's engines against
     11-14's: t2 old was 32,470 s summed, 84% map data); the `facts:` and `steps:` lines in the log; the `watch:`
     lines. If the gate fails: `-Dopenquests.relationCache=false` in tier 2's `opts` (`world_day.py`), under HOLD.
+- **11-15, the first day on the new engine: gate PASS, 2 h 47 min (21:11:13 to 23:58:23).** 20 of 32 cities
+  equal, clip 19,290,909, world 19,290,920 (+11), worst city 0.00159%: the same margin as every day before, so the
+  cache changed no count the gate sees. The day 10,030 s against 11-14's 36,923 (10 h 15 min) and 11-13's 24,992.
+  `finish` 7,973 s: tier 2 engine **2,462** (was 7,205-22,986), tier 2 reads 1,775, tier 2 delta 823, tier 1 751,
+  counts and note quests 599, engine files 523, store context after 454; prepare 724, update 668. Engines
+  (`engines.json`): t2 old 127 in 6,344 s summed, median 36 s, longest 302 s, **map data 283 s** (11-14: 32,470 s
+  summed, 27,262 s map data, longest 4,287 s); t2 new 6,463 s; heap up to 10,679 MB. No `watch:` line. `steps:`,
+  `engines,` and `facts:` all wrote (11-15's facts 159 MB in 15 s). 11-16 began 23:58:38.
+  - **The checkpoint is in the bucket and whole (about 23:00):** `state/2026-11-14/`, 134 objects, 57,239,496,536
+    bytes, `done` written; `state_checkpoint.py list` says whole. Its log's "uploaded 22 files" is a miscount of
+    rclone's lines (multi-part copies log differently); the size check passed for every file. Then
+    `archive_backup.py --only facts` (4,592 files) and `--only world` (14 days, 70 files) ran.
+  - **At this pace** 11-16 to 11-21 are six days of about 2.8 h, plus the daily window's pause: the catch-up
+    reaches 11-21 about 17:00-19:00 on 11-22, so the owner's 18:00 has 11-20 for sure and 11-21 maybe.
+  - **What the metrics point at next (not built, for the owner):** tier 2's engines are now 12,807 s summed on 4
+    workers for 2,462 s of wall, the quests' runs and the main pass in equal parts and no skew, so **more workers**
+    is the cheap lever (`WORLD_T2_WORKERS`, set to 4 in `planet_store_day.py`; a group's heap reached 10.7 GB, the
+    machine has 87 GB and the city run needs its 13 GB); **tier 2 reads 1,775 s** (the Rust `tilestore read`, one
+    at a time by design: "the reader uses the threads") is the largest single step after them; tier 2 delta 823 s
+    and tier 1 751 s follow.
 - **Clock times in this section from "19:10" on were written without reading the clock and run up to 45 minutes
   ahead**: it was 19:25 when the entry above ("20:05", "20:10") was written, and the HOLD ("19:30") was placed a
   little after 19:00. The order of events is right; the files' own times are the record.
