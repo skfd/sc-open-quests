@@ -3156,6 +3156,11 @@ wording and tab structure as a first draft open to change, not as decided design
   outside the pass: start-up over 32,222 cities and their parts, or writing the dump). Not map data (248-285 s
   for the whole phase). A candidate: split a group by its number of rectangles, not only by area
   (`WORLD_T2_GROUP_KM2`), or look at what start-up does per city. Not built.
+- **11-17 closed 12:38:41 on 11-22, gate PASS** (+11 of 19,301,653), 9,548 s (2 h 39 min): tier 2 engine 2,174 s,
+  reads 1,722. The loop did not stand still in the 11:55-14:15 window (the paused-cities rule holds). Facts for
+  11-16 and 11-17 written by the day's last step. 11-18 began 12:44:39; at 14:43 its second tier 2 pass was at 83
+  of 128 groups, 49 GB free (the day's low), so it closes about 15:25; then 11-19 about 18:05, 11-20 about 20:50,
+  11-21 about 23:30.
 - **Clock times in this section from "19:10" on were written without reading the clock and run up to 45 minutes
   ahead**: it was 19:25 when the entry above ("20:05", "20:10") was written, and the HOLD ("19:30") was placed a
   little after 19:00. The order of events is right; the files' own times are the record.
