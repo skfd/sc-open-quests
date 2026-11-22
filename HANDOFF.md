@@ -3111,6 +3111,23 @@ wording and tab structure as a first draft open to change, not as decided design
     machine has 87 GB and the city run needs its 13 GB); **tier 2 reads 1,775 s** (the Rust `tilestore read`, one
     at a time by design: "the reader uses the threads") is the largest single step after them; tier 2 delta 823 s
     and tier 1 751 s follow.
+- **Cities paused for the world's backfill (owner, 2026-11-22 01:20: "you can pause city processing in favour of
+  finishing up world backfill. do cities after backfill is done. cities are the vestigial feature, we are keeping
+  still, useful, but lower priority than world processing").**
+  - Task `kk-SCOpenQuests` is **disabled** (01:25). `data/cities.paused` exists (not in git), and while it does
+    `backfill_history.wait_for_quiet` waits for nothing (c76202ee), so the loop no longer stands still from 11:55
+    to 14:15 local. The cities are at 11-18.
+  - The running loop still has the old rule in memory: **HOLD placed 01:30** for a restart at the next day
+    boundary (11-16's close, about 02:45). `.scratch/restart-after-hold.sh` (detached; `logs/restart-after-hold.log`)
+    removes HOLD and starts the loop again once the run has ended cleanly; it does nothing if STOPPED is there.
+  - **To resume the cities, once the loop has reached today:** `schtasks /Change /TN kk-SCOpenQuests /ENABLE`,
+    delete `data/cities.paused`, `schtasks /Run /TN kk-SCOpenQuests`; then `python tools/facts.py cities`. The
+    days 11-19 to today's eve cannot be counted for the Canadian and German regions (Geofabrik's extracts are
+    today's only); Europe's clips of those days exist.
+- **More tier 2 workers: asked for by the owner (01:20), measured, not done.** With 4 workers the machine is at
+  94% CPU on average during tier 2 (60 s of samples at 01:20: min 81, max 100; 24 threads; each engine runs its
+  quests on all of them), with 21-28 GB of memory available. The engines' 12,807 s on 11-15 were not waiting for a
+  worker but for cores. More workers would add memory pressure for no time. Told the owner.
 - **Clock times in this section from "19:10" on were written without reading the clock and run up to 45 minutes
   ahead**: it was 19:25 when the entry above ("20:05", "20:10") was written, and the HOLD ("19:30") was placed a
   little after 19:00. The order of events is right; the files' own times are the record.
