@@ -226,7 +226,9 @@ def _seconds(a: str, b: str) -> float:
 def day_steps(log_text: str, day: str) -> dict | None:
     """the last run of `day` in the loop's log, as numbers; None when the log has no such day"""
     lines = log_text.splitlines()
-    starts = [i for i, l in enumerate(lines) if f"] == day {day}: " in l]
+    # a day's last attempt begins at its last "diff N on generation G" line; a resume after a stop ("resuming",
+    # "the store's checks and compaction, resumed") goes on with the same day and is read with it
+    starts = [i for i, l in enumerate(lines) if f"] == day {day}: diff " in l] or              [i for i, l in enumerate(lines) if f"] == day {day}: " in l][:1]
     if not starts:
         return None
     block = lines[starts[-1]:]
@@ -243,6 +245,8 @@ def day_steps(log_text: str, day: str) -> dict | None:
                 break
             if body.startswith("== day ") and not body.startswith(f"== day {day}"):
                 break                                   # the next day began: this one never said done
+            if body.startswith(f"== day {day}: ") and "diff " not in body:
+                rec["resumes"] = rec.get("resumes", 0) + 1
         x = EXIT.match(body)
         if x:
             name = step_name(x[1])

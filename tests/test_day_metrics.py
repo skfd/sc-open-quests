@@ -115,3 +115,19 @@ def test_the_stores_reads(tmp_path):
     assert set(r) == {"old"}
     assert (r["old"]["reads"], r["old"]["seconds"], r["old"]["tiles"], r["old"]["peakPrivateGiB"]) == (2, 12.0, 20, 4.5)
     assert r["old"]["longest"][0] == {"group": "t2/groups/f1", "s": 9.0, "pbfBytes": 100}
+
+
+def test_a_resumed_day_is_read_whole():
+    log = """[2026-11-22T00:00:00] == day 2026-11-16: diff 5178 on generation 14; the world at 2026-11-15T00:00:00Z
+[2026-11-22T00:12:00] world prepare 2026-11-16: 794 s; {"read diff": 156}
+[2026-11-22T00:24:00] update 5178: exit 0 in 707 s
+[2026-11-22T01:43:35] STOPPED: world finish 2026-11-16 failed
+[2026-11-22T07:12:26] planet store run started
+[2026-11-22T07:12:26] == day 2026-11-16: resuming (the store at generation 15, the world at 2026-11-15)
+[2026-11-22T09:45:19] world finish 2026-11-16: 9083 s; {"tier 2 engine": 2938.0}
+[2026-11-22T09:59:32] == day 2026-11-16 done: generation 15
+"""
+    r = dm.day_steps(log, "2026-11-16")
+    assert r["started"] == "2026-11-22T00:00:00" and r["resumes"] == 1
+    assert r["steps"]["update"]["s"] == 707.0 and r["steps"]["world finish"]["s"] == 9083.0
+    assert r["wall s"] == 9 * 3600 + 59 * 60 + 32 and r["unaccounted s"] == r["wall s"] - 794 - 707 - 9083
