@@ -619,6 +619,10 @@ pub fn context(a: &Args) {
         let n_el0 = elements.len();
         let m = (1i64 << st.z) - 1;
         let mut n_tiles = 0usize;
+        // where the time goes (counts in the loops; the clock read per chunk and per point and tile, not per way)
+        let (mut s_tiles, mut s_blobs, mut s_ways, mut s_rels) = (0f64, 0f64, 0f64, 0f64);
+        let (mut c_closed, mut c_refs, mut c_placed, mut c_rings, mut c_ring_segs) = (0u64, 0u64, 0u64, 0u64, 0u64);
+        let (mut c_mp, mut c_mp_in_box, mut c_mp_nodes, mut c_mp_segs, mut c_blobs) = (0u64, 0u64, 0u64, 0u64, 0u64);
         for chunk in homes.chunks(512) {
             let mut keys: Vec<i64> = Vec::new();
             for &(x, y) in chunk {
@@ -634,7 +638,10 @@ pub fn context(a: &Args) {
             keys.sort_unstable();
             keys.dedup();
             n_tiles += keys.len();
+            let t_ = Instant::now();
             let tiles: HashMap<i64, Part> = st.tiles(&keys).into_iter().collect();
+            s_tiles += t_.elapsed().as_secs_f64();
+            let t_ = Instant::now();
             // multipolygons in these tiles: their blobs, for the ring test and the box
             let mp: Vec<i64> = tiles
                 .values()
@@ -643,6 +650,8 @@ pub fn context(a: &Args) {
                 .into_iter()
                 .collect();
             fetch_blobs(&mp, &mut relidx, &mut blobs);
+            c_blobs += mp.len() as u64;
+            s_blobs += t_.elapsed().as_secs_f64();
             for &home in chunk {
                 let block: Vec<&Part> = (-a.around..=a.around)
                     .flat_map(|dx| (-a.around..=a.around).map(move |dy| (home.0 + dx, home.1 + dy)))
@@ -653,11 +662,14 @@ pub fn context(a: &Args) {
                     let (la, lo) = (pts[i].0 as f64, pts[i].1 as f64);
                     let mut seen: HashSet<(u8, i64)> = HashSet::new();
                     for p in &block {
+                        let t_ = Instant::now();
                         for j in 0..p.wid.len() {
                             let r = &p.wrefs[p.w_roff[j]..p.w_roff[j + 1]];
                             if r.len() < 4 || r[0] != r[r.len() - 1] || seen.contains(&(1, p.wid[j])) {
                                 continue;
                             }
+                            c_closed += 1;
+                            c_refs += r.len() as u64;
                             let id = p.wid[j];
                             let pos: Vec<(i32, i32)> = r
                                 .iter()
@@ -666,6 +678,7 @@ pub fn context(a: &Args) {
                             if pos.len() != r.len() {
                                 continue; // a ring the tile does not place whole: another tile of the block does
                             }
+                            c_placed += 1;
                             let (s, n_) = (pos.iter().map(|q| q.0).min().unwrap(), pos.iter().map(|q| q.0).max().unwrap());
                             let (w, e) = (pos.iter().map(|q| q.1).min().unwrap(), pos.iter().map(|q| q.1).max().unwrap());
                             if la < s as f64 || la > n_ as f64 || lo < w as f64 || lo > e as f64 {
@@ -673,11 +686,15 @@ pub fn context(a: &Args) {
                             }
                             seen.insert((1, id));
                             let segs: Vec<[f64; 4]> = pos.windows(2).map(|q| [q[0].0 as f64, q[0].1 as f64, q[1].0 as f64, q[1].1 as f64]).collect();
+                            c_rings += 1;
+                            c_ring_segs += segs.len() as u64;
                             if evenodd(&segs, la, lo) {
                                 hits[i].push((1, id));
                                 elements.entry((1, id)).or_insert_with(|| ([s, w, n_, e], p.wtb[p.w_toff[j]..p.w_toff[j + 1]].to_vec()));
                             }
                         }
+                        s_ways += t_.elapsed().as_secs_f64();
+                        let t_ = Instant::now();
                         for k in 0..p.rid.len() {
                             let id = p.rid[k];
                             if seen.contains(&(2, id)) {
@@ -688,12 +705,15 @@ pub fn context(a: &Args) {
                                 continue;
                             }
                             seen.insert((2, id));
+                            c_mp += 1;
                             let Some(b) = blobs.get(&id) else { continue };
                             let bx = blob_box(b);
                             if bx[0] == NO || la < bx[0] as f64 || la > bx[2] as f64 || lo < bx[1] as f64 || lo > bx[3] as f64 {
                                 continue;
                             }
                             // every member way's segments (outer and inner alike: even-odd over all of them)
+                            c_mp_in_box += 1;
+                            c_mp_nodes += b.nid.len() as u64;
                             let at: HashMap<i64, (i32, i32)> = b.nid.iter().enumerate().map(|(q, &nn)| (nn, (b.lat[q], b.lon[q]))).collect();
                             let mut segs = Vec::new();
                             for q in 0..b.wid.len() {
@@ -704,11 +724,13 @@ pub fn context(a: &Args) {
                                     }
                                 }
                             }
+                            c_mp_segs += segs.len() as u64;
                             if evenodd(&segs, la, lo) {
                                 hits[i].push((2, id));
                                 elements.entry((2, id)).or_insert_with(|| (bx, rtags.to_vec()));
                             }
                         }
+                        s_rels += t_.elapsed().as_secs_f64();
                     }
                 }
             }
@@ -726,7 +748,14 @@ pub fn context(a: &Args) {
         save_u1(d, "p_kind.npy", &pkind);
         save_i8(d, "p_id.npy", &pid);
         stats.insert("points".into(), serde_json::json!({"asked": n, "withContainer": hits.iter().filter(|h| !h.is_empty()).count(),
-            "newContainers": elements.len() - n_el0, "tilesRead": n_tiles, "around": a.around, "seconds": t.elapsed().as_secs_f64()}));
+            "newContainers": elements.len() - n_el0, "tilesRead": n_tiles, "around": a.around, "seconds": t.elapsed().as_secs_f64(),
+            // the split: seconds reading tiles, fetching multipolygon blobs, in the closed ways' loop and in the
+            // multipolygons' loop; what those loops did (a closed way is placed again for every point of its block)
+            "secondsTiles": s_tiles, "secondsBlobs": s_blobs, "secondsWays": s_ways, "secondsMultipolygons": s_rels,
+            "homeTiles": homes.len(), "blobsAsked": c_blobs,
+            "closedWaysSeen": c_closed, "wayRefsSearched": c_refs, "closedWaysPlaced": c_placed, "ringsTested": c_rings,
+            "ringSegments": c_ring_segs, "multipolygonsSeen": c_mp, "multipolygonsInBox": c_mp_in_box,
+            "multipolygonNodesMapped": c_mp_nodes, "multipolygonSegments": c_mp_segs}));
     }
 
     // --- crossings: the ways with a key whose segments cross the given segments ----------------------------------
