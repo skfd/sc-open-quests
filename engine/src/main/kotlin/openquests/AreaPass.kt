@@ -288,11 +288,13 @@ class AreaPass(
         if (!AREA_PASS) { log("area pass skipped (-Dopenquests.areaPass=false): the ${areaQuests.size} area quests are not counted"); return }
         this.memberWays = memberWays
         require(wayChunks.size == relStart - wayStart) { "area: ${wayChunks.size} way blocks collected of ${relStart - wayStart}" }
+        val lap = areaTiming.lap()
         var t0 = System.nanoTime()
         ways = wayColumnsOf(wayChunks)
         wayChunks.clear()
         wayIds = ways.ids
         timing("area: ways", t0, "${ways.size} ways touch a city area")
+        lap.to("way columns")
 
         t0 = System.nanoTime()
         require(nodes.keep) { "the area pass needs the main pass's nodes kept" }
@@ -304,26 +306,35 @@ class AreaPass(
             }
         }
         timing("area: nodes", t0, "${nodes.tagged.size} tagged nodes placed (of ${nodes.count} nodes)")
+        lap.to("tagged nodes placed")
 
         t0 = System.nanoTime()
         relations = parallelMap(relStart, blobs.size) { collectRelations(decodeBlock(blobs[it])) }.flatten()
         timing("area: relations", t0, "${relations.size} tagged relations")
         // nothing reads the file's blocks after this: let go of them (a file's worth of memory while the cities run)
         (blobs as? MutableList<ByteArray>)?.clear()
+        lap.to("relations collected")
 
-        if (unit == AreaUnit.TILES) { runTiles(); return }
+        if (unit == AreaUnit.TILES) { runTiles(); lap.to("tiles"); log(areaTiming.line()); return }
+        // what the cities' runs are made of, summed over the cities (wall time when they run one after the other)
+        val cityTiming = Timing(if (AREA_CITIES <= 1 || cities.size == 1) "area cities" else "area cities summed over $AREA_CITIES at once")
+        val mapDataTiming = Timing("area map data")
+        val threadTiming = Timing("over threads")
         fun one(c: City) {
             // with --dump-elements, only the dumped city
             if (engine.dumpElementsCity >= 0 && c.index != engine.dumpElementsCity) return
+            val cityLap = cityTiming.lap()
             val t0 = System.nanoTime()
             val enabledQuests = areaQuests.filter { engine.enabled[c.index][it] }
+            cityLap.to("enabled quests")
             if (enabledQuests.isEmpty()) return
-            val mapData = buildMapData(c.index)
+            val mapData = buildMapData(c.index, cityLap, mapDataTiming)
             val built = (System.nanoTime() - t0) / 1e9
-            countCity(c, mapData, enabledQuests)
+            countCity(c, mapData, enabledQuests, cityLap, threadTiming)
             engine.stats.timings["area: ${c.id}"] = (System.nanoTime() - t0) / 1e9
             log("area: %-18s %6.1f s  (map data %.1f s: %d nodes, %d ways, %d relations)".format(
                 c.id, (System.nanoTime() - t0) / 1e9, built, mapData.nodes.size, mapData.ways.size, mapData.relations.size))
+            cityLap.to("log line")
         }
         if (AREA_CITIES <= 1 || cities.size == 1) for (c in cities) one(c)
         else {
@@ -346,7 +357,15 @@ class AreaPass(
             timing("area: cities", t0, "${cities.size} cities, $AREA_CITIES at once")
         }
         if (VERIFY_FAST) log("area: fast twins matched their ports on ${verifiedTwins.get()} map data runs")
+        lap.to("cities")
+        log(areaTiming.line())
+        log(cityTiming.line())
+        log(mapDataTiming.line())
+        log(threadTiming.line())
     }
+
+    /** the log's `timing: area` line: [run]'s steps */
+    private val areaTiming = Timing("area")
 
     // ---------------------------------------------------------------------------------------------
     // tiles
@@ -718,7 +737,7 @@ class AreaPass(
     // ---------------------------------------------------------------------------------------------
     // per city
 
-    private fun buildMapData(city: Int): MapDataWithGeometry {
+    private fun buildMapData(city: Int, lap: Timing.Lap, mapDataTiming: Timing): MapDataWithGeometry {
         // the raster's squares start at the box's corner, and SC's point-in-polygon test counts some points
         // outside a polygon (on a vertex's latitude) as inside, so which squares a query reads moves counts:
         // the box cannot be cut down to the data without changing them (DESIGN.md, "The whole planet, made
@@ -730,6 +749,7 @@ class AreaPass(
                 box.max.latitude - box.min.latitude, box.max.longitude - box.min.longitude, slots, MAX_RASTER_SLOTS)
         }
         val inCity = citySets.membersOf(city)
+        lap.to("city sets holding the city")
         // the city's ways and tagged nodes, read off int columns
         val wayCities = ways.cities
         var n = 0
@@ -737,12 +757,16 @@ class AreaPass(
         val areaWays = IntArray(n)
         n = 0
         for (i in wayCities.indices) if (inCity[wayCities[i]]) areaWays[n++] = i
+        lap.to("ways chosen")
         n = 0
         for (set in taggedCities) if (inCity[set]) n++
         val tagged = IntArray(n)
         n = 0
         for (t in taggedCities.indices) if (inCity[taggedCities[t]]) tagged[n++] = nodes.tagged[t]
-        return assemble(box, areaWays, tagged, relations.filter { inCity[it.cities] }, parallel = true)
+        lap.to("tagged nodes chosen")
+        val areaRelations = relations.filter { inCity[it.cities] }
+        lap.to("relations chosen")
+        return assemble(box, areaWays, tagged, areaRelations, parallel = true, timing = mapDataTiming).also { lap.to("map data assembled") }
     }
 
     /** Map data of the ways at [areaWays] (indices into [ways]) with all their nodes, the nodes at [taggedNodes]
@@ -751,6 +775,8 @@ class AreaPass(
     private fun assemble(
         box: BoundingBox, areaWays: IntArray, taggedNodes: IntArray, areaRelations: List<RelRec>,
         parallel: Boolean = false,
+        /** the log's `timing: area map data` line: the steps below, of a city's map data only */
+        timing: Timing? = null,
     ): MapDataWithGeometry {
         fun <T> each(n: Int, f: (Int) -> T): List<T> = if (parallel) parallelMap(0, n, f) else (0 until n).map(f)
         fun eachDo(n: Int, f: (Int) -> Unit) {
@@ -760,9 +786,10 @@ class AreaPass(
         val steps = if (ASSEMBLE_TRACE && parallel) StringBuilder() else null
         var stepStart = System.nanoTime()
         fun step(name: String) {
-            if (steps == null) return
+            if (steps == null && timing == null) return
             val now = System.nanoTime()
-            steps.append(" %s %.2f".format(name, (now - stepStart) / 1e9))
+            timing?.add(name, now - stepStart)
+            steps?.append(" %s %.2f".format(name, (now - stepStart) / 1e9))
             stepStart = now
         }
 
@@ -868,9 +895,10 @@ class AreaPass(
     private inline fun safeGeometry(create: () -> ElementGeometry?): ElementGeometry? =
         try { create() } catch (e: RuntimeException) { null }
 
-    private fun countCity(city: City, mapData: MapDataWithGeometry, questIndices: List<Int>) {
+    private fun countCity(city: City, mapData: MapDataWithGeometry, questIndices: List<Int>, lap: Timing.Lap, threadTiming: Timing) {
         val box = mapData.boundingBox!!
         engine.dumpAreaElements(city, mapData)
+        lap.to("elements dumped")
         // every run is its own task: the runs known to be long first, then the age quests' (four runs each),
         // then the rest; a run left for last holds up the whole city
         val tasks = questIndices.sortedWith(compareBy({ longRank(engine.quests[it].name) }, { !engine.quests[it].usesAge }))
@@ -892,6 +920,7 @@ class AreaPass(
         val trace = if (TASK_TRACE != null) ConcurrentLinkedQueue<Traced>() else null
         val traceT0 = System.nanoTime()
         val zone = engine.zones[city.index]
+        lap.to("runs set up")
         val done = parallelWhenReady(shared.size + ordered.size,
             ready = { k -> k < shared.size || needs[k - shared.size].all { sharedDone[it] } }) { k -> EngineZone.at(zone) {
             if (k < shared.size) traced(trace, { "(shared) ${shared[k].name}" }) {
@@ -904,6 +933,7 @@ class AreaPass(
                 traced(trace, { "${engine.quests[task.first].name} ${task.second}" }) { runTask(task) }
             }
         } }.filterNotNull().groupBy { it.qi }
+        lap.to("quest runs")
         val questIds = done.keys.toList()
         val candidates = parallelMap(0, questIds.size) { k ->
             val qi = questIds[k]
@@ -911,7 +941,9 @@ class AreaPass(
                 tally(mapData, box, qi, listOf(city.index), done.getValue(qi).associate { it.run to it.elements })
             }
         }.flatten()
+        lap.to("results counted")
         if (dating) dateCandidates(city, candidates)
+        lap.to("dates")
         if (trace != null) synchronized(TASK_TRACE!!) {
             TASK_TRACE.appendText(trace.joinToString("") {
                 "%s\t%s\t%s\t%.3f\t%.3f\t%.3f\n".format(city.id, it.label, it.thread,
@@ -927,6 +959,10 @@ class AreaPass(
             log("  %-30s %6.1f s".format("(shared) ${shared[k].name}", s))
             engine.stats.timings["area: ${city.id} shared ${shared[k].name}"] = s
         }
+        // the runs' own seconds, each on its thread: against `quest runs`, the wall time they took together
+        threadTiming.add("area quest runs", (seconds.sumOf { it.second } * 1e9).toLong())
+        threadTiming.add("area shared searches", (sharedSeconds.sum() * 1e9).toLong())
+        lap.to("slow runs named")
     }
 }
 

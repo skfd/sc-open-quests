@@ -131,3 +131,45 @@ def test_a_resumed_day_is_read_whole():
     assert r["started"] == "2026-11-22T00:00:00" and r["resumes"] == 1
     assert r["steps"]["update"]["s"] == 707.0 and r["steps"]["world finish"]["s"] == 9083.0
     assert r["wall s"] == 9 * 3600 + 59 * 60 + 32 and r["unaccounted s"] == r["wall s"] - 794 - 707 - 9083
+
+
+# the engine's `timing:` lines as it writes them (Timing.kt), among the lines the other numbers are read off
+TIMED = """startup: registry and cities 0.7 s, parts 0.3 s (224 outlines from parts.cache, 0 parsed; lookup 0.0 s, read 0.0 s, decode 0.0 s, polygons 0.0 s), engine and its indexes 0.3 s
+timing: startup: registry 0.30 s, cities file 0.01 s, city entries 0.06 s, boundary read 0.16 s, parts file look-up 0.05 s, part outlines 0.10 s
+timing: engine: city index 0.01 s, parts of each city 0.02 s, gates 0.11 s, zones and quests by type 0.00 s
+193 quests in v64.1.json (192 counted: 140 filter, 52 ported custom), 428 cities (4792 parts in 428); threads=24 maxHeap=8192 MB
+relation member scan      0.1 s  109487 member ways of tagged relations
+nodes                     2.9 s  3223723 nodes
+ways                      2.0 s  90137 member ways kept
+relations                 0.3 s
+area: f10c0-0              0.5 s  (map data 0.2 s: 1500 nodes, 40 ways, 1 relations)
+timing: area: way columns 0.03 s, tagged nodes placed 0.03 s, relations collected 0.07 s, cities 6.19 s
+timing: area cities: enabled quests 0.00 s, ways chosen 0.26 s, map data assembled 1.54 s, quest runs 1.93 s, dates 1.38 s
+timing: area map data: refs 0.13 s, firstSeen 0.18 s, nodes 0.13 s, ways 0.19 s, relations 0.12 s, indexes 0.39 s
+timing: over threads: area quest runs 13.04 s, area shared searches 1.05 s
+pass 12.6 s, total 14.0 s; peak heap (sum of pool peaks) 2072 MB
+timing: before the pass: options and the quests line 0.02 s, file read 0.12 s
+timing: pass: block bounds 0.18 s, relation member scan 0.10 s, nodes 2.92 s, ways 1.99 s, relations 0.28 s, area 6.31 s, state closed 0.02 s
+timing: outside total: jvm start to count 0.10 s, git head 0.05 s, snapshot made 0.29 s, quests.json 0.11 s
+"""
+
+
+def test_the_engines_timing_lines(tmp_path):
+    (tmp_path / "engine.log").write_text(TIMED, encoding="utf-8")
+    e = dm.engine(tmp_path / "engine.log")
+    t = e["timing"]
+    assert t["startup: registry"] == 0.3 and t["startup: parts file look-up"] == 0.05
+    assert t["engine: parts of each city"] == 0.02 and t["engine: zones and quests by type"] == 0.0
+    assert t["area cities: map data assembled"] == 1.54 and t["area map data: firstSeen"] == 0.18
+    assert t["over threads: area quest runs"] == 13.04 and t["before the pass: options and the quests line"] == 0.02
+    assert t["pass: nodes"] == 2.92 and t["pass: area"] == 6.31 and t["outside total: quests.json"] == 0.11
+    assert len(t) == 6 + 4 + 4 + 5 + 6 + 2 + 2 + 7 + 4
+    # and the numbers read off the other lines are what they are without the timing lines
+    (tmp_path / "plain").mkdir()
+    (tmp_path / "plain" / "engine.log").write_text(
+        "".join(l + "\n" for l in TIMED.split("\n") if l and not l.startswith("timing: ")), encoding="utf-8")
+    plain = dm.engine(tmp_path / "plain" / "engine.log")
+    assert "timing" not in plain
+    assert {k: v for k, v in e.items() if k != "timing"} == plain
+    assert e["main"] == {"relation member scan": 0.1, "nodes": 2.9, "ways": 2.0, "relations": 0.3}
+    assert (e["pass s"], e["total s"], e["startup s"], e["cities"], e["parts"], e["areas"]) == (12.6, 14.0, 1.3, 428, 4792, 1)

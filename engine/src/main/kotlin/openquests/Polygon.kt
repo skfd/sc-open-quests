@@ -55,8 +55,11 @@ class Polygon(
          *  relation element (data/boundaries/<id>.json) or a whole response with `elements`
          *  (ontario-farmland's cache/boundaries.json). Fails if its member ways do not form closed
          *  rings. */
-        fun fromOverpassJson(file: File, relationId: Long): Polygon {
-            val root = Json.parseToJsonElement(file.readText()).jsonObject
+        fun fromOverpassJson(file: File, relationId: Long, lap: Timing.Lap? = null): Polygon {
+            val text = file.readText()
+            lap?.to("boundary read")
+            val root = Json.parseToJsonElement(text).jsonObject
+            lap?.to("boundary parse")
             val candidates = root["elements"]?.jsonArray?.map { it.jsonObject } ?: listOf(root)
             val rel = candidates.firstOrNull {
                 it["type"]!!.jsonPrimitive.content == "relation" && it["id"]!!.jsonPrimitive.long == relationId
@@ -77,7 +80,7 @@ class Polygon(
             }
             val open = endpointDegree.values.count { it % 2 == 1 }
             require(open == 0) { "relation $relationId: $open open ring ends" }
-            return Polygon(segs.toDoubleArray())
+            return Polygon(segs.toDoubleArray()).also { lap?.to("boundary polygon") }
         }
 
         /** Reads a GeoJSON Feature or bare geometry of type Polygon or MultiPolygon (`[lon, lat]`
