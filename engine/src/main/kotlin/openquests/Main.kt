@@ -136,8 +136,13 @@ fun parseToday(s: String): Instant =
 
 fun count(opts: CountOptions): CountResult {
     val tStart = System.nanoTime()
+    val startMillis = System.currentTimeMillis()
+    // the log's `timing:` lines (Timing.kt): what the lines below leave unnamed
+    val startup = Timing("startup")
+    val startupLap = startup.lap()
     val registry = Registry.load(opts.quests, withNotes = opts.notes != null)
-    val cities = loadCities(opts.cities, opts.baseDir)
+    startupLap.to("registry")
+    val cities = loadCities(opts.cities, opts.baseDir, startupLap)
     require(cities.isNotEmpty()) { "no cities in ${opts.cities}" }
 
     // the snapshot's date is asOf in the JVM's zone; each city's age filters run in its own zone (the `zone`
@@ -152,9 +157,12 @@ fun count(opts: CountOptions): CountResult {
         "the JVM runs in locale $language; start it with -Duser.language=en -Duser.country=CA (feature presets are bundled for ${ScFeatures.LANGUAGE})"
     }
 
+    startupLap.to("zones and locale")
     val tParts = System.nanoTime()
     val cache = if (opts.parts != null) opts.partsCache?.let { PartsCache.Reader(it, opts.baseDir) } else null
-    val parts = cache.use { c -> opts.parts?.let { loadParts(it, cities, opts.baseDir, c) }.orEmpty() }
+    startupLap.to("parts cache opened")
+    val parts = cache.use { c -> opts.parts?.let { loadParts(it, cities, opts.baseDir, c, startupLap) }.orEmpty() }
+    startupLap.to("parts cache closed")
     val tEngine = System.nanoTime()
     val engine = Engine(registry, cities, parts)
     log("startup: registry and cities %.1f s, parts %.1f s%s, engine and its indexes %.1f s".format(
@@ -164,6 +172,11 @@ fun count(opts: CountOptions): CountResult {
                 .format(c.nanos[0] / 1e9, c.nanos[1] / 1e9, c.nanos[2] / 1e9, c.nanos[3] / 1e9)
         } ?: "",
         (System.nanoTime() - tEngine) / 1e9))
+    log(startup.line())
+    log(engine.initTiming.line())
+    // from the startup line to the pass: with the three above and `timing: pass`, the whole of `total`
+    val before = Timing("before the pass")
+    val beforeLap = before.lap()
     if (opts.grid != null) engine.grid = TileGrid()
     engine.dumpQuests = opts.dumpQuests
     opts.dumpIds?.let { engine.dumpIds = readDumpIds(it) }
@@ -176,6 +189,7 @@ fun count(opts: CountOptions): CountResult {
         "${if (opts.notes != null) ", the note quest" else ""}), ${cities.size} cities" +
         (if (opts.parts != null) " (${parts.size} parts in ${parts.map { it.city }.distinct().size})" else "") + "; " +
         "threads=${Runtime.getRuntime().availableProcessors()} maxHeap=${Runtime.getRuntime().maxMemory() shr 20} MB")
+    beforeLap.to("options and the quests line")
 
     var t0 = System.nanoTime()
     val pbf = readPbf(opts.pbf.path)
@@ -185,12 +199,14 @@ fun count(opts: CountOptions): CountResult {
     log("read ${pbf.dataBlobs.size} blobs in %.1f s; replication timestamp $extractTimestamp; sha256 ${pbf.sha256}"
         .format((System.nanoTime() - t0) / 1e9))
     require("Sort.Type_then_ID" in pbf.header.optionalFeaturesList) { "${opts.pbf}: not sorted Type_then_ID" }
+    beforeLap.to("file read")
 
     val source = readSourceMeta(opts.sourceMeta, opts.pbf, pbf.sha256)
     val asOf = opts.today ?: extractTimestamp
     EngineClock.install(asOf)
     val asOfDate = asOf.toLocalDateTime(zone).date.toString()
     log("asOf $asOf ($asOfDate ${zone.id})${if (opts.today != null) " [--today override]" else ""}")
+    beforeLap.to("source meta and clock")
 
     engine.notes = opts.notes?.let { f ->
         t0 = System.nanoTime()
@@ -206,16 +222,27 @@ fun count(opts: CountOptions): CountResult {
         f.absoluteFile.parentFile.mkdirs()
         StateDump(f, places = true, partIds = engine.parts.map { it.id } + engine.cities.map { "city:" + it.id })
     }
+    beforeLap.to("notes and state opened")
     t0 = System.nanoTime()
     engine.run(pbf.dataBlobs)
+    val passLap = engine.passTiming.lap()
     engine.state?.let { s ->
         s.close()
+        passLap.to("state closed")
         s.writeSidecar(asOf, engine.quests.map { it.name })
         log("wrote ${opts.dumpState}: ${s.matches.get()} matches, ${s.dues.get()} quests waiting for their date")
+        passLap.to("state sidecar")
     }
     val passSeconds = (System.nanoTime() - t0) / 1e9
     val runSeconds = (System.nanoTime() - tStart) / 1e9
     logStats(engine, passSeconds, runSeconds)
+    log(before.line())
+    log(engine.passTiming.line())
+    // what the `total` above does not hold: the JVM's own start before this function, and the files written below
+    val outside = Timing("outside total")
+    outside.add("jvm start to count", (startMillis - ManagementFactory.getRuntimeMXBean().startTime) * 1_000_000L)
+    outside.add("stats lines", System.nanoTime() - tStart - (runSeconds * 1e9).toLong())
+    val outsideLap = outside.lap()
 
     val meta = SnapshotMeta(
         asOf = asOf.toString(),
@@ -231,28 +258,37 @@ fun count(opts: CountOptions): CountResult {
         notes = engine.notes?.let { NotesMeta(it.source, it.open.size, it.showAllNotes) },
         runSeconds = runSeconds,
     )
+    outsideLap.to("git head")
     opts.out?.let { out ->
         val snapshot = File(out, "snapshots/${meta.asOfDate}.json")
         snapshot.parentFile.mkdirs()
-        snapshot.writeText(snapshotJson(meta, engine))
+        val json = snapshotJson(meta, engine)
+        outsideLap.to("snapshot made")
+        snapshot.writeText(json)
+        outsideLap.to("snapshot written")
         File(out, "quests.json").writeText(questsJson(registry, cities))
         log("wrote $snapshot and ${File(out, "quests.json")}")
+        outsideLap.to("quests.json")
     }
     opts.grid?.let { dir ->
         val f = File(dir, "${meta.asOfDate}.json.gz")
         engine.grid!!.write(f, meta.asOfDate, engine.quests)
         log("wrote $f")
+        outsideLap.to("grid")
     }
     opts.dumpMatches?.let { f ->
         f.absoluteFile.parentFile.mkdirs()
         f.bufferedWriter().use { engine.writeDump(it) }
         log("wrote $f")
+        outsideLap.to("matches dump")
     }
     opts.dumpElements?.let { f ->
         f.absoluteFile.parentFile.mkdirs()
         f.bufferedWriter().use { engine.writeElements(it) }
         log("wrote $f")
+        outsideLap.to("elements dump")
     }
+    log(outside.line())
     return CountResult(engine, meta, registry)
 }
 

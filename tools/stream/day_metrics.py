@@ -35,6 +35,10 @@ PASS = re.compile(r"^pass ([\d.]+) s, total ([\d.]+) s; peak heap \(sum of pool 
 STEP = re.compile(r"^(relation member scan|nodes|ways|relations)\s+([\d.]+) s")
 CITIES = re.compile(r"(\d+) cities \((\d+) parts")
 STARTUP = re.compile(r"^startup: registry and cities ([\d.]+) s, parts ([\d.]+) s.*engine and its indexes ([\d.]+) s")
+# the engine's own split of what its other lines leave unnamed (engine Timing.kt):
+# `timing: <group>: <name> <seconds> s, <name> <seconds> s, ...`
+TIMING = re.compile(r"^timing: ([^:]+): (.*)$")
+TIMING_ITEM = re.compile(r"([^,]+?) ([\d.]+) s(?:, |$)")
 # an engine is worth a look when it is this many times the phase's median and at least this long
 WATCH_TIMES, WATCH_SECONDS = 10, 120
 # or when one step holds this share of an engine that long
@@ -75,6 +79,13 @@ def engine(log: Path) -> dict | None:
         m = STARTUP.match(line)
         if m:
             e["startup s"] = round(float(m[1]) + float(m[2]) + float(m[3]), 1)
+            continue
+        m = TIMING.match(line)
+        if m:
+            t = e.setdefault("timing", {})
+            for name, s in TIMING_ITEM.findall(m[2]):
+                key = f"{m[1]}: {name}"
+                t[key] = round(t.get(key, 0.0) + float(s), 2)
             continue
         m = CITIES.search(line) if "cities (" in line and "quests in" in line else None
         if m:

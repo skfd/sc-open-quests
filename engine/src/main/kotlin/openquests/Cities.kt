@@ -28,12 +28,15 @@ class City(
     val zone: TimeZone = TimeZone.of(timeZone)
 }
 
-fun loadCities(file: File, baseDir: File): List<City> {
+/** [lap]: the clock of the log's `timing: startup` line (Timing.kt); null for none */
+fun loadCities(file: File, baseDir: File, lap: Timing.Lap? = null): List<City> {
     val root = Json.parseToJsonElement(file.readText()).jsonObject
+    lap?.to("cities file")
     val cities = root["cities"]!!.jsonArray.mapIndexed { i, e ->
         val c = e as JsonObject
         val relation = c["relation"]!!.jsonPrimitive.long
         val boundary = File(baseDir, c.str("boundary")!!)
+        lap?.to("city entries")
         City(
             index = i,
             id = c.str("id")!!,
@@ -43,11 +46,12 @@ fun loadCities(file: File, baseDir: File): List<City> {
             timeZone = c.str("timeZone")!!,
             population = c["population"]?.takeIf { it !is JsonNull }?.jsonPrimitive?.long,
             landAreaKm2 = c["landAreaKm2"]?.takeIf { it !is JsonNull }?.jsonPrimitive?.double,
-            polygon = Polygon.fromOverpassJson(boundary, relation),
+            polygon = Polygon.fromOverpassJson(boundary, relation, lap),
         )
     }
     val ids = cities.map { it.id }
     require(ids.toSet().size == ids.size) { "duplicate city ids in ${file.path}" }
+    lap?.to("city entries")
     return cities
 }
 
@@ -57,14 +61,19 @@ class Part(val index: Int, val id: String, val city: Int, val polygon: Polygon)
 
 /** The parts of [cities] from `<dir>/<cityId>.json` where that file exists (DATA-FORMAT.md, "Places
  *  and parts"); geometry paths are relative to [baseDir]. In city order, each city's in registry order. */
-fun loadParts(dir: File, cities: List<City>, baseDir: File, cache: PartsCache.Reader? = null): List<Part> {
+fun loadParts(dir: File, cities: List<City>, baseDir: File, cache: PartsCache.Reader? = null, lap: Timing.Lap? = null): List<Part> {
     val parts = ArrayList<Part>()
     // a place in many cells (a world run's country or county) is read once; a Polygon is immutable
     val polygons = HashMap<String, Polygon>()
     for (city in cities) {
         val file = File(dir, "${city.id}.json")
-        if (!file.isFile) continue
-        val root = Json.parseToJsonElement(file.readText()).jsonObject
+        val isFile = file.isFile
+        lap?.to("parts file look-up")
+        if (!isFile) continue
+        val text = file.readText()
+        lap?.to("parts file read")
+        val root = Json.parseToJsonElement(text).jsonObject
+        lap?.to("parts file parse")
         require(root.str("city") == city.id) { "${file.path} is the registry of ${root.str("city")}, not ${city.id}" }
         val seen = HashSet<String>()
         for (e in root["parts"]!!.jsonArray) {
@@ -73,8 +82,12 @@ fun loadParts(dir: File, cities: List<City>, baseDir: File, cache: PartsCache.Re
             require(seen.add(id)) { "${file.path}: part $id twice" }
             val geometry = p.str("geometry")!!
             parts += Part(parts.size, id, city.index,
-                polygons.getOrPut(geometry) { cache?.polygon(geometry) ?: Polygon.fromGeoJson(File(baseDir, geometry)) })
+                polygons.getOrPut(geometry) {
+                    lap?.to("part entries")
+                    (cache?.polygon(geometry) ?: Polygon.fromGeoJson(File(baseDir, geometry))).also { lap?.to("part outlines") }
+                })
         }
+        lap?.to("part entries")
     }
     return parts
 }
