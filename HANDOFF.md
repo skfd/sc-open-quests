@@ -3433,6 +3433,23 @@ wording and tab structure as a first draft open to change, not as decided design
     11-21 ones in `.scratch/anomalies/1121-points/` only while generations 19 and 20 are readable), `p_*.npy`
     byte for byte, and installed on a day of its own so a gate has one suspect. The test's `\r` edit goes with
     the next engine install.
+  - **(A) the points fix: drafted, NEVER COMPILED, not in main.** Branch `worktree-agent-a0045fbd7abb56a4c`
+    (5dc1fbe6; worktree `.claude/worktrees/agent-a0045fbd7abb56a4c`), only `tilestore/src/context.rs`, on top of
+    main 1541a916. Per chunk of 512 homes: each tile's closed ways placed once with their box (`tile_idx`,
+    in parallel), the box tested before a way is placed again; each multipolygon's box once per chunk (the
+    old code rescanned the blob's places for every point and multipolygon seen: a third cost); a relation's
+    node map and segments once, for all its points; homes and relations in parallel (rayon, already there),
+    all writes afterwards on one thread in the old order. **It now uses every core where it used one.**
+    Tests in the file (the old loop kept as an oracle), unrun. **Proof owed in the gap:** `cargo test` and
+    `cargo build` in the worktree; the old binary is `.scratch/anomalies/tilestore-points-counters-edb0521e.exe`;
+    `replay.py`'s `EXE` points at a removed worktree: point it at the new build and compare against
+    `.scratch/anomalies/replay/{before-points,after}/` (`p_*`, `e_*`), every file but `context.json`; the
+    counters `ringsTested`, `ringSegments`, `multipolygonsSeen`, `multipolygonsInBox`, `homeTiles`,
+    `blobsAsked`, `tilesRead` must equal the old ones (the others change meaning: per tile and per relation
+    a chunk, not per point). That replay is points only: also one full `after` call (`ctxcmp.py`, or a day's
+    kept `context/after/in-*.npy`) old against new, every output. Generations 19 and 20 must still be
+    readable, else a day under HOLD. Memory: per chunk, about 55 MB at ordinary density, 1.8 GB if every
+    tile is dense.
   - **The gate's margin since 11-18: traced (the read-only agent, about 12:45), nothing to fix in the data;
     not the notes dump.** Notes and scripts: `.scratch/anomalies/gate-margin/notes.md`. Every new row is an
     aged-only one. (1) **Bratislava AddCycleway +4 to +6, for good:** ways 4911921 and 184347348
