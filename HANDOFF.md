@@ -3412,7 +3412,7 @@ wording and tab structure as a first draft open to change, not as decided design
     `boundaries.ser` as it is), so a repin on a CRLF checkout records the same. **Not run: the engine's tests**
     (a gradle run beside the city run); the sums were checked by the script. **Left:** the test "byte for byte
     against the SC checkout" compares raw bytes and would fail against a CRLF checkout (today it is skipped:
-    `Temp/sc-v64.1` has lost its `country_metadata`); the fix is to drop `` from the checkout's side, but a
+    `Temp/sc-v64.1` has lost its `country_metadata`); the fix is to drop `\r` from the checkout's side, but a
     touched file under `engine/src` makes `engine_is_stale()` true, so it waits for a gap.
   - **Docker Desktop not starting by itself** is a way for every day to stop; the owner: leave it.
 - **Clock times in this section from "19:10" on were written without reading the clock and run up to 45 minutes
