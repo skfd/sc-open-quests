@@ -1117,7 +1117,7 @@ mod tests {
             "a",
             &sq,
             &[(100, vec![1, 2, 3, 4, 1]), (101, vec![1, 2, 3, 9, 1]), (102, vec![1, 2, 3, 4]), (103, vec![1, 2, 1])],
-            &[(500, mp), (501, "type\0route\0"), (502, mp), (503, mp)],
+            &[(500, mp), (501, "type\0route\0"), (502, mp), (503, mp), (504, mp)],
         );
         // tile B: way 100 again, 101 whole here, 104 the hole; relation 500 again
         let mut nb = sq.to_vec();
@@ -1132,7 +1132,7 @@ mod tests {
         blobs.insert(500, part("blob", &nodes, &[(100, vec![1, 2, 3, 4, 1]), (104, vec![5, 6, 7, 8, 5])], &[]));
         blobs.insert(503, part("blob", &[], &[], &[]));
         // a blob whose way has a node the blob lacks (its segments left out)
-        blobs.insert(501, part("blob", &sq, &[(100, vec![1, 2, 3, 9, 1])], &[]));
+        blobs.insert(504, part("blob", &sq, &[(100, vec![1, 2, 3, 9, 1])], &[]));
 
         // inside, in the hole, on corners, on edges, on the box's edge, outside, in 101's far corner
         let pts = [(2, 2), (5, 5), (0, 0), (10, 10), (0, 10), (10, 0), (0, 5), (5, 0), (10, 5), (5, 10), (4, 4), (6, 6), (4, 5), (11, 5), (-1, 5), (15, 2), (20, 0), (3, 12)];
@@ -1147,7 +1147,8 @@ mod tests {
         // the tags from the first tile of the block that holds them
         let ids = |h: &[Hit]| h.iter().map(|x| (x.0, x.1)).collect::<Vec<_>>();
         let got = new_point(&[&a], &blobs, 2.0, 2.0);
-        assert_eq!(ids(&got), vec![(1, 100), (2, 500)]);
+        // (504's blob lacks a node: the two segments it has left still put the point inside, as the old loop did)
+        assert_eq!(ids(&got), vec![(1, 100), (2, 500), (2, 504)]);
         assert_eq!(got[0].2, [0, 0, 10, 10]);
         assert_eq!(got[0].3, b"from\0a\0".to_vec());
         let got = new_point(&[&b, &a], &blobs, 2.0, 2.0);
