@@ -845,7 +845,30 @@ its own static page or a Worker that rewrites the head; the state is in the quer
   (2) per-place PNGs. Sequencing: `cloudflare/` stays untouched until the flip and the `assets-switch`
   merge; the generator can be built and checked on `wrangler dev` before that.
 
-### Share previews for release 1: decided, nothing built (owner, 2026-11-23)
+### Share previews: built on `share-previews`, not merged, not live (2026-11-23, afternoon; owner: "build it, i will upgrade account later")
+
+- **Where:** branch `share-previews`, worktree `../sc-open-quests-previews`, two commits: `bab3d69a` (the
+  page's `og:` tags and the site card `docs/img/share-card.png`) and `704065a2` (the Worker). Its DESIGN.md
+  section, "Share previews: a Worker's text for every place", has what it does and what was checked;
+  `cloudflare/README.md`, "Share previews", has the go-live steps. 213 tests pass there.
+- **Nothing on main or on the live site changed.** The Worker is `cloudflare/wrangler.previews.jsonc`;
+  the daily run deploys `wrangler.jsonc`, which is untouched, so merging the branch puts only the tags
+  and the card live.
+- **Waiting on the owner, two things:** (1) a look at the card (sent in the session) before the branch
+  is merged, since merging publishes it with the next daily run; (2) **Workers Paid** before the Worker
+  is deployed. It must not go out on Free: about 6 ms to parse `quests.json` plus a city's history is
+  past Free's 10 ms of CPU, and a failed page view is a broken page.
+- **Checked locally:** all 147 cities' previews say `cities.json`'s number (293 of 293 links); seven
+  links in a browser, page against card (city, part, selections, a world place, counted places under
+  their place ids); the home page byte-equal; 404s; revalidation; a hostile name escaped.
+- **Not checkable before live:** the zone's folder rewrite rule in front of the script. The go-live
+  steps deploy by hand, test at once, and say how to put the script-less site back.
+- **The site's title and description still say "Canada and Europe"** (page, `og:` tags and the card's
+  alt text). Left as is: the wording for the world is the owner's, at release 1.
+- **Local check servers are stopped** (ports 8791, 8792). `C:/tmp/pv-fix` and `C:/tmp/pv-check` are
+  scratch and can go.
+
+### Share previews for release 1: decided (owner, 2026-11-23)
 
 The 11-10 architecture above is stale: `docs/` is 9,339 files (pages plus PNGs for cities and parts would
 reach about 18,060 of 20,000), and about 1M world places can never be static pages. Decided instead:
