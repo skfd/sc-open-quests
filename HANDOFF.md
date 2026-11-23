@@ -854,7 +854,7 @@ its own static page or a Worker that rewrites the head; the state is in the quer
 - **Nothing on main or on the live site changed.** The Worker is `cloudflare/wrangler.previews.jsonc`;
   the daily run deploys `wrangler.jsonc`, which is untouched, so merging the branch puts only the tags
   and the card live.
-- **Waiting on the owner, two things:** (1) a look at the card (sent in the session) before the branch
+- **Waiting on the owner, two things:** (1) a look at the card (`docs/img/share-card.png` in the worktree; the session could not send the file) before the branch
   is merged, since merging publishes it with the next daily run; (2) **Workers Paid** before the Worker
   is deployed. It must not go out on Free: about 6 ms to parse `quests.json` plus a city's history is
   past Free's 10 ms of CPU, and a failed page view is a broken page.
