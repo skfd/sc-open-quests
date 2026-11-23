@@ -3187,6 +3187,53 @@ wording and tab structure as a first draft open to change, not as decided design
   failure or 11-21 is not done. **To check in the morning:** that log; the city run's `update done` in
   `logs/scheduler.log` (it ran out of heap on 11-21 beside the catch-up; alone it should not); the loop's days
   11-22 on.
+- **The anomalies looked into (2026-11-23, 00:05-00:35; owner: "lets look into the metrics and performance
+  anomalies we observed"). Read-only beside the live loop: nothing built, nothing changed, proposals wait for the
+  owner.** Kept: `.scratch/anomalies/1121-f116/engine-{old,new}.log` (11-21's f116, before the work went).
+  - **Store context is the `points` query, and it is two different things.** Every other part of a context call
+    is steady (ways 20-85 s, crossings 26-39 s, nodes 5-30 s); `points` (the closed ways and multipolygons holding
+    each changed tagged node) is 105-1,590 s. (1) **11-20 was input volume:** 337,479 points before and 346,278
+    after against 11,000-44,000 on every other day, at an ordinary 4.7 ms a point: 1,575 s and 1,591 s. That day's
+    change had 345,556 tagged nodes (usual 20,000-35,000): a mass edit, its changesets not traced. (2) **The other
+    slow days are cost per point, 3 to 28 ms, at ordinary counts:** generation 8, 31,352 points, 778 s; generation
+    11, 33,994, 911 s; generation 13, 26,991, 716 s; against generation 1, 31,541 points, 105 s. Not machine load:
+    generation 15's same inputs took 592 s and 604 s seven hours apart (before and after the disk stop).
+  - **The likely mechanism (read in `tilestore/src/context.rs`, lines 652-680; not measured, the stat has no
+    count of ways tested):** one thread; for every point, every closed way of the nine tiles around it is placed
+    again (a binary search per node ref, a new vector) before its box is even compared with the point. So the
+    cost is points times the closed ways around them: a day whose changes sit in built-up tiles is slow, and
+    13 times the points is 13 times the time. **Proposed:** place each tile's closed ways once per chunk (their
+    positions and box), test a point against the boxes only, then the ring; the homes of a chunk in parallel;
+    add `waysTested` and `ringsTested` to the stat. Same output files, so `ctxcmp` and a byte comparison of the
+    `p_*.npy` of a kept day prove it. Expected: the step from 165-1,590 s to well under a minute, twice a day.
+    Needs a `cargo build`, so between two days.
+  - **f116 is not skew, it is cost per part, and the whole of tier 2 pays it.** f116 (north Norway, Svalbard) has
+    11,000-32,000 rectangles a day at 11-13 parts each (other large groups: 6): 708 s on 11-16 with 32,222
+    rectangles and 390,616 parts, 189-338 s on the other days. A group's start-up is 0.5-0.9 ms a part and its
+    pass 0.5-1.1 ms a part whatever the group (f127: 31,405 rectangles, 181,896 parts, 230 s). So splitting a
+    group by its number of rectangles would move the time, not remove it. **11-21's f116 log, 11,290 rectangles,
+    208 s, says where it is not:** the main pass's four steps 10.6 s, the quests 1.3 s, the parts cache 0.2 s. It
+    is in four places no line names: registry and cities 13.5 s, parts outside the cache's own timers 15.7 s, "the
+    engine and its indexes" 56.8 s, and about 108 s of the pass between the `relations` step and the `pass` line
+    (the area pass over 11,290 areas, `state.bin`, the dumps).
+  - **Over all of tier 2** (`engines.json`, 11-15 to 11-20, each of the two phases): about 6,400 s summed, of which
+    start-up 1,300-1,580 s and at least 2,300-2,540 s of pass time outside the main steps and the areas (a lower
+    bound if the areas' seconds are summed over threads; the main steps are wall-clock in f116's log). Map data
+    212-289 s, the quests about 1,100 s, the main steps about 1,080 s. So **more than half of tier 2's engine
+    time is per-rectangle work that no line times**, which corrects "the quests' runs and the main pass in equal
+    parts" above. **Proposed:** first timers (cities loading, `loadParts` outside the cache, `Engine`'s indexes
+    by index, the pass after `relations` by part), one day of them, then the fix the numbers name. Engine change:
+    between two days, with the gate as proof.
+  - **Seen in the table, not traced:** tier 2 reads went from 1,100-1,390 s (11-04 to 11-13) to 1,558-1,825 s
+    from 11-15 on with fewer tiles read (`engines.json`: 11-14 1,391 s summed over 973,308 tiles, 11-15 1,616 s
+    over 858,065; the tile seconds grew most), so the reads got slower per tile at the swap: probably CPU shared
+    with something that used to be idle, not looked at. `rectangles` and `engine files` climb through a run of
+    days (118 to 366 s, 418 to 963 s over 11-04 to 11-13) and fall after a restart (139 s, 522 s on 11-15): not
+    looked at. 11-14 and 11-16 have no `steps.json` row (the swap day and the day that ran twice). The gate's
+    margin moving from +11 to +13/+15/+16 since 11-18 was not examined here.
+  - **The watch rule misses both kinds:** it compares a step with its median, so a slow day at ordinary volume
+    under twice the median passes, and f116 trips it only because the group is large. Rates would say it: ms a
+    point for `points`, ms a part for an engine.
 - **Clock times in this section from "19:10" on were written without reading the clock and run up to 45 minutes
   ahead**: it was 19:25 when the entry above ("20:05", "20:10") was written, and the HOLD ("19:30") was placed a
   little after 19:00. The order of events is right; the files' own times are the record.
