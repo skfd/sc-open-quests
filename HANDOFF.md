@@ -845,6 +845,27 @@ its own static page or a Worker that rewrites the head; the state is in the quer
   (2) per-place PNGs. Sequencing: `cloudflare/` stays untouched until the flip and the `assets-switch`
   merge; the generator can be built and checked on `wrangler dev` before that.
 
+### Share previews for release 1: decided, nothing built (owner, 2026-11-23)
+
+The 11-10 architecture above is stale: `docs/` is 9,339 files (pages plus PNGs for cities and parts would
+reach about 18,060 of 20,000), and about 1M world places can never be static pages. Decided instead:
+
+- **Every place gets a text preview on release day, through a Worker.** It runs on the page request only
+  (`app.js`, icons and JSON stay plain static assets), reads `?place=<id>` (crawlers send the query), fetches
+  that place's file from `sc-data` and rewrites the head: title "N open StreetComplete quests in <place>",
+  description with the 4-week change. Today's `?place=` links work as they are, so **no slugs are frozen**
+  and the address scheme (`/toronto/agincourt-north/` against `/<country>/.../<slug>/`) stays open.
+- **The picture is one site-wide card on day one** (the mockup's frame, no numbers, no date). The home page
+  gets `og:`/`twitter:` tags and that image; its title and description still say "Canada and Europe".
+- **Owner: Workers Paid, $5 a month, agreed** (no 100,000-a-day cap on page loads; under the $50 breaker).
+  The owner upgrades the plan; not done yet.
+- **After release:** per-place pictures rendered on demand in the Worker and kept in R2 (about 300 ms CPU a
+  card, which is why Paid), once a card for a world place is designed.
+- **To check while building:** the Worker's number must be the page's (same default-on quests summed); what
+  the zone's folder rewrite rule and `html_handling: none` do with a Worker in front (`wrangler dev` does not
+  reproduce the rule; that interplay broke the home page once); it goes live with or after the world
+  publish merge, since it reads the same place files.
+
 ## Countries in the place index: decided, not built (owner, 2026-11-10, evening)
 
 The owner asked whether the regional division is controversial. It was Overture's default view as
