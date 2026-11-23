@@ -3346,6 +3346,16 @@ wording and tab structure as a first draft open to change, not as decided design
     Geofabrik answers, the city task, `facts.py cities`, `fill europe` and the loop (11-22 is the first day
     with the points counters). If that session does not come, the 12:15 city run and the 14:45 store task do
     the fetching and the day on their own; the timers then wait.
+- **07:10 check on 11-23 (the storage session).** Read the night's entries above (the other session's): 11-21
+  closed 01:20:06 with its gate passed after two stops that session caused and cleared; the helper resumed the
+  cities, whose fetch met Geofabrik's 404; nothing is running, no HOLD or STOPPED, 126 GB free, the city task
+  enabled, `data/cities.paused` gone. **The backfill is done: 11-01 to 11-21, every day gated.** This session
+  started nothing: the 07:30 task of the other session has the city retry, `fill europe` and the loop, and wants
+  a still machine for its engine proof. Done here, on the still machine, in under a minute: **11-21's owed facts**
+  (`facts.py world`: 27,761,653 rows; all 21 gated days now have facts; `verify --sample 2`: 0 different) **and its
+  `steps.json`**. That showed `day_metrics.day_steps` read only a resumed day's last fragment; fixed (a day is
+  read from its last "diff N on generation G" line through every resume, with `resumes` counted) and 11-16 and
+  11-21 rewritten: 11-16 36,054 s with 24,848 in no step (the disk stop), 11-21 11,568 s with 1,959 in no step.
 - **Clock times in this section from "19:10" on were written without reading the clock and run up to 45 minutes
   ahead**: it was 19:25 when the entry above ("20:05", "20:10") was written, and the HOLD ("19:30") was placed a
   little after 19:00. The order of events is right; the files' own times are the record.
