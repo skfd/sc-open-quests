@@ -2920,7 +2920,7 @@ wording and tab structure as a first draft open to change, not as decided design
   `fixme=*` and similar tags counted from our own extracts.
 - **When:** not on any release's path. Pick it up only after open quests over time have shipped.
 
-## Parked until Release 1 is out: retire the daily city run (owner, 2026-11-23, about 13:00: "its ok to wait, add it to the list of work")
+## Parked until Release 1 is out: retire the daily city run (owner, 2026-11-23, 12:40: "its ok to wait, add it to the list of work")
 
 - Owner asked why the cities are still processed when the world has the same daily data. The numbers no longer
   need it ("World vs the daily run's cities: they agree"; clock decided, midnight UTC), but the run carries
