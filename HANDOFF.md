@@ -3595,6 +3595,21 @@ wording and tab structure as a first draft open to change, not as decided design
   11-21; `day.pkl` is kept and `finished` is absent, so the documented resume redoes finish (about 2.5 h). **Not
   restarted: the laptop goes offline about 17:00.** When it is back: remove STOPPED and HOLD, look at the commit
   (`Win32_OperatingSystem`, big processes) and the disk first, then start the loop. Both sessions were told.
+  - **The commit at rest, read 15:26 by the "fix all these" session (no engine alive): 71 GB of 108.6 committed,
+    37 GB left.** By process 54.5 GB: 53 `claude` processes 16.4 GB, `svchost` 4.6, WindowsTerminal 4.4, vmmem
+    4.0 and vmmemWSL 1.9 as Windows shows them, Chrome 2.7, qBittorrent 2.6; about 17 GB is in no process
+    (kernel pools 9 GB; the rest probably the Docker and WSL machines, whose limit is 43 GiB: a guess). The
+    engines that died were tier 2's four at a fixed `-Xmx8g` (`hs_err`: "G1 virtual space", 67 s in): 32 GB of
+    heap and the JVMs' own memory do not fit in 37 GB. **So the rest is the cause as far as one reading goes:
+    tier 2 starts four 8 g engines without asking what the machine can commit; the gate's engine asks.** What
+    this session added today: Docker Desktop (11:57, the city run needs it) and four agents, ended by 12:36.
+    **For the heap and disk branch before it is merged: tier 2's engines under the same rule (wait, or fewer
+    workers), and the commit left as a metric.** Before the resume: close what can be closed (old Claude
+    sessions first) and read the commit again.
+  - **Run in that stretch (15:26-15:28, the machine still), nothing else:** the Python suite, 210 tests, OK
+    (`python -m unittest -q`); gradle `CountryMetadataTest`, 5 passed, the checkout one skipped: **the sums'
+    test is green again.** `engine_is_stale()` still False. `syspath-leak` NOT merged: 11-22 is half done, and
+    code changes between two days. The 16:00 check deleted; the 21:30 one stands for the laptop's return.
 - **Clock times in this section from "19:10" on were written without reading the clock and run up to 45 minutes
   ahead**: it was 19:25 when the entry above ("20:05", "20:10") was written, and the HOLD ("19:30") was placed a
   little after 19:00. The order of events is right; the files' own times are the record.
