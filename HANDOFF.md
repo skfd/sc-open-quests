@@ -2935,6 +2935,12 @@ wording and tab structure as a first draft open to change, not as decided design
   monthly city series kept frozen, or replaced when the world's monthly backfill exists; (4) the Canadian and
   German fetches and the per-region engine runs stopped. Saves about two hours of machine a day and the
   memory competition behind two of this week's stops.
+- **The city gaps stay until then (owner, 11-23, 12:49: no action now, the joining of cities and world fills them).**
+  Not counted by the city run: Ontario 11-19 and 11-21; the other Canadian regions, Berlin, Hamburg and Bremen
+  11-18, 11-19 and 11-21; all twelve 11-09; a few older days by region. Europe's four lack 11-22, expected from the
+  next run (the clip was filled at 12:37, after the city run). `osm-extracts fill` makes clips only, not these twelve.
+  **So (2) must read the world's `osm-<city>` counts back to 2026-11-01, not from the day of the switch**, or the
+  gaps stay. Checked again on 11-23 at 23:20, after tonight's work (owner's ask).
 
 ## Storage redesign: facts, serving, working state (owner, 2026-11-21, 13:10)
 
