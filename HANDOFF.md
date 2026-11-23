@@ -3578,6 +3578,11 @@ wording and tab structure as a first draft open to change, not as decided design
   (14,138 in a box, 162 million nodes mapped), blobs 20 s, tiles 11 s: the same picture as 11-21's replay. This
   session reads 11-22's `after` and the engines' `timing` once the day has closed (scheduled 15:30); the fixes
   themselves are with the session of the owner's "fix all these" (12:16).
+- **HOLD placed 14:57 on 11-23 (owner: "can we pause work at around 5 pm? i need my laptop offline").** The loop (pid
+  15328) ends its run when 11-22 closes and takes no 11-23. `.scratch/after-backfill.sh` starts nothing while HOLD
+  is there. Not to be removed before the owner says the laptop is back; then remove it and start the loop
+  (`python tools\stream\planet_store_day.py --max-days 20`, detached). The laptop being off also drops the 21:30 gap
+  check, the 23:20 city check and any scheduled task due then; they are due again when it is back.
 - **Clock times in this section from "19:10" on were written without reading the clock and run up to 45 minutes
   ahead**: it was 19:25 when the entry above ("20:05", "20:10") was written, and the HOLD ("19:30") was placed a
   little after 19:00. The order of events is right; the files' own times are the record.
