@@ -3610,6 +3610,37 @@ wording and tab structure as a first draft open to change, not as decided design
     (`python -m unittest -q`); gradle `CountryMetadataTest`, 5 passed, the checkout one skipped: **the sums'
     test is green again.** `engine_is_stale()` still False. `syspath-leak` NOT merged: 11-22 is half done, and
     code changes between two days. The 16:00 check deleted; the 21:30 one stands for the laptop's return.
+- **15:30 on 11-23, the anomalies session's last reading (logs only; nothing run, nothing restarted; 11-22 is
+  STOPPED and under the owner's HOLD, see the entries of 15:26).** What the new measures say, from the day's
+  work folder as it stands:
+  - **Points, 11-22's `after` at generation 21:** 23,553 points, 152.5 s: the closed ways' loop 91 s (299 million
+    placed, 2.7 billion binary searches, 57,940 rings tested), the multipolygons' 32 s (22,189 in a box, 210
+    million nodes mapped), blobs 20 s, tiles 9 s. With the `before` (67, 30, 20, 11 of 127 s) and 11-21's
+    replay: on ordinary days the closed ways are 55-63% and the multipolygons 21-32%; a slow day's split is
+    still to be seen. The drafted fix covers both loops.
+  - **The engines' `timing:` lines, the 122 tier 2 engines of the D-1 pass that ended before the stop** (5,227 s
+    summed, 227,500 rectangles, 1,957,716 parts; the D pass has none). **The time no line named is now named,
+    and it is no single thing:**
+    - the pass 3,912 s: the area pass 2,865, of it the quests' runs 965 wall (1,949 over threads), **map data
+      assembled 585, ways chosen 274, dates 263, city sets holding the city 230, tagged nodes chosen 217**,
+      results counted 80, relations chosen 77; the main steps 957.
+    - start-up 826 s: **boundary read 259, parts file read 179, parts file look-up 92** (one small file read
+      per rectangle: 530 s of file reads), boundary polygon 90, registry 63 (128 JVMs), part outlines 59.
+    - the engine's indexes 409 s: **parts of each city 316** (a loop of cities times parts), gates 56.
+    - outside `total` 392 s more: snapshot made 216, quests.json 82, JVM start 42, git head 27.
+  - **f116 (13,178 rectangles, 160,427 parts, 238 s): parts of each city 100 s, city sets holding the city
+    38 s**, the start-up's file reads 33 s, the quests' runs 14 s, map data 10 s, relations chosen 9 s, ways
+    chosen 8 s. So f116's slowness is the two loops that grow with rectangles times parts (or times city
+    sets); on 11-16, with 32,222 rectangles, they will have been most of the 708 s.
+  - **What each names, largest first, none built:** (1) the per-rectangle choosing (`ways chosen`, `tagged nodes
+    chosen`, `relations chosen`, `city sets holding the city`: about 800 s of 5,227, each rectangle scanning
+    what the file holds): an index from city set to its elements, made once. (2) the start-up's file reads
+    (530 s): the rectangles' boundaries and parts lists in one file per group, or in the parts cache. (3) `parts
+    of each city` (316 s, 100 of them f116's): group the parts by city in one pass. (4) `snapshot made` (216 s)
+    and `dates` (263 s): look before touching. The quests' runs and the map data are the work itself. On 4
+    workers the summed seconds are about a quarter of that in wall time.
+  - This session ends here: nothing of its own is running or scheduled, no HOLD of its own. The fixes, the
+    restart of 11-22 and the laptop's return are with the other sessions' entries.
 - **Clock times in this section from "19:10" on were written without reading the clock and run up to 45 minutes
   ahead**: it was 19:25 when the entry above ("20:05", "20:10") was written, and the HOLD ("19:30") was placed a
   little after 19:00. The order of events is right; the files' own times are the record.
