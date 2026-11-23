@@ -3171,6 +3171,22 @@ wording and tab structure as a first draft open to change, not as decided design
     diffs, is paused), so it ends its run or stops for want of a clip: either is the sign to resume the cities.
     After the city run has fetched, `python ../osm-extracts/osm_extracts.py fill europe` makes the days the fetch
     skipped (it applies every missing diff at once), then start the loop again.
+- **11-19 and 11-20, the two days gated against filled-in clips, both PASS.** 11-19 closed 18:34:36 (+13 of
+  19,308,665, worst city 0.00177%, 10,634 s); 11-20 closed 22:07:04 (+16 of 19,316,066, 0.00177%, 12,732 s). So
+  `fill`'s clips are good oracles. 11-21 began 22:07:18 and was in tier 2 at 23:40 (54 GB free); it closes about
+  00:50 on 11-23. **Three `watch:` lines on 11-20, all the same thing: `store context before` 1,735 s (4.9 times
+  its median of 353 s) and `after` 1,781 s (3.9 times 456 s), and so `world prepare` 2,210 s.** That is the Rust
+  store's context query (ways of moved nodes, crossings, relations), flagged on 11-09 and 11-12 too and back to
+  316 s on 11-21's prepare: it swings by day, cause unknown, about 45 minutes on a bad day. The next thing to
+  look into, with the reads (about 1,750 s every day).
+- **What happens when 11-21 closes (set up 23:45, detached: `.scratch/after-backfill.sh`, log
+  `logs/after-backfill.log`).** The loop has no diff 5184 on disk, so it takes no further day and ends its run
+  cleanly. The helper then: enables `kk-SCOpenQuests`, deletes `data/cities.paused`, runs the task, waits for it
+  to end, `facts.py cities`, `osm_extracts.py fill europe` (the clip days the fetch skips), and starts the loop
+  again (`--max-days 20`) unless RUNNING, STOPPED or HOLD is there. It does nothing if the loop stopped on a
+  failure or 11-21 is not done. **To check in the morning:** that log; the city run's `update done` in
+  `logs/scheduler.log` (it ran out of heap on 11-21 beside the catch-up; alone it should not); the loop's days
+  11-22 on.
 - **Clock times in this section from "19:10" on were written without reading the clock and run up to 45 minutes
   ahead**: it was 19:25 when the entry above ("20:05", "20:10") was written, and the HOLD ("19:30") was placed a
   little after 19:00. The order of events is right; the files' own times are the record.
