@@ -3244,6 +3244,25 @@ wording and tab structure as a first draft open to change, not as decided design
   - **The watch rule misses both kinds:** it compares a step with its median, so a slow day at ordinary volume
     under twice the median passes, and f116 trips it only because the group is large. Rates would say it: ms a
     point for `points`, ms a part for an engine.
+- **Counters and timers: owner "go, but be careful" (2026-11-23, 00:17). Under way at 00:30, nothing in main but
+  this file.** Rules kept: no build and no install in main while `RUNNING` exists or the city task runs; measuring
+  code only, the fix later and apart, so a gate has one suspect.
+  - **Tile store, branch `points-counters`** (worktree `.claude/worktrees/points-counters`, edb0521e, built there):
+    the `points` stat of `context.json` gains `secondsTiles`, `secondsBlobs`, `secondsWays`,
+    `secondsMultipolygons` and the loops' counts (`closedWaysSeen`, `wayRefsSearched`, `closedWaysPlaced`,
+    `ringsTested`, `ringSegments`, `multipolygonsSeen`, `multipolygonsInBox`, `multipolygonNodesMapped`,
+    `multipolygonSegments`, `homeTiles`, `blobsAsked`). The clock is read per chunk and per point and tile, not
+    per way. Nothing reads the stat strictly (`store_context.py` logs it whole).
+  - **Its proof, waiting (background):** `.scratch/anomalies/replay.py` waits for the loop to end its run after
+    11-21, then as a reader (`store_lock.reading`, a HOLD of minutes, its own, removed on exit) runs the worktree
+    binary on the kept 11-21 points inputs at generations 19 and 20 and compares `p_*.npy` byte for byte with
+    the day's own; outputs `.scratch/anomalies/replay/`. If a HOLD with "anomalies session" in it is ever found
+    left behind, the replay died: remove it.
+  - **Engine timers:** a subagent in its own worktree adds `timing:` lines only (every existing line as it is),
+    with an old-against-new run on a small input as proof. Not reviewed yet.
+  - **Install, not done:** tile store: merge and `cargo build --release` in main when no `tilestore` process
+    runs (the loop copies the binary at its start). Engine: `installDist` in main only with no `RUNNING` and
+    the city task not running, under HOLD for its minutes; the old exe and install folder copied aside first.
 - **Clock times in this section from "19:10" on were written without reading the clock and run up to 45 minutes
   ahead**: it was 19:25 when the entry above ("20:05", "20:10") was written, and the HOLD ("19:30") was placed a
   little after 19:00. The order of events is right; the files' own times are the record.
