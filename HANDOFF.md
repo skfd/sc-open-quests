@@ -3467,6 +3467,25 @@ wording and tab structure as a first draft open to change, not as decided design
     STOPPED after a clean end at the gate, `store_lock.reading` lets readers take a store that is at D before
     its checks and compaction (that state used to come only with STOPPED); the old `HEAP_MIN_GB` timeout at
     the gate now ends cleanly too; a day resumed so gets no `steps.json`.
+  - **Tier 2 reads: looked into (the read-only agent, to about 12:55), no cause established, nothing wrong with
+    the reader; and a leak found beside it.** Notes: `.scratch/anomalies/t2-reads/NOTES.txt`. The step is
+    measured as before the swap (the same span in `world_day.rect_rows`, 4 workers, no commit in `tilestore/`).
+    Like for like, seconds a GB of map data: 53-73 on 11-04 to 11-13, 80-93 on 11-15 to 11-19, 77-80 on 11-20
+    and 11-21; 11-14's D-1 phase, on the old code, already 84. A phase's first reads cost what they did; the
+    excess grows along the phase (1.07 to 1.65 times), and the stage with no I/O (merge) rose most: so not
+    the binary, the index, the generations or the disk. **Leading guess: the reads share the machine with
+    busier engines** (the old engine's long runs held slots and used about one thread; the new ones are
+    short and many). `tier 2 engine` is wall minus reads, so judge tier 2 by the sum of the two. To settle: a
+    row per read in `engines.json`, and one day's last 32 groups replayed idle under HOLD. **A saving that
+    holds either way, not built:** each of 254 reads a day loads the whole index (`idx` 772 MB, `relidx`
+    305 MB), bounded at 250-350 s a day; a mapped index or one reader process would remove it.
+  - **The `rectangles` climb is a leak, fixed on a branch, not in main: `syspath-leak` (efaab49d, worktree
+    `.claude/worktrees/syspath-leak`).** `world_day.quiet()` put `tools/` on `sys.path` again at every call,
+    about 512 times a day; the pool's 22 spawned workers get the list whole and every import scans every
+    copy: the pool part of `rectangles()` went 50 to 302 s over the eleven days of one process and fell at
+    each restart (measured apart: an interpreter's imports 0.22 s with no copy, 5.7 s with 2,560). The fix
+    inserts once. `world_day.py` is imported by the loop: merge in the gap only. `engine files` is volume and
+    machine state, no leak.
   - **The gate's margin since 11-18: traced (the read-only agent, about 12:45), nothing to fix in the data;
     not the notes dump.** Notes and scripts: `.scratch/anomalies/gate-margin/notes.md`. Every new row is an
     aged-only one. (1) **Bratislava AddCycleway +4 to +6, for good:** ways 4911921 and 184347348
