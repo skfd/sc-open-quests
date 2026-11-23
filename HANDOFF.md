@@ -848,7 +848,7 @@ its own static page or a Worker that rewrites the head; the state is in the quer
 ### Share previews: built on `share-previews`, not merged, not live (2026-11-23, afternoon; owner: "build it, i will upgrade account later")
 
 - **Where:** branch `share-previews`, worktree `../sc-open-quests-previews`, two commits: `bab3d69a` (the
-  page's `og:` tags and the site card `docs/img/share-card.png`) and `704065a2` (the Worker). Its DESIGN.md
+  page's `og:` tags and the site card `docs/img/share-card.png`) and `06bf2326` (the Worker). Its DESIGN.md
   section, "Share previews: a Worker's text for every place", has what it does and what was checked;
   `cloudflare/README.md`, "Share previews", has the go-live steps. 213 tests pass there.
 - **Nothing on main or on the live site changed.** The Worker is `cloudflare/wrangler.previews.jsonc`;
