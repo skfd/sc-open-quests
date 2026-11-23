@@ -2920,6 +2920,22 @@ wording and tab structure as a first draft open to change, not as decided design
   `fixme=*` and similar tags counted from our own extracts.
 - **When:** not on any release's path. Pick it up only after open quests over time have shipped.
 
+## Parked until Release 1 is out: retire the daily city run (owner, 2026-11-23, about 13:00: "its ok to wait, add it to the list of work")
+
+- Owner asked why the cities are still processed when the world has the same daily data. The numbers no longer
+  need it ("World vs the daily run's cities: they agree"; clock decided, midnight UTC), but the run carries
+  other things. Nothing built; not to start before Release 1, and after the heap and disk branch is merged
+  (the same code).
+- **What `run.py update` still carries:** the Europe clip and the daily diffs (the world's input and its gate's
+  oracle: the world stood still on 11-23 when this run died on Docker); the site's city snapshots in `docs/data`
+  and their push; the monthly history from 2017-01 (the world starts 2026-11-01; its monthly backfill is
+  Release 2); the cloud publish, the archive backup (the world's gated days too) and `check-release`.
+- **To retire it:** (1) the Europe clip and diff fetch, the archive backup and the release check move into the
+  world's daily run; (2) the site's city pages built from the world's `osm-<city>` counts; (3) the 2017-2026
+  monthly city series kept frozen, or replaced when the world's monthly backfill exists; (4) the Canadian and
+  German fetches and the per-region engine runs stopped. Saves about two hours of machine a day and the
+  memory competition behind two of this week's stops.
+
 ## Storage redesign: facts, serving, working state (owner, 2026-11-21, 13:10)
 
 - Owner: "we store data in a shape too close to how we publish it, and do not publish/back it up. how should we do
