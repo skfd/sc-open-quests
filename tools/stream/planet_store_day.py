@@ -488,8 +488,9 @@ def days(max_days: int, day=None) -> int:
         while n < max_days and (day or one_day)():
             n += 1
     except WG.run.MemoryBusy as e:
-        log(f"not now: {e}. No STOPPED: nothing failed and nothing is half written; the next run resumes the day "
-            f"at its gate")
+        # not the text "STOPPED:" in this line: store_lock.run_going reads that in the log as a run's end by a stop
+        log(f"not now: {e}. No STOPPED written, since nothing failed and nothing is half written; the next run "
+            f"resumes the day at its gate")
     return n
 
 

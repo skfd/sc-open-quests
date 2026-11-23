@@ -179,6 +179,7 @@ class GuardedAndDays(Tmp):
         for part in ("not now: not enough memory", "can spare 14 GB of heap", "needs 27 GB", "No STOPPED",
                      "the next run resumes the day at its gate"):
             self.assertIn(part, self.lines[0])
+        self.assertNotIn("STOPPED:", self.lines[0])   # store_lock.run_going reads "STOPPED:" in the log as a stop
 
     def test_days_until_one_says_no_more_and_never_over_the_most(self):
         steps = iter([True, True, False, True])
