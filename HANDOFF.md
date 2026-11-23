@@ -3309,6 +3309,31 @@ wording and tab structure as a first draft open to change, not as decided design
   - **Also found, for the engine's install:** `run.py`, `backfill_history.py` and `places.py` rebuild the engine
     themselves when a source file is newer than the installed jars (`engine_is_stale`). So engine source merged
     into main is installed by the next city run, whoever is ready: merge it only when it may be installed.
+  - **Owner (01:10, asked as a wizard): the Overpass logs may go.** `logs/opbench-full.log` and
+    `opbench-rehearse.log` deleted (4.6 GB; the results under `.scratch/overpass/` stay): 47.2 GiB free.
+  - **11-21 CLOSED 01:20:06.** STOPPED removed, the loop started 01:16:00 (pid 23036): the store's checks again,
+    `compact: exit 0 in 2 s`, the engines' metrics written, the day's work deleted, **124 GiB free**, "no diff
+    to 2026-11-22 on disk yet; done for now". `after-backfill.sh` (started again 01:16) went on at 01:20:07:
+    the city task enabled and running, then `facts.py cities`, `fill europe`, the loop.
+    **Owed for 11-21, because it closed on a resume:** its world facts (the loop's next day writes every gated
+    day without facts; else `python tools/facts.py world`, not beside a city run) and its `steps.json`.
+  - **THE COUNTERS ARE INSTALLED (01:21).** `points-counters` merged into main (7ef35c56), worktree and branch
+    gone. `tilestore/target/release/tilestore.exe` is the proven binary itself, copied, not rebuilt (sha256
+    6249b9b1..., built in the worktree from edb0521e); the one before (165a0bd7..., of 11-17) is
+    `.scratch/anomalies/tilestore-before-counters-1117.exe`: copy it back to undo. The loop copies the binary
+    at its next start, so **the first day with the split in `context.json` and in the log's "store context at
+    generation" lines is 11-22.** To read after a few days: `secondsWays` against `secondsMultipolygons` on a
+    slow day; then the fix (both loops), apart, with its own proof.
+  - **The engine timers: diff read by this session (additive: clock reads and `init` blocks between
+    properties in their order; nothing reordered), NOT installed, branch `worktree-agent-a3eb722146f115366`
+    kept.** Owed before install, on a still machine only (no RUNNING, no city task; the gate's engine takes
+    27 g): old against new on one gate region with `--notes` (europe-east, about a minute), the outputs and
+    the peak heap compared; `CountryMetadataTest` on the base commit. Install: merging engine source into main
+    makes the next city run rebuild the engine (`engine_is_stale`), so merge and `installDist` together, under
+    HOLD, the install folder copied aside first.
+  - **The lesson of the night, for whoever works beside the loop:** an engine's heap is what the machine can
+    spare when it starts, and compaction needs 40 GiB free. A build, a test run or a few GB beside the gate or
+    a city run can stop the day. Work in the gap between runs, or under HOLD.
 - **Clock times in this section from "19:10" on were written without reading the clock and run up to 45 minutes
   ahead**: it was 19:25 when the entry above ("20:05", "20:10") was written, and the HOLD ("19:30") was placed a
   little after 19:00. The order of events is right; the files' own times are the record.
