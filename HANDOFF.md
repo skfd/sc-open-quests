@@ -3390,6 +3390,19 @@ wording and tab structure as a first draft open to change, not as decided design
   - **Still open from the night:** the fix of the points query (both loops; wait for a slow day's split); a
     minimum heap per region for the gate and the city run, and the heap as a metric; the loop refusing a day
     it has no disk for; tier 2 reads slower since the swap; the gate's margin since 11-18.
+- **The noon check on 11-23 (owner: "whats next"): the 07:37 run died on Docker; started again 11:59.**
+  - **What happened:** the city run of 07:37 fetched every region, then failed at `fetch europe` at 09:35:
+    "docker is not answering" (Docker Desktop was not running; `com.docker.service` Stopped, start type Manual;
+    why it was down is not known). So no 11-22 clip or diff for Europe, `facts.py cities` wrote 0, and the loop
+    of 09:35 ended with "no diff to 2026-11-22 on disk yet": **the world is still at 11-21, generation 20.**
+  - **Done:** Docker Desktop started (29.9.3, answered in 5 s; `name-ru-repair-osmium` runs, osmium 1.18.0), then
+    `.scratch/after-backfill.sh` started again, detached, at 11:59 in a gap (no RUNNING, STOPPED or HOLD, task
+    Ready, 127 GB free). At 12:01 the task was Running and Europe's fetch was past the failure (diffs 5184 and
+    5185 downloaded, so the clip goes to 11-23's sequence and `fill` makes 11-22). Nothing built or tested.
+  - **To check:** `update done` in `logs/scheduler.log`; `fill ended` and `loop started` in
+    `logs/after-backfill.log`; then 11-22's gate in `logs/planet-store.log`, and after it the timers (above).
+  - **Noticed, not touched:** the task's next run read 12:15, not the 13:15 this file and the notes say (the
+    run of 11:59 was already going then). Docker Desktop not starting by itself is a way for every day to stop.
 - **Clock times in this section from "19:10" on were written without reading the clock and run up to 45 minutes
   ahead**: it was 19:25 when the entry above ("20:05", "20:10") was written, and the HOLD ("19:30") was placed a
   little after 19:00. The order of events is right; the files' own times are the record.
