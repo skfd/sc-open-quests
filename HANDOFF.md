@@ -3583,6 +3583,10 @@ wording and tab structure as a first draft open to change, not as decided design
   is there. Not to be removed before the owner says the laptop is back; then remove it and start the loop
   (`python tools\stream\planet_store_day.py --max-days 20`, detached). The laptop being off also drops the 21:30 gap
   check, the 23:20 city check and any scheduled task due then; they are due again when it is back.
+  - **The "fix all these" session, 14:58:** a check at 16:00 into that session: if 11-22 has closed, the quiet
+    stretch under this HOLD is used for light gap work only (11-22's gate, timers and points split read; free
+    disk; gradle `CountryMetadataTest`; the Python suite; if green, `syspath-leak` merged), idle by 16:50, HOLD
+    left alone. The heap and disk branch and the points fix wait for the laptop's return and the owner's word.
 - **Clock times in this section from "19:10" on were written without reading the clock and run up to 45 minutes
   ahead**: it was 19:25 when the entry above ("20:05", "20:10") was written, and the HOLD ("19:30") was placed a
   little after 19:00. The order of events is right; the files' own times are the record.
