@@ -3334,6 +3334,18 @@ wording and tab structure as a first draft open to change, not as decided design
   - **The lesson of the night, for whoever works beside the loop:** an engine's heap is what the machine can
     spare when it starts, and compaction needs 40 GiB free. A build, a test run or a few GB beside the gate or
     a city run can stop the day. Work in the gap between runs, or under HOLD.
+  - **The city run the helper started failed in 20 s (01:20:27): `osm_extracts.py fetch ontario`, HTTP 404.**
+    Geofabrik's `ontario-latest.osm.pbf` redirects (307) to `ontario-261122.osm.pbf`, which was a 404 at 01:22
+    (06:22 UTC): probably their daily publication under way, not checked further. So no Europe clip of 11-22
+    and no diff 5184 were fetched; `facts.py cities` wrote 6 snapshots, `fill europe` had nothing to fill, and
+    the loop the helper started ended at once ("no diff to 2026-11-22 on disk yet"). **State at 01:25: nothing
+    running, no HOLD, no STOPPED; store and world at 11-21, generation 20; the city task enabled (next 12:15),
+    `data/cities.paused` gone; 124 GiB free.**
+  - **Scheduled for 07:30 on 11-23, into this session** (scheduled task "Engine timers proof, city run retry"):
+    on the still machine, the engine timers' proof under HOLD and, if clean, their install; then, if
+    Geofabrik answers, the city task, `facts.py cities`, `fill europe` and the loop (11-22 is the first day
+    with the points counters). If that session does not come, the 12:15 city run and the 14:45 store task do
+    the fetching and the day on their own; the timers then wait.
 - **Clock times in this section from "19:10" on were written without reading the clock and run up to 45 minutes
   ahead**: it was 19:25 when the entry above ("20:05", "20:10") was written, and the HOLD ("19:30") was placed a
   little after 19:00. The order of events is right; the files' own times are the record.
