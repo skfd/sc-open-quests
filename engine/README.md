@@ -11,7 +11,8 @@ release is a *repin*: [REPIN.md](../REPIN.md). Output format: [DATA-FORMAT.md](.
 `src/main/kotlin/sc/` is StreetComplete source, **GPL-3.0** (licence text copied alongside). Linking it
 makes the engine a GPL-3.0 derivative; the repository is GPL-3.0. The SC files carry no per-file headers
 upstream; they are copied byte-for-byte except for the patches below (see the sha256 list in
-`SC-VERSION.txt`).
+`SC-VERSION.txt`). Byte for byte means SC's git blobs: `sync-sc.ps1` copies text with LF line endings even
+from a checkout that `core.autocrlf` made CRLF, and the sums are of those bytes.
 
 ## Build, run, test
 
