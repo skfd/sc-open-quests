@@ -3450,6 +3450,23 @@ wording and tab structure as a first draft open to change, not as decided design
     kept `context/after/in-*.npy`) old against new, every output. Generations 19 and 20 must still be
     readable, else a day under HOLD. Memory: per chunk, about 55 MB at ordinary density, 1.8 GB if every
     tile is dense.
+  - **(B+C) heap and disk: written, NO TEST RUN, not in main.** Branch `worktree-agent-aaad0db7d023acc9a`
+    (bd22fd81, d5cb7a80; worktree of the same name): `run.py`, `config/regions.json`,
+    `tools/stream/{planet_store_day,world_gate,storecheck_cities}.py`, `tests/test_heap.py`, new
+    `tests/test_loop_safety.py`, DESIGN.md, DATA-FORMAT.md. (1) The gate logs `gate heap: <region> given N MB,
+    peak M MB` and writes `"clip heap"` into `gate.json`; the city run's heap line names the region (its peak
+    is in `scheduler.log` only, in no record). (2) `"minHeapGb": 27` on europe-central alone;
+    `engine_heap_gb` waits for it up to `HEAP_WAIT_MINUTES` (60), a line every 5 min, then raises
+    `MemoryBusy`: the city run exits 1 naming the numbers; the loop logs "not now", writes no STOPPED and ends
+    its run, the next start resuming at the gate (`one_day`'s `loc_at == prev and w_at in (prev, day)`
+    branch). (3) `DAY_NEEDS_GB = 75` + `DISK_FLOOR_GB = 40`: under 115 GiB free a new day is not taken, one
+    line, no STOPPED. **To settle before the merge, read by this session in the gap:** 27 is the edge, not a
+    measured need (the peak follows the heap given: 27,189 of 27,648 MB, 28,251 of 28,672; it died at 14 g; a
+    still machine gives 37-40 g); 115 GiB is close to what the disk has at a day's end (124-127), so the loop
+    could stand still with one quiet line a run and nothing frees space by itself; with neither RUNNING nor
+    STOPPED after a clean end at the gate, `store_lock.reading` lets readers take a store that is at D before
+    its checks and compaction (that state used to come only with STOPPED); the old `HEAP_MIN_GB` timeout at
+    the gate now ends cleanly too; a day resumed so gets no `steps.json`.
   - **The gate's margin since 11-18: traced (the read-only agent, about 12:45), nothing to fix in the data;
     not the notes dump.** Notes and scripts: `.scratch/anomalies/gate-margin/notes.md`. Every new row is an
     aged-only one. (1) **Bratislava AddCycleway +4 to +6, for good:** ways 4911921 and 184347348
