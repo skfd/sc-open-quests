@@ -3278,13 +3278,37 @@ wording and tab structure as a first draft open to change, not as decided design
     that is a guess. The city run died of the same error at `-Xmx13g` on 11-21 "beside the catch-up". **The
     gate engine's heap is in no metric: an anomaly of its own.** `after-backfill.sh` saw STOPPED and did nothing
     (00:40:54).
-  - **Restart, 00:55:** gradle daemons stopped, nothing of this session running; STOPPED removed; the loop
-    started as the helper starts it (it resumes 11-21 at the gate, then the store's checks and compaction);
-    `.scratch/after-backfill.sh` started again once RUNNING was there. One attempt: if the gate's engine dies
-    again on a still machine, the load is not the cause and the heap is (`world_gate.py` / `storecheck_cities`).
-  - **Install, not done:** tile store: merge and `cargo build --release` in main when no `tilestore` process
-    runs (the loop copies the binary at its start). Engine: `installDist` in main only with no `RUNNING` and
-    the city task not running, under HOLD for its minutes; the old exe and install folder copied aside first.
+  - **The cause, found on the rerun: memory, not timing.** The gate's engine takes `-Xmx` from what the machine
+    can spare when it starts (`run.engine_heap_gb`): 14 g at 00:39 beside the subagent's gradle, its engine
+    runs and unit tests, **27 g on the still machine**, where europe-central then peaked at 27,189 MB (sum of
+    pool peaks) and counted in 148 s. So this session's work took the memory the gate needed: the stop was
+    caused here. The rule waits only for `HEAP_MIN_GB`, which is less than europe-central needs; the city run's
+    `OutOfMemoryError` at `-Xmx13g` on 11-21 is the same thing. **Not built, worth having:** a minimum per
+    region (wait, do not start with less), and the heap given and the peak kept as a metric.
+  - **Restart 00:52:24 (pid 64404), STOPPED removed, nothing of this session running:** "day 2026-11-21:
+    resuming (the store at generation 20, the world at 2026-11-21)", the gate only. **Gate 11-21: PASS**, 20 of
+    32 equal, clip 19,321,402, world 19,321,415 (+13), worst city 0.00177%. `loc advance`, `loc check`, the
+    cut, `subcmp` (13,968 same, 32 differ, 5 only planet), `why` (37 of 37 explained): all as every day.
+  - **THEN STOPPED AGAIN AT 00:59:37: `compact` exit 101, "under the disk floor: nothing written".** The floor
+    is 40 GiB free (`nodefile.rs`); the disk had 36.76. Nothing was written: the store is whole at generation
+    20, the node file at 11-21, the world at 11-21 and gated; what is left of the day is the compaction (it
+    copies 0.09 GiB and then frees about 14), the day's record, the delete of `world-days/2026-11-21` (about
+    90 GB back) and the facts. `after-backfill.sh`, started again at 00:53, saw STOPPED and did nothing (00:59:52):
+    **the cities are still paused and the task disabled.**
+  - **This session's part of the disk: about 1 GB** (two worktrees' builds and the subagent's proof runs), now
+    deleted; the proven binary kept as `.scratch/anomalies/tilestore-points-counters-edb0521e.exe`. Free after
+    that: 39.4 GiB, still 0.6 under. The day's margin over the floor at this step was never recorded; the
+    day's low was 45-54 GiB during tier 2 on the days before.
+  - **Asked of the owner (01:05), nothing deleted that is not this session's:** what may go to get over the
+    floor: `logs/opbench-full.log` and `opbench-rehearse.log` (4.6 GB, the Overpass benchmark's logs of 11-14),
+    or `.scratch/planet-day/clip-1103`, `-1104`, `-1105` (7.3 GB, the store's first checks, written up in
+    DESIGN.md), or one compaction under a lower floor (`TILESTORE_TEST_FLOOR_GIB`). **Then, to resume:** remove
+    STOPPED, start the loop (`planet_store_day.py --max-days 20`, as `.scratch/after-backfill.sh` starts it): it
+    takes the branch "the store's checks and compaction, resumed"; once RUNNING is there start
+    `.scratch/after-backfill.sh` again (it resumes the cities, fills Europe's clips, starts the loop).
+  - **Also found, for the engine's install:** `run.py`, `backfill_history.py` and `places.py` rebuild the engine
+    themselves when a source file is newer than the installed jars (`engine_is_stale`). So engine source merged
+    into main is installed by the next city run, whoever is ready: merge it only when it may be installed.
 - **Clock times in this section from "19:10" on were written without reading the clock and run up to 45 minutes
   ahead**: it was 19:25 when the entry above ("20:05", "20:10") was written, and the HOLD ("19:30") was placed a
   little after 19:00. The order of events is right; the files' own times are the record.
