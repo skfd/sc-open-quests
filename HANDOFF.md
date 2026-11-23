@@ -41,7 +41,8 @@ Toronto only, about 10 common quest types whose filters are simple, a few weeks 
 Milestone 1 is done and the site is live at https://skfd.github.io/sc-open-quests/. It covers every
 Canadian municipality over 50,000 people (111 cities in nine provinces) and Germany's city-states, and all
 quest types of SC v64.0 that the app offers there, monthly from 2017-01 and daily since 2026-10.
-`kk-SCOpenQuests` runs daily at 13:15. Design and known gaps are in DESIGN.md.
+`kk-SCOpenQuests` runs daily at 17:15 UTC: 13:15 in summer, **12:15 in winter (EST)**, as its trigger
+carries a fixed `-05:00`. Design and known gaps are in DESIGN.md.
 
 **Repinned to SC v64.0 on 2026-10-21** (DESIGN.md, "Repin to StreetComplete v64.0"; the routine is
 REPIN.md). 193 quest types, all counted and oracle-checked (Guelph and Bremerhaven). Merged into main
@@ -3401,8 +3402,19 @@ wording and tab structure as a first draft open to change, not as decided design
     5185 downloaded, so the clip goes to 11-23's sequence and `fill` makes 11-22). Nothing built or tested.
   - **To check:** `update done` in `logs/scheduler.log`; `fill ended` and `loop started` in
     `logs/after-backfill.log`; then 11-22's gate in `logs/planet-store.log`, and after it the timers (above).
-  - **Noticed, not touched:** the task's next run read 12:15, not the 13:15 this file and the notes say (the
-    run of 11:59 was already going then). Docker Desktop not starting by itself is a way for every day to stop.
+  - **The task's time is right, the status line was not:** the trigger is 17:15 UTC (fixed `-05:00`), so 12:15
+    EST in winter and 13:15 in summer ("Daylight time" above); the planet store's 14:45 moves with it (13:45 EST).
+    The line under "Status and next steps" now says so. Nothing changed in the Task Scheduler.
+  - **`CountryMetadataTest`, the sums (cf18da81):** the LF files are SC's own bytes (`AD.yml` on disk and SC's
+    raw file at the pinned commit both give f300507e...), so the sums were recorded anew, not the files exempted.
+    `.scratch/rerecord_sc_sums.py` showed for each of the 613 files and 7 upstream sums that the old sum is the
+    same bytes with CRLF, then wrote the LF sums; `sync-sc.ps1` now copies text with LF (`Copy-Lf`;
+    `boundaries.ser` as it is), so a repin on a CRLF checkout records the same. **Not run: the engine's tests**
+    (a gradle run beside the city run); the sums were checked by the script. **Left:** the test "byte for byte
+    against the SC checkout" compares raw bytes and would fail against a CRLF checkout (today it is skipped:
+    `Temp/sc-v64.1` has lost its `country_metadata`); the fix is to drop `` from the checkout's side, but a
+    touched file under `engine/src` makes `engine_is_stale()` true, so it waits for a gap.
+  - **Docker Desktop not starting by itself** is a way for every day to stop; the owner: leave it.
 - **Clock times in this section from "19:10" on were written without reading the clock and run up to 45 minutes
   ahead**: it was 19:25 when the entry above ("20:05", "20:10") was written, and the HOLD ("19:30") was placed a
   little after 19:00. The order of events is right; the files' own times are the record.
