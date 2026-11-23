@@ -3589,7 +3589,7 @@ wording and tab structure as a first draft open to change, not as decided design
     left alone. The heap and disk branch and the points fix wait for the laptop's return and the owner's word.
 - **STOPPED at 15:20:23 on 11-23, day 11-22 in `world finish` (tier 2 `old`, engine f8 exit 1); HOLD is also there.** All
   four engines of that moment (pids 11428, 26484, 55252, 57228: `hs_err_pid*.log` in the repo root) died at
-  14:57:11: the machine's commit limit was used up (page file 112 GB in all, 6-7 MB left, with 13 GB of physical
+  14:57:11: the machine's commit limit was used up (limit 112 GB, RAM and page file; 6-7 MB left in three reports, with 13 GB of physical
   memory free). What held the commit is not known: nothing was recorded at that moment. Not a count mismatch. Free
   disk fell from 108 GiB (14:42) to 52 GiB (15:20); not traced. The store is at generation 21 and the world at
   11-21; `day.pkl` is kept and `finished` is absent, so the documented resume redoes finish (about 2.5 h). **Not
