@@ -3433,6 +3433,23 @@ wording and tab structure as a first draft open to change, not as decided design
     11-21 ones in `.scratch/anomalies/1121-points/` only while generations 19 and 20 are readable), `p_*.npy`
     byte for byte, and installed on a day of its own so a gate has one suspect. The test's `\r` edit goes with
     the next engine install.
+  - **The gate's margin since 11-18: traced (the read-only agent, about 12:45), nothing to fix in the data;
+    not the notes dump.** Notes and scripts: `.scratch/anomalies/gate-margin/notes.md`. Every new row is an
+    aged-only one. (1) **Bratislava AddCycleway +4 to +6, for good:** ways 4911921 and 184347348
+    (`cycleway:both=no`, last edited 2022-11-18) reached the 4-year resurvey age on 11-18; they lie where SC's
+    boundaries say Austria, so the world counts them and the clip's `["SK"]` city counts no AddCycleway: the
+    known country-gate difference of DESIGN.md, growing as more of them age. (2) **Sofia, +1 to +4 for one day
+    each:** the world's cell (`f2c7`) runs in Europe/Belgrade, the clip's Sofia in Europe/Helsinki, so an
+    element last edited in the hour before Belgrade's midnight ages in a day sooner in the world; 6 of the 7
+    rows shown by their edit times (11-18's CheckExistence +1 not found). DESIGN (about line 1906) foresaw it.
+    (3) Istanbul AddHousenumber +2 to +1 from 11-20, not traced. **Corrections to the above:** the margin was
+    not +11 since 11-02 but +9 (11-02 to 11-04), +10 (to 11-10), +14 (11-11, Sofia again, not traced), +11
+    (11-12 to 11-17); the dump cut in on 11-18 was `planet-notes-261121`; the worst city moved from Athens to
+    Bratislava. **Would make it +0, not built, the owner's:** Sofia's ground in a UTC+2 cell (DESIGN's "cut a
+    cell along zone lines") and the clip's city gated by position. **The one proof left:** keep the clip
+    side's `state.bin` of europe-east for a day (`world_gate.py` line 84 deletes it) and diff Sofia's rows.
+    Per element nothing of the clip side is kept; 11-22 had not begun, so nothing was copied (its
+    `gate.json` is kept in `days/<D>/` anyway).
 - **Clock times in this section from "19:10" on were written without reading the clock and run up to 45 minutes
   ahead**: it was 19:25 when the entry above ("20:05", "20:10") was written, and the HOLD ("19:30") was placed a
   little after 19:00. The order of events is right; the files' own times are the record.
