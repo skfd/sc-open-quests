@@ -3546,6 +3546,15 @@ wording and tab structure as a first draft open to change, not as decided design
     side's `state.bin` of europe-east for a day (`world_gate.py` line 84 deletes it) and diff Sofia's rows.
     Per element nothing of the clip side is kept; 11-22 had not begun, so nothing was copied (its
     `gate.json` is kept in `days/<D>/` anyway).
+- **13:00 on 11-23, the anomalies session's reading (nothing run).** The 07:37 city run died at 09:35 on `fetch
+  europe` ("docker is not answering"); the helper was started again at 11:59 (not by this session), the city run
+  ended with `update done` at 12:32 (the first on the timers engine: `timing:` lines are in `logs/scheduler.log`),
+  `fill` wrote `europe-2026-11-22.osm.pbf`, and the loop began 11-22 at 12:44 (pid 15328); it closes about 15:20.
+  **The first split from production, 11-22's `before` at generation 20:** 11,643 points, 127 s: the closed ways'
+  loop 67 s (181 million placed, 1.7 billion binary searches, 35,652 rings tested), the multipolygons' 30 s
+  (14,138 in a box, 162 million nodes mapped), blobs 20 s, tiles 11 s: the same picture as 11-21's replay. This
+  session reads 11-22's `after` and the engines' `timing` once the day has closed (scheduled 15:30); the fixes
+  themselves are with the session of the owner's "fix all these" (12:16).
 - **Clock times in this section from "19:10" on were written without reading the clock and run up to 45 minutes
   ahead**: it was 19:25 when the entry above ("20:05", "20:10") was written, and the HOLD ("19:30") was placed a
   little after 19:00. The order of events is right; the files' own times are the record.
