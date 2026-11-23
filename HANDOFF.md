@@ -3415,6 +3415,24 @@ wording and tab structure as a first draft open to change, not as decided design
     `Temp/sc-v64.1` has lost its `country_metadata`); the fix is to drop `\r` from the checkout's side, but a
     touched file under `engine/src` makes `engine_is_stale()` true, so it waits for a gap.
   - **Docker Desktop not starting by itself** is a way for every day to stop; the owner: leave it.
+- **Owner, 12:05 on 11-23 (phone): "lets fix all these, except docker".** Read as: the two calls above (done)
+  and the night's five open items. **Under way since 12:15, nothing in main, nothing built or run:**
+  - Two agents writing in worktrees of their own (`.claude/worktrees/agent-*`, branches `worktree-agent-*`; two
+    older worktrees there are other sessions'): (A) the points query fix in `tilestore/src/context.rs`, a
+    draft that has never been compiled; (B+C) the heap given and its peak as a metric, a minimum heap per
+    region, and the loop taking no day it has no disk for. Decided for B+C before the brief: a region without its
+    minimum waits a bounded time (60 min, a line every few minutes), then the gate ends the run cleanly with
+    no STOPPED (the next start resumes at the gate) and the city run fails naming memory; under about 115 GiB
+    free the loop takes no new day and ends its run cleanly.
+  - Two agents reading only: tier 2 reads since the swap (notes in `.scratch/anomalies/t2-reads/`) and the
+    gate's margin since 11-18 (`.scratch/anomalies/gate-margin/`; it copies 11-22's gate outputs if the day's
+    work would delete them). Each may end in a named cause and no fix.
+  - **The gap's order (no RUNNING, city task not Running; no HOLD is placed to make one, world days come
+    first):** free disk; gradle `CountryMetadataTest`; the whole Python suite; merge B+C after reading it;
+    then A alone: `cargo build` in its worktree, old binary against new on a day's `--points` inputs (the kept
+    11-21 ones in `.scratch/anomalies/1121-points/` only while generations 19 and 20 are readable), `p_*.npy`
+    byte for byte, and installed on a day of its own so a gate has one suspect. The test's `\r` edit goes with
+    the next engine install.
 - **Clock times in this section from "19:10" on were written without reading the clock and run up to 45 minutes
   ahead**: it was 19:25 when the entry above ("20:05", "20:10") was written, and the HOLD ("19:30") was placed a
   little after 19:00. The order of events is right; the files' own times are the record.
