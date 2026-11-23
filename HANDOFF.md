@@ -3467,7 +3467,7 @@ wording and tab structure as a first draft open to change, not as decided design
     STOPPED after a clean end at the gate, `store_lock.reading` lets readers take a store that is at D before
     its checks and compaction (that state used to come only with STOPPED); the old `HEAP_MIN_GB` timeout at
     the gate now ends cleanly too; a day resumed so gets no `steps.json`.
-  - **Tier 2 reads: looked into (the read-only agent, to about 12:55), no cause established, nothing wrong with
+  - **Tier 2 reads: looked into (the read-only agent, done 12:35), no cause established, nothing wrong with
     the reader; and a leak found beside it.** Notes: `.scratch/anomalies/t2-reads/NOTES.txt`. The step is
     measured as before the swap (the same span in `world_day.rect_rows`, 4 workers, no commit in `tilestore/`).
     Like for like, seconds a GB of map data: 53-73 on 11-04 to 11-13, 80-93 on 11-15 to 11-19, 77-80 on 11-20
@@ -3486,7 +3486,7 @@ wording and tab structure as a first draft open to change, not as decided design
     each restart (measured apart: an interpreter's imports 0.22 s with no copy, 5.7 s with 2,560). The fix
     inserts once. `world_day.py` is imported by the loop: merge in the gap only. `engine files` is volume and
     machine state, no leak.
-  - **The gate's margin since 11-18: traced (the read-only agent, about 12:45), nothing to fix in the data;
+  - **The gate's margin since 11-18: traced (the read-only agent, done about 12:25), nothing to fix in the data;
     not the notes dump.** Notes and scripts: `.scratch/anomalies/gate-margin/notes.md`. Every new row is an
     aged-only one. (1) **Bratislava AddCycleway +4 to +6, for good:** ways 4911921 and 184347348
     (`cycleway:both=no`, last edited 2022-11-18) reached the 4-year resurvey age on 11-18; they lie where SC's
