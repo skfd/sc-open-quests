@@ -3356,6 +3356,40 @@ wording and tab structure as a first draft open to change, not as decided design
   `steps.json`**. That showed `day_metrics.day_steps` read only a resumed day's last fragment; fixed (a day is
   read from its last "diff N on generation G" line through every resume, with `resumes` counted) and 11-16 and
   11-21 rewritten: 11-16 36,054 s with 24,848 in no step (the disk stop), 11-21 11,568 s with 1,959 in no step.
+- **The 07:30 follow-up on 11-23 (the anomalies session; the machine still, a HOLD of its own 07:31-07:37, removed).**
+  - **THE ENGINE TIMERS ARE INSTALLED (07:35).** Proof first, as the gate runs a region (`storecheck_cities.engine`:
+    `--notes`, `--dump-state`, `--today`), europe-east on `europe-2026-11-21.osm.pbf`, both at `-Xmx32g`, one
+    after the other: old (main's install of 11-21) 45 s, new (the worktree's build) 39 s. `quests.json` and
+    `state.bin.json` byte for byte; the snapshot the same but for `runSeconds`; `state.bin` the same 4,058,708
+    records as a multiset (its order is the threads'). Peak heap (sum of pool peaks) 31,194 MB old, 27,205 MB
+    new: not higher. Then merged into main (fb9c233d; one conflict, two tests added at the same place in
+    `tests/test_day_metrics.py`, both kept; 259 Python tests pass), `installDist` in main, `engine_is_stale()`
+    False, and the installed engine run once more on the region: the same outputs (the snapshot differs in
+    `engineCommit` and `runSeconds` only). **To undo:** the install of 11-21 is
+    `.scratch/anomalies/engine-install-before-timers-1121/`; copy it over
+    `engine/build/install/sc-open-quests-engine/` and revert fb9c233d (else the next city run rebuilds from
+    source). Proof kept: `.scratch/anomalies/timers-proof/europe-east/` and `timers_proof.py`. Worktree and
+    branch gone.
+  - **What the timers give:** `timing:` lines in every `engine.log` (startup, engine, area, area cities, area
+    map data, over threads, before the pass, pass, outside total), and from the next closed day
+    `engines.json` has them per engine under `"timing"`. **To read after 11-22 closes:** f116's
+    `timing: engine` (which index holds the 39-57 s) and `timing: area cities` (which of ways chosen, tagged
+    nodes chosen, relations chosen, map data assembled holds the 108 s), and their sums over all of tier 2.
+    Not measured at scale yet: the subagent's guess is the per-city scan of every way, node and relation of
+    the file, and the cities-times-parts loop in `Engine`.
+  - **`CountryMetadataTest` fails on main as well, since the LF conversion of 11-17, not from the timers:**
+    `SC-VERSION.txt` records `AD.yml`'s sha256 with CRLF (86c4bd7b...), the file in git and on disk is LF
+    (f300507e...; the same bytes with CRLF give the recorded sum). So the bundled `country_metadata` files are no
+    longer SC's bytes and the test that says so has been red since. Not touched: whether these files are
+    exempted from LF or the sums recorded anew is the owner's.
+  - **Geofabrik answers again** (`ontario-latest` to `ontario-261122.osm.pbf`, 200, last modified 00:06 UTC; the
+    404 at 01:22 was their publication under way). `.scratch/after-backfill.sh` started 07:37 (detached): the
+    city task is Running (downloading at 07:38; **the first run on the timers engine**), then `facts.py cities`,
+    `fill europe`, the loop (`--max-days 20`): **11-22 is the first world day with the points counters and the
+    timers.** To check: `logs/after-backfill.log`, `update done` in `logs/scheduler.log`, 11-22's gate.
+  - **Still open from the night:** the fix of the points query (both loops; wait for a slow day's split); a
+    minimum heap per region for the gate and the city run, and the heap as a metric; the loop refusing a day
+    it has no disk for; tier 2 reads slower since the swap; the gate's margin since 11-18.
 - **Clock times in this section from "19:10" on were written without reading the clock and run up to 45 minutes
   ahead**: it was 19:25 when the entry above ("20:05", "20:10") was written, and the HOLD ("19:30") was placed a
   little after 19:00. The order of events is right; the files' own times are the record.
