@@ -34,14 +34,19 @@ REGIONS = ["europe-west", "europe-central", "europe-east", "europe-msk"]
 KIND = {0: "n", 1: "w", 2: "r"}
 
 
-def engine(pbf: Path, cities: Path, out: Path, notes: Path, tz: str, quests: Path, today: str) -> float:
-    """the clock given, not taken from the file's header: an oracle cut from a history file keeps the history's"""
+def engine(pbf: Path, cities: Path, out: Path, notes: Path, tz: str, quests: Path, today: str,
+           min_heap_gb: int | None = None, what: str | None = None, log=None) -> float:
+    """the clock given, not taken from the file's header: an oracle cut from a history file keeps the history's.
+    min_heap_gb: the region's least heap (run.region_min_heap_gb); the wait for it, and run.MemoryBusy at its end,
+    come before anything is written. `what` names the engine in the heap's lines, which go to `log`. The seconds
+    are the engine's own, not the wait's."""
+    env = run.engine_env(tz, heap=True, min_heap_gb=min_heap_gb, what=what, say=log)
     out.mkdir(parents=True, exist_ok=True)
     cmd = [str(run.ENGINE_BAT), "count", "--pbf", str(pbf), "--quests", str(quests), "--cities", str(cities),
            "--out", str(out / "out"), "--notes", str(notes), "--dump-state", str(out / "state.bin"), "--today", today]
     t = time.time()
     with open(out / "log.txt", "w", encoding="utf-8") as f:
-        subprocess.run(cmd, cwd=ROOT, env=run.engine_env(tz, heap=True), stdout=f, stderr=subprocess.STDOUT, check=True)
+        subprocess.run(cmd, cwd=ROOT, env=env, stdout=f, stderr=subprocess.STDOUT, check=True)
     return time.time() - t
 
 

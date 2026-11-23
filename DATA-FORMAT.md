@@ -6,7 +6,8 @@ This is the contract between the engine (writes snapshots), the pipeline (keeps 
 ## Inputs
 
 - `data/quests/v<SC>.json`: the quest registry dumped from the StreetComplete build (`tools/sc-harness`).
-- `config/regions.json`: `{ "regions": [ { id, name, group, timeZone, poly, source, extract?, url?, cadence? } ] }`.
+- `config/regions.json`: `{ "regions": [ { id, name, group, timeZone, poly, source, extract?, url?, cadence?, minHeapGb? } ] }`.
+  `minHeapGb` is the least heap, in whole GB, the region's engine is started with (DESIGN.md, "Engine heap").
   A region is one engine run: one time zone, its own cities, its own archive `data/archive/<id>/`. `extract`
   (default: `id`) is the shared-store extract it is counted from: the folder `~/Code/.osm-data/<extract>/`
   and the `osm-extracts fetch <extract>`; `url` is passed as `fetch --url` when osm-extracts does not know

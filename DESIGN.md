@@ -742,6 +742,19 @@ one-time-zone-per-run limit stays.
 - **Busy memory waits, then skips.** Under 12 GB spare (Ontario counts in 12-16 GB), the engine waits and
   re-reads every minute, up to 60 minutes (`SCOQ_HEAP_WAIT_MINUTES`), then the run stops with a clear
   error. A skipped count is not lost: the next run goes over every stored extract.
+- **A region may need more than 12 (2026-11-23).** `"minHeapGb"` in `config/regions.json`
+  (`run.region_min_heap_gb`): the engine for that region waits for that much, not for `HEAP_MIN_GB`, with a
+  line every 5 minutes (`HEAP_LOG_MINUTES`) and the same 60-minute bound (`HEAP_WAIT_MINUTES`), then raises
+  `run.MemoryBusy`. Only europe-central has one, 27: on 11-21's Europe clip its engine died of
+  `OutOfMemoryError` at 14 g and counted at 27 g. The other regions have none, as before. The city run ends
+  with that error as its `ERROR:` line, naming the heap the machine could spare and the heap needed. The
+  world loop's gate (`world_gate.clip_side`) ends the run with no STOPPED and the next run resumes the day
+  at its gate ("The world day on the planet").
+- **The heap is a metric.** The city run logs `engine heap, <region>: -Xmx<N>g ...` before each engine,
+  and the engine's last line gives the peak. The gate logs `gate heap: <region> given N MB, peak M MB` for
+  each region and keeps both in `gate.json` (`"clip heap"`), read off the engine's log
+  (`run.engine_heap_of`). The peak follows the heap given (28,251 MB of 28,672 and 27,189 of 27,648 for
+  europe-central): it says a heap was enough, not how little would be.
 - **Same counts.** Bremen 2026-10-23 with `-Xmx19g` equals the archived snapshot. A smaller heap is a
   little slower (Ontario 260 s at 16 GB against 188 s at 40 GB), not different.
 
@@ -5645,6 +5658,16 @@ seed at 11-01) together; the store never moves alone. A day D, the store, its no
 6. **The store's own day** as before (loc advance and check, subcmp and why, compact, punch), then D's Europe clip
    unpinned and the day's work deleted, its `day.json` and `gate.json` kept in `W/days/<D>/`. Every clip of a day the
    world has not reached is pinned on sight.
+
+**Two ends that are not a STOP (2026-11-23).** Both end the run cleanly ("planet store run ended"), write no
+STOPPED and need nobody. (a) **No day without the disk for it:** before a new day, not a resumed one, the loop reads
+the free space of the store's disk and takes no day under 115 GiB (`DAY_NEEDS_GB` 75, what a day draws at its low,
+plus `DISK_FLOOR_GB` 40, the floor `update`, `loc advance` and `compact` refuse under); it logs `day <D> not taken:
+...` and the next run asks again. A day failed in its middle for want of disk on 11-16 and 11-21. A resumed day's
+steps keep their own checks. (b) **A gate region short of its heap** ("Engine heap", `minHeapGb`): after the
+60-minute wait `run.MemoryBusy` passes through `guarded` to `days`, which logs `not now: ...` and ends the run. The
+store and the world are at D, `finished` is written and the node file is at D-1, which is the state `one_day`
+resumes from at the gate; the regions already counted keep their `done`.
 
 **Notes.** The world's clips hold every note's history up to their dump's `until`. A day past it cuts the newest dump
 into every plan file again; the old union clip stays as that day's D-1 side of the hidden flags
