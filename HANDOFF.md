@@ -3244,7 +3244,7 @@ wording and tab structure as a first draft open to change, not as decided design
   - **The watch rule misses both kinds:** it compares a step with its median, so a slow day at ordinary volume
     under twice the median passes, and f116 trips it only because the group is large. Rates would say it: ms a
     point for `points`, ms a part for an engine.
-- **Counters and timers: owner "go, but be careful" (2026-11-23, 00:17). Under way at 00:30, nothing in main but
+- **Counters and timers: owner "go, but be careful" (2026-11-23, 00:17). Under way at 00:23, nothing in main but
   this file.** Rules kept: no build and no install in main while `RUNNING` exists or the city task runs; measuring
   code only, the fix later and apart, so a gate has one suspect.
   - **Tile store, branch `points-counters`** (worktree `.claude/worktrees/points-counters`, edb0521e, built there):
@@ -3253,13 +3253,35 @@ wording and tab structure as a first draft open to change, not as decided design
     `ringsTested`, `ringSegments`, `multipolygonsSeen`, `multipolygonsInBox`, `multipolygonNodesMapped`,
     `multipolygonSegments`, `homeTiles`, `blobsAsked`). The clock is read per chunk and per point and tile, not
     per way. Nothing reads the stat strictly (`store_context.py` logs it whole).
-  - **Its proof, waiting (background):** `.scratch/anomalies/replay.py` waits for the loop to end its run after
-    11-21, then as a reader (`store_lock.reading`, a HOLD of minutes, its own, removed on exit) runs the worktree
-    binary on the kept 11-21 points inputs at generations 19 and 20 and compares `p_*.npy` byte for byte with
-    the day's own; outputs `.scratch/anomalies/replay/`. If a HOLD with "anomalies session" in it is ever found
-    left behind, the replay died: remove it.
-  - **Engine timers:** a subagent in its own worktree adds `timing:` lines only (every existing line as it is),
-    with an old-against-new run on a small input as proof. Not reviewed yet.
+  - **Its proof, done 00:42-00:49 (the store STOPPED and still, generations 19 and 20 both readable; no HOLD was
+    ever placed):** the worktree binary on the kept 11-21 points inputs; `p_offs`, `p_kind`, `p_id` byte for
+    byte the day's own, both calls; outputs `.scratch/anomalies/replay/`. **The split, an ordinary day:**
+    generation 19, 12,284 points, 180 s: the closed ways' loop 91 s, the multipolygons' 58 s, blobs 21 s, tiles
+    11 s. Generation 20, 25,358 points, 207 s: 131 s, 59 s, 8 s, 9 s. **Both candidates are real.** Closed ways:
+    193 and 370 million placed (1.9 and 3.4 billion binary searches) for 35,704 and 65,973 rings whose box held
+    the point: 5,400 placed for one tested. Multipolygons: 17,442 and 25,489 in a box, 327 and 431 million
+    nodes put in a map for them (18,000 nodes each time). So the fix proposed above takes both loops.
+  - **Engine timers: built by a subagent, branch `worktree-agent-a3eb722146f115366` (9dc17f7d), not reviewed by
+    this session yet and NOT ready to install.** `timing:` lines only (startup, engine, area, area cities, area
+    map data, over threads, before the pass, pass, outside total), `day_metrics` reads them into `"timing"`.
+    Its proof: `.scratch/rectgroups/exact/groups/f10`, 428 rectangles, old against new, the outputs the same as
+    two old runs are the same. Still owed: the diff read for anything held longer in memory; an old-against-new
+    run of a gate region with `--notes` on a still machine, with the peak heap; `CountryMetadataTest` (fails in
+    the worktree, on `AD.yml`'s sha) run on the base commit.
+  - **THE LOOP STOPPED AT 00:40:41 ON 11-21's GATE, WHILE THIS WORK RAN BESIDE IT.** The clip-side engine for
+    europe-central died of `OutOfMemoryError: Java heap space` in `AreaPass.wayColumnsOf` (`maxHeap=14336 MB`;
+    its log kept: `.scratch/anomalies/1121-gate-oom/log.txt`). Not a count that differs and not the store:
+    `finished` is there, europe-west had counted (71 s against the usual 54-58: the machine was loaded). What
+    ran beside it: the subagent's gradle build, its engine runs on the fixture (00:32-00:34, 00:43) and its
+    unit tests; this session's cargo build had ended at 00:21. Another process cannot fill a JVM's heap, so the
+    load can only have moved the timing of 24 threads' allocations in a heap that was near its limit already;
+    that is a guess. The city run died of the same error at `-Xmx13g` on 11-21 "beside the catch-up". **The
+    gate engine's heap is in no metric: an anomaly of its own.** `after-backfill.sh` saw STOPPED and did nothing
+    (00:40:54).
+  - **Restart, 00:55:** gradle daemons stopped, nothing of this session running; STOPPED removed; the loop
+    started as the helper starts it (it resumes 11-21 at the gate, then the store's checks and compaction);
+    `.scratch/after-backfill.sh` started again once RUNNING was there. One attempt: if the gate's engine dies
+    again on a still machine, the load is not the cause and the heap is (`world_gate.py` / `storecheck_cities`).
   - **Install, not done:** tile store: merge and `cargo build --release` in main when no `tilestore` process
     runs (the loop copies the binary at its start). Engine: `installDist` in main only with no `RUNNING` and
     the city task not running, under HOLD for its minutes; the old exe and install folder copied aside first.
