@@ -854,6 +854,12 @@ its own static page or a Worker that rewrites the head; the state is in the quer
   in gaps of the loop only.
 - **Risk to settle before go-live:** the $5 Workers limit blocks every Worker past it, and then the home page fails
   (error 1103). A render on demand spends from that same limit; a batch made here does not.
+- **Owner, 11-24: the design is done in a fresh session; nothing was designed or decided here.** Claude's proposal to
+  start from, not agreed: mockups of both cards first (real data), design frozen about 11-25, built 11-26 to 11-27,
+  cards made and merged 11-28, Worker live 11-29. Place card: name, parent, top three quest types, no totals. General
+  card: the world total, rounded and dated, once its overlaps are checked. Cards for countries, regions and the 147
+  cities (about 4,350); Latin, Cyrillic and Greek names; the general card for the rest; no rendering on demand at
+  release. Also the owner's: what happens at the Workers limit, and the wording "Canada and Europe".
 
 ### Share previews: built on `share-previews`, not merged, not live (2026-11-23, afternoon; owner: "build it, i will upgrade account later")
 
