@@ -847,6 +847,12 @@ its own static page or a Worker that rewrites the head; the state is in the quer
 
 ### Share previews: built on `share-previews`, not merged, not live (2026-11-23, afternoon; owner: "build it, i will upgrade account later")
 
+- **Under review (11-23, evening):** `design/share-previews.md` on the branch (`736d7529`) has the requirements, the
+  design, measurements and open questions. Owner: no outlines; the general card needs statistics. **The Worker
+  render benchmark (`cloudflare/bench/run.py`) is written, not run:** it needs a gap in the world loop.
+- **Correction:** four wrangler processes from the checks were left running from 13:19 and 13:25 until about 21:30
+  (stopped; about 270 MB), so "check servers are stopped" below was wrong, and the test suite and browser checks of
+  13:00 to 13:30 ran without looking for the loop. Not shown to have caused the 15:20 stop, nor ruled out.
 - **Where:** branch `share-previews`, worktree `../sc-open-quests-previews`, two commits: `bab3d69a` (the
   page's `og:` tags and the site card `docs/img/share-card.png`) and `06bf2326` (the Worker). Its DESIGN.md
   section, "Share previews: a Worker's text for every place", has what it does and what was checked;
