@@ -3034,6 +3034,18 @@ wording and tab structure as a first draft open to change, not as decided design
     `canada-germany-history-261102.osh.pbf` (5.5 GB): keep it; Europe's would need a planet download.
   - **Offered, not done:** the sidebyside task (ended 11-14, no next run) and the eight dated `canada-germany` clips
     (about 10 GB, read only by `.scratch/side-by-side/compare.py`); disk was 113 GiB free mid-day against the loop's 115.
+- **Begun before Release 1 (owner, 11-24, 15:05: "go ahead with your recs, we can do it before release 1").** On branch
+  `retire-cities` (worktree `../sc-open-quests-retire`, ef5ce98e), 264 tests OK, the compare page looked at; **to merge
+  only between two world days** (`run.py` and `planet_store_day.py` are the loop's), then `schedule-inputs-add.ps1`:
+  - `run.py inputs` (task `kk-SCOpenQuests-inputs`, 11:15, log `logs/inputs.log`): `fetch europe`, `fetch notes` (three
+    tries, 10 min apart), the facts' and the world's backup, `check-release` (gone from `update`). It holds
+    `data/inputs.lock` while it fetches; the loop waits for it up to an hour. `update` still fetches both (no-ops then).
+  - `docs/data/quests.json` from `tools/site_quests.py` (`config/site-quests.json` + cities' country codes; byte for byte
+    today's file for 147 cities); REPIN.md step 5 has `take`.
+  - The compare view's "Per road km" is gone (owner: "we dont want that feature"), and `highwayKm` from the site's files.
+  - **Left:** the city pages from `osm-<city>` (waits for the neighbourhoods' answer, a session of its own:
+    "City neighbourhoods missing from the world counts"; parts sit inside the same snapshots), `world_compare.py` rerun in a
+    gap, the site deploy's new home, then the city task off. The widget's files come with the city pages.
 
 ## Storage redesign: facts, serving, working state (owner, 2026-11-21, 13:10)
 
