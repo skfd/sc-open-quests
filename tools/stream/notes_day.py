@@ -190,9 +190,9 @@ def notes_table(clip: Path, workers: int = 16) -> dict:
     st = clip.stat()
     stamp = np.array([TABLE_VERSION, st.st_size, st.st_mtime_ns], np.int64)
     if cache.exists():
-        z = np.load(cache)
-        if (z["stamp"] == stamp).all():
-            return {k: z[k] for k in ("key", "created", "ev_note", "ev_ts", "ev_act")}
+        with np.load(cache) as z:  # closed before the cache is replaced below: Windows refuses to replace an open file
+            if (z["stamp"] == stamp).all():
+                return {k: z[k] for k in ("key", "created", "ev_note", "ev_ts", "ev_act")}
     size = st.st_size
     n = max(1, min(workers, size // (8 << 20) + 1))
     bounds = [size * i // n for i in range(n + 1)]

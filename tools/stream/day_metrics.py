@@ -35,6 +35,10 @@ PASS = re.compile(r"^pass ([\d.]+) s, total ([\d.]+) s; peak heap \(sum of pool 
 STEP = re.compile(r"^(relation member scan|nodes|ways|relations)\s+([\d.]+) s")
 CITIES = re.compile(r"(\d+) cities \((\d+) parts")
 STARTUP = re.compile(r"^startup: registry and cities ([\d.]+) s, parts ([\d.]+) s.*engine and its indexes ([\d.]+) s")
+# the engine's own split of what its other lines leave unnamed (engine Timing.kt):
+# `timing: <group>: <name> <seconds> s, <name> <seconds> s, ...`
+TIMING = re.compile(r"^timing: ([^:]+): (.*)$")
+TIMING_ITEM = re.compile(r"([^,]+?) ([\d.]+) s(?:, |$)")
 # an engine is worth a look when it is this many times the phase's median and at least this long
 WATCH_TIMES, WATCH_SECONDS = 10, 120
 # or when one step holds this share of an engine that long
@@ -75,6 +79,13 @@ def engine(log: Path) -> dict | None:
         m = STARTUP.match(line)
         if m:
             e["startup s"] = round(float(m[1]) + float(m[2]) + float(m[3]), 1)
+            continue
+        m = TIMING.match(line)
+        if m:
+            t = e.setdefault("timing", {})
+            for name, s in TIMING_ITEM.findall(m[2]):
+                key = f"{m[1]}: {name}"
+                t[key] = round(t.get(key, 0.0) + float(s), 2)
             continue
         m = CITIES.search(line) if "cities (" in line and "quests in" in line else None
         if m:
@@ -226,7 +237,9 @@ def _seconds(a: str, b: str) -> float:
 def day_steps(log_text: str, day: str) -> dict | None:
     """the last run of `day` in the loop's log, as numbers; None when the log has no such day"""
     lines = log_text.splitlines()
-    starts = [i for i, l in enumerate(lines) if f"] == day {day}: " in l]
+    # a day's last attempt begins at its last "diff N on generation G" line; a resume after a stop ("resuming",
+    # "the store's checks and compaction, resumed") goes on with the same day and is read with it
+    starts = [i for i, l in enumerate(lines) if f"] == day {day}: diff " in l] or              [i for i, l in enumerate(lines) if f"] == day {day}: " in l][:1]
     if not starts:
         return None
     block = lines[starts[-1]:]
@@ -243,6 +256,8 @@ def day_steps(log_text: str, day: str) -> dict | None:
                 break
             if body.startswith("== day ") and not body.startswith(f"== day {day}"):
                 break                                   # the next day began: this one never said done
+            if body.startswith(f"== day {day}: ") and "diff " not in body:
+                rec["resumes"] = rec.get("resumes", 0) + 1
         x = EXIT.match(body)
         if x:
             name = step_name(x[1])

@@ -51,7 +51,9 @@ def _log(msg):
 
 def quiet(ahead_minutes: int = 0):
     """no engine starts in (or runs into) the daily update's window: world_cells.quiet"""
-    sys.path.insert(0, str(ROOT / "tools"))
+    tools = str(ROOT / "tools")
+    if tools not in sys.path:      # once: this is called for every engine, and a pool's workers get sys.path whole
+        sys.path.insert(0, tools)
     import world_cells
     world_cells.quiet(ahead_minutes)
 

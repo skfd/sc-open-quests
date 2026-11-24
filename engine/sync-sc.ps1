@@ -77,6 +77,15 @@ function Get-Sha256([string]$path) {
     -join ([System.Security.Cryptography.SHA256]::Create().ComputeHash($bytes) | ForEach-Object { $_.ToString('x2') })
 }
 
+# A text file of the checkout, copied with LF line endings: the bytes SC has in git, whatever
+# core.autocrlf made of the checkout, and what .gitattributes keeps here. So the sums in SC-VERSION.txt
+# are those of SC's own blobs. Byte-wise (Latin-1 both ways), so nothing else of the file changes.
+function Copy-Lf([string]$src, [string]$target) {
+    $latin1 = [System.Text.Encoding]::GetEncoding(28591)
+    $text = $latin1.GetString([System.IO.File]::ReadAllBytes($src)) -replace "`r`n", "`n"
+    [System.IO.File]::WriteAllBytes($target, $latin1.GetBytes($text))
+}
+
 $pkg = 'de/westnordost/streetcomplete'
 $files = @(
     # the element filter parser and matcher
@@ -391,14 +400,14 @@ $lines = @(
     "patches=$(($patches | ForEach-Object { $_.Name } | Select-Object -Unique) -join ',')"
 )
 foreach ($p in $patches) { $lines += "  $($p.Name): $($p.Description)" }
-$lines += "files (sha256 of the copied file; patched files also give the upstream sha256):"
+$lines += "files (sha256 of the copied file, LF line endings as in SC's git; patched files also give the upstream sha256):"
 
 foreach ($f in $files) {
     $src = Join-Path $commonMain $f
     if (-not (Test-Path $src)) { throw "Missing in SC checkout: $src" }
     $target = Join-Path $dest $f
     New-Item -ItemType Directory -Force (Split-Path $target) | Out-Null
-    Copy-Item $src $target
+    Copy-Lf $src $target
     $upstream = Get-Sha256 $target
     $filePatches = @($patches | Where-Object { $_.File -eq $f })
     if ($filePatches) {
@@ -427,7 +436,7 @@ foreach ($f in $resources) {
     if (-not (Test-Path $src)) { throw "Missing in SC checkout: $src" }
     $target = Join-Path $resDest $f
     New-Item -ItemType Directory -Force (Split-Path $target) | Out-Null
-    Copy-Item $src $target
+    if ($f -like '*.ser') { Copy-Item $src $target } else { Copy-Lf $src $target }
     $lines += "  $(Get-Sha256 $target)  $f"
 }
 # ordinal order, so that SC-VERSION.txt and the index do not depend on the culture
@@ -439,7 +448,7 @@ New-Item -ItemType Directory -Force (Join-Path $resDest $countryMetadata) | Out-
 foreach ($name in $metadataFiles) {
     $f = "$countryMetadata/$name"
     $target = Join-Path $resDest $f
-    Copy-Item (Join-Path $composeFiles $f) $target
+    Copy-Lf (Join-Path $composeFiles $f) $target
     $lines += "  $(Get-Sha256 $target)  $f"
 }
 $codes = @($metadataFiles | ForEach-Object { $_.Substring(0, $_.Length - '.yml'.Length) })

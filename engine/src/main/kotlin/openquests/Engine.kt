@@ -131,19 +131,31 @@ class PassStats {
  * of tagged relations keep their node positions); then relations.
  */
 class Engine(val registry: Registry, val cities: List<City>, val parts: List<Part> = emptyList()) {
+    /** the log's `timing: engine` line: what making this object took, each part named ([initLap] between the
+     *  properties below, which are made in the order they stand in) */
+    val initTiming = Timing("engine")
+    private val initLap = initTiming.lap()
+
+    /** the log's `timing: pass` line: [run]'s steps, and what Main adds to them */
+    val passTiming = Timing("pass")
+
     val quests: List<QuestDef> = registry.countedQuests
     private val cityIndex = CityIndex(cities)
+    init { initLap.to("city index") }
 
     /** each city's parts (indices into [parts]) and an index over their polygons (null for a city without) */
     val partsOfCity: Array<IntArray> = Array(cities.size) { c -> parts.filter { it.city == c }.map { it.index }.toIntArray() }
+    init { initLap.to("parts of each city") }
     private val partIndex: Array<PolygonIndex?> = Array(cities.size) { c ->
         // clipped to the city: every point asked of a city's parts lies in the city
         partsOfCity[c].takeIf { it.isNotEmpty() }?.let { ps -> PolygonIndex(ps.map { parts[it].polygon }, clip = cities[c].polygon) }
     }
+    init { initLap.to("part indexes") }
     /** per (part, quest): the open quests at resurvey x1 whose position is in the part, as the city counts them */
     val partOpen = AtomicLongArray(parts.size * quests.size)
     /** per (part, quest): of [partOpen], those open only because of time (the part's `agedOnly`) */
     val partAged = AtomicLongArray(parts.size * quests.size)
+    init { initLap.to("part counters") }
 
     /** the parts of city [c] whose polygon contains [p] (indices into [parts]) */
     private fun partsAt(c: Int, p: LatLon): IntArray {
@@ -181,6 +193,7 @@ class Engine(val registry: Registry, val cities: List<City>, val parts: List<Par
     /** enabled[city][quest]: the quest may count somewhere in the city; where [gate] is BY_POSITION, only
      *  where [enabledAt] says so */
     val enabled: Array<BooleanArray> = Array(cities.size) { c -> BooleanArray(quests.size) { gate[c][it] != Gate.OFF } }
+    init { initLap.to("gates") }
 
     /** whether quest [qi] counts at [p] in city [c], given [ids], the region ids at [p] (asked only when needed) */
     inline fun enabledAt(c: Int, qi: Int, ids: () -> List<String>): Boolean = when (gate[c][qi]) {
@@ -200,10 +213,13 @@ class Engine(val registry: Registry, val cities: List<City>, val parts: List<Par
         quests.indices.filter { quests[it].matcher?.includesElementType(type) == true }.toIntArray()
     }
     private val geometryCreator = ElementGeometryCreator()
+    init { initLap.to("zones and quests by type") }
     private val matchCache: MatchCache? = if (MATCH_CACHE == "false") null else MatchCache(quests, questsByType)
+    init { initLap.to("match cache") }
 
     val counts = Counts(cities.size, quests.size)
     val stats = PassStats()
+    init { initLap.to("counters") }
 
     /** the open notes at asOf; null when the run has no notes clip (nothing hidden, note quest not counted) */
     var notes: OpenNotes? = null
@@ -242,6 +258,7 @@ class Engine(val registry: Registry, val cities: List<City>, val parts: List<Par
             val matcher = q.matcher ?: continue // area quests see untagged elements too (AreaPass)
             require(untagged.none { matcher.matches(it) }) { "${q.name} matches untagged elements" }
         }
+        initLap.to("untagged check")
     }
 
     fun writeDump(w: Writer) {
@@ -423,9 +440,11 @@ class Engine(val registry: Registry, val cities: List<City>, val parts: List<Par
     // the pass
 
     fun run(blobs: List<ByteArray>) {
+        val lap = passTiming.lap()
         val wayStart = lowerBound(blobs, BlockKind.WAYS)
         val relStart = lowerBound(blobs, BlockKind.RELATIONS)
         log("blocks: nodes [0,$wayStart) ways [$wayStart,$relStart) relations [$relStart,${blobs.size})")
+        lap.to("block bounds")
 
         var t0 = System.nanoTime()
         val neededWays = parallelMap(relStart, blobs.size) { i ->
@@ -438,6 +457,7 @@ class Engine(val registry: Registry, val cities: List<City>, val parts: List<Par
             all.distinctSorted()
         }
         timing("relation member scan", t0, "${neededWays.size} member ways of tagged relations")
+        lap.to("relation member scan")
 
         t0 = System.nanoTime()
         // the area pass reads every node's version, time and tags off the same table (NodeStore)
@@ -447,6 +467,7 @@ class Engine(val registry: Registry, val cities: List<City>, val parts: List<Par
             processNodes(decodeBlock(blobs[i]).also { require(it.kind() == BlockKind.NODES) }, keepNodes, tagDict)
         }, tagDict)
         timing("nodes", t0, "${nodes.size} nodes")
+        lap.to("nodes")
 
         t0 = System.nanoTime()
         // the area pass takes its ways off the same read (AreaPass.collectWay): a way's block is decoded once
@@ -457,18 +478,23 @@ class Engine(val registry: Registry, val cities: List<City>, val parts: List<Par
         }
         val memberWays = SortedIdMap(wayBlocks.map { it.keptIds to it.keptCoords })
         timing("ways", t0, "${memberWays.size} member ways kept")
+        lap.to("ways")
 
         t0 = System.nanoTime()
         parallelMap(relStart, blobs.size) { i ->
             processRelations(decodeBlock(blobs[i]), memberWays)
         }
         timing("relations", t0, "")
+        lap.to("relations")
         matchCache?.logStats()
+        lap.to("match cache lines")
 
         // the chunks are let go once they are one table: nothing else may hold them while the cities run
         if (area != null) area.run(memberWays, wayBlocks.mapTo(ArrayList()) { b -> b.areaWays!!.also { b.areaWays = null } })
         else AreaPass(this, blobs, wayStart, relStart, nodes, areaUnit, tagDict ?: TagDict()).run(memberWays, ArrayList())
+        lap.to("area")
         notes?.let { countNotes(it) }
+        lap.to("notes")
     }
 
     /** The note quest: one quest per note quest whose position is in the city (OsmNoteQuest's position
