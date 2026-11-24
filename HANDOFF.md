@@ -845,6 +845,16 @@ its own static page or a Worker that rewrites the head; the state is in the quer
   (2) per-place PNGs. Sequencing: `cloudflare/` stays untouched until the flip and the `assets-switch`
   merge; the generator can be built and checked on `wrangler dev` before that.
 
+### Share cards are in release 1 (owner, 2026-11-24, 04:10: "we will design and implement share cards by release day")
+
+- Release day is about 12-01 (11-30 gated that evening, published 12-01 15:30). This replaces "per-place pictures
+  after release" under "decided (owner, 2026-11-23)" below: place cards are now release work. Text previews stand.
+- What the owner has said of the design is in `design/share-previews.md` on `share-previews`; its "Questions for the
+  next review" are the open ones. Not built: the place card, the new general card, the batch. Renders and builds go
+  in gaps of the loop only.
+- **Risk to settle before go-live:** the $5 Workers limit blocks every Worker past it, and then the home page fails
+  (error 1103). A render on demand spends from that same limit; a batch made here does not.
+
 ### Share previews: built on `share-previews`, not merged, not live (2026-11-23, afternoon; owner: "build it, i will upgrade account later")
 
 - **Workers Paid: the owner says subscribed; Workers spending limit $5 set (2026-11-23, by Claude in the owner's Chrome).**
