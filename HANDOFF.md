@@ -3011,6 +3011,29 @@ wording and tab structure as a first draft open to change, not as decided design
   next run (the clip was filled at 12:37, after the city run). `osm-extracts fill` makes clips only, not these twelve.
   **So (2) must read the world's `osm-<city>` counts back to 2026-11-01, not from the day of the switch**, or the
   gaps stay. Checked again on 11-23 at 23:20, after tonight's work (owner's ask).
+- **Asked again 11-24, 14:55 ("are we ready to turn off city machinery ... keep the monthly backfill?"). Read, nothing
+  changed: not ready.** Of the two waits only Release 1 is left (23 gated days of 30; the branch merged this morning).
+  - **The pause recipe (`data/cities.paused` and the task disabled) now stops the world by the next day:** the diff,
+    the Europe clip and the notes dump come only from this run's download step (today's loop took diff 5186,
+    `europe-2026-11-24`, `planet-notes-261124`). `fetch planet-diffs` cannot stand in: it counts from a history file,
+    deleted 11-16. It worked in the backfill because those files were on disk. **The world's least daily need:
+    `fetch europe`, `fetch notes`, `archive_backup.py`**; those three run on their own before anything is stopped.
+  - **Missing from the list above:** denominators (`counts.json` has none; the compare view's per-road-km and the
+    history files use `highwayKm`); `docs/data/quests.json`, built by `history` from the regions' `quests.json`
+    (the world place pages load it too); the widget reads `docs/data/{cities,quests}.json`, `history/`, `parts/`;
+    neighbourhoods: all 147 `osm-<city>` are in the world's 11-23 counts, 41 of the 4,214 parts are not (by id; 16
+    Berlin, 8 Hamburg), and the rest were checked for presence, not for equal numbers; `world_compare.py` last ran to 11-13,
+    before the swap, and Canada and Germany are in no daily gate: rerun it, in a gap, before the switch.
+  - **The saving, from today's log (12:15-13:36, not two hours):** the twelve Geofabrik downloads 53 min (4.5 GB),
+    `fetch europe` 4, notes 17 s, notes clips 2, Canada and Germany counted 6, Europe's four 8 (with 11-22's catch-up),
+    history and publish 7. Memory: the region engines' heaps, `minHeapGb` 27 for europe-central. No sibling project
+    relies on this run for Ontario: `toronto-streets-osm` and `address-importer-friend` fetch it themselves.
+  - **"Monthly backfill":** the 2017-2026 series in `data/archive` stays (frozen, on R2); `kk-SCOpenQuests-planet`
+    already off since 11-16, its history file deleted; `tools/backfill_history.py` stays (imported by
+    `world_cells.py`; Release 2's base). The only history left for the cities is
+    `canada-germany-history-261102.osh.pbf` (5.5 GB): keep it; Europe's would need a planet download.
+  - **Offered, not done:** the sidebyside task (ended 11-14, no next run) and the eight dated `canada-germany` clips
+    (about 10 GB, read only by `.scratch/side-by-side/compare.py`); disk was 113 GiB free mid-day against the loop's 115.
 
 ## Storage redesign: facts, serving, working state (owner, 2026-11-21, 13:10)
 
