@@ -3708,6 +3708,25 @@ wording and tab structure as a first draft open to change, not as decided design
   - **Next check 10:00 on 11-24**, for the gap between 11-23's end and the 12:15 city run: commit and disk;
     the Python suite on each branch; merge `syspath-leak`, then the heap and disk branch; the points fix's
     `cargo test`, build and proof only if an hour is left before 12:00, else the next gap.
+- **The 10:00 gap on 11-24 (the "fix all these" session). 11-23 CLOSED 09:10:00, gate PASS** (20 of 32 equal, clip
+  19,329,755, world 19,329,767, +12, worst city 0.00177%), 10,742 s on two tier 2 workers (tier 2 engine 3,758,
+  reads 1,110); the run ended 09:10:28, "no diff to 2026-11-24 on disk yet". No RUNNING, STOPPED or HOLD, the
+  city task Ready; 47 GB of commit left, 124 GiB of disk free.
+  - **MERGED INTO MAIN, the Python suite green before and after each (211, then 254 tests):** `syspath-leak`
+    (5ccdac8a) and the heap and disk branch with the engine room (9d149279). One test of the engine room had
+    its own arithmetic wrong (24 GB holds two engines, not one) and was corrected; nothing else failed on the
+    first run of the agent's tests. `engine_is_stale()` False: no engine source touched. Read on the real
+    machine after the merge: room for an 8 g engine (47 GB left), the gate's europe-central would get
+    `-Xmx39g` against its 27, the disk check passes with 123 GiB against 115 (8 over).
+  - **So from the next run on:** the city run (12:15) names the region in its heap line and refuses
+    europe-central under 27 g after an hour's wait; the loop takes no new day under 115 GiB free, its gate
+    logs `gate heap:` lines and ends the run cleanly when short of memory, and the world day's engines pass
+    through `engine_room.ROOM`. **`WORLD_T2_WORKERS` is 4 again unless the starter sets it** (the 20:57 and
+    03:50 starts set 2 by hand): with the room that is the upper bound, not a risk. **To watch on 11-24's
+    day:** `engine room:` lines in `logs/planet-store.log` (none means it never had to wait), the `gate heap:`
+    lines, `"clip heap"` in `gate.json`, and `rectangles` back near 120-140 s for the whole run.
+  - **To undo:** `git revert -m 1 9d149279` (heap, disk, engine room) and `git revert -m 1 5ccdac8a` (the
+    leak); neither touches data or the engine's install.
 - **Clock times in this section from "19:10" on were written without reading the clock and run up to 45 minutes
   ahead**: it was 19:25 when the entry above ("20:05", "20:10") was written, and the HOLD ("19:30") was placed a
   little after 19:00. The order of events is right; the files' own times are the record.
