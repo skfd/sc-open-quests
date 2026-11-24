@@ -3050,6 +3050,39 @@ wording and tab structure as a first draft open to change, not as decided design
     "City neighbourhoods missing from the world counts"; parts sit inside the same snapshots), `world_compare.py` rerun in a
     gap, the site deploy's new home, then the city task off. The widget's files come with the city pages.
 
+## City neighbourhoods on the world's counts, and places with nothing open (2026-11-24, evening; nothing built)
+
+- **The 41 neighbourhoods absent from the world's `counts.json` are in its plan; they have no quests.** That list holds
+  only places some quest row falls in (50,859 of 1,069,532 world places are absent the same way). The city run has 0 for
+  them in all 1,804 entries, 10-27 to 11-23. **The other 4,173 match:** city D against world D+1 (2.6 h; no part is in
+  Europe's four, so no same-clock day), seven days 11-02 to 11-22, 93.4 to 94.3% equal in every quest, sums +0.002 to
+  +0.008%. 166 have a steady difference (788 quests in all): 35 reach past the city line (Winnipeg's Mathers +2.1%, the
+  largest), up to 21 have another outline, 112 neither (nearly all `AddHousenumber` by 1 or 2; in the four cities that
+  showed it, of five checked, the city total has it too; cause not traced).
+- **Owner's answers:** neighbourhoods show **the world's number as is** (no clipping at the city line); a series starts
+  **2026-11-01, world only** (10-27 to 10-31 not glued on). The 41 were left "for another session after discussion";
+  then the owner accepted the empty-place design below, where they are state 1.
+- **For the builder of the city pages:** take the parts from `config/parts`, 0 for any the world does not list; `run.py`'s
+  part series skips a part that is in no snapshot and starts one at its first listed day, so give it every registered part.
+  `tools/add_parts.py` cuts outlines from the Canadian and German extracts: it needs another source once those stop.
+- **Places with nothing open: the design (owner: "this looks good, we go ahead with it").** Zero has five meanings:
+  1. *Nothing to ask* (never had a quest): "No open quests. None on any count since <first>." No tick, tiles or chart.
+  2. *All clear* (had some): "✓ No open quests. The last 3 closed on 23 Nov", the quests, and the chart. "Closed", never
+     "completed": the counts cannot tell a solve from a deletion or an app change.
+  3. *All clear, more due*: state 2 plus "Some come back as they age"; the published files do not carry it yet.
+  4. *Your ticks hide the rest*: "0 of your selected quest types, 14 open in all", Select all.
+  5. *Not counted*: only where nothing counts the place.
+  Table: "N quest types done here" becomes a ✓ fold for types that had some and a plain fold for the others. Lists: a plain
+  0 at the bottom, ✓ for state 2 only. The world publisher writes a small file for each absent place, from 11-01 (read
+  from the code, not checked live: a place with no row has no file, so its page says "Not counted yet").
+- **Measured:** world, 11-03 to 11-23: 51 places went from open to 0, 40 listed ones from 0 to open. Parts at 0 now: 87, one
+  of which had any in its window.
+- **Trap found while looking at the widgets:** a part's series lists only quests open on some date of its 35 days, so state
+  2 would turn into state 1 after 35 days. The files must carry the last open count and its date (per quest, since the
+  ticks choose the total).
+- Mockups and scripts: `.scratch/parts-vs-world/` (`mock/empty-places.html`, `mock/empty-widgets.html`; not in git).
+- **Widgets: proposed, not agreed** (`~/Code/sc-open-quests-widget`, unchanged).
+
 ## Storage redesign: facts, serving, working state (owner, 2026-11-21, 13:10)
 
 - Owner: "we store data in a shape too close to how we publish it, and do not publish/back it up. how should we do
