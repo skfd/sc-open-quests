@@ -80,12 +80,48 @@ def clip_side(w: Path, clip_pbf: Path, day: str, out: Path, log=_log) -> dict:
         if (d / "done").exists():
             continue
         cities = run.region_cities(r).relative_to(ROOT)
-        s = SCC.engine(clip_pbf, cities, d, notes[r["id"]], r["timeZone"], quests.relative_to(ROOT), f"{day}T00:00:00Z")
+        try:
+            # a region short of its least heap waits, and after the wait raises run.MemoryBusy with nothing
+            # written: the regions before it keep their `done`, and the next gate of this day starts here
+            s = SCC.engine(clip_pbf, cities, d, notes[r["id"]], r["timeZone"], quests.relative_to(ROOT),
+                           f"{day}T00:00:00Z", min_heap_gb=run.region_min_heap_gb(r), what=f"gate {r['id']}", log=log)
+        except subprocess.CalledProcessError:
+            log(heap_line(r["id"], engine_heap(d)))  # an engine that died: the heap it had, said before the stop
+            raise
         (d / "state.bin").unlink(missing_ok=True)  # the gate compares counts; the rows are not needed
         (d / "done").write_text("", encoding="utf-8")
         secs[r["id"]] = round(s)
         log(f"gate: {r['id']} counted on {clip_pbf.name} in {s:.0f} s")
+        log(heap_line(r["id"], engine_heap(d)))
     return secs
+
+
+def engine_heap(d: Path) -> dict:
+    """a gate region's heap, read off its engine's log (d/log.txt): run.engine_heap_of; {} with no log"""
+    try:
+        return run.engine_heap_of((d / "log.txt").read_text(encoding="utf-8", errors="replace"))
+    except OSError:
+        return {}
+
+
+def heap_line(region: str, h: dict) -> str:
+    """'gate heap: europe-central given 27,648 MB, peak 27,189 MB (98% of it)'. A line of its own: the
+    'gate: <region> counted ... in N s' line is read whole by day_metrics.GATE."""
+    given, peak = h.get("given MB"), h.get("peak MB")
+    said = f"given {given:,} MB" if given is not None else "given: not in the engine's log"
+    if peak is not None:
+        said += f", peak {peak:,} MB" + (f" ({peak / given:.0%} of it)" if given else "")
+    elif h.get("out of memory"):
+        said += ", died of OutOfMemoryError before it logged a peak"
+    else:
+        said += ", no peak logged (the engine did not end)"
+    return f"gate heap: {region} {said}"
+
+
+def clip_heap(out: Path) -> dict:
+    """every gate region's heap from the logs under `out`, also of the regions counted by an earlier run of this
+    day's gate: what gate.json keeps as "clip heap" """
+    return {r: h for r in REGIONS if (h := engine_heap(out / r))}
 
 
 def compare(w: Path, day: str, out: Path) -> dict:
@@ -132,6 +168,7 @@ def gate(w: Path, day: str, clip_pbf: Path, out: Path, log=_log) -> dict:
     secs = clip_side(w, clip_pbf, day, out, log)
     res = compare(w, day, out)
     res["clip seconds"] = secs
+    res["clip heap"] = clip_heap(out)  # per region: the heap given and the peak, MB (kept with the day's gate.json)
     res["seconds"] = round(time.time() - t)
     (out / "gate.json").write_text(json.dumps(res, indent=1), encoding="utf-8", newline="\n")
     log(f"gate {day}: {'PASS' if res['ok'] else 'FAIL'}; {res['equal']} of {res['cities']} cities equal in every quest "

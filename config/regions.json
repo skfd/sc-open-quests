@@ -27,7 +27,7 @@
   {"id": "europe-west", "name": "Europe, west (UTC+0)", "group": "Europe", "timeZone": "Europe/London", "poly": "config/europe-west.poly",
    "extract": "europe", "source": "planet history clip europe"},
   {"id": "europe-central", "name": "Europe, central (UTC+1)", "group": "Europe", "timeZone": "Europe/Berlin", "poly": "config/europe-central.poly",
-   "extract": "europe", "source": "planet history clip europe"},
+   "extract": "europe", "source": "planet history clip europe", "minHeapGb": 27},
   {"id": "europe-east", "name": "Europe, east (UTC+2)", "group": "Europe", "timeZone": "Europe/Helsinki", "poly": "config/europe-east.poly",
    "extract": "europe", "source": "planet history clip europe"},
   {"id": "europe-msk", "name": "Europe, UTC+3", "group": "Europe", "timeZone": "Europe/Moscow", "poly": "config/europe-msk.poly",

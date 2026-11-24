@@ -154,9 +154,23 @@ def pipeline_lock():
 # --- regions --------------------------------------------------------------------------------------
 
 def regions(path: Path = REGIONS_CONFIG) -> list[dict]:
-    """config/regions.json: {id, name, group, timeZone, poly, source[, extract][, url][, cadence]}. A region
-    is one engine run: one time zone, its own cities and output folder. Several regions may share an extract."""
+    """config/regions.json: {id, name, group, timeZone, poly, source[, extract][, url][, cadence][, minHeapGb]}.
+    A region is one engine run: one time zone, its own cities and output folder. Several regions may share an
+    extract. minHeapGb: the least heap its engine is started with (region_min_heap_gb)."""
     return read_json(path)["regions"]
+
+
+def region_min_heap_gb(region: dict) -> int | None:
+    """The least -Xmx (whole GB) this region's engine is started with, or None: no minimum of its own, only
+    HEAP_MIN_GB. Set only from a run that was recorded: europe-central died of OutOfMemoryError at 14 g on
+    2026-11-21's file and counted it at 27 g (peak 27,189 MB). The engine's peak follows the heap it is given,
+    so a recorded peak is a heap that was enough, not the least that would be."""
+    gb = region.get("minHeapGb")
+    if gb is None:
+        return None
+    if isinstance(gb, bool) or not isinstance(gb, int) or gb <= 0:
+        raise ValueError(f"region {region['id']}: minHeapGb {gb!r} is not a whole number of GB above 0")
+    return gb
 
 
 CADENCES = ("daily", "weekly")
@@ -355,8 +369,17 @@ def snapshot_for_sha(sha: str, region_dir: Path) -> Path | None:
 HEAP_RESERVE_GB = 8      # left to Windows and everything else running
 HEAP_MIN_GB = 12         # below this the engine waits for memory rather than start
 HEAP_MAX_FRACTION = 0.75  # of physical memory, however idle the machine is
-HEAP_WAIT_MINUTES = int(os.environ.get("SCOQ_HEAP_WAIT_MINUTES", "60"))
+HEAP_WAIT_MINUTES = int(os.environ.get("SCOQ_HEAP_WAIT_MINUTES", "60"))  # the bound of the wait for memory
 HEAP_POLL_SECONDS = 60
+HEAP_LOG_MINUTES = 5     # while it waits, one line this often
+ENGINE_MAX_HEAP = re.compile(r"\bmaxHeap=(\d+) MB")
+ENGINE_PEAK_HEAP = re.compile(r"^pass ([\d.]+) s, total ([\d.]+) s; peak heap \(sum of pool peaks\) (\d+) MB", re.M)
+
+
+class MemoryBusy(RuntimeError):
+    """The machine could not spare the heap an engine needs within HEAP_WAIT_MINUTES. No engine was started and
+    nothing is broken: the city run fails with this as its ERROR line; the world loop ends its run without
+    STOPPED and the next run resumes the day at its gate (tools/stream/planet_store_day.py)."""
 
 
 def memory_status() -> tuple[float, float, float] | None:
@@ -387,45 +410,76 @@ def spare_heap_gb(status: tuple[float, float, float]) -> int:
     return int(min(free_phys, free_commit, total * HEAP_MAX_FRACTION) - HEAP_RESERVE_GB)
 
 
-def engine_heap_gb(status=memory_status, sleep=None, wait_minutes: int | None = None) -> int | None:
-    """Wait until the machine can spare HEAP_MIN_GB, then return what it can spare. None off Windows
-    (the start script's default stands). Raises after wait_minutes: a skipped count is picked up by the
-    next run, which goes over every stored extract; an engine that dies of memory halfway is not."""
+def engine_heap_gb(status=memory_status, sleep=None, wait_minutes: int | None = None,
+                   min_gb: int | None = None, what: str = "the engine", say=None) -> int | None:
+    """Wait until the machine can spare the heap `what` needs, then return what it can spare. The need is
+    HEAP_MIN_GB, or the region's own minimum (min_gb, region_min_heap_gb) when that is more. None off Windows
+    (the start script's default stands). While it waits it says so every HEAP_LOG_MINUTES, to `say` (the
+    caller's log; run.log by default). Raises MemoryBusy after wait_minutes (HEAP_WAIT_MINUTES): a skipped
+    count is picked up by the next run, which goes over every stored extract; an engine that dies of memory
+    halfway is not."""
     import time
     sleep = sleep or time.sleep
+    say = say or log
     wait_minutes = HEAP_WAIT_MINUTES if wait_minutes is None else wait_minutes
+    need = max(HEAP_MIN_GB, min_gb or 0)
     waited = 0
     while True:
         st = status()
         if st is None:
             return None
         spare = spare_heap_gb(st)
-        if spare >= HEAP_MIN_GB:
+        if spare >= need:
             if waited:
-                log(f"memory freed after {waited} min")
+                say(f"memory freed after {waited} min: {spare} GB of heap to spare, {what} needs {need}")
             return spare
+        now = (f"the machine can spare {spare} GB of heap ({st[0]:.0f} GB free, {st[1]:.0f} GB commit left, "
+               f"{HEAP_RESERVE_GB} GB kept back) and {what} needs {need} GB")
         if waited >= wait_minutes:
-            raise RuntimeError(f"memory stayed busy for {waited} min: {st[0]:.0f} GB free, {st[1]:.0f} GB commit "
-                               f"left, the engine needs {HEAP_MIN_GB + HEAP_RESERVE_GB}; not counting now")
-        if not waited:
-            log(f"memory busy ({st[0]:.0f} GB free, {st[1]:.0f} GB commit left); waiting up to "
-                f"{wait_minutes} min for {HEAP_MIN_GB + HEAP_RESERVE_GB} GB")
+            raise MemoryBusy(f"not enough memory for {what} after waiting {waited} min: {now}; no engine "
+                             f"started (it would die of OutOfMemoryError)")
+        if waited % HEAP_LOG_MINUTES == 0:
+            say(f"memory busy: {now}; waited {waited} of up to {wait_minutes} min")
         sleep(HEAP_POLL_SECONDS)
         waited += HEAP_POLL_SECONDS // 60
 
 
-def engine_env(time_zone: str | None = None, heap: bool = False) -> dict[str, str]:
+def engine_heap_of(log_text: str) -> dict:
+    """What an engine's own log says of its heap: "given MB" (the JVM's maxHeap, its -Xmx), "peak MB" (the sum of
+    the pool peaks) with "pass s" and "total s", "ended" (it logged that last line), "out of memory" (it died
+    of OutOfMemoryError). A key is absent when the log has no such line: an engine that died logs no peak.
+    The peak follows the heap given (the collector fills what it has), so it says a heap was enough, not how
+    little would be."""
+    out: dict = {}
+    m = ENGINE_MAX_HEAP.search(log_text)
+    if m:
+        out["given MB"] = int(m[1])
+    m = ENGINE_PEAK_HEAP.search(log_text)
+    if m:
+        out["pass s"], out["total s"], out["peak MB"] = float(m[1]), float(m[2]), int(m[3])
+    out["ended"] = m is not None
+    if "OutOfMemoryError" in log_text:
+        out["out of memory"] = True
+    return out
+
+
+def engine_env(time_zone: str | None = None, heap: bool = False, min_heap_gb: int | None = None,
+               what: str | None = None, say=None) -> dict[str, str]:
     """The engine's environment. SC's date filters use the JVM's zone, which must be the cities'
     (Main.kt); JAVA_OPTS comes after the start script's default -Duser.timezone and -Xmx, so it wins.
-    With heap, -Xmx is what the machine can spare now (engine_heap_gb), which may wait for memory."""
+    With heap, -Xmx is what the machine can spare now (engine_heap_gb), which may wait for memory and raises
+    MemoryBusy when the machine stays short of HEAP_MIN_GB or of min_heap_gb (a region's own minimum). `what`
+    names the engine in the lines (a region's id); they go to `say` (run.log by default). An -Xmx already in
+    JAVA_OPTS wins and is held against no minimum."""
     env = dict(os.environ)
     if os.path.isdir(JAVA_HOME):
         env["JAVA_HOME"] = JAVA_HOME
     opts = env.get("JAVA_OPTS", "")
     if heap and "-Xmx" not in opts:
-        gb = engine_heap_gb()
+        gb = engine_heap_gb(min_gb=min_heap_gb, what=f"the engine for {what}" if what else "the engine", say=say)
         if gb is not None:
-            log(f"engine heap: -Xmx{gb}g (what the machine can spare now)")
+            (say or log)(f"engine heap{f', {what}' if what else ''}: -Xmx{gb}g (what the machine can spare now; "
+                         f"at least {max(HEAP_MIN_GB, min_heap_gb or 0)}g)")
             opts += f" -Xmx{gb}g"
     if time_zone:
         opts += f" -Duser.timezone={time_zone}"
@@ -504,7 +558,11 @@ def count(region: dict, force: bool = False, extract: tuple[Path, Path] | None =
                "--grid", str((GRID_DIR / region["id"]).relative_to(ROOT))]
         cmd += parts_args()
         log("running engine: " + " ".join(cmd[1:]))
-        subprocess.run(cmd, cwd=ROOT, env=engine_env(region["timeZone"], heap=True), check=True)
+        # the heap given goes into this log with the region ("engine heap, <region>: -Xmx<N>g"); the engine's own
+        # last line, "pass ... peak heap (sum of pool peaks) N MB", follows it in the same log. A region short of
+        # its minimum heap after the wait raises MemoryBusy: this run's ERROR, not an engine that dies halfway
+        env = engine_env(region["timeZone"], heap=True, min_heap_gb=region_min_heap_gb(region), what=region["id"])
+        subprocess.run(cmd, cwd=ROOT, env=env, check=True)
         snap = snapshot_for_sha(sha, out)
         if not snap:
             raise RuntimeError("engine finished but no snapshot carries this extract's sha256")
