@@ -1,0 +1,7 @@
+// Local only: never deployed. See run.py.
+{
+  "name": "card-bench-local-only",
+  "main": "worker.js",
+  "compatibility_date": "2026-10-01",
+  "rules": [{ "type": "Data", "globs": ["**/*.ttf"] }]
+}

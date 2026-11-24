@@ -5897,8 +5897,8 @@ index.html for folder paths") in front of the script. The script answers `/index
 that is what the rule should hand it, but `wrangler dev` does not run the rule, and its interplay with
 the assets broke the home page once (11-11). The go-live steps in `cloudflare/README.md` test it first.
 
-**Cost.** Workers Paid: $5 a month; its included requests and CPU time were not looked up (from memory,
-10M requests and 30M CPU-ms a month; check the plan's page before relying on it). One request a page view (a
+**Cost.** Workers Paid: $5 a month with 10M requests and 30M CPU-ms included (looked up 2026-11-23).
+One request a page view (a
 reader's page writes `?city=` into its address, so nearly every reload takes the script's path). CPU
 measured in node on this machine: `quests.json` (742 KB) parses in about 6 ms, once per isolate every
 10 minutes; a city's history (190 KB) in about 1.5 ms; a name-layer file in about 1 ms (two are over
