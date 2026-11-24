@@ -10,6 +10,7 @@ data/grid/
 .preview/
 docs/data/*/quests.json
 data/archive/
+data/archive-world/
 .scratch/
 data/cities/
 data/overture/
