@@ -847,6 +847,10 @@ its own static page or a Worker that rewrites the head; the state is in the quer
 
 ### Share previews: built on `share-previews`, not merged, not live (2026-11-23, afternoon; owner: "build it, i will upgrade account later")
 
+- **Workers Paid: the owner says subscribed; Workers spending limit $5 set (2026-11-23, by Claude in the owner's Chrome).**
+  Billing, Spend limits: blocks all Workers on the account past $5 of usage in a billing period (Nov 10 to Dec 9 now),
+  with an email to the owner. Past it the home page fails (error 1103) once the Worker is live; the plan's $5 is extra.
+  Durable Objects has no limit (the site uses none). **Left: the owner's ok on the card, then merge and go live.**
 - **Under review (11-23, evening):** `design/share-previews.md` on the branch (`736d7529`) has the requirements, the
   design, measurements and open questions. Owner: no outlines; the general card needs statistics. **The Worker
   render benchmark (`cloudflare/bench/run.py`) is written, not run:** it needs a gap in the world loop.
