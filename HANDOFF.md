@@ -3662,6 +3662,14 @@ wording and tab structure as a first draft open to change, not as decided design
   (conhost swallows the exit code), so read `logs/scheduler.log`, not the result. A runbook that rewrites the
   planetstore task's command must keep the `conhost.exe --headless` front. `kk-SCOpenQuests-planet` (disabled) is
   untouched.
+- **STOPPED again at 22:55 on 11-23, 11-22 in `world finish` after both tier 2 passes; cause found and fixed; resumed
+  03:50 on 11-24 (owner: "go").** `notes_day.notes_table` opened the stale `notes-prev.jsonl.table.npz` with `np.load`
+  and never closed it, so Windows refused the replace (WinError 5). Not a lock from outside, not a count mismatch:
+  any day after a notes refresh that finds an older cache there would stop the same way. Fixed in 14ddab6d (with a
+  test that fails without it; the 20 notes tests pass), and both caches were built by themselves before the start. Copy
+  of the stop: `.scratch/anomalies/STOPPED-2026-11-23b.txt`. Two engines again (`WORLD_T2_WORKERS=2`); 47 GB of commit
+  free before the start. `finish` from the start again (about 2 h), then the gate, then 11-23. The gap check at 06:30
+  will meet a running loop.
 - **Clock times in this section from "19:10" on were written without reading the clock and run up to 45 minutes
   ahead**: it was 19:25 when the entry above ("20:05", "20:10") was written, and the HOLD ("19:30") was placed a
   little after 19:00. The order of events is right; the files' own times are the record.
