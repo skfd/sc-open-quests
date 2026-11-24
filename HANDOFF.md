@@ -3686,6 +3686,28 @@ wording and tab structure as a first draft open to change, not as decided design
   of the stop: `.scratch/anomalies/STOPPED-2026-11-23b.txt`. Two engines again (`WORLD_T2_WORKERS=2`); 47 GB of commit
   free before the start. `finish` from the start again (about 2 h), then the gate, then 11-23. The gap check at 06:30
   will meet a running loop.
+- **The 06:30 check on 11-24 (the "fix all these" session): the loop is running, nothing heavy done.**
+  - **11-22 CLOSED 06:10:58, gate PASS** (20 of 32 equal, clip 19,324,940, world 19,324,952, +12, worst city
+    0.00177%), on its third run. **11-23 began 06:10:58** (prepare 688 s, store context before 291 s); it has no
+    11-24 diff after it, so the run ends with it, about 10:00 by 11-22's pace. The city task is Ready (next
+    12:15). At 06:30: 37 GB of commit left with the loop up, 119 GiB of disk free.
+  - **Read, not run: the heap and disk branch (`worktree-agent-aaad0db7d023acc9a`).** It merges into main
+    without conflict, as do `syspath-leak` and the points fix. Its three open points, settled so: (1) the clean
+    end at the gate stays: the store is whole at D and nothing is compacted, a reader's HOLD only delays the
+    resume, and the next start heals it with no person, which a STOP would not; (2) 27 for europe-central stays,
+    known to be an edge and not a need; (3) 115 GiB stays: days that began with 124-142 free had 45-54 at
+    their low, so a day begun under about 120 would meet the 40 GiB floor in its middle; the refusal is right
+    and the disk is the owner's (119 free this morning: one bad day from standing still).
+  - **Added to that branch (6b39db7b), not run: `tools/stream/engine_room.py`, the commit rule for the world
+    day's own engines** (tier 1, tier 2, the notes: `world_day.engine_dump` and `counts_at`). One enters when
+    the commit left, less 8 GB, holds its heap and every engine of ours alive, counted whole; with engines
+    alive it waits for one to leave; with none alive a line every 5 min and after 60 min a STOP. On 11-23's
+    numbers (37 GB left) that is three engines at a time where four died. `WORLD_T2_WORKERS` stays the upper
+    bound. Tests: `tests/test_engine_room.py`. Not yet a metric: `ROOM.most` and `ROOM.waited_s` are kept
+    but written nowhere.
+  - **Next check 10:00 on 11-24**, for the gap between 11-23's end and the 12:15 city run: commit and disk;
+    the Python suite on each branch; merge `syspath-leak`, then the heap and disk branch; the points fix's
+    `cargo test`, build and proof only if an hour is left before 12:00, else the next gap.
 - **Clock times in this section from "19:10" on were written without reading the clock and run up to 45 minutes
   ahead**: it was 19:25 when the entry above ("20:05", "20:10") was written, and the HOLD ("19:30") was placed a
   little after 19:00. The order of events is right; the files' own times are the record.
