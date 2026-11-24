@@ -3032,8 +3032,11 @@ wording and tab structure as a first draft open to change, not as decided design
     already off since 11-16, its history file deleted; `tools/backfill_history.py` stays (imported by
     `world_cells.py`; Release 2's base). The only history left for the cities is
     `canada-germany-history-261102.osh.pbf` (5.5 GB): keep it; Europe's would need a planet download.
-  - **Offered, not done:** the sidebyside task (ended 11-14, no next run) and the eight dated `canada-germany` clips
-    (about 10 GB, read only by `.scratch/side-by-side/compare.py`); disk was 113 GiB free mid-day against the loop's 115.
+  - **Done at the owner's word (11-24, "Delete both"):** the sidebyside task (ended 11-14; its XML is in
+    `~/Code/.task-backups/kk-SCOpenQuests-sidebyside.2026-11-24-before-delete.xml`) and the eight dated `canada-germany`
+    clips; kept: the history file, the metas and `canada-germany-latest.osm.pbf` (the 11-14 clip's other name, so 9 GB
+    came free, not 10). `latest.json` names a file that is gone: the clip is dead until a recut. Their only
+    reader found was `.scratch/side-by-side/compare.py`. Disk 101 to 110 GiB free, mid-day, against the loop's 115.
 - **Begun before Release 1 (owner, 11-24, 15:05: "go ahead with your recs, we can do it before release 1").** On branch
   `retire-cities` (worktree `../sc-open-quests-retire`, ef5ce98e), 264 tests OK, the compare page looked at; **to merge
   only between two world days** (`run.py` and `planet_store_day.py` are the loop's), then `schedule-inputs-add.ps1`:
