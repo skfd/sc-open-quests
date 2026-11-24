@@ -1001,7 +1001,6 @@ async function compareRows() {
       c, open,
       notOffered: !!(q && q.status && q.status[c.id] === "not-in-region"),
       perKm2: open != null && c.landAreaKm2 ? open / c.landAreaKm2 : null,
-      perRoadKm: open != null && c.highwayKm ? open / c.highwayKm : null,
       per1k: open != null && c.population ? (1000 * open) / c.population : null,
     });
   }
@@ -1037,7 +1036,7 @@ async function renderCompare() {
   const [rows, trends] = await Promise.all([compareRows(), state.compareQuest ? null : cityTrends()]);
   const { key, dir } = state.compareSort;
   const val = { name: (r) => r.c.name.toLowerCase(), open: (r) => r.open, perKm2: (r) => r.perKm2,
-                perRoadKm: (r) => r.perRoadKm, per1k: (r) => r.per1k }[key];
+                per1k: (r) => r.per1k }[key];
   rows.sort((a, b) => {
     const va = val(a), vb = val(b);
     if (va == null) return 1;
@@ -1069,7 +1068,6 @@ async function renderCompare() {
       trends ? el("td", { class: "c-trend" }, trend ? sparkline(trends.dates, trend, r.c.name) : null) : null,
       el("td", { class: "num" }, r.notOffered ? el("span", { title: where ? where.title : null }, where ? where.text : "not offered") : fmt(r.open, nf)),
       el("td", { class: "num" }, rate(r.perKm2)),
-      el("td", { class: "num" }, rate(r.perRoadKm)),
       el("td", { class: "num" }, rate(r.per1k)),
       el("td", { class: "bar-col" }, v != null && max ? el("div", { class: "hbar", style: `width:${(100 * v) / max}%`,
                                                                     title: `${r.c.name}: ${rate(v)}` }) : null));

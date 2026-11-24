@@ -48,12 +48,11 @@ class HistoryTest(unittest.TestCase):
         o = self.load("history/ottawa.json")
         self.assertEqual(o["dates"], ["2026-07-17", "2026-07-18"])
         self.assertEqual(o["quests"]["AddA"]["open"], [1, 2])
-        self.assertEqual(o["denominators"]["highwayKm"], [50.0, 51.0])
 
     def test_denominators(self):
         d = self.load("history/toronto.json")["denominators"]
         self.assertEqual(d["landAreaKm2"], 665.9)
-        self.assertEqual(d["highwayKm"], [100.0, 101.0, 102.0])
+        self.assertNotIn("highwayKm", d)
 
     def test_city_index_totals_exclude_default_disabled(self):
         idx = self.load("cities.json")
@@ -64,7 +63,7 @@ class HistoryTest(unittest.TestCase):
         self.assertEqual(t["open"], 8 + 6)        # AddD is default-disabled
         self.assertEqual(t["openAll"], 8 + 6 + 6)
         self.assertEqual(t["agedOnly"], 2)
-        self.assertEqual(t["highwayKm"], 102.0)
+        self.assertNotIn("highwayKm", t)
         self.assertEqual(t["questsCounted"], 3)
         self.assertEqual(t["countryCodes"], ["CA", "CA-ON"])   # what the site names a quest's absence by
         self.assertNotIn("countryCodes", idx["cities"][0])     # none in the config, none published

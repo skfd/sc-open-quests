@@ -165,6 +165,16 @@ def daily_run_going():
     return started and not any("update done" in x or "] ERROR:" in x for x in lines[-5:])
 
 
+def inputs_going():
+    """`run.py inputs` is fetching the day's Europe clip, planet diff or notes dump: its lock names a live process"""
+    import run as runmod
+    try:
+        pid = int(runmod.INPUTS_LOCK.read_text(encoding="utf-8").strip())
+    except (OSError, ValueError):
+        return False
+    return runmod.pid_alive(pid)
+
+
 def monthly_going():
     """the monthly planet job (kk-SCOpenQuests-planet: about 170 GB while it writes the new history file) is running"""
     p = subprocess.run(["schtasks", "/query", "/tn", "kk-SCOpenQuests-planet", "/fo", "csv", "/nh"], capture_output=True, text=True)
@@ -509,6 +519,12 @@ def main():
     while not a.no_wait and daily_run_going() and waited < 180:
         if waited == 0:
             log("today's daily run is going: waiting for it (up to 3 h)")
+        time.sleep(60)
+        waited += 1
+    waited = 0
+    while not a.no_wait and inputs_going() and waited < 60:
+        if waited == 0:
+            log("today's inputs are being fetched: waiting for them (up to 1 h)")
         time.sleep(60)
         waited += 1
     # the monthly planet job and this one both need tens of GB at once: wait for it, or leave the day to the next
