@@ -3049,6 +3049,13 @@ wording and tab structure as a first draft open to change, not as decided design
   - **Left:** the city pages from `osm-<city>` (waits for the neighbourhoods' answer, a session of its own:
     "City neighbourhoods missing from the world counts"; parts sit inside the same snapshots), `world_compare.py` rerun in a
     gap, the site deploy's new home, then the city task off. The widget's files come with the city pages.
+- **City pages from the world begun (11-24, 17:20; the neighbourhoods are answered, next section).** Branch `world-cities`
+  (worktree `../sc-open-quests-world-cities`, off `retire-cities`): `tools/world_cities.py` turns each gated day into region
+  snapshots of today's shape (`data/archive-world`), `run.history(world=...)` joins them to the archive at 11-01; parts are
+  the world's alone. Seven tests OK on made-up data; **not yet run on the real counts** (waits for the loop's day). Nothing
+  calls it and `docs/data` is refused without `--live`. The rule for which quests a city counts matches the newest
+  snapshot of all 147 cities. The world has no `taggedNodes`/`taggedWays`/`openAllNotes` (the site reads none of them).
+  Next: build into a scratch folder, compare with today's files, then ask the owner before anything goes live.
 
 ## City neighbourhoods on the world's counts, and places with nothing open (2026-11-24, evening; nothing built)
 
