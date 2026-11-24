@@ -3727,6 +3727,26 @@ wording and tab structure as a first draft open to change, not as decided design
     lines, `"clip heap"` in `gate.json`, and `rectangles` back near 120-140 s for the whole run.
   - **To undo:** `git revert -m 1 9d149279` (heap, disk, engine room) and `git revert -m 1 5ccdac8a` (the
     leak); neither touches data or the engine's install.
+  - **THE POINTS FIX IS BUILT AND PROVEN, NOT MERGED, NOT INSTALLED (10:03-10:19).** In its worktree (5dc1fbe6):
+    `cargo build --release` clean at the first try, `cargo test` 7 passed (the old loop as oracle among them).
+    Then `.scratch/anomalies/points_fix_proof.py 22`, as a reader of the store (its HOLD placed and removed), the
+    old binary (`tilestore-points-counters-edb0521e.exe`, the installed one, sha 6249b9b1...) against the new
+    on generation 22 with 11-21's two kept point lists: (A) `--points` alone; (B) with half of the ways and
+    relations A found asked first by `--ways` and `--rels`, so `elements` holds them before the points
+    section. **All four pairs: every output file the same bytes (8 files in A, 30 in B), the counters that
+    kept their meaning equal. 12,284 points: 177 s to 11 s. 25,358 points: 241 s to 13 s.** Inside: the closed
+    ways 95-158 s to about 1 s (placed 194-371 million to 29-34 million), the multipolygons 51-70 s to 1.1-1.4 s
+    (nodes mapped 327-431 million to 16-19 million); what is left is tiles 4-5 s and blobs 3-4 s. Outputs:
+    `.scratch/anomalies/points-fix-proof/`; the proven binary kept as
+    `.scratch/anomalies/tilestore-points-fix-5dc1fbe6.exe` (sha256 a3c49f7e...).
+  - **Owed before its install:** (1) a call with `--nodes` and `--node-places` beside `--points` (no day's
+    `in-nodes.npy` is kept: the work goes when a day closes; copy `context/before` and `context/after` inputs
+    from the next day while it runs, or replay under HOLD); (2) its peak memory against the old one's (not
+    measured; it runs on every core now); (3) **a day of its own:** 11-24's world day is the first on the
+    leak fix, the heap and disk rules and the engine room, so the binary goes in for the day after, not
+    this one. Install: merge the branch (only `tilestore/src/context.rs`), copy the proven exe over
+    `tilestore/target/release/tilestore.exe` (the loop copies it at its start); undo by copying
+    `tilestore-points-counters-edb0521e.exe` back.
 - **Clock times in this section from "19:10" on were written without reading the clock and run up to 45 minutes
   ahead**: it was 19:25 when the entry above ("20:05", "20:10") was written, and the HOLD ("19:30") was placed a
   little after 19:00. The order of events is right; the files' own times are the record.
