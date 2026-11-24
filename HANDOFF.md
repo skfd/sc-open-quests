@@ -3641,6 +3641,17 @@ wording and tab structure as a first draft open to change, not as decided design
     workers the summed seconds are about a quarter of that in wall time.
   - This session ends here: nothing of its own is running or scheduled, no HOLD of its own. The fixes, the
     restart of 11-22 and the laptop's return are with the other sessions' entries.
+- **Resumed 20:57 on 11-23 (owner, about 20:45: "we're back to power and good internet, let's catch up on what we
+  missed").** STOPPED (copy: `.scratch/anomalies/STOPPED-2026-11-23.txt`) and HOLD removed; loop pid 62660,
+  `WORLD_T2_WORKERS=2` in its environment instead of 4, as 36 GB of commit was free (31 GB at 20:57 with the loop up)
+  and four engines of 8 GB had died on the limit. 11-22 resumes at `finish`. Disk 53 GiB free at the start. To watch:
+  free commit and free disk; if it stops again, the next try is 1 engine or closing sessions first.
+- **No popups (owner, 20:15-20:50).** `taskrun.exe` (task-beholder baea6f0) is windowless for all its tasks. The
+  city, planetstore and sidebyside tasks now run as `conhost.exe --headless cmd.exe ...` with the same arguments
+  (backups in `~/Code/.task-backups`), like spend and worldpub: **Task Scheduler's result for these five is always 0**
+  (conhost swallows the exit code), so read `logs/scheduler.log`, not the result. A runbook that rewrites the
+  planetstore task's command must keep the `conhost.exe --headless` front. `kk-SCOpenQuests-planet` (disabled) is
+  untouched.
 - **Clock times in this section from "19:10" on were written without reading the clock and run up to 45 minutes
   ahead**: it was 19:25 when the entry above ("20:05", "20:10") was written, and the HOLD ("19:30") was placed a
   little after 19:00. The order of events is right; the files' own times are the record.
