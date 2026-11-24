@@ -1,4 +1,0 @@
-{
-  "command": "python -m unittest -q",
-  "timeoutSeconds": 120
-}
