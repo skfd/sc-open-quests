@@ -3609,7 +3609,7 @@ wording and tab structure as a first draft open to change, not as decided design
   - **Run in that stretch (15:26-15:28, the machine still), nothing else:** the Python suite, 210 tests, OK
     (`python -m unittest -q`); gradle `CountryMetadataTest`, 5 passed, the checkout one skipped: **the sums'
     test is green again.** `engine_is_stale()` still False. `syspath-leak` NOT merged: 11-22 is half done, and
-    code changes between two days. The 16:00 check deleted; the 21:30 one stands for the laptop's return.
+    code changes between two days. The 16:00 check deleted. **The gap check is now 06:30 on 11-24** (moved 20:58 on 11-23: the loop was restarted 20:57 with two tier 2 workers and resumes 11-22; it does nothing heavy beside a running loop or city task).
 - **15:30 on 11-23, the anomalies session's last reading (logs only; nothing run, nothing restarted; 11-22 is
   STOPPED and under the owner's HOLD, see the entries of 15:26).** What the new measures say, from the day's
   work folder as it stands:
