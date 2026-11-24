@@ -3088,7 +3088,20 @@ wording and tab structure as a first draft open to change, not as decided design
   2 would turn into state 1 after 35 days. The files must carry the last open count and its date (per quest, since the
   ticks choose the total).
 - Mockups and scripts: `.scratch/parts-vs-world/` (`mock/empty-places.html`, `mock/empty-widgets.html`; not in git).
-- **Widgets: proposed, not agreed** (`~/Code/sc-open-quests-widget`, unchanged).
+- **Widgets: the owner adopted the design for both (Android and Scriptable), 2026-11-24** ("adopt"; nothing built,
+  `~/Code/sc-open-quests-widget` unchanged). The same states:
+  1. *Nothing to ask*: grey "0" and "No open quests" (medium: "on any count since <first>"). No chip, line, tick or section.
+  2. *All clear*: green "✓ 0", the chip stays, the line ends on a baseline at 0, "last 3 closed 11-23"; large: "Last to close"
+     with "3 → 0" in place of "Most open". The same for one quest type in a city (191 city × quest pairs are there now).
+  3. *More due*: waits for data. 4. *Quests off by default hide the rest* (widgets have no ticks): "0", "9 more open in quests
+     off by default" (159 parts now). *Data over 3 days old*: red date as now, and no tick.
+  - Lock screen (iPhone): "✓ 0", a bare ✓ in the circle; "0" for state 1.
+  - Fix with it: 0 instead of the "No quest" error for a quest the city counts but the part never had (Scriptable); the zero
+    line floating at mid-height; the empty "Most open · a quiet week" on large; and the last open count and its date from the
+    files (the trap above).
+  - Every product in one commit with its `features.json` rows, and shared fixtures for the model tests.
+- Name in the mockups: "Appellplatz" was the real OSM name of a square in Berlin (w26443399, beside the defence ministry),
+  one of the 41. A bad example; the mockups use Meyerinckplatz now. The place and its data are unchanged.
 
 ## Storage redesign: facts, serving, working state (owner, 2026-11-21, 13:10)
 
