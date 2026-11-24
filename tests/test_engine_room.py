@@ -105,13 +105,13 @@ class Enter(unittest.TestCase):
         self.assertIn("1 of our engines alive (8 g)", said[0])
 
     def test_leaving_wakes_the_one_that_waits(self):
-        r = ER.Room(status=lambda: (50.0, 24.0, 88.0), poll_seconds=5)   # 24 - 8 = 16: one engine, not two
+        r = ER.Room(status=lambda: (50.0, 23.0, 88.0), poll_seconds=5)   # 23 - 8 = 15: one engine, not two
         r.enter(8)
         entered = threading.Event()
         t = threading.Thread(target=lambda: (r.enter(8, "second", lambda m: None), entered.set()))
         t.start()
         self.assertFalse(entered.wait(0.2))
-        r.leave(8)                      # the status still says 24, and now nobody is alive
+        r.leave(8)                      # the status still says 23, and now nobody is alive
         self.assertTrue(entered.wait(2))
         t.join()
         self.assertEqual(r.alive, [8])
