@@ -3100,6 +3100,16 @@ wording and tab structure as a first draft open to change, not as decided design
     line floating at mid-height; the empty "Most open · a quiet week" on large; and the last open count and its date from the
     files (the trap above).
   - Every product in one commit with its `features.json` rows, and shared fixtures for the model tests.
+- **Squares as neighbourhoods: being discussed, nothing decided or built (2026-11-24).** 36 of the 41 are OSM `place=square`,
+  which Overture calls microhood (`local_type` "square" in `division.parquet`: an exact mark for all 469 squares among our
+  4,214 parts). Berlin 272 of 461 parts, Hamburg 66 of 188, Montreal 25 of 61. World: 70,684 of 1,069,532 places (Italy
+  19,684), none the parent of another place. Open on 11-23: median 5, 38,803 have 5 or fewer, 17,631 have 0 (16,352 unlisted,
+  of the 50,859), 949 have 100+, the largest 1,504; our 469: the largest is Alexanderplatz, 272. Some large ones are housing
+  estates tagged as squares (Indonesia; Superilla del Poblenou).
+  If dropped from the name layer: the lists, search and publisher lose them (the publisher goes by `docs/places`); the counts
+  keep them, so it can be undone. 93.5 MB of name files lose 6.3 MB; an old link says "a place the site cannot find".
+  **Traps:** the bucket's files for them are over `MAX_DELETE` (2,000), and the changed parents' lists may be past `DAY_CAP`;
+  `add_parts.py` and `world_cities.py` read the registry, so it must lose them too.
 - Name in the mockups: "Appellplatz" was the real OSM name of a square in Berlin (w26443399, beside the defence ministry),
   one of the 41. A bad example; the mockups use Meyerinckplatz now. The place and its data are unchanged.
 
