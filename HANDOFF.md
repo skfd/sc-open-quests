@@ -3162,11 +3162,18 @@ wording and tab structure as a first draft open to change, not as decided design
   `world_publish.py` writes `city/`, `city-parts/`, `cities.json`, `city-trends.json`, `city-quests.json` (DESIGN.md, "The counted
   cities"). Without them (or with sc-data down) the page falls back to today's files. Compared in a browser for all 147 cities,
   4,214 parts, 193 compare files, trends and totals: 44,355,752 values, 0 different (`.scratch/city-test`). 285 tests OK.
-  **To do after the 12:15 run, before 14:45:** `planet_store_day.py --max-days 0 --no-wait --console` (tries the loop's publish for real; the
-  first build with cities rebuilds the publisher's events cache, all gated days), then check city files live.
-  **Old files still made daily (history/, parts, compare, trends, snapshots): both widgets read `data/cities.json`, `history/`, `parts/` on
-  the site** (`../sc-open-quests-widget`: Android Repository.kt, ios/open-quests.js). The daily build, commit and deploy end once
-  the widgets read sc-data, or at the owner's word that they may go stale. Until then step 2's result is not had.
+  **Done 11-25, 12:53-13:24:** `planet_store_day.py --max-days 0` ran the hook (exit 0, 31 min: 23 of them the events cache, rebuilt because
+  the city list joined its stamp); 297 city files up, verify and live check 0 mismatches; live Toronto, Berlin and compare read them.
+  Not yet seen: the hook after a run that took a day (tonight). **The cache rebuild costs about 1 min per gated day, so a changed
+  quest list (an SC release) or city list costs 25 min now and hours by next summer; nothing done about it.**
+  **`latest.json` gets `questsFrom` (d33b0565):** the first counted day of a quest a release adds, so it is null before (page and widgets), not
+  a rise from 0. Empty until SC's next release, so seen in tests only. The page's part goes live with the next `run.py site`.
+  **Both widgets read sc-data (owner, 11-25: "yes"; `../sc-open-quests-widget` c3cf6d6):** compared with the old files for 147 cities and
+  4,214 parts, 10.9 million values, 0 different; Android on the emulator, Scriptable in the preview. APK and script in ~/Dropbox/my-apps.
+  They still read the site's `data/cities.json`, `quests.json`, `parts/` and icons.
+  **Left:** (1) the owner's OK to write `docs/apps` (`node tools/apps-page.js ../sc-open-quests/docs/apps` in the widget repo; its check fails
+  until then); (2) the owner's phones on the new builds; (3) then the code: `run.py history` writes `history/`, part series, `trends`, `compare`,
+  snapshots only up to 10-31 (frozen) and the lists only when SC, config or parts change, so a day needs no commit and no deploy.
 - **The site's deploy is its own run, and the world's city pages are live (owner, 11-25: "yes"; 194d497b, 44ec7856).** `run.py site`, task
   `kk-SCOpenQuests-site`, hourly 07:20 to 23:20, log `logs/site.log`: when the newest gated day is not the one in
   `data/site-deployed.json` (not committed) it does history, commit, push (now also with no new data) and deploy; a change of
