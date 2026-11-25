@@ -1,0 +1,24 @@
+/* The privacy and terms pages: plain reading pages in the site's colours, no script of their own. */
+:root{color-scheme:light;--page:#f2f2f4;--surface:#fff;--ink:#111;--ink-2:#4f5250;--grid:#e6e6ea;
+  --brand:#4141ba;--link:#3535a8;--wash:rgba(65,65,186,.08);
+  --shadow:0 1px 2px rgba(0,0,0,.10),0 3px 10px rgba(0,0,0,.06)}
+@media (prefers-color-scheme:dark){:root{color-scheme:dark;--page:#111;--surface:#222;--ink:#fff;--ink-2:#c3c3c8;
+  --grid:#303033;--brand:#34349a;--link:#a8a8ff;--wash:rgba(154,154,255,.12);
+  --shadow:0 1px 2px rgba(0,0,0,.5)}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--ink);font:16px/1.55 Roboto,system-ui,-apple-system,"Segoe UI",sans-serif}
+a{color:var(--link)}
+header{background:var(--brand);color:#fff;padding:28px 20px 24px}
+header a{color:#fff}
+.wrap{max-width:720px;margin:0 auto}
+h1{font-size:1.7rem;font-weight:600;margin:6px 0 4px;letter-spacing:-.01em}
+h2{font-size:1.15rem;font-weight:600;margin:1.6em 0 .4em}
+.lede{margin:0;opacity:.9}
+.back{font-size:.9rem;opacity:.85}
+main{padding:20px}
+.card{background:var(--surface);border-radius:14px;box-shadow:var(--shadow);padding:6px 22px 18px}
+p,ul{margin:.6em 0}
+ul{padding-left:1.3em}
+li{margin:.35em 0}
+code{font:.88em ui-monospace,Consolas,monospace;background:var(--wash);padding:1px 5px;border-radius:5px}
+.foot{color:var(--ink-2);font-size:.88rem;margin-top:18px}
