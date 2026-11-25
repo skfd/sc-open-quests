@@ -3095,6 +3095,15 @@ wording and tab structure as a first draft open to change, not as decided design
   barely.** Disk nothing deleted: the low will be near 40 GiB again, where `loc advance` and `compact` refuse; those steps
   resume cheaply once disk is there. Candidate, not approved: `.scratch/planet-day/clip-1103` to `-1105`, 7.3 GB.
   **Docker must be started again before the 12:15 city run on 11-25.**
+- **11-24's gate PASSED; STOPPED 01:30:14 on 11-25 at `compact`, under the disk floor (39.0 GiB free), nothing written; not
+  restarted.** Tier 2 ended 01:01, gate 20 of 32 equal, clip 19,335,063, world 19,335,075 (+12), worst city 0.00177%. Store at
+  generation 23, node file and world at 11-24, `finished` there; what is left is `compact`, the day's record, the delete of
+  `world-days/2026-11-24` and the facts. Commit 48 GB free now. Copy: `.scratch/anomalies/STOPPED-2026-11-25.txt`.
+  **Clearing the floor is not enough this time: this compaction copies packs 18 and 21, 41 GiB, before it deletes anything**
+  (11-21's copied 0.09), and only the start is checked against the floor: 39 + the clips' 7.3 GiB would pass and run the disk
+  down to about 5. It wants 82 GiB or more free. `world-days/2026-11-24/before` (52.6 GB, the world at 11-23, hard links no longer shared) is the
+  day's way back, read only by a `finish` that did not end; after the gate nothing reads it, and the loop deletes it minutes
+  after `compact`. Deleting it by hand first gives 91 GiB. **Asked of the owner, nothing deleted.** Docker is still off.
 
 ## City neighbourhoods on the world's counts, and places with nothing open (2026-11-24, evening; nothing built)
 
