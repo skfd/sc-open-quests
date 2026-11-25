@@ -861,6 +861,15 @@ its own static page or a Worker that rewrites the head; the state is in the quer
   cities (about 4,350); Latin, Cyrillic and Greek names; the general card for the rest; no rendering on demand at
   release. Also the owner's: what happens at the Workers limit, and the wording "Canada and Europe".
 
+### General card: three mockups for the owner (2026-11-24, 22:15; nothing decided)
+
+- `design/project-mockups.html` (A world, B over time, C quest types), written by `design/project_mockups.py` from
+  `docs/data`, real numbers: 147 cities on 2026-11-23, 11,384,789 open, 1,110,272 resurvey, 159 types. SVG text only, as
+  the loop was running: **nobody has looked at it drawn here**; text widths were measured, not seen. The owner had asked
+  for one image that represents the project, then for statistics on it, then for mockups.
+- `design/project_image.py` draws A as a PNG with Pillow (no browser); **not run yet**, waits for a gap.
+- Left out: the 576M world total (overlaps not measured). Nothing on `share-previews` or in `docs/` changed.
+
 ### Share previews: built on `share-previews`, not merged, not live (2026-11-23, afternoon; owner: "build it, i will upgrade account later")
 
 - **Workers Paid: the owner says subscribed; Workers spending limit $5 set (2026-11-23, by Claude in the owner's Chrome).**
