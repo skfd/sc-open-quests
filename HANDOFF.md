@@ -3063,6 +3063,11 @@ wording and tab structure as a first draft open to change, not as decided design
   after TaskStop said they were stopped (their `.exe` children outlive it); ended at 19:04, about 2 GB came back. The
   neighbourhoods session was also running scripts (`areas_to.py`, about 3 GB) from 18:30 on. Owner, 19:06, asked what may be
   closed: **"Nothing, let it stop"**; resume in a quiet gap. `retire-cities` waits for the day to close, not for its stop.
+  **Corrected 20:50: it stops about 22:24, not 19:23.** Each of the four workers gives up after its own hour and takes the next
+  group: f112, f114 to f116 gave up about 19:22, f117 to f120 about 20:22, f121 to f124 wait until about 21:22, then f125 to f127.
+  `rect_rows` leaves its pool without cancelling what is queued. f112's failure is already recorded, so this run ends in STOPPED
+  even if memory comes back (read from the code; not waited out). 112 of 127 groups have an engine's result. 20:47: commit 99.8
+  of 108.6 GB, disk 40.7 GiB, 0.7 over the floor under which `loc advance` and `compact` refuse.
 
 ## City neighbourhoods on the world's counts, and places with nothing open (2026-11-24, evening; nothing built)
 
