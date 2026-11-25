@@ -861,14 +861,16 @@ its own static page or a Worker that rewrites the head; the state is in the quer
   cities (about 4,350); Latin, Cyrillic and Greek names; the general card for the rest; no rendering on demand at
   release. Also the owner's: what happens at the Workers limit, and the wording "Canada and Europe".
 
-### General card: three mockups for the owner (2026-11-24, 22:15; nothing decided)
+### General card: one card, B and C combined (2026-11-25, 13:25; drawn, waiting on the owner)
 
-- `design/project-mockups.html` (A world, B over time, C quest types), written by `design/project_mockups.py` from
-  `docs/data`, real numbers: 147 cities on 2026-11-23, 11,384,789 open, 1,110,272 resurvey, 159 types. SVG text only.
-  Drawn once in headless Edge at 22:24, in the gap after the loop stopped: no overlaps, icons right; A's map is faint. The owner had asked
-  for one image that represents the project, then for statistics on it, then for mockups.
-- `design/project_image.py` draws A as a PNG with Pillow (no browser); **not run yet**, waits for a gap.
-- Left out: the 576M world total (overlaps not measured). Nothing on `share-previews` or in `docs/` changed.
+- `design/project-card.svg` and `.png` (2400x1260), written by `design/project_card.py` from `docs/data`: 147 cities on
+  2026-11-24, 11,385,773 open, 1,110,434 resurvey, 159 types, the six largest types, the sum since 2017-01. The PNG is a
+  headless Edge screenshot, taken with no loop and no city run. Every city's sum is checked against `cities.json`.
+- **Owner, 11-24 and 11-25:** wants statistics on it; **no world map** ("world stock image"); B's and C's data together.
+  Mockups A, B and C are in git at `84057012` (removed since).
+- The 2017 figure is SC 64.0, the newest 64.1. Left out: the 576M world total (overlaps not measured).
+- An illustration so far: whether it becomes the general card of the share previews is the owner's call. Nothing on
+  `share-previews` or in `docs/` changed.
 
 ### Share previews: built on `share-previews`, not merged, not live (2026-11-23, afternoon; owner: "build it, i will upgrade account later")
 
