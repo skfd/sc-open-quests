@@ -861,14 +861,18 @@ its own static page or a Worker that rewrites the head; the state is in the quer
   cities (about 4,350); Latin, Cyrillic and Greek names; the general card for the rest; no rendering on demand at
   release. Also the owner's: what happens at the Workers limit, and the wording "Canada and Europe".
 
-### General card: one card, B and C combined (2026-11-25, 13:25; drawn, waiting on the owner)
+### General card: the world's numbers (2026-11-25, 13:31; drawn, waiting on the owner)
 
-- `design/project-card.svg` and `.png` (2400x1260), written by `design/project_card.py` from `docs/data`: 147 cities on
-  2026-11-24, 11,385,773 open, 1,110,434 resurvey, 159 types, the six largest types, the sum since 2017-01. The PNG is a
-  headless Edge screenshot, taken with no loop and no city run. Every city's sum is checked against `cities.json`.
-- **Owner, 11-24 and 11-25:** wants statistics on it; **no world map** ("world stock image"); B's and C's data together.
-  Mockups A, B and C are in git at `84057012` (removed since).
-- The 2017 figure is SC 64.0, the newest 64.1. Left out: the 576M world total (overlaps not measured).
+- `design/project-card.svg` and `.png` (2400x1260), written by `design/project_card.py` from the published files on
+  sc-data: 576,650,884 open on 2026-11-24 (28,599,114 resurvey), 159 types, 248 countries and dependencies, the six
+  largest types, +1,568,038 since 11-01, a bar per day for the net change. The table and the 248 series agree. The
+  PNG is a headless Edge screenshot, taken with no loop and no city run.
+- **Owner, 11-24 and 11-25:** statistics on it; **no world map** ("world stock image"); B's and C's data together;
+  **the world, not 147 cities**. The 147-city card is in git at `2b8ac4bb`, mockups A, B and C at `84057012`.
+- **The overlaps of the world total, measured:** the land outlines of the 248 (one each, 248 codes) overlap in 11 pairs,
+  about 1,993 km2, 1,867 of it CL and AR (the icefield), then HR and RS 108. So about 125 km2 elsewhere; its quests were not
+  counted. Rounded to a million the total stands. Gaps (land in no outline) not measured.
+- The first world day is 11-01, so the world has no 2017 line; the total from zero was a flat strip, hence daily bars.
 - An illustration so far: whether it becomes the general card of the share previews is the owner's call. Nothing on
   `share-previews` or in `docs/` changed.
 
