@@ -3144,6 +3144,9 @@ wording and tab structure as a first draft open to change, not as decided design
   again only when the Overture release changes. Blind spot: an estate with neither the tag nor open building quests.
   Superilla: residential, 15.1 ha, 1,345 open (578 tree leaf type); 83% in el Parc i la Llacuna del Poblenou, 17% in el Poblenou (both counted).
   Scripts and pages: `.scratch/parts-vs-world/` (`area.py`, `check.py`, `keep_page.py`, `keep.html`).
+- **Squares: left by the owner for another session (2026-11-24). Open there:** drop them everywhere (the owner leans to), the
+  safety check and its kept list (`keep.html` has the 46 with maps), Superilla kept or not (proposed: kept), where old links
+  go (proposed: the place around). Also open: when to build the five empty-place states (proposed: after the city pages land).
 - Name in the mockups: "Appellplatz" was the real OSM name of a square in Berlin (w26443399, beside the defence ministry),
   one of the 41. A bad example; the mockups use Meyerinckplatz now. The place and its data are unchanged.
 
