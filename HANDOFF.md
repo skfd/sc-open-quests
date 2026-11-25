@@ -3119,6 +3119,10 @@ wording and tab structure as a first draft open to change, not as decided design
     other microhoods, 14 counties), from a sample of 24 mostly real: RT blocks in Indonesia, farms and hamlets; 4 places are under 1 m² (degenerate outlines, one of them a square). Registry: 334 of 469 squares, and 3 others.
   - A cutoff for squares alone (not for other subtypes) is what the numbers point to; 8,804 squares are 5,000 m² or more
     (Alexanderplatz 78,656; the largest, in Uzbekistan, 7.8 km²). 324 are 50,000 m² or more.
+  - Toronto: 12 of 218 parts are squares, 5 under 5,000 m² (Corner Commons, Piazza, Hart House Quad, Olive Square Park, Art
+    Centre Square; 64 open quests). Each lies wholly in a neighbourhood. Of the registry's 334: 320 lie wholly inside another
+    part of their city that is not a square (any type), 14 in none (one each in 14 cities; only the city page has them).
+    `areas_to.py`, `cover.py`.
 - **Squares, safety check (owner leans to drop, wants a check so a place like Superilla del Poblenou is not lost; not decided).**
   Size alone fails: median 1,064 m2, 87 are 10 ha or more, among them Tiananmen and empty plazas. Two checks on every square:
   OSM says residential (19 of the 8,892 whose tags were read: 0.5 ha+, or 20+ building quests, or 100+ open) or building
