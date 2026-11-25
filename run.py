@@ -15,8 +15,10 @@ Subcommands:
   migrate-archive  move snapshots published before 2026-10-24 (docs/data/<region>/snapshots/) into
              data/archive/; count and history do it too, so it is idempotent and needs no flag
   update     download + backfill + history, then commit "data <asOfDate>" and push, then sync docs/ to the
-             R2 bucket behind street-complete-statistics.comentality.com (tools/cloud_publish.py); last,
-             check-release
+             R2 bucket behind street-complete-statistics.comentality.com (tools/cloud_publish.py)
+  inputs     what the world's day needs, apart from the city run (task kk-SCOpenQuests-inputs): the Europe
+             clip and with it the planet's daily diff, the notes dump, the backup of the world's gated days
+             and the facts, check-release
   planet     the monthly planet job: refresh the planet
              history file (osm-extracts fetch planet-history; a failure leaves it as it is), re-cut every
              osm-extracts clip from it (osm-extracts recut), count the months the regions on a clip lack
@@ -50,6 +52,7 @@ import os
 import re
 import subprocess
 import sys
+import time
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
@@ -689,7 +692,6 @@ def build_history(snapshots: list[dict], city_config: list[dict], disabled: set[
             "denominators": {
                 "landAreaKm2": den.get("landAreaKm2"),
                 "population": den.get("population"),
-                "highwayKm": [c["denominators"].get("highwayKm") for _, c in rows],
                 "taggedNodes": [c["denominators"].get("taggedNodes") for _, c in rows],
                 "taggedWays": [c["denominators"].get("taggedWays") for _, c in rows],
             },
@@ -711,7 +713,6 @@ def build_history(snapshots: list[dict], city_config: list[dict], disabled: set[
             "scVersion": last_snap["scVersion"],
             "landAreaKm2": den.get("landAreaKm2"),
             "population": den.get("population"),
-            "highwayKm": den.get("highwayKm"),
             "open": sum(q.get("open") or 0 for q in headline.values()),
             "agedOnly": sum(q.get("agedOnly") or 0 for q in headline.values()),
             "openAll": sum(q.get("open") or 0 for q in last["quests"].values()),
@@ -995,7 +996,12 @@ def history(data_dir: Path = DATA_DIR, cities_config: Path = CITIES_CONFIG, arch
             raise RuntimeError(f"{archive} lacks {len(lost)} snapshot date(s) the published history has "
                                f"(e.g. {min(lost)}); restore the archive (git history holds the snapshots "
                                f"published until 2026-10-24) or delete {published} to rebuild from what is there")
-    changed += merge_quests(data_dir, archive)
+    if default:
+        sys.path.insert(0, str(TOOLS_DIR))
+        import site_quests  # noqa: E402  (tools/site_quests.py; it imports this module)
+        changed += site_quests.build()
+    else:
+        changed += merge_quests(data_dir, archive)
     out = build_history(snapshots, read_json(cities_config)["cities"], default_disabled(data_dir), regions())
     places = counted_places(data_dir.parent / "places")
     for c in out["cities"]["cities"]:   # the city's row in the name layer: its page's chain and children
@@ -1083,20 +1089,77 @@ def update(force: bool = False, push: bool = True) -> None:
             log("=== cloud ===")
             publish_cloud()
             backup_archive()
-    log("=== check-release ===")
-    try:
-        check_release()
-    except Exception as e:  # the day's data is published; a GitHub hiccup must not fail the run
-        log(f"check-release failed (ignored): {e}")
     log("update done")
 
 
-def backup_archive() -> bool:
-    """Copy data/archive/ (the one copy of every snapshot, not in git) to its own R2 bucket
-    (tools/archive_backup.py). Last and on its own: a failure is logged as "archive backup FAILED"
+# --- inputs: what the world's day needs, apart from the city run ---------------------------------------
+
+INPUTS_LOCK = LOCK_DIR / "inputs.lock"  # planet_store_day.py waits for it
+INPUTS_TRIES, INPUTS_WAIT_S = 3, 600     # docker not answering, a download that broke off
+
+
+def fetch_input(name: str, sleep=time.sleep) -> bool:
+    """osm-extracts fetch, tried again a few times. Returns success; never raises."""
+    cmd = [sys.executable, str(OSM_EXTRACTS_TOOL), "fetch", name]
+    for n in range(1, INPUTS_TRIES + 1):
+        log(f"fetching {name}")
+        code = subprocess.run(cmd, check=False).returncode
+        if code == 0:
+            return True
+        log(f"fetch {name} failed (exit {code}), try {n} of {INPUTS_TRIES}")
+        if n < INPUTS_TRIES:
+            sleep(INPUTS_WAIT_S)
+    return False
+
+
+@contextlib.contextmanager
+def inputs_lock():
+    """data/inputs.lock with this process's pid; yields False if another inputs run is alive."""
+    if INPUTS_LOCK.exists():
+        try:
+            pid = int(INPUTS_LOCK.read_text(encoding="utf-8").strip())
+        except ValueError:
+            pid = -1
+        if pid_alive(pid):
+            yield False
+            return
+    INPUTS_LOCK.parent.mkdir(parents=True, exist_ok=True)
+    INPUTS_LOCK.write_text(str(os.getpid()), encoding="utf-8")
+    try:
+        yield True
+    finally:
+        INPUTS_LOCK.unlink(missing_ok=True)
+
+
+def inputs(sleep=time.sleep) -> None:
+    """The world's daily inputs: the Europe clip (with it the planet's daily diff) and the notes dump; then the
+    private backup of the world's gated days and the facts, and the StreetComplete release check. Every step runs
+    whatever became of the others; a fetch or backup that failed makes the run exit 1 and names it."""
+    with inputs_lock() as mine:
+        if not mine:
+            log("another inputs run is going")
+            return
+        log("=== inputs ===")
+        failed = [f"fetch {n}" for n in ("europe", "notes") if not fetch_input(n, sleep)]
+    # outside the lock: the loop need not wait for the uploads
+    for source in ("facts", "world"):
+        if not backup_archive(source):
+            failed.append(f"backup {source}")
+    try:
+        check_release()
+    except Exception as e:  # a GitHub hiccup fails nothing
+        log(f"check-release failed (ignored): {e}")
+    if failed:
+        raise RuntimeError("inputs: " + ", ".join(failed) + " failed")
+    log("inputs done")
+
+
+def backup_archive(only: str | None = None) -> bool:
+    """Copy data/archive/ (the one copy of every snapshot, not in git) and archive_backup's other sources, or
+    the one named, to the private R2 bucket (tools/archive_backup.py). Last and on its own: a failure is logged as "archive backup FAILED"
     and the run goes on. Returns success."""
-    r = subprocess.run([sys.executable, str(TOOLS_DIR / "archive_backup.py")], cwd=ROOT,
-                       capture_output=True, text=True)
+    r = subprocess.run([sys.executable, str(TOOLS_DIR / "archive_backup.py"), *(["--only", only] if only else [])],
+                       cwd=ROOT, capture_output=True, text=True)
     for line in (r.stdout + r.stderr).splitlines():
         if line.strip():
             log(line)
@@ -1257,7 +1320,7 @@ def open_repin_issue(release: dict, pinned: str) -> str:
             f"{release['date']} from the stored extracts, which the store keeps 14 days. "
             f"Until then every snapshot carries `scVersion` {pinned[1:]}, "
             f"and the chart marks the break when the first {version[1:]} snapshot lands.\n\n"
-            f"Opened by `python run.py check-release` (the scheduled update's last step).")
+            f"Opened by `python run.py check-release` (the last step of the daily `run.py inputs`).")
     return gh("issue", "create", "--title", repin_issue_title(version), "--body", body).strip()
 
 
@@ -1309,6 +1372,8 @@ def main(argv: list[str] | None = None) -> int:
                    help=f"where the snapshots are (default {ARCHIVE_DIR.relative_to(ROOT).as_posix()} with the "
                         "default --data-dir, else --data-dir itself)")
     sub.add_parser("migrate-archive", help="move snapshots published in docs/data into data/archive")
+    sub.add_parser("inputs", help="the world's daily inputs: Europe clip and planet diff, notes dump, the world's "
+                   "backup, the release check")
     sub.add_parser("check-release", help="open the repin issue if StreetComplete has a newer stable release")
     args = parser.parse_args(argv)
     try:
@@ -1327,6 +1392,8 @@ def main(argv: list[str] | None = None) -> int:
                 migrate_archive()
         elif args.command == "update":
             update(force=args.force, push=args.push)
+        elif args.command == "inputs":
+            inputs()
         elif args.command == "planet":
             planet(push=args.push)
         elif args.command == "check-release":

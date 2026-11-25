@@ -53,7 +53,8 @@ This is the contract between the engine (writes snapshots), the pipeline (keeps 
 `data/archive/<region>/snapshots/<asOfDate>.json` (not committed), where `asOfDate` is the extract's
 replication date in the cities' time zone (`YYYY-MM-DD`). The engine runs once per region, with
 `--out data/archive/<region>`, so each region has its own snapshot of a date, holding only its cities. It
-also writes `data/archive/<region>/quests.json`, which `run.py history` merges into `docs/data/quests.json`.
+also writes `data/archive/<region>/quests.json`, the source `tools/site_quests.py take` reads
+at a repin.
 The archive keeps every snapshot and is what `run.py history` reads; `docs/data/<region>/snapshots/` holds
 the region's newest one only, a byte-for-byte copy. Until 2026-10-24 every snapshot was in `docs/data`;
 `run.py migrate-archive` (also run by `count` and `history`) moves any left there into the archive, and
@@ -134,8 +135,9 @@ without `area=yes`, whose position is in the city; great-circle length on a 6371
 
 ## Quest metadata for the site
 
-`docs/data/quests.json`, rewritten each run by `run.py history` from the regions' `quests.json` (the
-newest registry; `status` holds every region's cities):
+`docs/data/quests.json`, written by `tools/site_quests.py` (`run.py history` calls it) from
+`config/site-quests.json` (the newest registry, taken from an engine's `quests.json` at a repin) and the
+`countryCodes` in `config/cities.json`, which give `status`:
 
 ```jsonc
 { "scVersion": "63.4", "scCommit": "244c6873…", "quests": [ {   // registry order, one quest per line
@@ -183,7 +185,7 @@ by name, cells by x then y; a quest with nothing counted is absent.
                                                         //   parallel to dates, so breaks show; areaUnit only
                                                         //   where the snapshot has it, notes only where true
   "quests": { "AddBenchBackrest": { "open": [3063], "agedOnly": [0] } },
-  "denominators": { "landAreaKm2": 665.9, "highwayKm": [0.0] } }
+  "denominators": { "landAreaKm2": 665.9 } }
 ```
 
 A city's `dates` holds only the snapshots that contain it. A quest absent from one of them (not counted
@@ -209,7 +211,7 @@ the file the switch is hidden.
     "place": "9fc3a6b4bdda", "in": "ca/eb1eed766420",   // since 2026-11-17: the city's row in the name layer
                                                  //   ("Places and parts") and the file holding it, for its
                                                  //   page's chain and children; absent when no row is the city
-    "landAreaKm2": 665.9, "population": null, "highwayKm": 0.0,
+    "landAreaKm2": 665.9, "population": null,
     "open": 0,          // headline: counted quests, default-disabled excluded
     "agedOnly": 0,      // of `open`
     "openAll": 0,       // default-disabled included
