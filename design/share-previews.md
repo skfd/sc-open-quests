@@ -9,7 +9,7 @@ or live. Cards per place are not built. "Owner" marks what the owner said; "prop
 2. Text previews come from a Worker on Workers Paid, $5 a month (owner agreed; not upgraded yet).
 3. **No outlines** on cards (owner, 11-23).
 4. The general card needs statistics; the first one is too bland (owner, 11-23). **Settled (owner, 11-25): the world
-   card**, `design/project-card.svg`, is the general card. How often it is redrawn is open.
+   card**, `design/project-card.svg`, is the general card. Redrawn monthly and on release day (owner, 11-25); nothing runs it yet.
 5. Pictures are pregenerated for chosen places and a missing one is rendered by the Worker: the owner's idea,
    under discussion. The render speed in the Worker is to be tested and recorded (owner).
 6. Proposed: the picture never contradicts the text, is never broken, and has a hard spend limit.
@@ -110,4 +110,4 @@ most 3 s, well under 128 MB.
 4. CJK and Arabic names: carry fonts, or the general card?
 5. A monthly cap on fallback renders (proposed 20,000), and should `spend_breaker.py` learn Workers?
 6. Card refresh: monthly or quarterly?
-7. The site's wording for the world, still "Canada and Europe".
+7. ~~The site's wording for the world.~~ "Open StreetComplete quests around the world" (owner, 11-25).
