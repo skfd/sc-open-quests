@@ -4291,3 +4291,7 @@ at once to 0.28 GB (40.8 GiB).
   conflicts with main in `run.py`, not with `place-ids`.
   A rename must also hold back `run.py site`'s own publish until the big upload is done by hand.
   The gap: after 11-25's day closes and its publish ends (tonight) until 11:15 on 11-26. Tests there first.
+- **Owner, 2026-11-25 (about 17:15): "yes rename if they pass"** (asked: rename tomorrow night, 11-26, if the tests pass tonight; it was said
+  that about 1.13M files are uploaded again and old links break). Read as: the rename and the upload, under HOLD, after the
+  tests pass. **The deletes of the old bucket files were not named in that question: ask before them**, after the `--dry-run`. `upload`
+  as written refuses when the deletes pass `--max-delete`, so it needs a way to upload and keep the old files first.
