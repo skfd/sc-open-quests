@@ -3077,6 +3077,15 @@ wording and tab structure as a first draft open to change, not as decided design
   `rect_rows` leaves its pool without cancelling what is queued. f112's failure is already recorded, so this run ends in STOPPED
   even if memory comes back (read from the code; not waited out). 112 of 127 groups have an engine's result. 20:47: commit 99.8
   of 108.6 GB, disk 40.7 GiB, 0.7 over the floor under which `loc advance` and `compact` refuse.
+- **STOPPED 22:23:37 on 11-24, 11-24 in `world finish` (tier 2 `new`, f112 first), for want of commit; not restarted, owner
+  asked.** Copy: `.scratch/anomalies/STOPPED-2026-11-24.txt`; STOPPED is still in place. The process freed its memory by
+  22:25; task Ready. `day.pkl` there, `finished` absent: the documented resume redoes `finish`. **At rest, 22:27: 26.4 GB of
+  commit left (82.2 of 108.6 committed), and the loop's python itself reached 17 GB in tier 2 `new`: a resume now would
+  stand at 9 GB again and starve the same way.** It needs about 34 GB at rest for one engine at a time, 41 for two (11-23 at
+  rest: 37). Read off the log: 22 GB left at 17:20 (`old`, one engine alive), 16 at 17:30 as `new` began, falling to 7.
+  **Disk 40.3 GiB:** all 127 of `before/`'s files (52.6 GB) are already replaced, so the resume's restore gives about 52 GB
+  back and finish takes it again: expect about the same low, on the 40 GiB floor. It wants about 10 GiB more free first.
+  Nothing closed or deleted. When both are there: remove STOPPED, start the loop with `WORLD_T2_WORKERS=2`.
 
 ## City neighbourhoods on the world's counts, and places with nothing open (2026-11-24, evening; nothing built)
 
