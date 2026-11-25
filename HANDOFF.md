@@ -880,9 +880,20 @@ its own static page or a Worker that rewrites the head; the state is in the quer
 - **Decided (owner, 11-25):** redrawn **monthly** and on release day; the title is **"Open StreetComplete quests around
   the world"** (title, `og:title`, the page's heading; the descriptions say "places around the world", Claude's words), on
   the branch; **merged on release day, after that day's redraw**, so not before.
-- **Left:** (1) nothing redraws it monthly yet: a step or task to write once merged, in a loop gap; (2) the branch's tests
-  were not run after the title change (the loop was running); (3) it was 88 commits behind main on 11-25 (`docs/index.html`,
-  HANDOFF and DESIGN change on both sides). At 360 px wide the small labels do not read; a centre square crop loses "577".
+- **To do, for the next session (owner, 11-25: "we will pick up in next session"), in this order.** 1 to 3 in a gap of
+  the world loop:
+  1. Run the branch's tests: none were run since the title change (`55cdd007`; the loop was running), and before it only
+     the three of `tests/test_preview_worker.py`.
+  2. Release day (about 12-01): on the branch, `python design/project_card.py && python design/render_share_card.py`,
+     look at `docs/img/share-card.png`, commit.
+  3. Merge `share-previews` into main (the owner's yes of 11-25 is for release day, after the redraw; merging publishes
+     the tags and the card with the next daily run). It was 88 commits behind on 11-25; `docs/index.html`, HANDOFF and
+     DESIGN change on both sides, and `design/project-card.*` and `project_card.py` are on both.
+  4. After the merge: write what redraws the card monthly, in a loop gap. Nothing does yet.
+  5. The Worker's deploy is separate and needs the owner's go (with the $5 limit question above).
+- **Owner's, if wanted:** the descriptions' wording (Claude's words); "248 countries and territories" counts every Overture
+  country and dependency entry, possibly its placeholders too. **Known limits, left as they are:** at 360 px wide the small
+  labels do not read; a centre square crop loses "577".
 
 ### Share previews: built on `share-previews`, not merged, not live (2026-11-23, afternoon; owner: "build it, i will upgrade account later")
 
