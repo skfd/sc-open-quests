@@ -3165,7 +3165,17 @@ wording and tab structure as a first draft open to change, not as decided design
     Willow Park: a place=suburb multipolygon of 2024-04-05 over a 2019 boundary; Bayview Woods-Steeles in 2024-03 and 2025-02;
     Centennial a 2011 relation and a 2016 way; Cantley Village a 2012 CanVec import and a 2024 boundary; Les
     Bassins du Nouveau Havre in 2017 and 2024. Overture seems to make one division per OSM object (an inference; not documented
-    where I looked). Guelph's are deliberate, so a fix in OSM is not ours to make there.
+    where I looked). Correction: Guelph's plain names are the owner's own edit
+    (changeset 187822521, user skfd, from ~/Code/guelph-boundaries), whose README already says the group relations should lose
+    `place=neighbourhood`.
+  - **Owner (2026-11-24): fix OSM where it should be fixed, in cowork; here, do the proposal.** The OSM side is handed
+    to a session in ~/Code/cowork (`osm-duplicate-neighbourhoods/BRIEF.md`; nothing edited in OSM). Here: branch
+    `dropped-places` (worktree `../sc-open-quests-dropped`, sparse: config, tools, tests), commit fbd81524, **not merged and
+    not tested**: `config/dropped-places.json` (16), the registry without them, `run.dropped_places`, readers in
+    `add_parts.py` and `places.py`, `tests/test_dropped_places.py`, DATA-FORMAT "Dropped places". Left: the tests in a gap in the
+    loop, the owner's look at the list, then merge, rebuild the name layer, publish (16 deletions). Merging makes the next
+    daily run stop the series of the 16 and drop their files; the archive keeps the old counts. The squares can use the same file later (`why` is
+    `duplicate` now, and the file's checks must learn the new reason).
 - **Squares, safety check (owner leans to drop, wants a check so a place like Superilla del Poblenou is not lost; not decided).**
   Size alone fails: median 1,064 m2, 87 are 10 ha or more, among them Tiananmen and empty plazas. Two checks on every square:
   OSM says residential (19 of the 8,892 whose tags were read: 0.5 ha+, or 20+ building quests, or 100+ open) or building
