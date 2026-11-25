@@ -41,7 +41,7 @@ class SiteTest(unittest.TestCase):
         def step(name, value=None):
             return lambda *a, **k: self.calls.append(name) or value
         for name, value in [("SITE_STATE", self.tmp / "state.json"), ("LOCK_PATH", self.tmp / "pipeline.lock"),
-                            ("LOCK_DIR", self.tmp), ("DATA_DIR", self.tmp / "data"), ("git", git),
+                            ("LOCK_DIR", self.tmp), ("LOOP_RUNNING", self.tmp / "RUNNING"), ("DATA_DIR", self.tmp / "data"), ("git", git),
                             ("log", self.logged.append), ("history", step("history")), ("publish", step("publish")),
                             ("publish_cloud", lambda: self.calls.append("cloud") or self.cloud_ok),
                             ("memory_status", lambda: self.memory)]:
@@ -79,6 +79,15 @@ class SiteTest(unittest.TestCase):
         self.assertEqual(self.calls, [])
         self.assertIn("commit left", self.logged[0])
         self.assertIn("another run", self.logged[1])
+
+    def test_waits_for_the_world_loop_but_not_for_ever(self):
+        (self.tmp / "RUNNING").write_text("", encoding="utf-8")
+        now = datetime.now(timezone.utc)
+        for hours, calls in [(30, 0), (40, 3)]:
+            run.write_json(run.SITE_STATE, {"day": "2026-11-23", "docs": "t1",
+                                            "at": (now - timedelta(hours=hours)).isoformat()})
+            run.site()
+            self.assertEqual(len(self.calls), calls)
 
     def test_only_from_main(self):
         self.branch = "wip"

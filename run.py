@@ -1139,6 +1139,8 @@ def publish_site(push: bool = True) -> bool:
 
 SITE_STATE = ROOT / "data" / "site-deployed.json"  # the last deploy: the world's day, docs/'s tree, when; not committed
 SITE_AGAIN = timedelta(hours=20)  # a change of docs/ alone (code, texts) goes up this long after the last deploy
+SITE_PATIENCE = timedelta(hours=36)  # how old the last deploy may grow before one goes up beside the world loop
+LOOP_RUNNING = ROOT / ".scratch" / "planet-cut" / "RUNNING"  # tools/stream/store_lock.py
 SITE_MIN_COMMIT_GB = 8            # the build peaks at 2.4 GB (2026-11-25); the world loop's engines come first
 
 
@@ -1174,6 +1176,10 @@ def site(force: bool = False, push: bool = True) -> None:
     branch = git("rev-parse", "--abbrev-ref", "HEAD").stdout.strip()
     if branch != "main":
         raise RuntimeError(f"site: the checkout is on {branch}, not main")
+    now = datetime.now(timezone.utc)
+    if LOOP_RUNNING.exists() and not force and state and now - datetime.fromisoformat(state["at"]) < SITE_PATIENCE:
+        log(f"site: {why}, but the world loop is at work; the next run")
+        return
     memory = memory_status()
     if memory and memory[1] < SITE_MIN_COMMIT_GB and not force:
         log(f"site: {why}, but {memory[1]:.1f} GB of commit left; the next run")
