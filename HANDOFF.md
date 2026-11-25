@@ -864,8 +864,8 @@ its own static page or a Worker that rewrites the head; the state is in the quer
 ### General card: three mockups for the owner (2026-11-24, 22:15; nothing decided)
 
 - `design/project-mockups.html` (A world, B over time, C quest types), written by `design/project_mockups.py` from
-  `docs/data`, real numbers: 147 cities on 2026-11-23, 11,384,789 open, 1,110,272 resurvey, 159 types. SVG text only, as
-  the loop was running: **nobody has looked at it drawn here**; text widths were measured, not seen. The owner had asked
+  `docs/data`, real numbers: 147 cities on 2026-11-23, 11,384,789 open, 1,110,272 resurvey, 159 types. SVG text only.
+  Drawn once in headless Edge at 22:24, in the gap after the loop stopped: no overlaps, icons right; A's map is faint. The owner had asked
   for one image that represents the project, then for statistics on it, then for mockups.
 - `design/project_image.py` draws A as a PNG with Pillow (no browser); **not run yet**, waits for a gap.
 - Left out: the 576M world total (overlaps not measured). Nothing on `share-previews` or in `docs/` changed.
