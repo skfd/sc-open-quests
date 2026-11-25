@@ -3126,9 +3126,9 @@ wording and tab structure as a first draft open to change, not as decided design
   Still the city run's: the site deploy (`publish_cloud`) and the city counts. Still open: the owner's word on switching the
   city pages to the world; a new home for the deploy; then the city task off.
 - **The city pages are switched to the world's counts on main (owner, 11-25, 03:20: "yes switch"); fb0d8422 code, 20e9fe45 data;
-  not pushed.** The 12:15 city run deploys it from the working tree; **it probably will not push: `publish` returns before
+  pushed 06:47, below.** The 12:15 city run deploys it from the working tree; **it probably will not push: `publish` returns before
   `git push` when `docs/data` has nothing new to commit, and from now on each day's data is committed only when a new gated day
-  changes it. The push is the owner's to allow (asked 11-25).** `run.py history` for `docs/data` first writes the world's missing
+  changes it. So a push is asked for, or built into the new deploy.** `run.py history` for `docs/data` first writes the world's missing
   days (`data/archive-world`, 19 s each) and always joins them; `migrate_archive`, which each city `count` runs first, would have
   moved the world's published snapshots into the city archive: it now skips them. 273 tests OK; a second build changes 0 files.
   Against the files before: 52,728 series before 11-01 identical, no date and no quest lost, Europe's 11-24 +6 of 19,335,063.
@@ -3140,6 +3140,7 @@ wording and tab structure as a first draft open to change, not as decided design
   - The city run still counts all its regions: nothing but `world_compare.py` reads them now.
   - Way back: `git revert 20e9fe45 fb0d8422` (the archive is whole), then `run.py history` and a deploy; a revert alone
     leaves the live site as it is.
+  **Pushed 11-25, 06:47 (owner: "pusj and thats it?").** The site itself changes at the 12:15 deploy.
   Next: the site deploy's new home (after the world's day closes, so the pages are the same evening's), `world_compare.py` rerun
   in a gap, then the city task off.
 
