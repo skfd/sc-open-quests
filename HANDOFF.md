@@ -4103,3 +4103,12 @@ at once to 0.28 GB (40.8 GiB).
     decided; memory of `apply` (places.json 395 MB, three copies) and about 1 GB of disk, unaffordable at 40.7 GiB.
   - The GERS-derived ids stay in `gers` and in outline paths. The ingest tool for 12-16.0 (agent proposes, operator judges, ended pages,
     suggested successors, `?in=`, former names) is not begun.
+- **Owner, 2026-11-24:** Release 1 **waits** for the id rename; 12-01 is the earliest date it may be considered, not a fixed one. Who
+  merges the other branches: "not sure operator will figure it out" (read as: whoever runs the rename decides then).
+  Read off the branches for that person (12-hex strings added against main, files shared with `place-ids`):
+  `dropped-places` holds ids in `config/dropped-places.json` (both `id` and `keeps.id`; `rename_places.py` config covers it) and shares
+  DATA-FORMAT, `add_parts.py`, `places.py` (conflicts likely); `world-cities` in `tests/test_world_cities.py` only (made-up data,
+  not checked), shares DATA-FORMAT; `share-previews` in `cloudflare/README.md` and two tests (real place ids in links: **these do
+  need new ids**, the rename does not touch them), no shared file; `retire-cities` and `world-stable` none (`retire-cities`
+  shares DATA-FORMAT). So `dropped-places` first, then `place-ids`, the rest in any order. Corrects the "Clashes" line above:
+  `retire-cities` holds no place ids.
