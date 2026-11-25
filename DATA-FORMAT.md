@@ -1,7 +1,8 @@
 # Data format
 
 This is the contract between the engine (writes snapshots), the pipeline (keeps the series) and the site
-(reads it). All JSON is UTF-8. Dates are ISO-8601. Times are UTC unless a field name says `Local`.
+(reads it). The published files under `docs/` are offered under the ODbL 1.0, as the OpenStreetMap and Overture
+data they are made from (the site's `terms/` page). All JSON is UTF-8. Dates are ISO-8601. Times are UTC unless a field name says `Local`.
 
 ## Inputs
 

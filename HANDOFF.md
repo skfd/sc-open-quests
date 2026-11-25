@@ -3130,6 +3130,8 @@ wording and tab structure as a first draft open to change, not as decided design
   4 GB is another virtual machine (`vmwp`, since 11-21), not WSL's; left. **35 - 17 - 8 leaves room for one engine at a time,
   barely.** Disk nothing deleted: the low will be near 40 GiB again, where `loc advance` and `compact` refuse; those steps
   resume cheaply once disk is there. Candidate, not approved: `.scratch/planet-day/clip-1103` to `-1105`, 7.3 GB.
+  **Deleted at the owner's word, 11-25 about 17:35** (43.2 -> 50.5 GiB free, 11-25's tier 2 `new` just done); `.scratch/planet-day/run*.sh`,
+  one-off scripts of 11-16, still name them and would cut them again from Europe clips that may be gone.
   **Docker must be started again before the 12:15 city run on 11-25.**
 - **11-24's gate PASSED; STOPPED 01:30:14 on 11-25 at `compact`, under the disk floor (39.0 GiB free), nothing written; not
   restarted.** Tier 2 ended 01:01, gate 20 of 32 equal, clip 19,335,063, world 19,335,075 (+12), worst city 0.00177%. Store at
@@ -4265,4 +4267,33 @@ at once to 0.28 GB (40.8 GiB).
 - **Not needed:** a cookie banner (returns only with ads or cookie-based analytics); DMCA, children's, account or
   refund terms; an imprint.
 - **Open:** whether to ask StreetComplete's maintainer about the name and icon in the Play listing (trademark status
-  not looked up). Next step is the owner's word to draft the pages.
+  not looked up).
+- **Built 2026-11-25 on branch `legal-pages` (c35215ed), not merged, not live (owner: "build the pages please"):**
+  worktree `~/Code/sc-open-quests-legal` (sparse: `docs/*.html`, `docs/apps`, `docs/img`, the md files; new paths
+  there need `git add --sparse`). `docs/privacy/`, `docs/terms/`, their `docs/legal.css`; a footer paragraph in
+  `docs/index.html` (independent, privacy, terms, ODbL); the ODbL line in `DATA-FORMAT.md` and README. GoatCounter's
+  terms were read (help/privacy, dated 2025-06-08) and the page words them as its own claims. The widget repo has a
+  `legal-pages` branch too (34b0c50: apps page generator footer, Scriptable header, two buttons in
+  `MainActivity.kt`); `docs/apps/` on our branch is regenerated from it.
+- **Not verified:** nothing was opened in a browser and the Kotlin was not compiled (the world loop was running);
+  only tag balance and LF were checked. Merging our branch publishes at the next daily run, since it syncs all of
+  `docs/`. Merge both branches together, or the `--check` of `docs/apps` goes stale.
+- **Merged 2026-11-25, afternoon (owner: "merge"):** both branches are on their mains (ours 21e105f8, the widget's
+  34b0c50, fast-forward) and deleted, the worktree removed; `apps-page.js --check docs/apps` passes. Both pages were
+  then opened headless from `docs/` (phone light, desktop dark: no overflow, no failed request; shots in
+  `.scratch/legal/`). **Live with the daily run of 11-26, 12:15**, which pushes main and syncs `docs/`; after it,
+  open `/privacy/` and `/terms/` on the live site and the footer links. Still not compiled: the two buttons in the
+  widget's `MainActivity.kt`. Neither repo was pushed by hand.
+- **Still for the owner:** whether GoatCounter's "individual pageviews" setting is off (the page
+  assumes the default); no governing-law clause was written; contact is a public GitHub issue.
+- **2026-11-25, 17:10: `place-ids` is brought up to main (f37f487a), still not tested.** New since the plan: `data/archive-world` (renamed too), the
+  publisher's `city/` and `city-parts/` files, and **the loop publishes by itself after RUNNING is gone** (`run.py site`), so
+  `apply` also refuses while `pipeline.lock`, `inputs.lock` or the publisher's `daily.lock` is there. 11-24 closed on 11-25 at
+  02:12; `world-cities` and `retire-cities` are merged; `freeze-city-files` (new, no ids) merges clean. `dropped-places` now
+  conflicts with main in `run.py`, not with `place-ids`.
+  A rename must also hold back `run.py site`'s own publish until the big upload is done by hand.
+  The gap: after 11-25's day closes and its publish ends (tonight) until 11:15 on 11-26. Tests there first.
+- **Owner, 2026-11-25 (about 17:15): "yes rename if they pass"** (asked: rename tomorrow night, 11-26, if the tests pass tonight; it was said
+  that about 1.13M files are uploaded again and old links break). Read as: the rename and the upload, under HOLD, after the
+  tests pass. **The deletes of the old bucket files were not named in that question: ask before them**, after the `--dry-run`. `upload`
+  as written refuses when the deletes pass `--max-delete`, so it needs a way to upload and keep the old files first.
