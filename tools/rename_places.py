@@ -14,6 +14,13 @@ Default: all three. What it rewrites:
 Not here, rebuilt from the renamed files instead: docs/places (tools/places.py build), docs/data (run.py history), data/facts
 (facts.py cities --force, facts.py world --force, then verify), the bucket (world_publish.py), the checkpoint in R2.
 
+    python tools/rename_places.py check     every stored id is the registry's, and no old id is left (also after the
+                                            first day that runs on the new ids); exit 1 otherwise
+
+**Only between two closed days.** An open day (.scratch/planet-day/world-days/<day>) keeps a copy of place-sets.json
+and the engine's dumps, with the old ids; a resume would put them back and PlaceSets would take them as new places,
+with the gate still passing. So apply refuses while one exists, and while STOPPED does.
+
 Safety, per file: an id that is neither an old nor a new id of the registry stops the run, and so does a file with
 both, so a run that died is run again (a finished file is all new and is left). The new text is translated back and
 must equal the old text byte for byte before it replaces it; it is written beside it and renamed over it, so a
@@ -34,6 +41,7 @@ sys.path.insert(0, str(ROOT / "tools"))
 import place_ids  # noqa: E402
 
 PLANET_CUT = ROOT / ".scratch" / "planet-cut"
+WORLD_DAYS = ROOT / ".scratch" / "planet-day" / "world-days"   # planet_store_day.py WDAYS
 WORLD = ROOT / ".scratch" / "planet" / "world-1101"
 ARCHIVE = ROOT / "data" / "archive"
 PARTS = ROOT / "config" / "parts"
@@ -138,16 +146,46 @@ def run(what: list[str], apply: bool, pairs: dict[str, str], world: Path = WORLD
     return result
 
 
+def check(pairs: dict[str, str], world: Path = WORLD, archive: Path = ARCHIVE, parts: Path = PARTS) -> int:
+    """how many files hold an id that is not the registry's. Also the world's other JSON files (reports, done
+    marks), which the rename does not touch: an old id there is reported, so nobody has to remember the list."""
+    ours = set(pairs.values())
+    bad = 0
+    for kind in ("config", "archive", "world"):
+        for path, pattern in jobs(kind, world, archive, parts):
+            alien = {m.group(2) for m in pattern.finditer(read(path))} - ours
+            if alien:
+                bad += 1
+                print(f"{path}: {len(alien):,} ids not in the registry, e.g. {sorted(alien)[:3]}", flush=True)
+    known = {p for p, _ in jobs("world", world, archive, parts)}
+    others = [p for g in ("*.json", "files/*/*.json", "files/*/out/**/*.json") for p in sorted(world.glob(g))]
+    for path in others:
+        if path in known or path.name == "places.json":
+            continue
+        old = {m.group(2) for m in STRING.finditer(read(path))} & pairs.keys()
+        if old:
+            bad += 1
+            print(f"{path}: {len(old):,} old ids, not renamed (is it read by anything?)", flush=True)
+    print(f"check: {bad} files")
+    return bad
+
+
 def refuse_beside_the_loop() -> None:
     if (PLANET_CUT / "RUNNING").exists():
         raise SystemExit("a world day is running (.scratch/planet-cut/RUNNING): the rename needs a gap")
+    if (PLANET_CUT / "STOPPED").exists():
+        raise SystemExit("the loop is STOPPED in a day: close that day first")
+    days = WORLD_DAYS
+    still = sorted(p.name for p in days.iterdir() if p.is_dir()) if days.is_dir() else []
+    if still:
+        raise SystemExit(f"a world day is open ({', '.join(still)} in {days}): its copies hold the old ids")
     if not (PLANET_CUT / "HOLD").exists():
         raise SystemExit("place .scratch/planet-cut/HOLD first, so no day starts during the rename")
 
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("cmd", choices=["plan", "apply"])
+    ap.add_argument("cmd", choices=["plan", "apply", "check"])
     ap.add_argument("what", nargs="*", choices=["config", "archive", "world"])
     ap.add_argument("--registry", type=Path, default=place_ids.REGISTRY)
     a = ap.parse_args(argv)
@@ -159,6 +197,8 @@ def main(argv: list[str] | None = None) -> int:
     pairs = {place_ids.old_id(p.gers): p.id for p in reg.places.values()}
     if len(pairs) != len(reg.places):
         raise SystemExit("two places of the registry had one old id")
+    if a.cmd == "check":
+        return 1 if check(pairs) else 0
     run(a.what or ["config", "archive", "world"], a.cmd == "apply", pairs)
     return 0
 

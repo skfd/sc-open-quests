@@ -142,6 +142,35 @@ class Rename(unittest.TestCase):
                 self.run_all(True)
             self.assertEqual(before, (self.world / "places.json").read_text())
 
+    def test_check_finds_an_old_id_left_behind(self):
+        self.assertNotEqual(0, rp.check(self.pairs, self.world, self.archive, self.parts))
+        self.run_all(True)
+        self.assertEqual(0, rp.check(self.pairs, self.world, self.archive, self.parts))
+        self.put(self.world / "report.json", json.dumps({"places": [self.o[0]]}))
+        self.assertEqual(1, rp.check(self.pairs, self.world, self.archive, self.parts))
+
+    def test_apply_refuses_beside_a_run_an_open_day_or_a_stop(self):
+        cut = Path(self.tmp.name) / "cut"
+        cut.mkdir()
+        was, rp.PLANET_CUT = rp.PLANET_CUT, cut
+        days, rp.WORLD_DAYS = rp.WORLD_DAYS, cut / "world-days"
+        try:
+            with self.assertRaises(SystemExit):   # no HOLD
+                rp.refuse_beside_the_loop()
+            (cut / "HOLD").write_text("x")
+            rp.refuse_beside_the_loop()
+            (cut / "world-days" / "2026-11-24").mkdir(parents=True)
+            with self.assertRaises(SystemExit):
+                rp.refuse_beside_the_loop()
+            (cut / "world-days" / "2026-11-24").rmdir()
+            for name in ("STOPPED", "RUNNING"):
+                (cut / name).write_text("x")
+                with self.assertRaises(SystemExit):
+                    rp.refuse_beside_the_loop()
+                (cut / name).unlink()
+        finally:
+            rp.PLANET_CUT, rp.WORLD_DAYS = was, days
+
     def test_a_hard_linked_copy_keeps_the_old_text(self):
         import os
         link = self.world / "checkpoint.json"

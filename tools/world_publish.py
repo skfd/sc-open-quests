@@ -574,8 +574,8 @@ def plan(out: Path, work: Path) -> tuple[list[tuple[str, str]], list[tuple[str, 
 
 def upload(out: Path, work: Path, print_only: bool = False, full: bool = False, trial: int = 0,
            max_delete: int = MAX_DELETE) -> int:
-    """the changed files in batches (the bucket manifest saved after each), then the gone ones deleted, and
-    latest.json last: it carries the new `v`, so no page asks for the new files before all are there"""
+    """the changed files in batches (the bucket manifest saved after each), then latest.json, which
+    carries the new `v`, so no page asks for the new files before all are there, and last the gone ones deleted"""
     todo, gone, local, bucket = plan(out, work)
     remote = f"r2:{BUCKET}"
     log(f"plan: {len(todo):,} files to upload of {len(local['p']) + len(local['c']):,}, {len(gone):,} to delete; "
@@ -626,6 +626,14 @@ def upload(out: Path, work: Path, print_only: bool = False, full: bool = False, 
     if trial:
         log(f"trial: {len(todo):,} files uploaded; latest.json untouched")
         return 0
+    log("rclone copyto latest.json")
+    r = subprocess.run(["rclone", "copyto", str(out / "latest.json"), f"{remote}/latest.json",
+                        "--header-upload", f"Cache-Control: {CACHE_LATEST_JSON}", *JSON_TYPE],
+                       env=env, capture_output=True, text=True)
+    if r.returncode:
+        log(f"FAILED: {r.stderr.strip()[-1000:]}")
+        return 1
+    # latest.json first: no page asks for a file that is about to go
     for i in range(0, len(gone), BATCH):
         batch = gone[i:i + BATCH]
         write_text(listing, "".join(rel(kind, pid) + "\n" for kind, pid in batch))
@@ -638,13 +646,6 @@ def upload(out: Path, work: Path, print_only: bool = False, full: bool = False, 
         for kind, pid in batch:
             del bucket[kind][pid]
         save_manifest(work / "bucket.json", bucket)
-    log("rclone copyto latest.json")
-    r = subprocess.run(["rclone", "copyto", str(out / "latest.json"), f"{remote}/latest.json",
-                        "--header-upload", f"Cache-Control: {CACHE_LATEST_JSON}", *JSON_TYPE],
-                       env=env, capture_output=True, text=True)
-    if r.returncode:
-        log(f"FAILED: {r.stderr.strip()[-1000:]}")
-        return 1
     bucket["v"], bucket["date"] = local.get("v"), local.get("date")
     save_manifest(work / "bucket.json", bucket)
     log(f"uploaded {local.get('date')} (v {local.get('v')})")

@@ -257,11 +257,11 @@ Rerunning on the same extract rewrites the same snapshot file byte for byte, apa
 The name layer and the neighbourhood counts (DESIGN.md, "Places: naming the world, counting on
 request"). Agreed before the work was split, so the builders, the engine and the site meet here.
 
-- **Place id**: the first 12 hex digits of the Overture GERS id, dashes removed
-  (`087cbb33-e54d-...` → `087cbb33e54d`). The build fails if two places share one. The same id is the
-  name shards' key, the `?place=` of the site, the issue form's field and a part's key in a snapshot.
-  The full GERS id is kept where the place is defined (shard field `g` is not stored; the parts registry
-  stores it).
+- **Place id**: ours, the first 12 hex digits of a random GUID kept in the place registry
+  (`data/place-ids/registry.tsv.gz`, tools/place_ids.py), where the Overture GERS id and the OSM object are attributes
+  that a release may change. The same id is the name shards' key, the `?place=` of the site, the issue form's field
+  and a part's key in a snapshot. A GERS id the registry lacks stops a build: a release is ingested by an agent and
+  an operator first. `index.json` says whose ids it holds: `"ids": "guid"`.
 - **Overture release** is pinned like the SC version: `config/places.json`
   `{ "overture": "2026-10-21.0" }`; moving it is a deliberate commit, not an automatic one.
 - **Name layer**, `docs/places/` (committed, published). Only divisions that have a `division_area`.
