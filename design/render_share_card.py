@@ -1,24 +1,56 @@
-"""Render design/share-card.html into docs/img/share-card.png, 1200x630 exactly.
+"""Draw design/project-card.svg into docs/img/share-card.png (1200x630, the og:image of every link), and write its date
+and its words into docs/index.html (`?v=`, so that networks fetch it again, and og:image:alt).
 
-Needs Playwright's Chromium (`pip install playwright`, `playwright install chromium`). Run it by hand when
-the card's design changes, and raise `?v=` on og:image in docs/index.html so networks fetch it again.
+The card carries a date and a total, so it goes stale: redraw it with
+
+    python design/project_card.py && python design/render_share_card.py
+
+Needs Pillow and Edge (headless; its profile is a temporary folder). In a gap of the world loop only.
 """
+import re
+import subprocess
+import tempfile
+from datetime import datetime
 from pathlib import Path
 
-from playwright.sync_api import sync_playwright
+from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE = ROOT / "design" / "share-card.html"
+SOURCE = ROOT / "design" / "project-card.svg"
+LARGE = ROOT / "design" / "project-card.png"
 TARGET = ROOT / "docs" / "img" / "share-card.png"
+PAGE = ROOT / "docs" / "index.html"
+EDGE = r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
 
-with sync_playwright() as p:
-    browser = p.chromium.launch()
-    page = browser.new_page(viewport={"width": 1200, "height": 630}, device_scale_factor=1)
-    page.goto(SOURCE.as_uri())
-    page.wait_for_load_state("networkidle")
-    missing = page.evaluate("[...document.images].filter((i) => !i.naturalWidth).map((i) => i.src)")
-    if missing:
-        raise SystemExit(f"images that did not load: {missing}")
-    page.screenshot(path=str(TARGET), clip={"x": 0, "y": 0, "width": 1200, "height": 630})
-    browser.close()
-print(f"{TARGET.relative_to(ROOT)}: {TARGET.stat().st_size} bytes")
+
+def main():
+    if (ROOT.parent / "sc-open-quests" / ".scratch" / "planet-cut" / "RUNNING").exists():
+        raise SystemExit("the world loop is running: renders wait for a gap")
+    svg = SOURCE.read_text(encoding="utf-8")
+    found = re.search(r">(\d+)M</text>.*?>around the world on (\d+ \w+ \d{4})<", svg, re.S)
+    if not found:
+        raise SystemExit("no headline and date in the card")
+    number, when = found.groups()
+    day = datetime.strptime(when, "%d %b %Y").date()
+    LARGE.unlink(missing_ok=True)
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as profile:
+        subprocess.run([EDGE, "--headless=new", "--disable-gpu", "--no-first-run", f"--user-data-dir={profile}",
+                        "--window-size=1200,630", "--force-device-scale-factor=2", "--hide-scrollbars",
+                        f"--screenshot={LARGE}", SOURCE.as_uri()], timeout=60, check=True)
+        with Image.open(LARGE) as im:
+            if im.size != (2400, 1260):
+                raise SystemExit(f"drawn at {im.size}")
+            im.convert("RGB").resize((1200, 630), Image.LANCZOS).save(TARGET, optimize=True)
+    html = PAGE.read_text(encoding="utf-8")
+    html, a = re.subn(r"(img/share-card\.png\?v=)[^\"]*", rf"\g<1>{day}", html)
+    html, b = re.subn(r'(<meta property="og:image:alt" content=")[^"]*',
+                      rf"\g<1>{number} million open StreetComplete quests around the world on {when}, and the six "
+                      "largest quest types.", html)
+    if (a, b) != (1, 1):
+        raise SystemExit(f"og:image found {a} times, og:image:alt {b}")
+    PAGE.write_text(html, encoding="utf-8", newline="\n")
+    print(TARGET, TARGET.stat().st_size, day)
+
+
+if __name__ == "__main__":
+    main()

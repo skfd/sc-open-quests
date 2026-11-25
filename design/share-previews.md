@@ -8,7 +8,8 @@ or live. Cards per place are not built. "Owner" marks what the owner said; "prop
 1. Every place with numbers gets a text preview on release 1 day (owner).
 2. Text previews come from a Worker on Workers Paid, $5 a month (owner agreed; not upgraded yet).
 3. **No outlines** on cards (owner, 11-23).
-4. The general card needs statistics; the first one is too bland (owner, 11-23).
+4. The general card needs statistics; the first one is too bland (owner, 11-23). **Settled (owner, 11-25): the world
+   card**, `design/project-card.svg`, is the general card. How often it is redrawn is open.
 5. Pictures are pregenerated for chosen places and a missing one is rendered by the Worker: the owner's idea,
    under discussion. The render speed in the Worker is to be tested and recorded (owner).
 6. Proposed: the picture never contradicts the text, is never broken, and has a hard spend limit.

@@ -5840,8 +5840,9 @@ send the query. So the page's head is written per request: `og:title` and `og:de
 place's number, e.g. "3,398 open StreetComplete quests in Agincourt North,
 Toronto" and "Down 35 since Oct 27. Most open: path surface 687, tactile paving kerb 387, tactile paving
 crosswalk 287. As of Nov 22, 2026." The picture is one site-wide card, `docs/img/share-card.png`
-(1200x630, no number and no date; source `design/share-card.html`, rendered by
-`design/render_share_card.py`). A link with no place, or one the site has no numbers for, keeps the
+(1200x630; the owner's pick of 2026-11-25: the world total with its date, the six largest types; source
+`design/project-card.svg` by `design/project_card.py` from sc-data, drawn by `design/render_share_card.py`, which
+also writes `?v=` and the alt text. It does not redraw itself). A link with no place, or one the site has no numbers for, keeps the
 static head in `docs/index.html`, which now carries the `og:` tags and `twitter:card` itself.
 
 **No addresses were frozen.** Today's links work as they are (`?city=`, `&part=`, `?place=&in=`, and the
