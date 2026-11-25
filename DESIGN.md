@@ -5804,6 +5804,22 @@ file for its own last days: a country page downloaded `latest/<date>/world.json`
 | `place/<id[:2]>/<id>.json` | `id`, `name`, `subtype`, `cc`, `first`, `from` when not 0, and `quests`: the place's whole series as change points `[day, open, aged]` | when its bytes changed | `max-age=86400` |
 | `children/<p[:2]>/<parent>.json` | `quests`, the names this file uses, in the world's order; `places`: child id to `{<index into quests>: [open, aged, openBack, agedBack]}` | when its bytes changed | `max-age=86400` |
 
+**The counted cities (2026-11-25).** The world counts each of config/cities.json's cities inside its own boundary
+(`osm-<cityId>`), and the same build publishes them: the page reads a city's days from `first` on here, and only the
+dates before it from the site's `docs/data/history/<cityId>.json`. `latest.json` then has `city` and `cityParts`.
+
+| file | holds |
+|---|---|
+| `city/<cityId>.json` | a place file's form: `id`, `name`, `first`, `from` when not 0, `quests` |
+| `city-parts/<cityId>.json` | a children file's form over the city's registered parts (config/parts), and `noFile`: the parts with no place file, which have had no quest on any day |
+| `cities.json` | `open`: each city's open quests on `date`, over the quests asked there and on by default |
+| `city-trends.json` | `open`: the same on every day from `first` |
+| `city-quests.json` | a children file's form over the cities, for the compare view |
+
+A part's own days are its place's, `place/<id>`. A quest a file leaves out is 0 where `quests.json` says the site
+counts it in the city, and a quest it says is not asked there is not shown. Checked 2026-11-25 against that day's
+`docs/data` for every city, part, quest and date: 44,355,752 values, 0 different.
+
 - **Days are numbers.** The published days are every day from `first` through `date` with no gap, so day 0 is
   `first` and a point's `day` needs no date list. The build stops if the gated days have a gap.
 - **`v` is the publish's token** (a hash of the date and every file's hash). The page asks for every file but

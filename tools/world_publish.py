@@ -8,8 +8,14 @@ day's `counts/<D>/counts.{json,npz}` (tools/stream/place_counts.py). Writes, und
     place/<id[:2]>/<id>.json             a place's whole series; rewritten only when its bytes change
     children/<p[:2]>/<parent>.json       a parent's children, newest day and four weeks before (a country's
                                          parent: children/world.json); rewritten only when its bytes change
+    city/<cityId>.json                   a counted city (config/cities.json), in a place file's form
+    city-parts/<cityId>.json             its registered parts (config/parts), in a children file's form, and `noFile`:
+                                         the parts with no place file (no quest on any day)
+    cities.json                          every city's open quests, the app's defaults only
+    city-quests.json                     every city's quests, in a children file's form (the compare view)
+    city-trends.json                     every city's open quests on every day, the app's defaults only
 
-Only the 12-hex Overture places the name layer (docs/places) has; only `open` and `agedOnly`. A quest's series is a
+Only the 12-hex Overture places the name layer (docs/places) has, and the counted cities; only `open` and `agedOnly`. A quest's series is a
 list of change points `[day, open, aged]`, day counted from `first`. The paths never change, so only the files whose
 bytes differ from what the bucket holds are uploaded: `work/local.json` holds each built file's hash,
 `work/bucket.json` each uploaded one's.
@@ -62,6 +68,9 @@ JSON_TYPE = ["--header-upload", "Content-Type: application/json"]  # not left to
 SUBTYPES = ["country", "dependency", "region", "county", "localadmin", "locality",
             "borough", "macrohood", "neighborhood", "microhood"]  # tools/places.py SUBTYPES
 QBITS = 8  # a key is (place id as a 48-bit int) << QBITS | quest index
+CITY = 1 << 48  # a counted city's "place id": this bit and 48 bits of its id's hash
+CITY_PART = "osm-"  # a city's part id in the world's counts is osm-<cityId>
+KINDS = ("p", "c", "s")  # the manifests' kinds: place files, children files, the cities' (by path, less .json)
 
 
 def log(msg: str) -> None:
@@ -119,6 +128,44 @@ class NameLayer:
                     add(pid, parent, name, SUBTYPES[st] if 0 <= st < len(SUBTYPES) else str(st), cc)
 
 
+# --- the counted cities ------------------------------------------------------------------------------------------
+
+def city_key(cid: str) -> int:
+    return CITY | int.from_bytes(hashlib.blake2b(cid.encode("utf-8"), digest_size=6).digest(), "big")
+
+
+class Cities:
+    """the counted cities: the key, name and parts of each, and which quests its totals cover (asked there, and on
+    in the app by default)"""
+
+    def __init__(self, cities: list[dict], parts: dict[str, list[str]], quests: list[dict]):
+        sys.path.insert(0, str(ROOT / "tools"))
+        import site_quests
+        self.keys = {c["id"]: city_key(c["id"]) for c in cities}
+        self.ids = {k: c for c, k in self.keys.items()}
+        if len(self.ids) != len(self.keys):
+            raise SystemExit("two cities have the same key")
+        self.names = {c["id"]: c["name"] for c in cities}
+        self.parts = {c: sorted(parts.get(c, [])) for c in self.keys}   # [] for a city with none
+        self.totalled = {c["id"]: {q["name"] for q in quests if not q.get("defaultDisabled")
+                                   and site_quests.status(q, c) == "counted"} for c in cities}
+
+    @classmethod
+    def load(cls) -> "Cities":
+        sys.path.insert(0, str(ROOT / "tools"))
+        import run
+        import site_quests
+        return cls(run.read_json(run.CITIES_CONFIG)["cities"],
+                   {p.stem: [x["id"] for x in run.read_json(p)["parts"]] for p in sorted(run.PARTS_CONFIG.glob("*.json"))},
+                   site_quests.base(archive=run.ARCHIVE_DIR)["quests"])
+
+    def city_of(self, part: str) -> int | None:
+        return self.keys.get(part[len(CITY_PART):]) if part.startswith(CITY_PART) else None
+
+
+NO_CITIES = Cities([], {}, [])
+
+
 # --- days and counts ---------------------------------------------------------------------------------------------
 
 def gated_days(world: Path, first: str = FIRST) -> list[str]:
@@ -171,7 +218,7 @@ def hexkey(ids: list[str]) -> np.ndarray:
     return np.array([int(p, 16) for p in ids], dtype=np.int64)
 
 
-def day_state(world: Path, day: str, quests: list[str], names: NameLayer) -> tuple[np.ndarray, ...]:
+def day_state(world: Path, day: str, quests: list[str], names: NameLayer, cities: Cities = NO_CITIES) -> tuple[np.ndarray, ...]:
     """the day's published (place, quest) values: sorted keys, open, aged (rows 0 in both dropped), and the
     published places the world counted that day (sorted keys)"""
     meta = json.loads((world / "counts" / day / "counts.json").read_text(encoding="utf-8"))
@@ -179,8 +226,8 @@ def day_state(world: Path, day: str, quests: list[str], names: NameLayer) -> tup
     for i, q in enumerate(meta["quests"]):
         if q in quests:
             qmap[i] = quests.index(q)
-    pub = [len(p) == 12 and p in names.meta for p in meta["parts"]]
-    pkey = np.array([int(p, 16) if ok else -1 for p, ok in zip(meta["parts"], pub)], dtype=np.int64)
+    pkey = np.array([int(p, 16) if len(p) == 12 and p in names.meta else cities.city_of(p) or -1
+                     for p in meta["parts"]], dtype=np.int64)
     part, quest, o, a = _columns(world / "counts" / day / "counts.npz", meta["measures"])
     pk, qi = pkey[part], qmap[quest]
     keep = (pk >= 0) & (qi >= 0) & ((o != 0) | (a != 0))
@@ -208,12 +255,13 @@ def changes(prev: tuple, cur: tuple) -> tuple[np.ndarray, np.ndarray, np.ndarray
 
 # --- build -------------------------------------------------------------------------------------------------------
 
-def load_events(world: Path, work: Path, days: list[str], quests: list[str], names: NameLayer):
+def load_events(world: Path, work: Path, days: list[str], quests: list[str], names: NameLayer, cities: Cities = NO_CITIES):
     """every day's changes, cached: (keys, day index, open, aged) sorted by key then day; and the published places
     counted on any of the days (sorted keys) with the index of the first day each was counted"""
     ev = work / "events"
     ev.mkdir(parents=True, exist_ok=True)
-    stamp = dumps({"quests": quests, "first": days[0], "overture": names.overture})
+    stamp = dumps({"quests": quests, "first": days[0], "overture": names.overture,
+                   **({"cities": sorted(cities.keys)} if cities.keys else {})})
     sfile = work / "events.key"
     if not sfile.exists() or sfile.read_text(encoding="utf-8") != stamp:
         shutil.rmtree(ev, ignore_errors=True)
@@ -226,10 +274,10 @@ def load_events(world: Path, work: Path, days: list[str], quests: list[str], nam
         f = ev / f"{day}.npz"
         if not f.exists():
             if prev is None:
-                prev = (day_state(world, days[di - 1], quests, names)[:3]
+                prev = (day_state(world, days[di - 1], quests, names, cities)[:3]
                         if di > 0 else (np.zeros(0, np.int64), np.zeros(0, np.int32), np.zeros(0, np.int32)))
             t = time.time()
-            k, o, a, counted = day_state(world, day, quests, names)
+            k, o, a, counted = day_state(world, day, quests, names, cities)
             dk, do, da = changes(prev, (k, o, a))
             tmp = f.with_suffix(".tmp.npz")
             np.savez_compressed(tmp, keys=dk, open=do, aged=da, counted=counted)
@@ -309,7 +357,9 @@ def shard(pid: str) -> str:
 
 
 def rel(kind: str, pid: str) -> str:
-    """a file's path in the bucket; kind "p" a place's own file, "c" a parent's children file"""
+    """a file's path in the bucket; kind "p" a place's own file, "c" a parent's children file, "s" a cities' file"""
+    if kind == "s":
+        return pid + ".json"
     return ("place/" if kind == "p" else "children/") + shard(pid)
 
 
@@ -321,8 +371,9 @@ def load_manifest(path: Path) -> dict:
     if path.exists():
         m = json.loads(path.read_text(encoding="utf-8"))
         if m.get("schema") == SCHEMA:
+            m.setdefault("s", {})   # a manifest from before the cities' files
             return m
-    return {"schema": SCHEMA, "p": {}, "c": {}}
+    return {"schema": SCHEMA, "p": {}, "c": {}, "s": {}}
 
 
 def save_manifest(path: Path, m: dict) -> None:
@@ -337,17 +388,39 @@ def place_text(pid: str, meta: tuple[str, str, str], first: str, frm: int, serie
             f'"first":"{first}",' + (f'"from":{frm},' if frm else "") + f'"quests":{series}}}\n')
 
 
-def children_text(parent: str, kids: list[str], rows: dict[int, list], quests: list[str]) -> str:
+def children_text(parent: str, kids: list[str], rows: dict[int, list], quests: list[str],
+                  key=lambda c: int(c, 16), more: str = "") -> str:
     """the file's quests are listed once, in the world's order, and a child's keys index that list"""
-    mine = [(c, rows.get(int(c, 16), [])) for c in sorted(kids)]
+    mine = [(c, rows.get(key(c), [])) for c in sorted(kids)]
     used = sorted({q for _, r in mine for q, _ in r})
     at = {q: i for i, q in enumerate(used)}
     body = ",".join('"%s":{%s}' % (c, ",".join(f'"{at[q]}":{s}' for q, s in r)) for c, r in mine)
-    return (f'{{"schema":{SCHEMA},"parent":"{parent}","quests":{dumps([quests[q] for q in used])},'
+    return (f'{{"schema":{SCHEMA},"parent":"{parent}","quests":{dumps([quests[q] for q in used])},{more}'
             f'"places":{{{body}}}}}\n')
 
 
-def build(world: Path, out: Path, work: Path, places: Path, first: str, through: str | None) -> dict:
+def city_totals(k: np.ndarray, d: np.ndarray, o: np.ndarray, n: int, quests: list[str], cities: Cities) -> dict[str, list]:
+    """each city's open quests on each of the n days, over the quests its total covers"""
+    out = {}
+    at = {q: i for i, q in enumerate(quests)}
+    for cid, key in cities.keys.items():
+        lo, hi = np.searchsorted(k, [key << QBITS, (key + 1) << QBITS])
+        total = np.zeros(n, np.int64)
+        for q in cities.totalled[cid]:
+            if q not in at:
+                continue
+            a, b = lo + np.searchsorted(k[lo:hi], [key << QBITS | at[q], (key << QBITS | at[q]) + 1])
+            if a == b:
+                continue
+            step = np.zeros(n, np.int64)
+            step[d[a:b]] = np.diff(o[a:b].astype(np.int64), prepend=0)
+            total += np.cumsum(step)
+        out[cid] = total.tolist()
+    return out
+
+
+def build(world: Path, out: Path, work: Path, places: Path, first: str, through: str | None,
+          cities: Cities = NO_CITIES) -> dict:
     """every file's text is made, and a file is written only when its hash differs from the last build's
     (`work/local.json`), so `out` mirrors what the bucket should hold"""
     t0 = time.time()
@@ -361,13 +434,13 @@ def build(world: Path, out: Path, work: Path, places: Path, first: str, through:
     quests = json.loads((world / "counts" / day / "counts.json").read_text(encoding="utf-8"))["quests"]
     names = NameLayer(places)
     log(f"{len(days)} gated days {days[0]}..{day}; children against {days[back]}; {len(names.meta):,} named places")
-    k, d, o, a, ck, cf = load_events(world, work, days, quests, names)
+    k, d, o, a, ck, cf = load_events(world, work, days, quests, names, cities)
     log(f"{len(k):,} change points, {len(ck):,} published places")
     old = load_manifest(work / "local.json")
     if old.get("out") != str(out.resolve()) or not (out / "latest.json").exists():
-        old = {"p": {}, "c": {}}   # another folder, or an emptied one: every file is written
-    new = {"schema": SCHEMA, "out": str(out.resolve()), "p": {}, "c": {}}
-    wrote = {"p": 0, "c": 0}
+        old = {kind: {} for kind in KINDS}   # another folder, or an emptied one: every file is written
+    new = {"schema": SCHEMA, "out": str(out.resolve()), **{kind: {} for kind in KINDS}}
+    wrote = dict.fromkeys(KINDS, 0)
 
     def put(kind: str, pid: str, text: str) -> None:
         h = digest(text)
@@ -379,13 +452,20 @@ def build(world: Path, out: Path, work: Path, places: Path, first: str, through:
     t = time.time()
     ser = series_json(k, d, o, a, quests)
     children: dict[str, list[str]] = {}
+    city_from = {}
     for key, frm in zip(ck.tolist(), cf.tolist()):
+        if key in cities.ids:
+            city_from[cities.ids[key]] = frm
+            continue
         pid = idstr(key)
         if pid not in names.meta:   # the events cache is older than the name layer, which dropped the place
             continue
         put("p", pid, place_text(pid, names.meta[pid], days[0], frm, ser.get(key, "{}")))
         for p in names.parents.get(pid, []):
             children.setdefault(p, []).append(pid)
+    for cid, frm in city_from.items():
+        put("s", f"city/{cid}", f'{{"schema":{SCHEMA},"id":"{cid}","name":{dumps(cities.names[cid])},"first":"{days[0]}",' +
+            (f'"from":{frm},' if frm else "") + f'"quests":{ser.get(cities.keys[cid], "{}")}}}\n')
     del ser
     log(f"place/: {len(new['p']):,} files, {wrote['p']:,} written ({time.time() - t:.0f} s)")
     t = time.time()
@@ -393,20 +473,32 @@ def build(world: Path, out: Path, work: Path, places: Path, first: str, through:
     for parent, kids in children.items():
         put("c", parent, children_text(parent, kids, rows, quests))
     log(f"children/: {len(new['c']):,} files, {wrote['c']:,} written ({time.time() - t:.0f} s)")
-    gone = [(kind, pid) for kind in ("p", "c") for pid in old[kind] if pid not in new[kind]]
+    if cities.keys:
+        if missing := sorted(set(cities.keys) - set(city_from)):
+            raise SystemExit(f"cities the world does not count: {missing}")
+        for cid, parts in cities.parts.items():
+            none = [p for p in parts if p not in new["p"]]
+            put("s", f"city-parts/{cid}", children_text(cid, parts, rows, quests, more=f'"noFile":{dumps(none)},'))
+        put("s", "city-quests", children_text("cities", list(cities.keys), rows, quests, key=cities.keys.get))
+        totals = city_totals(k, d, o, len(days), quests, cities)
+        put("s", "cities", dumps({"schema": SCHEMA, "open": {c: v[-1] for c, v in totals.items()}}) + "\n")
+        put("s", "city-trends", dumps({"schema": SCHEMA, "first": days[0], "open": totals}) + "\n")
+        log(f"cities: {len(new['s']):,} files, {wrote['s']:,} written")
+    gone = [(kind, pid) for kind in KINDS for pid in old[kind] if pid not in new[kind]]
     for kind, pid in gone:
         (out / rel(kind, pid)).unlink(missing_ok=True)
     if gone:
         log(f"{len(gone):,} files no longer published: removed")
     v = hashlib.blake2b(digest_size=6)
     v.update(day.encode())
-    for kind in ("p", "c"):
+    for kind in KINDS:
         for pid in sorted(new[kind]):
             v.update(pid.encode()); v.update(new[kind][pid].encode())
     sc = json.loads((world / "world.json").read_text(encoding="utf-8")) if (world / "world.json").exists() else {}
     latest = {"schema": SCHEMA, "v": v.hexdigest(), "date": day, "first": days[0], "back": days[back],
               "scVersion": sc.get("scVersion") or _sc_version(), "resurveyMultiplier": 1,
-              "overture": names.overture, "quests": quests, "place": "place/", "children": "children/"}
+              "overture": names.overture, "quests": quests, "place": "place/", "children": "children/",
+              **({"city": "city/", "cityParts": "city-parts/"} if cities.keys else {})}
     write_text(out / "latest.json", json.dumps(latest, ensure_ascii=False, indent=1) + "\n")
     new["v"], new["date"] = latest["v"], day
     save_manifest(work / "local.json", new)
@@ -441,7 +533,10 @@ def day_list(latest: dict) -> list[str]:
 def read_place(out: Path, latest: dict, pid: str) -> dict[str, dict[str, tuple[int, int]]]:
     """what the page sees for one place: date -> quest -> (open, aged), from its own file alone, from the day it
     was first counted to latest.json's date"""
-    pf = json.loads((out / latest["place"] / shard(pid)).read_text(encoding="utf-8"))
+    return read_series(json.loads((out / latest["place"] / shard(pid)).read_text(encoding="utf-8")), latest)
+
+
+def read_series(pf: dict, latest: dict) -> dict[str, dict[str, tuple[int, int]]]:
     days = day_list(latest)
     seen: dict[str, dict[str, tuple[int, int]]] = {dt: {} for dt in days[pf.get("from", 0):]}
     for q, pts in pf["quests"].items():
@@ -460,7 +555,11 @@ def read_children(out: Path, latest: dict, pid: str, parent: str) -> tuple[dict,
     return ({q: (v[0], v[1]) for q, v in row.items()}, {q: (v[2], v[3]) for q, v in row.items()})
 
 
-def verify(world: Path, out: Path, work: Path, places: Path, sample: int, seed: int = 1) -> int:
+def read_city(out: Path, latest: dict, cid: str) -> dict[str, dict[str, tuple[int, int]]]:
+    return read_series(json.loads((out / latest["city"] / f"{cid}.json").read_text(encoding="utf-8")), latest)
+
+
+def verify(world: Path, out: Path, work: Path, places: Path, sample: int, seed: int = 1, cities: Cities = NO_CITIES) -> int:
     latest = json.loads((out / "latest.json").read_text(encoding="utf-8"))
     names = NameLayer(places)
     quests = latest["quests"]
@@ -471,20 +570,23 @@ def verify(world: Path, out: Path, work: Path, places: Path, sample: int, seed: 
     # every parent's file too (a place in two region files is under both)
     views = [(f"{pid} in {par}", pid, read_children(out, latest, pid, par))
              for pid in pick for par in names.parents[pid]]
-    want = set(hexkey(pick).tolist())
+    want = set(hexkey(pick).tolist()) | set(cities.ids)
+    for cid in cities.keys:   # every city, every time, and its row of the compare view
+        seen[cid] = read_city(out, latest, cid)
+    cq = json.loads((out / "city-quests.json").read_text(encoding="utf-8")) if cities.keys else None
     bad = 0
 
     def nz(row: dict) -> dict:
         return {q: v for q, v in row.items() if v != (0, 0)}
 
     for day in day_list(latest):
-        k, o, a, _ = day_state(world, day, quests, names)
+        k, o, a, _ = day_state(world, day, quests, names, cities)
         place = k >> QBITS
         m = np.isin(place, list(want))
         truth: dict[str, dict[str, tuple[int, int]]] = {}
         for kk, vo, va in zip(k[m].tolist(), o[m].tolist(), a[m].tolist()):
-            truth.setdefault(idstr(kk >> QBITS), {})[quests[kk & 255]] = (vo, va)
-        for pid in pick:
+            truth.setdefault(cities.ids.get(kk >> QBITS) or idstr(kk >> QBITS), {})[quests[kk & 255]] = (vo, va)
+        for pid in [*pick, *cities.keys]:
             got = nz(seen[pid].get(day, {}))
             exp = truth.get(pid, {})
             if got != exp:
@@ -492,6 +594,11 @@ def verify(world: Path, out: Path, work: Path, places: Path, sample: int, seed: 
                 if bad <= 5:
                     diff = {q: (exp.get(q), got.get(q)) for q in set(exp) | set(got) if exp.get(q) != got.get(q)}
                     log(f"MISMATCH {day} {pid}: {list(diff.items())[:5]}")
+        for cid in cities.keys if day == latest["date"] else ():
+            row = nz({cq["quests"][int(i)]: (v[0], v[1]) for i, v in cq["places"][cid].items()})
+            if row != truth.get(cid, {}):
+                bad += 1
+                log(f"MISMATCH {day} {cid}: its row of city-quests.json")
         for which, at in ((0, latest["date"]), (1, latest["back"])):
             if day != at:
                 continue
@@ -503,7 +610,7 @@ def verify(world: Path, out: Path, work: Path, places: Path, sample: int, seed: 
                         log(f"MISMATCH {day} {label} (children file, {'back' if which else 'newest'}): "
                             f"{exp} != {got}")
         log(f"verify {day}: {len(pick)} places checked")
-    log(f"verify: {bad} mismatches over {len(pick)} places, {len(views)} children views "
+    log(f"verify: {bad} mismatches over {len(pick)} places, {len(cities.keys)} cities, {len(views)} children views "
         f"and {len(day_list(latest))} days")
     return 1 if bad else 0
 
@@ -564,9 +671,9 @@ def plan(out: Path, work: Path) -> tuple[list[tuple[str, str]], list[tuple[str, 
     local, bucket = load_manifest(work / "local.json"), load_manifest(work / "bucket.json")
     if local.get("out") != str(out.resolve()):
         raise SystemExit(f"{work / 'local.json'} was not built into {out}: build first")
-    todo = sorted(((kind, pid) for kind in ("p", "c") for pid, h in local[kind].items()
+    todo = sorted(((kind, pid) for kind in KINDS for pid, h in local[kind].items()
                    if bucket[kind].get(pid) != h), key=lambda x: rel(*x))
-    gone = sorted(((kind, pid) for kind in ("p", "c") for pid in bucket[kind] if pid not in local[kind]),
+    gone = sorted(((kind, pid) for kind in KINDS for pid in bucket[kind] if pid not in local[kind]),
                   key=lambda x: rel(*x))
     return todo, gone, local, bucket
 
@@ -666,7 +773,7 @@ def check_live(out: Path, work: Path, sample: int, host: str = HOST, seed: int |
     if live.get("v") != v:
         log(f"MISMATCH latest.json: the bucket serves v {live.get('v')}, the manifest says {v}")
         bad += 1
-    keys = [(kind, pid) for kind in ("p", "c") for pid in bucket[kind]]
+    keys = [(kind, pid) for kind in KINDS for pid in bucket[kind]]
     rng = np.random.default_rng(seed)
     for i in rng.choice(len(keys), size=min(sample, len(keys)), replace=False):
         path = rel(*keys[i])
@@ -715,8 +822,8 @@ def cors(set_rule: bool) -> int:
     return 0
 
 
-def daily(world: Path, out: Path, work: Path, places: Path, first: str, sample: int) -> int:
-    """Task Scheduler's run: build to the newest gated day; if the bucket is behind, verify a sample, upload the
+def daily(world: Path, out: Path, work: Path, places: Path, first: str, sample: int, cities: Cities) -> int:
+    """The world loop's last step (run.py site): build to the newest gated day; if the bucket is behind, verify a sample, upload the
     changed files and read a sample back over HTTPS. `work/daily.lock` keeps two runs apart. Never --full: a plan
     past DAY_CAP stops here and waits for somebody."""
     work.mkdir(parents=True, exist_ok=True)
@@ -726,12 +833,12 @@ def daily(world: Path, out: Path, work: Path, places: Path, first: str, sample: 
         return 1
     lock.write_text(str(os.getpid()), encoding="utf-8")
     try:
-        latest = build(world, out, work, places, first, None)
+        latest = build(world, out, work, places, first, None, cities)
         todo, gone, _, bucket = plan(out, work)
         if not todo and not gone and bucket.get("v") == latest["v"]:
             log(f"nothing new: {latest['date']} is uploaded")
             return 0
-        if verify(world, out, work, places, sample):
+        if verify(world, out, work, places, sample, cities=cities):
             log("FAILED: verify found mismatches; not uploading")
             return 1
         if upload(out, work):
@@ -763,14 +870,14 @@ def main(argv: list[str] | None = None) -> int:
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # place names; python -I ignores PYTHONIOENCODING
     if a.cmd == "build":
-        build(a.world, a.out, a.work, a.places, a.first, a.through)
+        build(a.world, a.out, a.work, a.places, a.first, a.through, Cities.load())
         return 0
     if a.cmd == "verify":
-        return verify(a.world, a.out, a.work, a.places, a.sample or 2000)
+        return verify(a.world, a.out, a.work, a.places, a.sample or 2000, cities=Cities.load())
     if a.cmd == "crosscheck":
         return crosscheck(a.world, a.places, a.report, a.day, a.json)
     if a.cmd == "daily":
-        return daily(a.world, a.out, a.work, a.places, a.first, a.sample or 2000)
+        return daily(a.world, a.out, a.work, a.places, a.first, a.sample or 2000, Cities.load())
     if a.cmd == "cors":
         return cors(a.set)
     if a.cmd == "check":

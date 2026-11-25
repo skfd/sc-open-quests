@@ -286,15 +286,57 @@ function sliceSeries(h, from) {
 const longerThanRecent = (h) => h.dates.length > 1 && daysBetween(h.dates[0], last(h.dates)) > RECENT_DAYS;
 const shownSeries = (h) => (state.range === "all" || !longerThanRecent(h) ? h : sliceSeries(h, addDays(last(h.dates), -RECENT_DAYS)));
 
-// A city's series, once a page: history/<city>.json.
+// A city's series, once a page: history/<city>.json before the world's first day, the world's days after it.
+// Without the world's (its host does not answer) the file's own dates.
 const cityHistCache = new Map();
 function cityHistory(id) {
   if (!cityHistCache.has(id)) {
-    const p = getJSON(`history/${id}.json`);
+    const p = Promise.all([getJSON(`history/${id}.json`), worldCity(id).catch(() => null)])
+      .then(([h, w]) => (w ? joinWorld(h, w) : h));
     p.catch(() => cityHistCache.delete(id));
     cityHistCache.set(id, p);
   }
   return cityHistCache.get(id);
+}
+
+const countedIn = (cityId) => quests.quests.filter((q) => q.status && q.status[cityId] === "counted").map((q) => q.name);
+
+// The world's days of a city, over the quests the site counts there (quests.json); null when there are none.
+async function worldCity(id) {
+  const latest = await worldLatest();
+  const f = latest && latest.city && await worldJSON(`${latest.city}${encodeURIComponent(id)}.json`, latest.v);
+  return f && f.quests ? worldSeries(latest, f, countedIn(id)) : null;
+}
+
+// The file's dates before the world's first, then the world's; a quest only one of them counts is null on the other's.
+function joinWorld(h, w) {
+  const k = h.dates.findIndex((d) => d >= w.dates[0]), n = k < 0 ? h.dates.length : k;
+  const none = (len) => Array(len).fill(null);
+  const join = (a, b) => [...(a ? a.slice(0, n) : none(n)), ...(b || none(w.dates.length))];
+  const out = {};
+  for (const q of new Set([...Object.keys(h.quests), ...Object.keys(w.quests)])) {
+    const a = h.quests[q] || {}, b = w.quests[q] || {};
+    out[q] = { open: join(a.open, b.open), agedOnly: join(a.agedOnly, b.agedOnly) };
+    if (out[q].open.every((v) => v == null)) delete out[q];
+  }
+  const quests = Object.fromEntries(Object.entries(out).sort(([a], [b]) => (a < b ? -1 : 1)));
+  return { ...h, dates: join(h.dates, w.dates), meta: join(h.meta, w.meta), quests };
+}
+
+// A part's world days in the shape of its city's series. A part in its city's `noFile` has had nothing on any day.
+async function worldPart(cityId, pid) {
+  const c = cityById(cityId), latest = await worldLatest();
+  if (!latest || !latest.cityParts) return null;
+  const [pf, kids, names] = await Promise.all([worldJSON(latest.place + worldShard(pid), latest.v), cityParts(cityId), partNames(cityId)]);
+  const p = names && (names.parts || []).find((x) => x.id === pid);
+  const f = pf || (kids && (kids.noFile || []).includes(pid) ? { quests: {} } : null);
+  const s = p && f && worldSeries(latest, f, countedIn(cityId));
+  return s && { city: cityId, part: pid, name: p.en || p.name, subtype: p.subtype, in: c.in || null, cityName: c.name,
+                dates: s.dates, meta: s.meta, quests: s.quests };
+}
+async function cityParts(cityId) {
+  const latest = await worldLatest();
+  return latest && latest.cityParts ? worldJSON(`${latest.cityParts}${encodeURIComponent(cityId)}.json`, latest.v) : null;
 }
 
 // A part's series (DATA-FORMAT.md, "A part's series") in the shape of its city's: the city's meta on the
@@ -322,7 +364,7 @@ async function partHistory(cityId, pid) {
 // The page's series: the city's, or the part's.
 async function seriesFor(cityId, pid) {
   if (!pid) return cityHistory(cityId);
-  return partHistory(cityId, pid);
+  return await worldPart(cityId, pid).catch(() => null) || partHistory(cityId, pid);
 }
 
 // Steps worth a note on the chart: one quest type moving by more than a tenth of the total (and at least
@@ -947,7 +989,7 @@ const crumbSep = () => el("span", { class: "sep", "aria-hidden": "true" }, "›"
 
 // The chain in the head, from the name layer's region file (15-80 KB). Below the table, the city's parts
 // and the name layer's places inside this one, once the reader nears them: the parts come from the city's
-// newest snapshot, which for Ontario is 250 KB gzipped.
+// own file on the world's host.
 let childWatch = null;
 async function placeAround(seq) {
   const c = cityById(state.city);
@@ -975,9 +1017,17 @@ async function placeAround(seq) {
 
 // ---------- compare view ----------
 
-// one quest's open count per city, each in its newest snapshot: data/compare/<quest>.json. A quest
+// one quest's open count per city on the newest day: the world's city-quests.json (a city's keys index the
+// file's quests; a quest it lacks is 0 where the site counts it), else data/compare/<quest>.json. A quest
 // counted nowhere has no file, which reads as no count anywhere.
 async function compareFile(quest) {
+  const latest = await worldLatest();
+  const cq = latest && latest.city && await worldJSON("city-quests.json", latest.v);
+  if (cq && cq.places) {
+    const i = cq.quests.indexOf(quest), st = questByName.get(quest)?.status || {};
+    return { open: Object.fromEntries(Object.keys(cq.places).filter((id) => st[id] === "counted")
+      .map((id) => [id, cq.places[id][i]?.[0] ?? 0])) };
+  }
   if (!compareCache.has(quest)) {
     compareCache.set(quest, fetch(`${DATA}/compare/${encodeURIComponent(quest)}.json`, { cache: "no-cache" })
       .then((r) => {
@@ -990,6 +1040,7 @@ async function compareFile(quest) {
 }
 
 async function compareRows() {
+  await newestTotals().catch(() => {});
   const qn = state.compareQuest;
   const per = qn ? (await compareFile(qn)).open : null;
   const q = qn && questByName.get(qn);
@@ -1007,18 +1058,35 @@ async function compareRows() {
   return rows;
 }
 
-// Each city's default total on every snapshot date, for the trend column: data/trends.json, asked for
-// when Compare first opens so a first visit doesn't carry it. Data written before 2026-11-10 has the
-// arrays in cities.json; a file that fails to load leaves the column out.
+// Each city's default total on every date, for the trend column: data/trends.json before the world's first day,
+// the world's city-trends.json after it, asked for when Compare first opens so a first visit doesn't carry them.
+// A file that fails to load leaves the column out.
 let trendsFile = null;
 function cityTrends() {
-  if (!trendsFile) {
-    const old = cities.cities.some((c) => c.trend);
-    trendsFile = old
-      ? Promise.resolve({ dates: cities.dates, trend: Object.fromEntries(cities.cities.map((c) => [c.id, c.trend])) })
-      : getJSON("trends.json").catch(() => null);
-  }
+  trendsFile ||= Promise.all([getJSON("trends.json").catch(() => null), worldTrends().catch(() => null)])
+    .then(([t, w]) => {
+      if (!t || !w) return t;
+      const k = t.dates.findIndex((d) => d >= w.first), n = k < 0 ? t.dates.length : k;
+      const days = Object.values(w.open)[0].map((_, i) => addDays(w.first, i));
+      return { dates: [...t.dates.slice(0, n), ...days],
+               trend: Object.fromEntries(Object.keys(w.open).map((id) => [id, [...(t.trend[id] || Array(n).fill(null)).slice(0, n), ...w.open[id]]])) };
+    });
   return trendsFile;
+}
+async function worldTrends() {
+  const latest = await worldLatest();
+  return latest && latest.city ? worldJSON("city-trends.json", latest.v) : null;
+}
+
+// cities.json's own counts are the last deploy's: the world's newest day over them.
+async function newestTotals() {
+  const latest = await worldLatest();
+  const t = latest && latest.city && await worldJSON("cities.json", latest.v);
+  if (!t || !t.open) return;
+  cities.asOfDate = latest.date;
+  cities.scVersion = latest.scVersion;
+  for (const c of cities.cities) if (t.open[c.id] != null) { c.open = t.open[c.id]; c.asOfDate = latest.date; }
+  renderFooter();
 }
 
 async function renderCompare() {
@@ -1726,21 +1794,28 @@ function askCard(ref) {
       el("a", { href: `${ASK_URL}?${search}` }, "look for a request"), ", and a 👍 on it is a vote."));
 }
 
-// The newest snapshot of a city: the parts are in it (cities.<id>.parts).
-function snapshotOf(c) { return optionalJSON(`${DATA}/${c.region}/snapshots/${c.asOfDate}.json`); }
+// The parts' counts in the city's newest published snapshot, when the world's host does not answer.
+async function snapshotParts(c) {
+  const snap = await optionalJSON(`${DATA}/${c.region}/snapshots/${c.asOfDate}.json`).catch(() => null);
+  return snap && snap.cities && snap.cities[c.id] && snap.cities[c.id].parts;
+}
 function partNames(cityId) { return optionalJSON(`${DATA}/parts/${encodeURIComponent(cityId)}.json`); }
 
 const partTotal = (counts) => Object.entries(counts || {}).reduce((s, [q, n]) => s + (selected(q) ? n : 0), 0);
 const partKind = (st) => (st === "neighborhood" ? "neighbourhood" : st || "part");
 
-// The city's parts with their totals over the ticked quests, from its newest snapshot, each linking to its
+// The city's parts with their totals over the ticked quests on the newest day, each linking to its
 // page; current (a part id) is the one shown. Null when the city has none published.
 async function partsCard(cityId, current) {
   const c = cityById(cityId);
   if (!c) return null;
-  // the snapshot first: a city without parts has no names file to ask for
-  const snap = await snapshotOf(c).catch(() => null);
-  const counts = snap && snap.cities && snap.cities[cityId] && snap.cities[cityId].parts;
+  // the counts first: a city without parts has no names file to ask for
+  const kids = await cityParts(cityId).catch(() => null);
+  const asked = new Set(countedIn(cityId));
+  const counts = kids && kids.places
+    ? Object.fromEntries(Object.entries(kids.places).map(([pid, qs]) => [pid,
+        Object.fromEntries(Object.entries(qs).map(([i, v]) => [kids.quests[i], v[0]]).filter(([q]) => asked.has(q)))]))
+    : await snapshotParts(c);
   const names = counts && Object.keys(counts).length ? await partNames(cityId).catch(() => null) : null;
   if (!names || !names.parts || !names.parts.length) return null;
   const rows = names.parts.map((p) => ({ p, open: counts[p.id] ? partTotal(counts[p.id]) : null }))
@@ -1817,16 +1892,16 @@ function worldStatus(q, h) {
 // from the place file's change points. A quest the file leaves out is 0 if the world counts it in this place
 // (it is in latest.json's quests and the app offers it in the country); else the quest stays out. Null when
 // the place was first counted after latest.date.
-function worldSeries(latest, pf, cc) {
+const worldNames = (latest, pf, cc) =>
+  [...latest.quests.filter((q) => offeredIn(questByName.get(q)?.enabledInCountries, cc) === true), ...Object.keys(pf.quests)];
+function worldSeries(latest, pf, names) {
   const last = Math.round((dayTs(latest.date) - dayTs(latest.first)) / 86400);
   const from = Number.isInteger(pf.from) && pf.from > 0 ? pf.from : 0;
   if (!(last >= from)) return null;
   const days = Array.from({ length: last - from + 1 }, (_, k) => from + k);
   const counted = new Set(latest.quests);
-  const names = new Set([...latest.quests.filter((q) => offeredIn(questByName.get(q)?.enabledInCountries, cc) === true),
-                         ...Object.keys(pf.quests)]);
   const quests = {};
-  for (const q of names) {
+  for (const q of new Set(names)) {
     const at = days.map((k) => pointAt(pf.quests[q], k));
     quests[q] = { open: at.map((v) => v[0]), agedOnly: at.map((v) => v[1]) };
   }
@@ -1835,18 +1910,23 @@ function worldSeries(latest, pf, cc) {
 }
 
 const DAY = /^\d{4}-\d\d-\d\d$/;
+async function worldLatest() {
+  const latest = await worldJSON("latest.json");
+  // a latest.json of another schema (the host mid-switch) is as good as none
+  return latest && latest.schema === 2 && latest.v != null && latest.place && latest.children && Array.isArray(latest.quests) &&
+      [latest.date, latest.first, latest.back].every((d) => DAY.test(d)) ? latest : null;
+}
+
 // A place's world series, or null when the world does not count it (or its files cannot be had).
 async function worldPlace(ref) {
   const id = refId(ref);
   if (!/^[0-9a-f]{12}$/.test(id)) return null;   // a country addressed by its code has no world file
-  const latest = await worldJSON("latest.json");
-  // a latest.json of another schema (the host mid-switch) is as good as none
-  if (!latest || latest.schema !== 2 || latest.v == null || !latest.place || !latest.children || !Array.isArray(latest.quests) ||
-      ![latest.date, latest.first, latest.back].every((d) => DAY.test(d))) return null;
+  const latest = await worldLatest();
+  if (!latest) return null;
   const pf = await worldJSON(latest.place + worldShard(id), latest.v);
   if (!pf || !pf.quests) return null;
   const cc = (pf.cc || ref.country.cc).toUpperCase();
-  const s = worldSeries(latest, pf, cc);
+  const s = worldSeries(latest, pf, worldNames(latest, pf, cc));
   if (!s) return null;
   return { ...s, id, placeIn: state.placeIn, ref, cc, latest, name: refName(ref) };
 }
@@ -2090,6 +2170,7 @@ async function main() {
     return;
   }
   questByName = new Map(quests.quests.map((q) => [q.name, q]));
+  newestTotals().catch(() => {});   // the page need not wait for it
   // Icons and release dates only decorate; the site works without them.
   const [ic, rel, first] = await Promise.all([
     fetch("icons/index.json").then((r) => (r.ok ? r.json() : null)).catch(() => null),
