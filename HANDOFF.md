@@ -3123,6 +3123,12 @@ wording and tab structure as a first draft open to change, not as decided design
     Centre Square; 64 open quests). Each lies wholly in a neighbourhood. Of the registry's 334: 320 lie wholly inside another
     part of their city that is not a square (any type), 14 in none (one each in 14 cities; only the city page has them).
     `areas_to.py`, `cover.py`.
+  - Owner asked for a more aggressive cutoff on Toronto and Guelph (discussion, nothing decided): Toronto's 12 smallest of 218
+    are its squares (1,132 to 31,666 m²), the next is Distillery District (51,678); Guelph's 2 squares are 5,444 and 6,889
+    m², so a 5,000 cutoff keeps both, 10,000 drops both and 10 of Toronto's 12. Guelph's next is 508,675. Squares under
+    10,000 m² in the registry: 407, of which 20 lie in no other part. Proposal: 10,000 m² for squares, no size rule for
+    other types (88 non-squares in the registry are under 50,000). Near-duplicates (overlap over 80%): 19 pairs of 4,214,
+    6 of them in Guelph, where 18 of 40 parts are "Neighbourhood Group" and the like. `tg.py`, `dups.py`.
 - **Squares, safety check (owner leans to drop, wants a check so a place like Superilla del Poblenou is not lost; not decided).**
   Size alone fails: median 1,064 m2, 87 are 10 ha or more, among them Tiananmen and empty plazas. Two checks on every square:
   OSM says residential (19 of the 8,892 whose tags were read: 0.5 ha+, or 20+ building quests, or 100+ open) or building
