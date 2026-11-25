@@ -4314,3 +4314,8 @@ at once to 0.28 GB (40.8 GiB).
   as written refuses when the deletes pass `--max-delete`, so it needs a way to upload and keep the old files first.
 - **Order in tonight's gap agreed with the session "City machinery deprecation readiness" (11-25, 17:40):** `freeze-city-files` first; `place-ids`' tests
   wait for its "merged" or "not merged" (119a95b0), then main is merged into `place-ids` and the whole suite is run. Nothing of `place-ids` runs before.
+- **`place-ids`' tests PASSED (11-25, 19:05, in the gap after `freeze-city-files`):** main merged in (97def2b0), the whole suite 351 passed, 3
+  skipped (two need the Rust tilestore, not built in that worktree; main: 339 passed, 1 skipped). The first run found a real bug, fixed in
+  88250657: `places.build()` called `assign()` again without the registry. **Not merged into main yet:** it goes in
+  at the rename, 11-26 night, by the owner's go (merge, mint, back up, plan, apply, check, rebuild, upload `--keep-gone`). The worktree is no
+  longer sparse.
