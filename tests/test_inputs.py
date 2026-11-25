@@ -19,9 +19,10 @@ class InputsTest(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
         self.lock = Path(self.tmp.name) / "inputs.lock"
-        self.fetched, self.backed, self.slept = [], [], []
+        self.fetched, self.backed, self.slept, self.site_fails = [], [], [], False
         self.codes = {}      # name -> the exit codes its fetches end with, the last one repeated
         for name, value in [("INPUTS_LOCK", self.lock), ("log", lambda m: None), ("check_release", lambda: None),
+                            ("site", self.site),
                             ("backup_archive", lambda only=None: self.backed.append(only) or True)]:
             p = mock.patch.object(run, name, value)
             p.start()
@@ -29,6 +30,12 @@ class InputsTest(unittest.TestCase):
         p = mock.patch.object(run.subprocess, "run", self.fetch)
         p.start()
         self.addCleanup(p.stop)
+
+    def site(self):
+        self.assertFalse(self.lock.exists())
+        self.assertEqual(self.backed, ["facts", "world"])
+        if self.site_fails:
+            raise RuntimeError("site: the deploy failed")
 
     def fetch(self, cmd, check=False, **kw):
         name = cmd[-1]
@@ -61,6 +68,11 @@ class InputsTest(unittest.TestCase):
 
     def test_a_release_check_that_fails_fails_nothing(self):
         with mock.patch.object(run, "check_release", side_effect=RuntimeError("gh")):
+            run.inputs(self.slept.append)
+
+    def test_a_failed_publish_fails_the_run(self):
+        self.site_fails = True
+        with self.assertRaisesRegex(RuntimeError, "site failed"):
             run.inputs(self.slept.append)
 
     def test_a_second_run_beside_a_live_one_does_nothing(self):

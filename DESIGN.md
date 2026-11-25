@@ -2551,7 +2551,7 @@ has the commands.
   Chromium with no page errors and no failed requests.
 - **Daily:** `run.py update` and `planet` sync to R2 after the git push. A failure is logged as
   "cloud publish FAILED" and doesn't stop the run, because Pages is still the fallback. Since 2026-11-25
-  `run.py site` (hourly) does both once a new day of the world is gated. `docs/` stays
+  `run.py site`, the world loop's last step, does both once a new day of the world is gated. `docs/` stays
   in git for now: the dual write is what makes Pages a fallback.
 - **The flip:** after one scheduled run has uploaded by itself (from Task Scheduler, reading the token
   file), the old address `skfd.github.io/sc-open-quests/` gets a redirect that keeps path, query and

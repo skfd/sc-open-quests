@@ -3,7 +3,6 @@ import subprocess
 import sys
 import tempfile
 import unittest
-from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest import mock
 
@@ -13,17 +12,15 @@ sys.path.insert(0, str(ROOT / "tools"))
 import run  # noqa: E402
 import world_publish  # noqa: E402
 
-NOW = datetime(2026, 11, 25, 20, 20, tzinfo=timezone.utc)
-STATE = {"day": "2026-11-24", "docs": "t1", "at": (NOW - timedelta(hours=2)).isoformat()}
+STATE = {"day": "2026-11-24", "docs": "t1", "at": "2026-11-25T18:20:00+00:00"}
 
 
 class DueTest(unittest.TestCase):
     def test_due(self):
-        self.assertIn("no deploy", run.site_due({}, "2026-11-24", "t1", NOW))
-        self.assertIsNone(run.site_due(STATE, "2026-11-24", "t1", NOW))
-        self.assertIn("2026-11-25", run.site_due(STATE, "2026-11-25", "t1", NOW))
-        self.assertIsNone(run.site_due(STATE, "2026-11-24", "t2", NOW))
-        self.assertIn("docs/", run.site_due(STATE, "2026-11-24", "t2", NOW + timedelta(hours=19)))
+        self.assertIn("no deploy", run.site_due({}, "2026-11-24", "t1"))
+        self.assertIsNone(run.site_due(STATE, "2026-11-24", "t1"))
+        self.assertIn("2026-11-25", run.site_due(STATE, "2026-11-25", "t1"))
+        self.assertIn("docs/", run.site_due(STATE, "2026-11-24", "t2"))
 
 
 class SiteTest(unittest.TestCase):
@@ -31,6 +28,7 @@ class SiteTest(unittest.TestCase):
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
         self.tmp = Path(tmp.name)
+        self.world_ok = True
         self.calls, self.logged, self.cloud_ok, self.branch, self.memory = [], [], True, "main", (50.0, 40.0, 64.0)
         (self.tmp / "data").mkdir()
         run.write_json(self.tmp / "data" / "cities.json", {"asOfDate": "2026-11-24"})
@@ -41,9 +39,10 @@ class SiteTest(unittest.TestCase):
         def step(name, value=None):
             return lambda *a, **k: self.calls.append(name) or value
         for name, value in [("SITE_STATE", self.tmp / "state.json"), ("LOCK_PATH", self.tmp / "pipeline.lock"),
-                            ("LOCK_DIR", self.tmp), ("LOOP_RUNNING", self.tmp / "RUNNING"), ("DATA_DIR", self.tmp / "data"), ("git", git),
+                            ("LOCK_DIR", self.tmp), ("DATA_DIR", self.tmp / "data"), ("git", git),
                             ("log", self.logged.append), ("history", step("history")), ("publish", step("publish")),
                             ("publish_cloud", lambda: self.calls.append("cloud") or self.cloud_ok),
+                            ("publish_world", lambda: self.calls.append("world") or self.world_ok),
                             ("memory_status", lambda: self.memory)]:
             p = mock.patch.object(run, name, value)
             p.start()
@@ -54,11 +53,11 @@ class SiteTest(unittest.TestCase):
 
     def test_a_new_day_goes_up_once(self):
         run.site()
-        self.assertEqual(self.calls, ["history", "publish", "cloud"])
+        self.assertEqual(self.calls, ["world", "history", "publish", "cloud"])
         self.assertEqual(run.read_json(run.SITE_STATE)["day"], "2026-11-24")
         self.assertFalse(run.LOCK_PATH.exists())
         run.site()
-        self.assertEqual(len(self.calls), 3)
+        self.assertEqual(self.calls[4:], ["world"])   # it asks the bucket's manifest itself
 
     def test_a_failed_deploy_is_tried_again(self):
         self.cloud_ok = False
@@ -76,24 +75,22 @@ class SiteTest(unittest.TestCase):
         run.LOCK_PATH.write_text("4321", encoding="utf-8")
         with mock.patch.object(run, "pid_alive", return_value=True):
             run.site()
-        self.assertEqual(self.calls, [])
+        self.assertEqual(self.calls, ["world"])   # the place files need no pipeline lock
         self.assertIn("commit left", self.logged[0])
         self.assertIn("another run", self.logged[1])
 
-    def test_waits_for_the_world_loop_but_not_for_ever(self):
-        (self.tmp / "RUNNING").write_text("", encoding="utf-8")
-        now = datetime.now(timezone.utc)
-        for hours, calls in [(30, 0), (40, 3)]:
-            run.write_json(run.SITE_STATE, {"day": "2026-11-23", "docs": "t1",
-                                            "at": (now - timedelta(hours=hours)).isoformat()})
+    def test_failed_place_files_hold_nothing_back(self):
+        self.world_ok = False
+        with self.assertRaisesRegex(RuntimeError, "place files"):
             run.site()
-            self.assertEqual(len(self.calls), calls)
+        self.assertEqual(self.calls, ["world", "history", "publish", "cloud"])
+        self.assertTrue(run.SITE_STATE.exists())
 
     def test_only_from_main(self):
         self.branch = "wip"
         with self.assertRaisesRegex(RuntimeError, "wip"):
             run.site()
-        self.assertEqual(self.calls, [])
+        self.assertEqual(self.calls, ["world"])
 
     def test_no_push_is_no_deploy(self):
         run.site(push=False)

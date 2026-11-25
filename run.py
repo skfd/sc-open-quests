@@ -16,8 +16,8 @@ Subcommands:
              data/archive/; count and history do it too, so it is idempotent and needs no flag
   update     download + backfill + history, then commit "data <asOfDate>" and push, then sync docs/ to the
              R2 bucket behind street-complete-statistics.comentality.com (tools/cloud_publish.py)
-  site       if the world has a gated day the site lacks (task kk-SCOpenQuests-site, hourly from 07:20 to 23:20):
-             history, commit, push, deploy; a change of docs/ alone goes up 20 hours after the last deploy
+  site       publish the world's gated days and docs/ where the readers lack them: the place files on sc-data,
+             then history, commit, push, deploy; the world loop's last step, and inputs'
   inputs     what the world's day needs, apart from the city run (task kk-SCOpenQuests-inputs): the Europe
              clip and with it the planet's daily diff, the notes dump, the backup of the world's gated days
              and the facts, check-release
@@ -1135,12 +1135,9 @@ def publish_site(push: bool = True) -> bool:
     return True
 
 
-# --- site: the pages follow the world's day ------------------------------------------------------------
+# --- site: the world's day is published ----------------------------------------------------------------
 
 SITE_STATE = ROOT / "data" / "site-deployed.json"  # the last deploy: the world's day, docs/'s tree, when; not committed
-SITE_AGAIN = timedelta(hours=20)  # a change of docs/ alone (code, texts) goes up this long after the last deploy
-SITE_PATIENCE = timedelta(hours=36)  # how old the last deploy may grow before one goes up beside the world loop
-LOOP_RUNNING = ROOT / ".scratch" / "planet-cut" / "RUNNING"  # tools/stream/store_lock.py
 SITE_MIN_COMMIT_GB = 8            # the build peaks at 2.4 GB (2026-11-25); the world loop's engines come first
 
 
@@ -1148,19 +1145,33 @@ def docs_tree() -> str:
     return git("rev-parse", "HEAD:docs").stdout.strip()
 
 
-def site_due(state: dict, day: str, tree: str, now: datetime) -> str | None:
+def publish_world() -> bool:
+    """The place files on sc-data (tools/world_publish.py daily). A process of its own (a day's counts are GBs in
+    memory). Logged, not raised: the site's own data and code go up whatever became of it. Returns success."""
+    r = subprocess.run([sys.executable, str(TOOLS_DIR / "world_publish.py"), "daily"], cwd=ROOT,
+                       capture_output=True, text=True, encoding="utf-8", errors="replace")
+    for line in (r.stdout + r.stderr).splitlines():
+        if line.strip():
+            log(f"[world] {line}")
+    if r.returncode != 0:
+        log(f"world publish FAILED (exit {r.returncode}); sc-data keeps the day it had")
+    return r.returncode == 0
+
+
+def site_due(state: dict, day: str, tree: str) -> str | None:
     """Why the site is to be deployed now, or None."""
     if not state:
         return "no deploy on record"
     if state["day"] != day:
         return f"the world's newest gated day is {day}, the site has {state['day']}"
-    if state["docs"] != tree and now - datetime.fromisoformat(state["at"]) >= SITE_AGAIN:
+    if state["docs"] != tree:
         return "docs/ changed since the last deploy"
     return None
 
 
 def site(force: bool = False, push: bool = True) -> None:
-    """Deploy the site if the world has a gated day the site lacks (task kk-SCOpenQuests-site, hourly). A run
+    """Publish what the world's gated days and docs/ have and the readers don't: the place files, then the site.
+    The world loop's last step (tools/stream/planet_store_day.py), and inputs', which makes up for a failure. A run
     that can't do it now leaves it to the next one."""
     sys.path.insert(0, str(TOOLS_DIR))
     import world_publish  # noqa: E402  (it imports this module)
@@ -1168,22 +1179,25 @@ def site(force: bool = False, push: bool = True) -> None:
         day = world_publish.gated_days(world_publish.WORLD)[-1]
     except SystemExit as e:
         raise RuntimeError(str(e)) from None
+    memory = memory_status()
+    if memory and memory[1] < SITE_MIN_COMMIT_GB and not force:
+        log(f"site: {memory[1]:.1f} GB of commit left; the next run")
+        return
+    world_ok = publish_world() if push else True
+    deploy_site(day, force, push)
+    if not world_ok:
+        raise RuntimeError("site: the place files were not published; the next run tries again")
+
+
+def deploy_site(day: str, force: bool, push: bool) -> None:
     state = read_json(SITE_STATE) if SITE_STATE.exists() else {}
-    why = "--force" if force else site_due(state, day, docs_tree(), datetime.now(timezone.utc))
+    why = "--force" if force else site_due(state, day, docs_tree())
     if why is None:
         log(f"site: has {day}; nothing to do")
         return
     branch = git("rev-parse", "--abbrev-ref", "HEAD").stdout.strip()
     if branch != "main":
         raise RuntimeError(f"site: the checkout is on {branch}, not main")
-    now = datetime.now(timezone.utc)
-    if LOOP_RUNNING.exists() and not force and state and now - datetime.fromisoformat(state["at"]) < SITE_PATIENCE:
-        log(f"site: {why}, but the world loop is at work; the next run")
-        return
-    memory = memory_status()
-    if memory and memory[1] < SITE_MIN_COMMIT_GB and not force:
-        log(f"site: {why}, but {memory[1]:.1f} GB of commit left; the next run")
-        return
     if LOCK_PATH.exists() and LOCK_PATH.read_text(encoding="utf-8").strip().isdigit() \
             and pid_alive(int(LOCK_PATH.read_text(encoding="utf-8"))):
         log(f"site: {why}, but another run holds {LOCK_PATH.name}; the next run")
@@ -1250,7 +1264,8 @@ def inputs_lock():
 
 def inputs(sleep=time.sleep) -> None:
     """The world's daily inputs: the Europe clip (with it the planet's daily diff) and the notes dump; then the
-    private backup of the world's gated days and the facts, and the StreetComplete release check. Every step runs
+    private backup of the world's gated days and the facts, the StreetComplete release check, and whatever of the
+    last day the loop could not publish (site). Every step runs
     whatever became of the others; a fetch or backup that failed makes the run exit 1 and names it."""
     with inputs_lock() as mine:
         if not mine:
@@ -1266,6 +1281,11 @@ def inputs(sleep=time.sleep) -> None:
         check_release()
     except Exception as e:  # a GitHub hiccup fails nothing
         log(f"check-release failed (ignored): {e}")
+    try:
+        site()
+    except Exception as e:
+        log(f"{e}")
+        failed.append("site")
     if failed:
         raise RuntimeError("inputs: " + ", ".join(failed) + " failed")
     log("inputs done")
