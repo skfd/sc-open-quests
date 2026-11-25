@@ -3141,8 +3141,19 @@ wording and tab structure as a first draft open to change, not as decided design
   - Way back: `git revert 20e9fe45 fb0d8422` (the archive is whole), then `run.py history` and a deploy; a revert alone
     leaves the live site as it is.
   **Pushed 11-25, 06:47 (owner: "pusj and thats it?").** The site itself changes at the 12:15 deploy.
-  Next: the site deploy's new home (after the world's day closes, so the pages are the same evening's), `world_compare.py` rerun
-  in a gap, then the city task off.
+- **The site's deploy is its own run, and the world's city pages are live (owner, 11-25: "yes"; 194d497b, 44ec7856).** `run.py site`, task
+  `kk-SCOpenQuests-site`, hourly 07:20 to 23:20, log `logs/site.log`: when the newest gated day is not the one in
+  `data/site-deployed.json` (not committed) it does history, commit, push (now also with no new data) and deploy; a change of
+  `docs/` alone goes up 20 h after the last deploy. Not while the loop's RUNNING is there (unless the last deploy is 36 h old),
+  under 8 GB of commit, beside another holder of `pipeline.lock`, or off main: the next tick tries. 2.4 GB of commit at its peak. 281
+  tests OK. **First tick 07:20-07:22 on 11-25:** pushed, 4,465 files up; `cloud_publish.py --check` 9,338 files equal live;
+  a second run said "nothing to do". Not yet seen: a tick that takes up a new day by itself (tonight's 11-25 day, or 07:20 on 11-26).
+  `update` (12:15) does the same deploy, so both may run until the city task goes.
+- **`world_compare.py` rerun for 11-14 to 11-24 (07:05, beside no loop; `.scratch/world-compare-1124`): it agrees.** `open`: 1,210 city-days on the
+  nearest clock, 725 exact, median 0.000%, p90 0.003%, worst 0.212% (Oshawa 11-23, clocks 2.6 h apart); same clock (Europe) within
+  0.002%; sums +2,270 of 363 million. `agedOnly`: 1,126 of 1,210 exact, worst 1.085% (Oakville, 11-20), sums +100 of 11.4 million.
+  **Left: the city task off (asked of the owner 11-25; wait for one new day taken up by the site run).** The loop does not need it:
+  without a city run its `SCHED` check finds no "=== download" and does not wait.
 
 ## City neighbourhoods on the world's counts, and places with nothing open (2026-11-24, evening; nothing built)
 
