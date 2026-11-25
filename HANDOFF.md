@@ -3145,7 +3145,18 @@ wording and tab structure as a first draft open to change, not as decided design
     (Kingston, London and others are counties in Overture). Their own city page counts all 20. **Owner (wizard): a
     city or smaller (neighbourhood-level, locality or localadmin) must cover it**, so 63,800 are dropped and 3,306 stay
     (3,297 only in a county or larger, 9 in nothing); ours: 400 of 407 dropped, 7 stay. Not built; the traps above
-    (`MAX_DELETE`, `DAY_CAP`, the registry) come first, and the owner's go.
+    (`MAX_DELETE`, `DAY_CAP`, the registry) come first, and the owner's go. **Owner, 2026-11-24: not yet, handoff only.**
+  - **Duplicate parts, a proposal (owner asked; nothing built).** 19 pairs overlap over 80%. 16 are the same place (overlap 94%
+    or more, open counts within 10%); 3 are real neighbours and stay: Bremen-Mitte and Häfen (91%, 16,017 and 4,154 open),
+    Bremerhaven Mitte and Mitte-Süd (83%), Shearwater and CFB Shearwater (82%). `dups2.py` lists all 19 with tags.
+    Which one to keep, in this order: the parent if one is the other's parent (4 pairs: Cantley Village, Windsor Park,
+    Willow Park, Bassins du Nouveau Havre); the one with a wikidata id (Bayview Woods-Steeles, r17311556); the shorter name
+    (the other 11: in Guelph the plain name over "Neighbourhood Group" in all 6; Centennial, CFAD Bedford, Dockyard
+    Annex, Lawlor Island, Osborne Head). How: one checked-in list of dropped ids with the reason, read by
+    `places.py`, `add_parts.py` and the registry's readers, for the squares too; the rule is run once to make the list and the
+    list is reviewed, so a later Overture release cannot drop a place by itself. Counts are unchanged. World-wide pairs
+    were not measured. Guelph's other 12 groups have an outline of their own (6 share a plain place's name, such as
+    Clairfields: 1.3 against 9.1 km²) and stay.
 - **Squares, safety check (owner leans to drop, wants a check so a place like Superilla del Poblenou is not lost; not decided).**
   Size alone fails: median 1,064 m2, 87 are 10 ha or more, among them Tiananmen and empty plazas. Two checks on every square:
   OSM says residential (19 of the 8,892 whose tags were read: 0.5 ha+, or 20+ building quests, or 100+ open) or building
