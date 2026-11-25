@@ -3056,6 +3056,13 @@ wording and tab structure as a first draft open to change, not as decided design
   calls it and `docs/data` is refused without `--live`. The rule for which quests a city counts matches the newest
   snapshot of all 147 cities. The world has no `taggedNodes`/`taggedWays`/`openAllNotes` (the site reads none of them).
   Next: build into a scratch folder, compare with today's files, then ask the owner before anything goes live.
+- **Day 11-24 starved, 11-24 19:05 (not stopped yet; the engine room gives up about 19:23).** Tier 2 `new`, about 112 of 127 groups;
+  no engine since 18:23: 10 GB of commit left, 16 needed (8 and 8 kept back), disk 42 GiB. Commit was 98.6 of 108.6 GB at 19:04:
+  the loop's own python 16.9, 54 claude processes 16, pools 23, Windows Terminal 4.5, WSL/Docker 6 (one container,
+  `onagri-pg`). **Partly this session's doing:** a recursive `grep` of 15:23 and a `du` of `.scratch` of 17:03 went on running
+  after TaskStop said they were stopped (their `.exe` children outlive it); ended at 19:04, about 2 GB came back. The
+  neighbourhoods session was also running scripts (`areas_to.py`, about 3 GB) from 18:30 on. Owner, 19:06, asked what may be
+  closed: **"Nothing, let it stop"**; resume in a quiet gap. `retire-cities` waits for the day to close, not for its stop.
 
 ## City neighbourhoods on the world's counts, and places with nothing open (2026-11-24, evening; nothing built)
 
