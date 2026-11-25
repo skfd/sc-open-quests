@@ -37,11 +37,11 @@ def name_layer(root: Path) -> Path:
     return places
 
 
-def world_day(world: Path, day: str, rows: dict, compressed: bool, gate: str = "days", parts=None) -> None:
+def world_day(world: Path, day: str, rows: dict, compressed: bool, gate: str = "days", parts=None, quests=QUESTS) -> None:
     """rows: (part, quest) -> (open, aged); X is counted but not in the name layer, `city:` a cell"""
     parts = parts or [C, R, A, B, X, E, "city:f0", "osm-town"]
     d = world / "counts" / day
-    write_json(d / "counts.json", {"clock": day + "T00:00:00Z", "measures": MEASURES, "quests": QUESTS,
+    write_json(d / "counts.json", {"clock": day + "T00:00:00Z", "measures": MEASURES, "quests": quests,
                                    "parts": parts})
     keys = sorted(rows)
     m = np.zeros((len(keys), 9), np.int64)
@@ -49,7 +49,7 @@ def world_day(world: Path, day: str, rows: dict, compressed: bool, gate: str = "
         m[i, 0], m[i, 4] = rows[k]
         m[i, 1] = 99  # nodes: not published
     part = np.array([parts.index(p) for p, _ in keys], np.uint32)
-    quest = np.array([QUESTS.index(q) for _, q in keys], np.uint16)
+    quest = np.array([quests.index(q) for _, q in keys], np.uint16)
     (np.savez_compressed if compressed else np.savez)(d / "counts.npz", part=part, quest=quest, m=m)
     if gate == "seed":
         write_json(d / "gate1101.json", {"x": {}})
@@ -215,6 +215,17 @@ class WorldPublishTest(WorldCase):
         self.assertEqual((e["from"], e["quests"]), (3, {"AddLit": [[3, 2, 0]]}))
         self.assertEqual(list(wp.read_place(self.out, latest, E)), ["2026-11-02"])
         self.assertEqual(wp.verify(world, self.out, self.work, self.places, sample=10), 0)
+
+    def test_a_quest_added_by_a_release_says_from_when(self):
+        self.assertNotIn("questsFrom", self.build())
+        more = QUESTS[:1] + ["AddNew"] + QUESTS[1:]
+        world_day(self.world, "2026-11-02", {**DAYS["2026-11-02"], (A, "AddNew"): (9, 0)}, False, quests=more)
+        latest = self.build(out=self.out.with_name("o2"), work=self.work.with_name("w2"))
+        self.assertEqual(latest["questsFrom"], {"AddNew": 3})
+        # a list longer than the head read first
+        long = [f"Add{i:06}" for i in range(9000)]
+        write_json(self.world / "counts" / "2026-11-04" / "counts.json", {"clock": "x", "quests": long, "parts": []})
+        self.assertEqual(wp.counted_quests(self.world, "2026-11-04"), long)
 
     def test_only_changed_files_are_written_and_planned(self):
         self.build(through="2026-11-01")

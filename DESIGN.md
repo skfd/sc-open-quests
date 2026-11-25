@@ -5821,7 +5821,9 @@ counts it in the city, and a quest it says is not asked there is not shown. Chec
 `docs/data` for every city, part, quest and date: 44,355,752 values, 0 different.
 
 - **Days are numbers.** The published days are every day from `first` through `date` with no gap, so day 0 is
-  `first` and a point's `day` needs no date list. The build stops if the gated days have a gap.
+  `first` and a point's `day` needs no date list. `latest.json`'s `questsFrom` (there when not empty) is the day
+  number from which the world counts a quest a StreetComplete release added after `first`: before it, no count
+  (null, not 0), so a release does not draw a jump or enter a change. The build stops if the gated days have a gap.
 - **`v` is the publish's token** (a hash of the date and every file's hash). The page asks for every file but
   `latest.json` as `<path>?v=<v>`. Cloudflare's cache keys on the query string (checked on the bucket: MISS, then
   HIT), so each publish is a new address and yesterday's cached copy is never served for today's `v`. The files

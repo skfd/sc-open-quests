@@ -1891,7 +1891,8 @@ function worldStatus(q, h) {
 // The series: every day from the place's first counted day (`from`, 0 when absent) through latest.date, read
 // from the place file's change points. A quest the file leaves out is 0 if the world counts it in this place
 // (it is in latest.json's quests and the app offers it in the country); else the quest stays out. Null when
-// the place was first counted after latest.date.
+// the place was first counted after latest.date. A quest StreetComplete added later (latest.questsFrom: its first
+// counted day's number) is null before that day, as it is in a city's own file.
 const worldNames = (latest, pf, cc) =>
   [...latest.quests.filter((q) => offeredIn(questByName.get(q)?.enabledInCountries, cc) === true), ...Object.keys(pf.quests)];
 function worldSeries(latest, pf, names) {
@@ -1902,7 +1903,8 @@ function worldSeries(latest, pf, names) {
   const counted = new Set(latest.quests);
   const quests = {};
   for (const q of new Set(names)) {
-    const at = days.map((k) => pointAt(pf.quests[q], k));
+    const since = (latest.questsFrom || {})[q] || 0;
+    const at = days.map((k) => (k < since ? [null, null] : pointAt(pf.quests[q], k)));
     quests[q] = { open: at.map((v) => v[0]), agedOnly: at.map((v) => v[1]) };
   }
   const meta = { scVersion: latest.scVersion, resurveyMultiplier: latest.resurveyMultiplier ?? 1, notes: true };
@@ -1974,10 +1976,14 @@ function worldKidsCard(h, items, cf) {
   const { date, back } = h.latest;
   const ticked = (cf.quests || []).map((q) => selected(q));
   const total = (qs, n) => Object.entries(qs).reduce((s, [k, v]) => s + (ticked[k] ? v[n] || 0 : 0), 0);
+  // a quest not yet counted on `back` is no part of the change
+  const backNo = Math.round((dayTs(back) - dayTs(h.latest.first)) / 86400);
+  const then = (cf.quests || []).map((q) => ((h.latest.questsFrom || {})[q] || 0) <= backNo);
+  const moved = (qs) => Object.entries(qs).reduce((s, [k, v]) => s + (ticked[k] && then[k] ? (v[0] || 0) - (v[2] || 0) : 0), 0);
   const rows = items.filter((it) => cf.places[refId(it.ref)]).map((it) => {
     const qs = cf.places[refId(it.ref)];
     const open = total(qs, 0);
-    return { ref: it.ref, open, change: back === date ? null : open - total(qs, 2) };
+    return { ref: it.ref, open, change: back === date ? null : moved(qs) };
   }).sort((a, b) => b.open - a.open || refName(a.ref).localeCompare(refName(b.ref)));
   if (!rows.length) return null;
   const since = back === addDays(date, -WEEKS4) ? "Last 4 weeks" : `Since ${shortDate(back)}`;

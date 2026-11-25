@@ -240,6 +240,36 @@ def day_state(world: Path, day: str, quests: list[str], names: NameLayer, cities
     return keys, o.astype(np.int32), a.astype(np.int32), counted
 
 
+def counted_quests(world: Path, day: str) -> list[str]:
+    """the quests the world counted that day. Read off the head of counts.json: its `parts`, after them, are 30 MB"""
+    p = world / "counts" / day / "counts.json"
+    with open(p, encoding="utf-8") as fh:
+        head = fh.read(1 << 16)
+    i = head.find('"quests":')
+    try:
+        return json.JSONDecoder().raw_decode(head, head.index("[", i))[0] if i >= 0 else _all_quests(p)
+    except ValueError:   # the list is longer than the head
+        return _all_quests(p)
+
+
+def _all_quests(p: Path) -> list[str]:
+    return json.loads(p.read_text(encoding="utf-8"))["quests"]
+
+
+def quests_from(world: Path, days: list[str], quests: list[str]) -> dict[str, int]:
+    """of the newest day's quests, those not counted on the first day (a StreetComplete release added them): the
+    number of the first day each was. Their 0 before it is no count"""
+    out, left = {}, set(quests)
+    for di, day in enumerate(days):
+        for q in left & set(counted_quests(world, day)):
+            left.discard(q)
+            if di:
+                out[q] = di
+        if not left:
+            break
+    return {q: out[q] for q in quests if q in out}
+
+
 def changes(prev: tuple, cur: tuple) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """the pairs whose (open, aged) differ between two states (a pair missing is 0, 0), with the new values"""
     pk, po, pa = prev
@@ -431,7 +461,8 @@ def build(world: Path, out: Path, work: Path, places: Path, first: str, through:
     if days != [(date.fromisoformat(days[0]) + timedelta(days=i)).isoformat() for i in range(len(days))]:
         raise SystemExit("the gated days have a gap: a day number would not be a date")
     back = max(0, di - WINDOW_DAYS)
-    quests = json.loads((world / "counts" / day / "counts.json").read_text(encoding="utf-8"))["quests"]
+    quests = counted_quests(world, day)
+    late = quests_from(world, days, quests)
     names = NameLayer(places)
     log(f"{len(days)} gated days {days[0]}..{day}; children against {days[back]}; {len(names.meta):,} named places")
     k, d, o, a, ck, cf = load_events(world, work, days, quests, names, cities)
@@ -497,7 +528,8 @@ def build(world: Path, out: Path, work: Path, places: Path, first: str, through:
     sc = json.loads((world / "world.json").read_text(encoding="utf-8")) if (world / "world.json").exists() else {}
     latest = {"schema": SCHEMA, "v": v.hexdigest(), "date": day, "first": days[0], "back": days[back],
               "scVersion": sc.get("scVersion") or _sc_version(), "resurveyMultiplier": 1,
-              "overture": names.overture, "quests": quests, "place": "place/", "children": "children/",
+              "overture": names.overture, "quests": quests, **({"questsFrom": late} if late else {}),
+              "place": "place/", "children": "children/",
               **({"city": "city/", "cityParts": "city-parts/"} if cities.keys else {})}
     write_text(out / "latest.json", json.dumps(latest, ensure_ascii=False, indent=1) + "\n")
     new["v"], new["date"] = latest["v"], day
