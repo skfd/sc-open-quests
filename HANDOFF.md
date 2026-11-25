@@ -4031,3 +4031,16 @@ at once to 0.28 GB (40.8 GiB).
   Cadence: every release diffed, adopted only at a reseed (about quarterly).
 - **Not measured:** how much the 25,910 outlines changed (needs the 4.6 GB of outlines), the cost of the reseed with them.
 - **Open for the owner:** which release at the next reseed; the crosswalk; whether a lost place's page stays as "ended".
+- **Owner's answers (wizard, 2026-11-24, 20:00):** a lost place's page **stays, marked ended**. OVERTURE.md and `overture_diff.py`:
+  **not yet**. Ids: "we should migrate to new ids, whole system including references" (so not the crosswalk as proposed in (c)), and the
+  principle is **keep up with Overture and back-migrate our data to it**. Both and the release are **being discussed**. Facts for it:
+  - *The ids are public, not only internal*: `?place=`, `?in=`, `?part=` links, the bucket's paths, `docs/places` (4,290 files), 4,214
+    `history/<city>/<id>.json`, snapshots, facts, the issue form, the iPhone widget's saved part. No redirect exists. The old -> new map
+    (same OSM object) is needed either way: for migration it renames our data, and a small published file sends old links on.
+  - *Renaming ids in the past is cheap*: a day's counts name their places in one list (`counts.json` `parts`, 29 MB a day); facts, the
+    archive's `parts` keys and the registry likewise. Not built or timed.
+  - *Outlines and new places cannot be applied to past days that way*: a day keeps counts per place, not positions (`world.bin` has
+    lat/lon and one place-set number, for the newest day only). It needs a recount from the planet at the date, and the history file was deleted
+    11-16. Release 2's monthly backfill recounts on whatever outlines are pinned then.
+  - *A reseed costs about 4.5 h* (11-01: 23:27-03:49, HANDOFF "Step 3, the seed at 11-01"), so a monthly move with a reseed is
+    affordable on paper. Disk and memory as of tonight are not (40.8 GiB, 9 GB of commit).
