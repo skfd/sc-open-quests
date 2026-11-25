@@ -43,7 +43,8 @@ the JSON.
 python run.py download   # osm-extracts fetch <extract> once per distinct extract (it skips an unchanged one)
 python run.py count      # engine on each region's newest extract -> data/archive/<region>/snapshots/ (skipped if counted)
 python run.py backfill   # count every dated extract still in the store
-python run.py history    # archive -> docs/data/history/<city>.json, cities.json, compare/<quest>.json, newest snapshots
+python run.py history    # archive -> docs/data/history/<city>.json, cities.json, compare/<quest>.json, newest snapshots,
+                         # up to config/city-files.json's day
 python run.py update     # all three, then commit "data <asOfDate>" and push (--no-push: commit only)
 python run.py planet     # monthly: osm-extracts fetch planet-history, osm-extracts recut (every clip), the
                          # months the regions on clips lack, the "cadence": "weekly" regions -> archive,
@@ -81,8 +82,8 @@ is stopped after two hours.
 .\schedule-inputs-add.ps1    # run.py inputs, daily at 11:15, appends to logs\inputs.log
 ```
 
-Publishing has no task of its own: the world loop ends with `run.py site` (the place files on sc-data, then the site's
-data, commit, push and deploy; `logs\site.log`), and `inputs` runs it again for what the loop could not publish.
+Publishing has no task of its own: the world loop ends with `run.py site` (the place files on sc-data; the site's
+data, commit and deploy only when `docs/` or `config/` changed; push; `logs\site.log`), and `inputs` runs it again for what the loop could not publish.
 
 ```powershell
 .\schedule-planet-add.ps1      # run.py planet on the first Monday of each month at 07:30, appends to logs\planet.log

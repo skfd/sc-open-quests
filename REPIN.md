@@ -108,7 +108,8 @@ either: old snapshots keep them, the site shows them while the newest registry h
   which is what players saw. For each region:
   `python tools/backfill_history.py recount --region <r> --since <release date YYYY-MM-DD>`, then
   `python tools/backfill_history.py merge --region <r>`; then `python run.py history` and `publish` via
-  `update`, or let the 12:15 run do it. Close the issue with the data commit. About 10 minutes of counting
+  `update`, or let the 12:15 run do it (`docs/data`'s city files end on `config/city-files.json`'s day; the days after
+  it are the world's, on sc-data). Close the issue with the data commit. About 10 minutes of counting
   per day recounted for all regions together; no history file is read (none is kept since 2026-11-16).
   **Repin within 14 days of the release:** the store keeps a region's extracts 14 days, and a snapshot
   whose extract is gone is left as counted (the recount names it). The issue is opened by the scheduled run

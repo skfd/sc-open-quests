@@ -189,9 +189,13 @@ by name, cells by x then y; a quest with nothing counted is absent.
 
 Since 2026-11-25 the site's pages read a city's, a part's and the compare view's days from 2026-11-01 on from
 sc-data (DESIGN.md, "The counted cities"), and from these files only the dates before it, the names and the static
-facts; they fall back to these files when sc-data does not answer. The phone widgets still read all of them.
+facts; they fall back to these files when sc-data does not answer. The phone widgets read `cities.json`, `quests.json`, `parts/` and the icons
+(until 2026-11-25 all of them).
 
-`docs/data/history/<cityId>.json` is rebuilt from all regions' snapshots in the archive on every run:
+**These files end on `config/city-files.json`'s `until`** (DESIGN.md, "docs/data's own city files end on a set day"):
+"newest" below is that day, not today.
+
+`docs/data/history/<cityId>.json` is rebuilt from all regions' snapshots in the archive up to then:
 
 ```jsonc
 { "city": "toronto", "name": "Toronto",

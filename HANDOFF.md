@@ -3130,6 +3130,8 @@ wording and tab structure as a first draft open to change, not as decided design
   4 GB is another virtual machine (`vmwp`, since 11-21), not WSL's; left. **35 - 17 - 8 leaves room for one engine at a time,
   barely.** Disk nothing deleted: the low will be near 40 GiB again, where `loc advance` and `compact` refuse; those steps
   resume cheaply once disk is there. Candidate, not approved: `.scratch/planet-day/clip-1103` to `-1105`, 7.3 GB.
+  **Deleted at the owner's word, 11-25 about 17:35** (43.2 -> 50.5 GiB free, 11-25's tier 2 `new` just done); `.scratch/planet-day/run*.sh`,
+  one-off scripts of 11-16, still name them and would cut them again from Europe clips that may be gone.
   **Docker must be started again before the 12:15 city run on 11-25.**
 - **11-24's gate PASSED; STOPPED 01:30:14 on 11-25 at `compact`, under the disk floor (39.0 GiB free), nothing written; not
   restarted.** Tier 2 ended 01:01, gate 20 of 32 equal, clip 19,335,063, world 19,335,075 (+12), worst city 0.00177%. Store at
@@ -3186,8 +3188,20 @@ wording and tab structure as a first draft open to change, not as decided design
   They still read the site's `data/cities.json`, `quests.json`, `parts/` and icons.
   **`docs/apps` has the new script (285f9061; owner, 11-25: "yes"),** the widget repo's checks all ok; live with the next `run.py site`
   (tonight's loop), so check `/apps/open-quests.js` after it. iPhones that have the old script keep it until it is downloaded again.
-  **Left:** (1) the owner's phones on the new builds; (2) then the code: `run.py history` writes `history/`, part series, `trends`, `compare`,
-  snapshots only up to 10-31 (frozen) and the lists only when SC, config or parts change, so a day needs no commit and no deploy.
+  **Live 11-25 18:40 with the loop's publish of 11-25** (`/apps/open-quests.js` equal to `docs/apps`).
+  **The city files end on a set day: merged 11-25 18:50 (b4c1f7b6; owner: "yes, do it in a safe way").** `config/city-files.json`
+  `{"until": "2026-11-25"}`: `history/`, part series, `trends`, `compare`, snapshots and `cities.json`'s counts stop there, so a new day
+  needs no commit and no deploy (DESIGN.md, "docs/data's own city files end on a set day"; undo = revert, the next site run writes
+  the days since). Not 10-31 as first said: the last published day, so the switch moved no byte and the no-sc-data fallback is as new
+  as it can be. `run.py site` deploys only when the tree of `docs/` or `config/` is not the deployed one (`data/site-deployed.json`
+  keeps "day" too, for the old code). **Checked before merging:** 290 tests OK; the branch's `history` in main wrote 0 files
+  (`git status docs` clean); pages from a copy of `docs/` with the 11-24 data, through a local CORS proxy to sc-data and with
+  sc-data down: Toronto, picker, compare (175-185 kinds), Berlin, map, a part (Agincourt North), the parts card from the files'
+  own day; no error but the blocked fetches. **After:** `run.py site` once: history 0 files, nothing committed, 1 file deployed
+  (`app.js`, live equal), pushed; a second run "nothing to do", pushed.
+  **Not yet seen:** 11:15 `inputs` and the 12:15 city run on 11-26 (history should change 0 files, no data commit), and the loop's
+  publish of 11-26 (place files only, no commit, no deploy, main pushed). **Then:** the owner's yes to turn off `kk-SCOpenQuests`
+  (12:15); `data/archive` and the monthly backfill stay. **Left:** the owner's phones on the new builds (Android not confirmed).
 - **The site's deploy is its own run, and the world's city pages are live (owner, 11-25: "yes"; 194d497b, 44ec7856).** `run.py site`, task
   `kk-SCOpenQuests-site`, hourly 07:20 to 23:20, log `logs/site.log`: when the newest gated day is not the one in
   `data/site-deployed.json` (not committed) it does history, commit, push (now also with no new data) and deploy; a change of
@@ -4284,3 +4298,19 @@ at once to 0.28 GB (40.8 GiB).
   widget's `MainActivity.kt`. Neither repo was pushed by hand.
 - **Still for the owner:** whether GoatCounter's "individual pageviews" setting is off (the page
   assumes the default); no governing-law clause was written; contact is a public GitHub issue.
+- **2026-11-25, 17:10: `place-ids` is brought up to main (f37f487a), still not tested.** New since the plan: `data/archive-world` (renamed too), the
+  publisher's `city/` and `city-parts/` files, and **the loop publishes by itself after RUNNING is gone** (`run.py site`), so
+  `apply` also refuses while `pipeline.lock`, `inputs.lock` or the publisher's `daily.lock` is there. 11-24 closed on 11-25 at
+  02:12; `world-cities` and `retire-cities` are merged; `freeze-city-files` (new, no ids) merges clean. `dropped-places` now
+  conflicts with main in `run.py`, not with `place-ids`.
+  A rename must also hold back `run.py site`'s own publish until the big upload is done by hand.
+  The gap: after 11-25's day closes and its publish ends (tonight) until 11:15 on 11-26. Tests there first.
+  **Order in that gap (11-25, 17:40): `freeze-city-files` goes first** (brought up to main, 6cf26e08; tests, byte compare, merge, one
+  `run.py site`); `place-ids`' tests after it is merged or says here that it is not. The two branches merge clean.
+  **`freeze-city-files` merged 11-25 18:50 (b4c1f7b6), its `run.py site` done 18:54; nothing of it is running: `place-ids`' turn.**
+- **Owner, 2026-11-25 (about 17:15): "yes rename if they pass"** (asked: rename tomorrow night, 11-26, if the tests pass tonight; it was said
+  that about 1.13M files are uploaded again and old links break). Read as: the rename and the upload, under HOLD, after the
+  tests pass. **The deletes of the old bucket files were not named in that question: ask before them**, after the `--dry-run`. `upload`
+  as written refuses when the deletes pass `--max-delete`, so it needs a way to upload and keep the old files first.
+- **Order in tonight's gap agreed with the session "City machinery deprecation readiness" (11-25, 17:40):** `freeze-city-files` first; `place-ids`' tests
+  wait for its "merged" or "not merged" (119a95b0), then main is merged into `place-ids` and the whole suite is run. Nothing of `place-ids` runs before.
