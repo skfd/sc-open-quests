@@ -3116,7 +3116,7 @@ wording and tab structure as a first draft open to change, not as decided design
   - Squares are tiny: median 1,063 m² (Italy 19,684 of them, 94.5% under 5,000). Under 5,000 m²: 61,880 of 70,684 squares
     (87.5%), median 4 open quests, 16,262 with 0, 495,221 of the squares' 835,530 open on 11-23. 38 of the 41 are under it.
   - Not only squares: 9,157 other places are under 5,000 m² (6,404 neighbourhoods, 2,375 localities, 89 macrohoods, 275
-    other microhoods, 14 counties), from a sample of 24 mostly real: RT blocks in Indonesia, farms and hamlets; 4 places are under 1 m² (degenerate outlines, none a square). Registry: 334 of 469 squares, and 3 others.
+    other microhoods, 14 counties), from a sample of 24 mostly real: RT blocks in Indonesia, farms and hamlets; 4 places are under 1 m² (degenerate outlines, one of them a square). Registry: 334 of 469 squares, and 3 others.
   - A cutoff for squares alone (not for other subtypes) is what the numbers point to; 8,804 squares are 5,000 m² or more
     (Alexanderplatz 78,656; the largest, in Uzbekistan, 7.8 km²). 324 are 50,000 m² or more.
 - Name in the mockups: "Appellplatz" was the real OSM name of a square in Berlin (w26443399, beside the defence ministry),
