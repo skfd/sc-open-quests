@@ -3086,6 +3086,15 @@ wording and tab structure as a first draft open to change, not as decided design
   **Disk 40.3 GiB:** all 127 of `before/`'s files (52.6 GB) are already replaced, so the resume's restore gives about 52 GB
   back and finish takes it again: expect about the same low, on the 40 GiB floor. It wants about 10 GiB more free first.
   Nothing closed or deleted. When both are there: remove STOPPED, start the loop with `WORLD_T2_WORKERS=2`.
+- **Resumed 23:06:34 on 11-24 (owner, 23:00: "yes enable and start engine to run. we want to progress", to closing Docker/WSL
+  and idle sessions).** Loop pid 62096, `WORLD_T2_WORKERS=2`, two group workers; the world was put back to 11-23 at 23:07:50,
+  disk 40 -> 93 GiB. Commit at rest 35 GB (26 before): Docker Desktop and WSL stopped (`docker desktop stop`, so `onagri-pg`
+  comes back with Docker), and seven finished sessions closed: Osmium Windows speed, Skills and steward review, Weekly advisor
+  11-23, Should the done-check exist, Task Beholder, Crs Guessing Game, mapsme-fork-watch-2d (transcripts kept). `vmmem`'s
+  4 GB is another virtual machine (`vmwp`, since 11-21), not WSL's; left. **35 - 17 - 8 leaves room for one engine at a time,
+  barely.** Disk nothing deleted: the low will be near 40 GiB again, where `loc advance` and `compact` refuse; those steps
+  resume cheaply once disk is there. Candidate, not approved: `.scratch/planet-day/clip-1103` to `-1105`, 7.3 GB.
+  **Docker must be started again before the 12:15 city run on 11-25.**
 
 ## City neighbourhoods on the world's counts, and places with nothing open (2026-11-24, evening; nothing built)
 
