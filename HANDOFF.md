@@ -3958,3 +3958,57 @@ wording and tab structure as a first draft open to change, not as decided design
   be the oracle), the slicer's choice (osmium or Rust, parked above), and the Windows-only pieces (`.exe`, `.bat`,
   `schtasks`, `tasklist`, the memory probe; the seed's scripts live in `.scratch`).
 - **First step on return:** rehearse the history cut on one region.
+
+## Overture's next release: measured, a process proposed (2026-11-24, evening; owner: "develop a process of updating Overture to the next version")
+
+Nothing built, the pin unmoved. First move ever: we have only been on 2026-10-21.0. Scripts and narrow copies (keep them, the
+releases expire): `.scratch/overture-next/` (`diff.py`, `diff.out`, `reid.py`, `d-*.parquet`, `area-*.parquet` for 09-23.1,
+10-21.0 and 11-18.0). Read beside the loop at 400-700 MB; its first version wrote 0.75 GB and took the disk to 40.3 GiB, shrunk
+at once to 0.28 GB (40.8 GiB).
+
+- **Releases.** Newest 2026-11-18.0 (OSM to 11-09); next 12-16.0, a "major breaking" slot (March, June, September, December),
+  nothing announced for divisions. S3 keeps a release 60 days, changelogs for good: 10-21.0 goes about 12-20, 11-18.0 about
+  01-17. **Our pull of 10-21.0 is the only copy after that, and no backup list has it.**
+- **What a month changes for us** (countable places, OSM relation or way; same size both months):
+
+  | | 09-23 -> 10-21 | 10-21 -> 11-18 |
+  |---|---|---|
+  | countable before, after | 1,065,942, 1,069,532 | 1,069,532, 1,073,190 |
+  | ids gained, lost | 4,789, 1,199 | 5,135, 1,477 |
+  | of the lost: the same OSM object under a new id | 527 | 672 |
+  | kept ids: renamed, parent moved, OSM id replaced | 770, 843, 197 | 374, 1,135, 213 |
+  | kept ids: outline changed | 27,131 | 25,910 |
+  | of them: bbox overlap under 90%, under 50% (bbox only) | 1,008, 157 | 1,184, 210 |
+  | squares lost, gained | 115, 644 | 114, 569 |
+
+  Quiet months. By the changelog (areas removed): 2025-12 2,236, 2026-01 4,278, 2026-06 25,305 (Czechia, Slovakia), 2026-07
+  2,333, 2026-09 3,674. 2026-03 changed 770,003 areas (bbox FLOAT to DOUBLE); 04 and 05 repeated 03's data.
+- **A GERS id does not survive a subtype change** (DESIGN.md "Places: naming the world" says it does): no kept id changed subtype
+  or country in either month; every subtype move seen is a new id on the same OSM object. 24 ids lost in October are back in
+  November. The changelog does not compare `sources`, and has no split, merge or re-id, so it cannot replace our own diff.
+- **Our cities on 11-18.0:** all 147 as before by relation (143; bratislava, laval, london-gb, markham go by name or otherwise,
+  in all three releases). **27 of 4,214 parts lose their id: Toronto 24 (the federal ridings, OSM retagged them quarter -> ward,
+  so microhood -> neighborhood), Halifax's Bedford South, Hamburg's Louis-Braille-Platz, Burnaby's Lochdale (gone).** 26 have
+  the same OSM object. 213 parts' Overture outlines changed (theirs are OSM's, so that is only a hint).
+- **Where it bites.** (1) `places.py` would not stop on 11-18.0: the same nine subtypes. (2) **The world cannot take a new place
+  list between two days**: rows keep a place-set number, only touched elements are placed again, and the gate reads only
+  `osm-<city>`, so a swap gives wrong counts and a passing gate. It needs a reseed. One is due about 2027-01-04 anyway
+  (area dates reach 11-01 + 64 days, DESIGN.md "a horizon"); **the planet job of 12-07 that was to be it has been off since 11-16**
+  (read in the retire section, its plan not looked for further). (3) `geo/` must be built in a new folder: W's registries point
+  at `.scratch/world-places/world/geo/`, and `places` writes in place. (4) `world_publish.py` deletes at most 2,000 files,
+  no override: 11-18.0 is about 1,560 (1,477 places, 84 of them parents), September to November at once about 2,740. Skipping
+  a release, or the squares, stops publishing. Every later day's cache is also thrown away at the pin bump, and the changed
+  children files may pass `DAY_CAP` (not counted). (5) A lost id loses its series, its links and its part in widgets; a changed
+  outline is an unmarked step in a series; a new place starts at its first day. (6) `gated_days` walks one world folder without gaps.
+- **Proposal, OVERTURE.md beside REPIN.md, in this order:** (a) monthly, after a release: `tools/overture_diff.py` (this
+  session's two scripts) over narrow columns, no pin moved; report ids, re-ids, subtype, parents, outline overlap, squares,
+  perspectives, cities, parts. (b) gates, else stop: no unknown subtype, no 12-hex clash, all 147 cities matched, lost parts
+  listed, lost countable under 1% per country (June's Czechia would stop it), schema changes read. (c) **a checked-in crosswalk
+  `config/place-ids.json`: a new GERS id on the same OSM object keeps our old place id** when the outlines overlap (a rule run once,
+  reviewed), with the dropped-squares and duplicate lists beside it. Lost ids then are about 800, not 1,477, and Toronto's links
+  and series stay. (d) pull to `data/overture/<release>/` (about 7 GB; `--out`, never over the old one) and back it up. (e) one
+  branch: pin, parts, `places.py`, name layer, `places` and `plan` in a new folder. (f) go live **only with a reseed**, world and
+  name layer together, the old world's days kept joined. (g) mark outline steps of 10% or more as `KNOWN_STEPS`.
+  Cadence: every release diffed, adopted only at a reseed (about quarterly).
+- **Not measured:** how much the 25,910 outlines changed (needs the 4.6 GB of outlines), the cost of the reseed with them.
+- **Open for the owner:** which release at the next reseed; the crosswalk; whether a lost place's page stays as "ended".
