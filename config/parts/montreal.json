@@ -2,7 +2,6 @@
   {"id": "c45a127200b3", "gers": "c45a1272-00b3-4771-84bd-808174d389aa", "name": "Ahuntsic", "en": null, "subtype": "neighborhood", "osm": "r9910875", "geometry": "data/boundaries/parts/montreal/r9910875.geojson"},
   {"id": "463668603550", "gers": "46366860-3550-49c1-8118-f65926514f67", "name": "Ahuntsic-Cartierville", "en": null, "subtype": "macrohood", "osm": "r8803535", "geometry": "data/boundaries/parts/montreal/r8803535.geojson"},
   {"id": "d3637bc6d6b4", "gers": "d3637bc6-d6b4-494f-bb06-9b1b7c164a4f", "name": "Anjou", "en": null, "subtype": "macrohood", "osm": "r8803286", "geometry": "data/boundaries/parts/montreal/r8803286.geojson"},
-  {"id": "3ed11fcfd553", "gers": "3ed11fcf-d553-4025-86ed-1fd3ab66a18a", "name": "Bassins du Nouveau Havre", "en": null, "subtype": "microhood", "osm": "r7515124", "geometry": "data/boundaries/parts/montreal/r7515124.geojson"},
   {"id": "6c7aa6b36edc", "gers": "6c7aa6b3-6edc-4556-a1b7-6a15fd4c0c70", "name": "Cartierville", "en": null, "subtype": "neighborhood", "osm": "r15976148", "geometry": "data/boundaries/parts/montreal/r15976148.geojson"},
   {"id": "a39a457c6387", "gers": "a39a457c-6387-4fae-a1f8-a627c465ed2e", "name": "Côte-des-Neiges–Notre-Dame-de-Grâce", "en": null, "subtype": "macrohood", "osm": "r8806187", "geometry": "data/boundaries/parts/montreal/r8806187.geojson"},
   {"id": "c95ed4900816", "gers": "c95ed490-0816-4c29-a6f0-c294cb39eaea", "name": "Espace 67", "en": null, "subtype": "microhood", "osm": "w1203893776", "geometry": "data/boundaries/parts/montreal/w1203893776.geojson"},

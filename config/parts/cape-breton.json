@@ -18,7 +18,6 @@
   {"id": "dd37e31ad59c", "gers": "dd37e31a-d59c-4c9b-868c-709d87daaaf2", "name": "Boisdale", "en": null, "subtype": "locality", "osm": "r9321779", "geometry": "data/boundaries/parts/cape-breton/r9321779.geojson"},
   {"id": "2a713cf26224", "gers": "2a713cf2-6224-4179-8a43-db2a594f97aa", "name": "Bras d'Or", "en": null, "subtype": "locality", "osm": "r9192159", "geometry": "data/boundaries/parts/cape-breton/r9192159.geojson"},
   {"id": "e1584c4aa6cb", "gers": "e1584c4a-a6cb-42da-b8bd-645abfd71534", "name": "Broughton", "en": null, "subtype": "locality", "osm": "r9321645", "geometry": "data/boundaries/parts/cape-breton/r9321645.geojson"},
-  {"id": "5df39e1d47ba", "gers": "5df39e1d-47ba-4161-be95-c03f09f99170", "name": "Cantley Village", "en": null, "subtype": "neighborhood", "osm": "r17391180", "geometry": "data/boundaries/parts/cape-breton/r17391180.geojson"},
   {"id": "ea14a1fab056", "gers": "ea14a1fa-b056-4a72-9d3c-5548fa8f3b60", "name": "Cantley Village", "en": null, "subtype": "locality", "osm": "r2174658", "geometry": "data/boundaries/parts/cape-breton/r2174658.geojson"},
   {"id": "3b5011d534ad", "gers": "3b5011d5-34ad-42aa-bf8c-5bb999b8d50b", "name": "Caribou Marsh", "en": null, "subtype": "locality", "osm": "r9321648", "geometry": "data/boundaries/parts/cape-breton/r9321648.geojson"},
   {"id": "9aeca094a72e", "gers": "9aeca094-a72e-4a5d-ad35-047301383d33", "name": "Castle Bay", "en": null, "subtype": "locality", "osm": "r9321830", "geometry": "data/boundaries/parts/cape-breton/r9321830.geojson"},

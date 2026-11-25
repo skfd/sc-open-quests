@@ -26,7 +26,6 @@
   {"id": "d97eb0338bf2", "gers": "d97eb033-8bf2-4fcb-bfcc-c5d7faa5cdd7", "name": "Burrows–Keewatin", "en": null, "subtype": "neighborhood", "osm": "r1821271", "geometry": "data/boundaries/parts/winnipeg/r1821271.geojson"},
   {"id": "b06c722622a4", "gers": "b06c7226-22a4-4e9d-b367-444653196d4b", "name": "Canterbury Park", "en": null, "subtype": "neighborhood", "osm": "r18469385", "geometry": "data/boundaries/parts/winnipeg/r18469385.geojson"},
   {"id": "c0a7bead110c", "gers": "c0a7bead-110c-4306-8e7b-736f014a7295", "name": "Centennial", "en": null, "subtype": "neighborhood", "osm": "r1457998", "geometry": "data/boundaries/parts/winnipeg/r1457998.geojson"},
-  {"id": "434c6e06de1f", "gers": "434c6e06-de1f-47ce-8f3b-e810bf459e25", "name": "Centennial Neighbourhood", "en": null, "subtype": "neighborhood", "osm": "w432156819", "geometry": "data/boundaries/parts/winnipeg/w432156819.geojson"},
   {"id": "e0a5d0a30291", "gers": "e0a5d0a3-0291-497e-880e-f96652854fcd", "name": "Central Park", "en": null, "subtype": "neighborhood", "osm": "r1455061", "geometry": "data/boundaries/parts/winnipeg/r1455061.geojson"},
   {"id": "16e432ea8a52", "gers": "16e432ea-8a52-4b1a-924b-a7fcd5f0e75f", "name": "Central River Heights", "en": null, "subtype": "neighborhood", "osm": "r1454407", "geometry": "data/boundaries/parts/winnipeg/r1454407.geojson"},
   {"id": "e09c6e3f4f53", "gers": "e09c6e3f-4f53-4061-acc8-6220cc04b8f1", "name": "Central St. Boniface", "en": null, "subtype": "neighborhood", "osm": "r18469830", "geometry": "data/boundaries/parts/winnipeg/r18469830.geojson"},
