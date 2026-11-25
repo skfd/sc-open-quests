@@ -4219,3 +4219,23 @@ at once to 0.28 GB (40.8 GiB).
   need new ids**, the rename does not touch them), no shared file; `retire-cities` and `world-stable` none (`retire-cities`
   shares DATA-FORMAT). So `dropped-places` first, then `place-ids`, the rest in any order. Corrects the "Clashes" line above:
   `retire-cities` holds no place ids.
+
+## Legal pages: the list agreed, nothing built (2026-11-24, late evening; owner: "this website needs terms of use and some other legal stuff like cookie consent")
+
+- **Checked first:** no cookies (none set in `docs/`, no `Set-Cookie` and no Cloudflare beacon on the live home page);
+  one `localStorage` key, `sc-open-quests-cities` (recent cities, stays in the browser); GoatCounter
+  (`osm-ontario.goatcounter.com`, its no-cookie, no-IP terms recalled, not re-read). A visitor's IP reaches
+  Cloudflare, GoatCounter, tile.openstreetmap.org (Map tab) and GitHub (place requests).
+- **Owner's answers:** operator named as the handle `skfd`, no real name; based in Canada (no imprint); contact is
+  GitHub issues only, no email on a page; nothing planned (no ads, donations, accounts or forms).
+- **To build, in order:** (1) a privacy page naming the four parties and the one key; Google Play needs its URL for
+  the widget; (2) a line that the published JSON is offered under ODbL (footer and `DATA-FORMAT.md`; neither says so
+  now); (3) a short terms page: counts are estimates with no warranty, the data may be reused under its licence
+  without hammering the host, the borders stance, links to the vendored libraries' licences; (4) "independent, not
+  affiliated with or endorsed by StreetComplete or OpenStreetMap" on the site and in the store listing; (5) operator
+  and contact; (6) links to these from `docs/index.html`, `docs/apps/`, the Android about screen and the Scriptable
+  script header.
+- **Not needed:** a cookie banner (returns only with ads or cookie-based analytics); DMCA, children's, account or
+  refund terms; an imprint.
+- **Open:** whether to ask StreetComplete's maintainer about the name and icon in the Play listing (trademark status
+  not looked up). Next step is the owner's word to draft the pages.
