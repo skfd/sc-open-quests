@@ -4284,3 +4284,10 @@ at once to 0.28 GB (40.8 GiB).
   widget's `MainActivity.kt`. Neither repo was pushed by hand.
 - **Still for the owner:** whether GoatCounter's "individual pageviews" setting is off (the page
   assumes the default); no governing-law clause was written; contact is a public GitHub issue.
+- **2026-11-25, 17:10: `place-ids` is brought up to main (f37f487a), still not tested.** New since the plan: `data/archive-world` (renamed too), the
+  publisher's `city/` and `city-parts/` files, and **the loop publishes by itself after RUNNING is gone** (`run.py site`), so
+  `apply` also refuses while `pipeline.lock`, `inputs.lock` or the publisher's `daily.lock` is there. 11-24 closed on 11-25 at
+  02:12; `world-cities` and `retire-cities` are merged; `freeze-city-files` (new, no ids) merges clean. `dropped-places` now
+  conflicts with main in `run.py`, not with `place-ids`.
+  A rename must also hold back `run.py site`'s own publish until the big upload is done by hand.
+  The gap: after 11-25's day closes and its publish ends (tonight) until 11:15 on 11-26. Tests there first.
