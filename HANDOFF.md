@@ -3141,6 +3141,15 @@ wording and tab structure as a first draft open to change, not as decided design
   - Way back: `git revert 20e9fe45 fb0d8422` (the archive is whole), then `run.py history` and a deploy; a revert alone
     leaves the live site as it is.
   **Pushed 11-25, 06:47 (owner: "pusj and thats it?").** The site itself changes at the 12:15 deploy.
+- **Publishing is the world run's last step (owner, 11-25: "do both please"; step 1).** `planet_store_day.py` ends with `run.py site`
+  (`publish()`, after RUNNING is gone; also when it took no day or stopped; log `logs/site.log`): first `world_publish.py daily`, then
+  history, commit, push and deploy if the site lacks the day or docs/ changed. `inputs` (11:15) runs it again for what failed.
+  Tasks `kk-SCOpenQuests-site` and `-worldpub` are removed (XML in `~/Code/.task-backups/*-removed-2026-11-25.xml`). The 20 h and 36 h rules
+  went: **a committed docs/ change goes live at the next run.** A catch-up of several days publishes once, at its end.
+  **Step 2, under way (branch `city-from-world`):** the 2017 to 2026-10-31 city history a fixed file, the days from 11-01 read by the page from
+  sc-data (the publisher adds the 147 `osm-<city>` places and a small summary for the list, trends and compare). Additive first:
+  **both widgets read `data/cities.json`, `history/`, `parts/` on the site, so those files go on until the widgets are moved**
+  (Android and the Scriptable script, `../sc-open-quests-widget`).
 - **The site's deploy is its own run, and the world's city pages are live (owner, 11-25: "yes"; 194d497b, 44ec7856).** `run.py site`, task
   `kk-SCOpenQuests-site`, hourly 07:20 to 23:20, log `logs/site.log`: when the newest gated day is not the one in
   `data/site-deployed.json` (not committed) it does history, commit, push (now also with no new data) and deploy; a change of
