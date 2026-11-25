@@ -3115,6 +3115,16 @@ wording and tab structure as a first draft open to change, not as decided design
   down to about 5. It wants 82 GiB or more free. `world-days/2026-11-24/before` (52.6 GB, the world at 11-23, hard links no longer shared) is the
   day's way back, read only by a `finish` that did not end; after the gate nothing reads it, and the loop deletes it minutes
   after `compact`. Deleting it by hand first gives 91 GiB. **Asked of the owner, nothing deleted.** Docker is still off.
+- **11-24 CLOSED 02:12:31 on 11-25** (owner, 02:00: "go ahead"): `before/` deleted (disk 31 -> 85 GiB: 8 GiB had gone in
+  the half hour before, not traced), loop restarted 02:03. `compact` removed 59.5 GiB of files in 169 s, low 44 GiB; 129 GiB
+  free after. Store generation 23; world 24 gated days, 11-01 to 11-24; its facts written by hand (02:20).
+- **`retire-cities` (37a66bd3) and `world-cities` (a2a626bf) merged into main, 02:13-02:20; 271 tests OK; worktrees and
+  branches removed.** `kk-SCOpenQuests-inputs` is registered (daily 11:15) and ran once, 02:13-02:19: the Europe clip of
+  11-25 with diff 5187, the notes dump of 11-25, the two backups, "inputs done". **`run.py history` on the merged
+  code changes 148 files, by `highwayKm` alone (the per-road-km figure the owner dropped); committed.** The 12:15 city run pushes
+  main, so the dropped column reaches the site then. Docker is running again (`onagri-pg` up).
+  Still the city run's: the site deploy (`publish_cloud`) and the city counts. Still open: the owner's word on switching the
+  city pages to the world; a new home for the deploy; then the city task off.
 
 ## City neighbourhoods on the world's counts, and places with nothing open (2026-11-24, evening; nothing built)
 
