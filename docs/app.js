@@ -1085,8 +1085,10 @@ async function newestTotals() {
   if (!t || !t.open) return;
   cities.asOfDate = latest.date;
   cities.scVersion = latest.scVersion;
-  for (const c of cities.cities) if (t.open[c.id] != null) { c.open = t.open[c.id]; c.asOfDate = latest.date; }
+  for (const c of cities.cities) if (t.open[c.id] != null) { c.filesDate ||= c.asOfDate; c.open = t.open[c.id]; c.asOfDate = latest.date; }
   renderFooter();
+  // the picker, if it was opened before the totals came: cities.json's own can be months old
+  if ($("#city-sheet").open && !$("#city-results").contains(document.activeElement)) renderSheet();
 }
 
 async function renderCompare() {
@@ -1118,7 +1120,7 @@ async function renderCompare() {
   const fmt = (v, f) => (v == null ? "—" : f.format(v));
   for (const th of document.querySelectorAll("#compare-table th.c-trend")) th.hidden = !trends;
   // The app offers some quests only in some countries, so totals cover different sets of quests.
-  const kinds = cities.cities.map((c) => c.questsCounted).filter((n) => n != null);
+  const kinds = cities.cities.map((c) => countedIn(c.id).length);
   const lo = Math.min(...kinds), hi = Math.max(...kinds);
   const off = rows.filter((r) => r.notOffered).length;
   $("#compare-sub").textContent = `${state.compareQuest ? humanize(state.compareQuest) : "All counted quests the app turns on by default"}, ${cities.asOfDate}. ` +
@@ -1794,11 +1796,12 @@ function askCard(ref) {
       el("a", { href: `${ASK_URL}?${search}` }, "look for a request"), ", and a 👍 on it is a vote."));
 }
 
-// The parts' counts in the city's newest published snapshot, when the world's host does not answer.
+// The parts' counts in the city's published snapshot, when the world's host does not answer.
 async function snapshotParts(c) {
-  const snap = await optionalJSON(`${DATA}/${c.region}/snapshots/${c.asOfDate}.json`).catch(() => null);
+  const snap = await optionalJSON(`${DATA}/${c.region}/snapshots/${filesDate(c)}.json`).catch(() => null);
   return snap && snap.cities && snap.cities[c.id] && snap.cities[c.id].parts;
 }
+const filesDate = (c) => c.filesDate || c.asOfDate;   // the last day of docs/data's own city files
 function partNames(cityId) { return optionalJSON(`${DATA}/parts/${encodeURIComponent(cityId)}.json`); }
 
 const partTotal = (counts) => Object.entries(counts || {}).reduce((s, [q, n]) => s + (selected(q) ? n : 0), 0);
@@ -1822,7 +1825,7 @@ async function partsCard(cityId, current) {
     .sort((a, b) => (b.open ?? -1) - (a.open ?? -1) || enName(a.p).localeCompare(enName(b.p)));
   return el("article", { class: "card" },
     el("h2", {}, current ? `Every part of ${c.name}` : `Neighbourhoods and other parts of ${c.name}`),
-    el("p", { class: "sub" }, `Open quests inside each part's OpenStreetMap boundary on ${shortDate(c.asOfDate)}, counting ` +
+    el("p", { class: "sub" }, `Open quests inside each part's OpenStreetMap boundary on ${shortDate(kids && kids.places ? c.asOfDate : filesDate(c))}, counting ` +
       `${selectionText()}. Parts overlap and leave gaps, so they do not add up to the city.`),
     el("div", { class: "table-wrap" }, el("table", { class: "data parts" },
       el("thead", {}, el("tr", {}, el("th", { scope: "col" }, "Part"), el("th", { scope: "col" }, "Kind"), el("th", { scope: "col", class: "num" }, "Open"))),

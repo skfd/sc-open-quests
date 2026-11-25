@@ -5820,6 +5820,21 @@ A part's own days are its place's, `place/<id>`. A quest a file leaves out is 0 
 counts it in the city, and a quest it says is not asked there is not shown. Checked 2026-11-25 against that day's
 `docs/data` for every city, part, quest and date: 44,355,752 values, 0 different.
 
+**`docs/data`'s own city files end on a set day (2026-11-25 on, `config/city-files.json`'s `until`).** `history/`,
+`trends.json`, `compare/`, the region snapshots and `cities.json`'s counts are built from the days up to it, so `run.py
+history` writes the same bytes whatever the newest day is, and a new day needs no commit and no deploy of the site:
+`run.py site` publishes the place files each day and deploys only when the tree of `docs/` or `config/` is not the one
+deployed last (`data/site-deployed.json`). What is still made from `config/`: `quests.json` (a release), `parts/`,
+`coverage.json`, the list in `cities.json`.
+
+- The page reads the files for the dates before `latest.json`'s `first`, names and areas. Without sc-data it shows
+  them as they are, under their own date. Widgets from before 2026-11-25 stop at that day, also under their own date.
+- `until` is the last day published before the change, not the last before `first`, so the change moved no byte of
+  `docs/data`, and what is shown without sc-data is as new as it can be without a daily build.
+- **To add a city, set `until` on** to a day the world counted it: without any day it has no files, and `history`
+  stops and says so. `until` can go on, never back (`history` refuses to lose a published date).
+- To undo: revert the commit; the next `run.py site` writes every day since, from the world's counts.
+
 - **Days are numbers.** The published days are every day from `first` through `date` with no gap, so day 0 is
   `first` and a point's `day` needs no date list. `latest.json`'s `questsFrom` (there when not empty) is the day
   number from which the world counts a quest a StreetComplete release added after `first`: before it, no count

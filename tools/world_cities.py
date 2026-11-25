@@ -97,14 +97,17 @@ def day_snapshots(day_dir: Path, day: str, cities: list[dict], regions: list[dic
 
 
 def snapshots(world: Path, out: Path, force: bool = False, cities_config: Path = run.CITIES_CONFIG,
-              parts_dir: Path = run.PARTS_CONFIG) -> int:
-    """Write the gated days that are not there yet, or are older than their counts. Returns the days written."""
+              parts_dir: Path = run.PARTS_CONFIG, until: str | None = None) -> int:
+    """Write the gated days (with until, up to that one) that are not there yet, or are older than their counts.
+    Returns the days written."""
     cities, regions = run.read_json(cities_config)["cities"], run.regions()
     quest_list = site_quests.base(archive=run.ARCHIVE_DIR)
     registries = {p.stem: run.read_json(p) for p in sorted(parts_dir.glob("*.json"))}
     days = world_publish.gated_days(world)
     done = 0
     for day in days:
+        if until and day > until:
+            break
         src = world / "counts" / day
         files = {r["id"]: out / r["id"] / "snapshots" / f"{day}.json" for r in regions
                  if any(c.get("region") == r["id"] for c in cities)}

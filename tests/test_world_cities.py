@@ -133,6 +133,36 @@ class WorldCitiesTest(unittest.TestCase):
         # the world's published snapshot is never taken into the city run's archive
         self.assertFalse((self.archive / "ontario" / "snapshots" / "2026-11-02.json").exists())
 
+    def test_the_city_files_end_on_their_day(self):
+        data = self.tmp / "site" / "data"
+        data.mkdir(parents=True)
+
+        def build(until):
+            with mock.patch.object(run, "publish_parts", lambda *a: 0):
+                return run.history(data, self.config, self.archive, self.parts, world=self.out, until=until)
+        self.snapshots(until="2026-11-01")
+        self.assertFalse((self.out / "ontario" / "snapshots" / "2026-11-02.json").exists())
+        build("2026-11-01")
+        files = {p: p.read_bytes() for p in data.rglob("*.json")}
+        self.assertEqual(self.snapshots(), 1)      # a new day
+        self.assertEqual(self.snapshots(until="2026-11-01"), 0)
+        self.assertTrue((self.out / "ontario" / "snapshots" / "2026-11-02.json").exists())   # gated, so it stays
+        self.assertEqual(build("2026-11-01"), 0)   # changes nothing
+        self.assertEqual(files, {p: p.read_bytes() for p in data.rglob("*.json")})
+        self.assertEqual([x.name for x in (data / "ontario" / "snapshots").glob("*.json")], ["2026-11-01.json"])
+        with self.assertRaisesRegex(RuntimeError, "2026-11-03"):
+            build("2026-11-03")                    # not counted yet
+        build("2026-11-02")                        # the day is set on
+        self.assertEqual(run.read_json(data / "cities.json")["asOfDate"], "2026-11-02")
+        with self.assertRaisesRegex(RuntimeError, "lacks 1 snapshot date"):
+            build("2026-11-01")                    # and never back by itself
+
+    def test_a_city_no_day_has_is_an_error(self):
+        self.snapshots()
+        run.write_json(self.config, {"cities": CITIES + [{**CITIES[0], "id": "ccc"}]})
+        with mock.patch.object(run, "publish_parts", lambda *a: 0), self.assertRaisesRegex(RuntimeError, "ccc"):
+            run.history(self.tmp / "site" / "data", self.config, self.archive, self.parts, world=self.out, until="2026-11-02")
+
     def test_a_published_world_snapshot_is_not_migrated(self):
         self.snapshots()
         data = self.tmp / "site" / "data"
