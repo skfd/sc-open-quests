@@ -3142,8 +3142,10 @@ wording and tab structure as a first draft open to change, not as decided design
     locality or localadmin, 3,297 only in a county, region or country, 9 in nothing (5 Norway, 1 each MX, GI, KR, PH). County
     and above were tested by a point inside the square, the rest by outline (over 95%). Ours: of the 407, 20 are in no
     neighbourhood-level place (Garden Square, Veterans Square and so on), 13 of them in a locality, 7 in a county
-    (Kingston, London and others are counties in Overture). Their own city page counts all 20. Open: what counts as
-    "another region" (any place: 9 stay; a city or smaller: 3,306 stay; a neighbourhood: 53,505 stay).
+    (Kingston, London and others are counties in Overture). Their own city page counts all 20. **Owner (wizard): a
+    city or smaller (neighbourhood-level, locality or localadmin) must cover it**, so 63,800 are dropped and 3,306 stay
+    (3,297 only in a county or larger, 9 in nothing); ours: 400 of 407 dropped, 7 stay. Not built; the traps above
+    (`MAX_DELETE`, `DAY_CAP`, the registry) come first, and the owner's go.
 - **Squares, safety check (owner leans to drop, wants a check so a place like Superilla del Poblenou is not lost; not decided).**
   Size alone fails: median 1,064 m2, 87 are 10 ha or more, among them Tiananmen and empty plazas. Two checks on every square:
   OSM says residential (19 of the 8,892 whose tags were read: 0.5 ha+, or 20+ building quests, or 100+ open) or building
