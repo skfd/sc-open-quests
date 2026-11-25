@@ -16,6 +16,8 @@ Subcommands:
              data/archive/; count and history do it too, so it is idempotent and needs no flag
   update     download + backfill + history, then commit "data <asOfDate>" and push, then sync docs/ to the
              R2 bucket behind street-complete-statistics.comentality.com (tools/cloud_publish.py)
+  site       if the world has a gated day the site lacks (task kk-SCOpenQuests-site, hourly from 07:20 to 23:20):
+             history, commit, push, deploy; a change of docs/ alone goes up 20 hours after the last deploy
   inputs     what the world's day needs, apart from the city run (task kk-SCOpenQuests-inputs): the Europe
              clip and with it the planet's daily diff, the notes dump, the backup of the world's gated days
              and the facts, check-release
@@ -1079,6 +1081,8 @@ def publish(data_dir: Path = DATA_DIR, message: str | None = None, push: bool = 
     git("add", "--", rel)
     if git("diff", "--cached", "--quiet", "--", rel, check=False).returncode == 0:
         log("docs/data unchanged; nothing to commit")
+        if push:   # main may still be ahead: code, notes, a commit whose push failed
+            push_main()
         return False
     if message is None:
         message = f"data {read_json(data_dir / 'cities.json').get('asOfDate') or 'unknown'}"
@@ -1087,11 +1091,15 @@ def publish(data_dir: Path = DATA_DIR, message: str | None = None, push: bool = 
     if not push:
         log("not pushed (--no-push)")
         return True
+    push_main()
+    return True
+
+
+def push_main() -> None:
     push = git("push", check=False)
     if push.returncode != 0:
         raise RuntimeError(f"git push failed: {push.stderr.strip()}")
     log("pushed")
-    return True
 
 
 def publish_cloud() -> bool:
@@ -1110,6 +1118,77 @@ def publish_cloud() -> bool:
     return True
 
 
+def publish_site(push: bool = True) -> bool:
+    """Make docs/data, commit and push it, deploy docs/. Returns False if the deploy failed; SITE_STATE says
+    what the site has otherwise."""
+    log("=== history ===")
+    history()
+    log("=== publish ===")
+    publish(push=push)
+    if not push:
+        return True
+    log("=== cloud ===")
+    if not publish_cloud():
+        return False
+    write_json(SITE_STATE, {"day": read_json(DATA_DIR / "cities.json")["asOfDate"], "docs": docs_tree(),
+                            "at": datetime.now(timezone.utc).isoformat(timespec="seconds")})
+    return True
+
+
+# --- site: the pages follow the world's day ------------------------------------------------------------
+
+SITE_STATE = ROOT / "data" / "site-deployed.json"  # the last deploy: the world's day, docs/'s tree, when; not committed
+SITE_AGAIN = timedelta(hours=20)  # a change of docs/ alone (code, texts) goes up this long after the last deploy
+SITE_MIN_COMMIT_GB = 8            # the build peaks at 2.4 GB (2026-11-25); the world loop's engines come first
+
+
+def docs_tree() -> str:
+    return git("rev-parse", "HEAD:docs").stdout.strip()
+
+
+def site_due(state: dict, day: str, tree: str, now: datetime) -> str | None:
+    """Why the site is to be deployed now, or None."""
+    if not state:
+        return "no deploy on record"
+    if state["day"] != day:
+        return f"the world's newest gated day is {day}, the site has {state['day']}"
+    if state["docs"] != tree and now - datetime.fromisoformat(state["at"]) >= SITE_AGAIN:
+        return "docs/ changed since the last deploy"
+    return None
+
+
+def site(force: bool = False, push: bool = True) -> None:
+    """Deploy the site if the world has a gated day the site lacks (task kk-SCOpenQuests-site, hourly). A run
+    that can't do it now leaves it to the next one."""
+    sys.path.insert(0, str(TOOLS_DIR))
+    import world_publish  # noqa: E402  (it imports this module)
+    try:
+        day = world_publish.gated_days(world_publish.WORLD)[-1]
+    except SystemExit as e:
+        raise RuntimeError(str(e)) from None
+    state = read_json(SITE_STATE) if SITE_STATE.exists() else {}
+    why = "--force" if force else site_due(state, day, docs_tree(), datetime.now(timezone.utc))
+    if why is None:
+        log(f"site: has {day}; nothing to do")
+        return
+    branch = git("rev-parse", "--abbrev-ref", "HEAD").stdout.strip()
+    if branch != "main":
+        raise RuntimeError(f"site: the checkout is on {branch}, not main")
+    memory = memory_status()
+    if memory and memory[1] < SITE_MIN_COMMIT_GB and not force:
+        log(f"site: {why}, but {memory[1]:.1f} GB of commit left; the next run")
+        return
+    if LOCK_PATH.exists() and LOCK_PATH.read_text(encoding="utf-8").strip().isdigit() \
+            and pid_alive(int(LOCK_PATH.read_text(encoding="utf-8"))):
+        log(f"site: {why}, but another run holds {LOCK_PATH.name}; the next run")
+        return
+    log(f"site: {why}")
+    with pipeline_lock():
+        if not publish_site(push):
+            raise RuntimeError("site: the deploy failed; the next run tries again")
+    log("site done")
+
+
 def update(force: bool = False, push: bool = True) -> None:
     with pipeline_lock():
         log("=== download ===")
@@ -1118,13 +1197,8 @@ def update(force: bool = False, push: bool = True) -> None:
         # every stored extract, not only the newest: one counted before its notes dump existed is
         # recounted once a dump reaches it; the rest are skipped
         backfill(force=force)
-        log("=== history ===")
-        history()
-        log("=== publish ===")
-        publish(push=push)
+        publish_site(push)
         if push:
-            log("=== cloud ===")
-            publish_cloud()
             backup_archive()
     log("update done")
 
@@ -1411,6 +1485,9 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("migrate-archive", help="move snapshots published in docs/data into data/archive")
     sub.add_parser("inputs", help="the world's daily inputs: Europe clip and planet diff, notes dump, the world's "
                    "backup, the release check")
+    s = sub.add_parser("site", help="if the world has a gated day the site lacks: history + commit + push + deploy")
+    s.add_argument("--force", action="store_true", help="deploy whatever the site has")
+    s.add_argument("--no-push", dest="push", action="store_false", help="commit but neither push nor deploy")
     sub.add_parser("check-release", help="open the repin issue if StreetComplete has a newer stable release")
     args = parser.parse_args(argv)
     try:
@@ -1431,6 +1508,8 @@ def main(argv: list[str] | None = None) -> int:
             update(force=args.force, push=args.push)
         elif args.command == "inputs":
             inputs()
+        elif args.command == "site":
+            site(force=args.force, push=args.push)
         elif args.command == "planet":
             planet(push=args.push)
         elif args.command == "check-release":

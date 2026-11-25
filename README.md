@@ -78,6 +78,14 @@ The task is named `kk-SCOpenQuests`. It starts when available if the machine was
 is stopped after two hours.
 
 ```powershell
+.\schedule-site-add.ps1      # run.py site, hourly from 07:20 to 23:20, appends to logs\site.log
+.\schedule-inputs-add.ps1    # run.py inputs, daily at 11:15, appends to logs\inputs.log
+```
+
+`kk-SCOpenQuests-site` makes, commits, pushes and deploys the site once the world has a gated day the site lacks
+(`data/site-deployed.json` says what it has); a run with nothing new only says so.
+
+```powershell
 .\schedule-planet-add.ps1      # run.py planet on the first Monday of each month at 07:30, appends to logs\planet.log
 .\schedule-planet-remove.ps1
 ```
