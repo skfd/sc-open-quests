@@ -655,7 +655,7 @@ function renderTiles(h, tot) {
     ? el("div", { class: "delta" + (change < 0 ? " down" : change > 0 ? " up" : "") }, changeWords(change, h.dates[i - 1], h.dates[i]) +
       (sameSet ? "" : ", over the same quest types"))
     : el("div", { class: "note" }, "First count, no change yet");
-  // 4 weeks back, or the first count when the series is younger (a part's starts 2026-10-27)
+  // 4 weeks back, or the first count when the series is younger (a part's starts 2026-11-01)
   let j = -1;
   for (let k = 0; k < i; k++) if (h.dates[k] <= addDays(h.dates[i], -WEEKS4)) j = k;
   const young = j < 0;
@@ -701,7 +701,7 @@ function renderCityCharts(full) {
   $("#chart-sub").textContent = `Counting ${selectionText()}. ` +
     (h.dates.length === 1 ? "One count so far; the line starts here." :
       h !== full ? `The last ${RECENT_DAYS} days, ${h.dates.length} counts.` :
-      `${h.dates.length} counts since ${h.dates[0]}` + (full.part && !long ? "; neighbourhoods are counted daily from 2026-10-27." : ".")) +
+      `${h.dates.length} counts since ${h.dates[0]}` + (full.part && !long ? "; neighbourhoods are counted daily from 2026-11-01." : ".")) +
     (state.asThen ? " Each quest counts from the release that first offered it, by today's rules. Quests since removed from the app are not in these counts." : "");
   lineChart($("#chart-total"), h, tot, { height: 300, questSetBreaks: true, note: $("#release-note"), marks });
   $("#breaks").replaceChildren(...breaks(h, { questSet: true }).map((b) => el("li", {}, `│ ${b.date}: ${b.label}. Totals on either side are not directly comparable.`)),
@@ -938,7 +938,7 @@ function placeHeadText(h = null) {
   $("#place-name").textContent = h ? h.name : state.part ? "" : c.name;
   $("#place-kind").textContent = !h ? "" : h.part ? partKind(h.subtype) : "city";
   $("#place-asof").textContent = !h ? "" : `Newest count ${shortDate(last(h.dates))}, ${last(h.dates).slice(0, 4)}` +
-    (h.part ? `, from ${h.cityName}'s daily run.` : ".");
+    (h.part ? `, in ${h.cityName}, from the daily count of the whole world.` : ".");
   if (!h || !h.part) $("#place-crumbs").replaceChildren(placeLink(null, "All countries"), crumbSep(),
     el("span", {}, cityWhere(c)));   // until the name layer gives the chain
   else $("#place-crumbs").replaceChildren(placeLink(null, "All countries"), crumbSep(), cityLink(c, c.name));
@@ -2063,9 +2063,8 @@ async function render() {
 
 function renderFooter() {
   const city = cities.cities.find((c) => c.id === state.city);
-  const region = city && (cities.regions || []).find((r) => r.id === city.region);
   $("#foot-data").textContent =
-    `Data as of ${cities.asOfDate} (${region ? region.source : "Geofabrik"} extract) · StreetComplete ${cities.scVersion} quest definitions · ` +
+    `Data as of ${cities.asOfDate} (OpenStreetMap at 00:00 UTC that day) · StreetComplete ${cities.scVersion} quest definitions · ` +
     `resurvey multiplier ×${cities.resurveyMultiplier ?? 1} · ${cities.cities.length} cities` +
     (city && city.asOfDate !== cities.asOfDate ? ` · ${city.name} last counted ${city.asOfDate}` : "");
 }

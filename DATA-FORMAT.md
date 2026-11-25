@@ -56,7 +56,7 @@ replication date in the cities' time zone (`YYYY-MM-DD`). The engine runs once p
 also writes `data/archive/<region>/quests.json`, the source `tools/site_quests.py take` reads
 at a repin.
 The archive keeps every snapshot and is what `run.py history` reads; `docs/data/<region>/snapshots/` holds
-the region's newest one only, a byte-for-byte copy. Until 2026-10-24 every snapshot was in `docs/data`;
+the region's newest one only, a byte-for-byte copy (since 2026-11-25 of the world's, below). Until 2026-10-24 every snapshot was in `docs/data`;
 `run.py migrate-archive` (also run by `count` and `history`) moves any left there into the archive, and
 the snapshots published until then stay in git history.
 
@@ -66,7 +66,9 @@ out of the world's counts of day D, for each gated day from 2026-11-01. `asOf` i
 part is its place as the world counts it, not cut at the city line; every registered part is listed, `{}` when nothing
 is open. A quest asked in a city that the world has no row for is 0. It can be deleted and made again.
 `tools/world_cities.py build` (`run.history(world=...)`) takes a city's days before the world's first from
-`data/archive` and the rest from here, and a part's series from here alone. Not yet what the site is built from.
+`data/archive` and the rest from here, and a part's series from here alone. The site is built this way since
+2026-11-25 (`run.py history` writes the missing days first); the engine's snapshots of days from 2026-11-01 on
+are kept in `data/archive` and not published.
 
 ```jsonc
 {

@@ -605,6 +605,18 @@ def with_world(snapshots: list[dict], world: list[dict]) -> list[dict]:
     return [s for s in snapshots if s["asOfDate"] < first] + world
 
 
+def world_snapshots() -> Path:
+    """The folder of the world's city snapshots, brought up to its newest gated day."""
+    sys.path.insert(0, str(TOOLS_DIR))
+    import world_cities  # noqa: E402  (they import this module)
+    import world_publish  # noqa: E402
+    try:
+        world_cities.snapshots(world_publish.WORLD, WORLD_ARCHIVE)
+    except SystemExit as e:   # no world here
+        raise RuntimeError(str(e)) from None
+    return WORLD_ARCHIVE
+
+
 def merge_quests(data_dir: Path, archive: Path | None = None) -> int:
     """Write data_dir/quests.json from each region's quests.json in the archive (default data_dir): the
     newest registry, with every region's per-city status. Returns 1 if the file changed."""
@@ -843,6 +855,8 @@ def migrate_archive(data_dir: Path = DATA_DIR, archive: Path = ARCHIVE_DIR) -> i
         return 0
     done = 0
     for p in sorted(data_dir.glob("*/snapshots/*.json")):
+        if "world" in (read_json(p).get("source") or {}):
+            continue   # the world's (tools/world_cities.py), never the city run's archive
         region = p.parent.parent.name
         dst = archive / region / "snapshots" / p.name
         if not dst.exists():
@@ -989,13 +1003,15 @@ def history(data_dir: Path = DATA_DIR, cities_config: Path = CITIES_CONFIG, arch
     fixtures have it) and the parts registry in parts_dir (default: PARTS_CONFIG for docs/data, else
     none); for docs/data, coverage.json too. With a separate archive, first migrate anything published the old way, then publish each
     region's newest snapshot. With world (tools/world_cities.py's snapshots), the cities' days from the world's first on are
-    the world's, and a part's series is the world's alone. places: the name layer (default: data_dir's sibling).
+    the world's, and a part's series is the world's alone; docs/data is always made with it. places: the name layer (default: data_dir's sibling).
     Returns the number of files changed."""
     places = places or data_dir.parent / "places"
     default = data_dir.resolve() == DATA_DIR.resolve()
     archive = archive or (ARCHIVE_DIR if default else data_dir)
     parts_dir = parts_dir or (PARTS_CONFIG if default else None)
     separate = archive.resolve() != data_dir.resolve()
+    if default and world is None:
+        world = world_snapshots()
     # not with world: what is published is the world's then, and migrating would put it among the city run's
     changed = migrate_archive(data_dir, archive) if separate and world is None else 0
     if parts_dir is not None:

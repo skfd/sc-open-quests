@@ -133,6 +133,25 @@ class WorldCitiesTest(unittest.TestCase):
         # the world's published snapshot is never taken into the city run's archive
         self.assertFalse((self.archive / "ontario" / "snapshots" / "2026-11-02.json").exists())
 
+    def test_a_published_world_snapshot_is_not_migrated(self):
+        self.snapshots()
+        data = self.tmp / "site" / "data"
+        src = self.out / "ontario" / "snapshots" / "2026-11-02.json"
+        run.write_json(data / "ontario" / "snapshots" / "2026-11-02.json", run.read_json(src))
+        run.write_json(data / "ontario" / "snapshots" / "2026-10-30.json", {"source": {"sha256": "x"}})
+        run.migrate_archive(data, self.archive)
+        self.assertEqual([p.name for p in (data / "ontario" / "snapshots").glob("*.json")], ["2026-11-02.json"])
+        self.assertTrue((self.archive / "ontario" / "snapshots" / "2026-10-30.json").exists())
+        self.assertFalse((self.archive / "ontario" / "snapshots" / "2026-11-02.json").exists())
+
+    def test_the_site_is_always_made_with_the_world(self):
+        class Asked(Exception):
+            pass
+        with mock.patch.object(run, "world_snapshots", side_effect=Asked), \
+                mock.patch.object(run, "migrate_archive") as migrate, self.assertRaises(Asked):
+            run.history()
+        migrate.assert_not_called()
+
     def test_history_without_world_days_stops(self):
         with self.assertRaisesRegex(RuntimeError, "no world snapshots"):
             run.history(self.tmp / "site" / "data", self.config, self.archive, world=self.out)
