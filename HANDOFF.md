@@ -4082,3 +4082,24 @@ at once to 0.28 GB (40.8 GiB).
   - **Proof:** after the rename every place's counts equal the old ones under the map, every day, exactly.
   - **Clashes:** `dropped-places` (16 ids, unmerged), `world-cities`, `retire-cities` and `share-previews` all hold place ids; merge or
     translate them first. All of it needs a gap in the loop (RUNNING and starved tonight: 9.6 GB of commit, disk 40.7 GiB).
+- **Owner (wizard, 2026-11-24, 20:45):** rename **before Release 1**; public id **the first 12 hex of the GUID**; write the code now;
+  the rename, bucket and live site wait for a separate go. **Built, not run and not tested (syntax only): branch `place-ids`**
+  (worktree `../sc-open-quests-place-ids`, sparse: md, py, config, tools, tests), a439b588: `tools/place_ids.py` (registry, `mint` once
+  only), `tools/rename_places.py` (`plan`, `apply`, `check`), `places.py`, `add_parts.py`, `world_cells.py` read the registry,
+  `world_publish.py` (`ids` in its cache stamp, deletes in batches after `latest.json`, `--max-delete`), `archive_backup.py`
+  (`place-ids`), DATA-FORMAT, tests.
+  - **An open day holds the old ids** (`.scratch/planet-day/world-days/<day>/before/place-sets.json` and the dumps; 11-24 is open):
+    resumed after a rename it would bring them back, gate passing. `apply` refuses while a day is open, RUNNING or STOPPED.
+  - **Order, in a gap (nothing done):** (1) 11-24 closed, HOLD; whole test suite. (2) Merge or translate `dropped-places`,
+    `world-cities`, `retire-cities`, `share-previews`; merge `place-ids`. (3) `place_ids.py mint --src data/overture/world`, `check`,
+    `archive_backup.py --only place-ids`, **read it back before going on**. (4) `rename_places.py plan`, then `apply`, then
+    `check`; grep W for old ids outside `geometry`. (5) `places.py build` (engine), `run.py history`, `facts.py cities --force`,
+    `world --force`, `verify`; every place's counts equal under the map. (6) `world_publish.py build`, `verify`, `upload --print`, then
+    the owner's go: `upload --full --max-delete <n>`; **`rclone delete --files-from` first with `--dry-run`, its count must equal
+    the plan's** (untried: if the filter were ignored it would empty the bucket). `kk` `daily` fails until then. (7)
+    `state_checkpoint.py link`, `upload`; HOLD off; after the first day, `rename_places.py check` again.
+  - **Not looked at:** `.scratch/world-places/world/places.json` (the hard-link twin of W's) keeps old ids; `add_parts` and fixtures'
+    hard-coded ids; the spend of about 1.13M uploads (`spend_breaker` asks); the widget's and issue form's links, which break as
+    decided; memory of `apply` (places.json 395 MB, three copies) and about 1 GB of disk, unaffordable at 40.7 GiB.
+  - The GERS-derived ids stay in `gers` and in outline paths. The ingest tool for 12-16.0 (agent proposes, operator judges, ended pages,
+    suggested successors, `?in=`, former names) is not begun.
