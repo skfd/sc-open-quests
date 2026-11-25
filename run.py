@@ -72,6 +72,7 @@ ARCHIVE_DIR = ROOT / "data" / "archive"  # every snapshot, <region>/snapshots/<a
 NOTES_DIR = ROOT / "data" / "notes"
 GRID_DIR = ROOT / "data" / "grid"  # counted quests per z14 tile, <region>/<asOfDate>.json.gz; not committed
 REGION_CITIES_DIR = ROOT / "data" / "cities"  # the engine's cities file per region; not committed
+WORLD_ARCHIVE = ROOT / "data" / "archive-world"  # the cities' days out of the world's counts (tools/world_cities.py)
 PARTS_CONFIG = ROOT / "config" / "parts"  # the parts registry, <cityId>.json (tools/add_parts.py)
 CLIP_NOTES = ROOT / "tools" / "clip_notes.py"
 
@@ -595,6 +596,15 @@ def load_snapshots(data_dir: Path) -> list[dict]:
     return sorted(snaps, key=lambda s: (s["asOfDate"], s["region"]))
 
 
+def with_world(snapshots: list[dict], world: list[dict]) -> list[dict]:
+    """The city run's snapshots before the world's first day, then the world's; a region the world lacks on a day
+    has none that day."""
+    if not world:
+        raise RuntimeError("no world snapshots; run tools/world_cities.py snapshots")
+    first = world[0]["asOfDate"]
+    return [s for s in snapshots if s["asOfDate"] < first] + world
+
+
 def merge_quests(data_dir: Path, archive: Path | None = None) -> int:
     """Write data_dir/quests.json from each region's quests.json in the archive (default data_dir): the
     newest registry, with every region's per-city status. Returns 1 if the file changed."""
@@ -799,13 +809,13 @@ def counted_place_files(places_dir: Path) -> dict[str, str]:
     return {k: f for k, (_, f) in counted_places(places_dir).items() if "/" in k}
 
 
-def write_part_history(data_dir: Path, snapshots: list[dict], parts_dir: Path) -> int:
+def write_part_history(data_dir: Path, snapshots: list[dict], parts_dir: Path, places: Path | None = None) -> int:
     """data_dir/history/<cityId>/<partId>.json for every part in the registry that has a count
     (build_part_history); a part or city no longer there loses its file. Returns the number of files
     changed."""
     registries = {p.stem: read_json(p) for p in sorted(parts_dir.glob("*.json"))}
     out = build_part_history(snapshots, registries)
-    files = counted_place_files(data_dir.parent / "places")
+    files = counted_place_files(places or data_dir.parent / "places")
     changed = 0
     root = data_dir / "history"
     for cid, parts in out.items():
@@ -859,12 +869,15 @@ def migrate_archive(data_dir: Path = DATA_DIR, archive: Path = ARCHIVE_DIR) -> i
     return done
 
 
-def publish_newest(data_dir: Path, archive: Path) -> int:
+def publish_newest(data_dir: Path, archive: Path, world: Path | None = None) -> int:
     """Copy each region's newest snapshot in the archive to data_dir/<region>/snapshots/ and delete the
-    region's other published snapshots the archive holds. Returns the number of files changed."""
+    region's other published snapshots the archive holds. With world (its snapshots' folder, in the archive's
+    layout) the newest is the world's, and the others go whichever of the two holds them. Returns the number of
+    files changed."""
     changed = 0
     for region_dir in sorted(p for p in archive.iterdir() if p.is_dir()):
-        snaps = sorted((region_dir / "snapshots").glob("*.json"))
+        held = [region_dir / "snapshots"] + ([world / region_dir.name / "snapshots"] if world else [])
+        snaps = sorted(held[-1].glob("*.json"))
         if not snaps:
             continue
         newest = snaps[-1]
@@ -875,7 +888,7 @@ def publish_newest(data_dir: Path, archive: Path) -> int:
             out.write_bytes(data)
             changed += 1
         for old in out.parent.glob("*.json"):
-            if old.name != newest.name and (region_dir / "snapshots" / old.name).exists():
+            if old.name != newest.name and any((h / old.name).exists() for h in held):
                 old.unlink()
                 changed += 1
     return changed
@@ -970,17 +983,21 @@ def publish_coverage(data_dir: Path, cities: list[dict], root: Path = ROOT) -> i
 
 
 def history(data_dir: Path = DATA_DIR, cities_config: Path = CITIES_CONFIG, archive: Path | None = None,
-            parts_dir: Path | None = None) -> int:
+            parts_dir: Path | None = None, world: Path | None = None, places: Path | None = None) -> int:
     """Rewrite history/*.json, cities.json, quests.json, compare/*.json and parts/*.json under data_dir
     from the snapshots in archive (default: ARCHIVE_DIR for docs/data, else data_dir itself, as the test
     fixtures have it) and the parts registry in parts_dir (default: PARTS_CONFIG for docs/data, else
     none); for docs/data, coverage.json too. With a separate archive, first migrate anything published the old way, then publish each
-    region's newest snapshot. Returns the number of files changed."""
+    region's newest snapshot. With world (tools/world_cities.py's snapshots), the cities' days from the world's first on are
+    the world's, and a part's series is the world's alone. places: the name layer (default: data_dir's sibling).
+    Returns the number of files changed."""
+    places = places or data_dir.parent / "places"
     default = data_dir.resolve() == DATA_DIR.resolve()
     archive = archive or (ARCHIVE_DIR if default else data_dir)
     parts_dir = parts_dir or (PARTS_CONFIG if default else None)
     separate = archive.resolve() != data_dir.resolve()
-    changed = migrate_archive(data_dir, archive) if separate else 0
+    # not with world: what is published is the world's then, and migrating would put it among the city run's
+    changed = migrate_archive(data_dir, archive) if separate and world is None else 0
     if parts_dir is not None:
         changed += publish_parts(data_dir, read_json(cities_config)["cities"], parts_dir)
     if default:
@@ -989,6 +1006,10 @@ def history(data_dir: Path = DATA_DIR, cities_config: Path = CITIES_CONFIG, arch
     if not snapshots:
         log(f"no snapshots in {archive}/*/snapshots; nothing to do")
         return changed
+    part_snapshots = snapshots
+    if world is not None:
+        part_snapshots = load_snapshots(world)
+        snapshots = with_world(snapshots, part_snapshots)
     published = data_dir / "cities.json"
     if published.exists():
         lost = set(read_json(published).get("dates") or []) - {s["asOfDate"] for s in snapshots}
@@ -996,17 +1017,17 @@ def history(data_dir: Path = DATA_DIR, cities_config: Path = CITIES_CONFIG, arch
             raise RuntimeError(f"{archive} lacks {len(lost)} snapshot date(s) the published history has "
                                f"(e.g. {min(lost)}); restore the archive (git history holds the snapshots "
                                f"published until 2026-10-24) or delete {published} to rebuild from what is there")
-    if default:
+    if default or world is not None:
         sys.path.insert(0, str(TOOLS_DIR))
         import site_quests  # noqa: E402  (tools/site_quests.py; it imports this module)
-        changed += site_quests.build()
+        changed += site_quests.build(data_dir, cities_config)
     else:
         changed += merge_quests(data_dir, archive)
     out = build_history(snapshots, read_json(cities_config)["cities"], default_disabled(data_dir), regions())
-    places = counted_places(data_dir.parent / "places")
+    rows = counted_places(places)
     for c in out["cities"]["cities"]:   # the city's row in the name layer: its page's chain and children
-        if c["id"] in places:
-            c["place"], c["in"] = places[c["id"]]
+        if c["id"] in rows:
+            c["place"], c["in"] = rows[c["id"]]
     for cid, series in out["history"].items():
         changed += write_json(data_dir / "history" / f"{cid}.json", series, compact=True)
     for stale in (data_dir / "history").glob("*.json"):
@@ -1022,9 +1043,9 @@ def history(data_dir: Path = DATA_DIR, cities_config: Path = CITIES_CONFIG, arch
     changed += write_json(data_dir / "cities.json", out["cities"], compact=True)
     changed += write_json(data_dir / "trends.json", out["trends"], compact=True)
     if parts_dir is not None:
-        changed += write_part_history(data_dir, snapshots, parts_dir)
+        changed += write_part_history(data_dir, part_snapshots, parts_dir, places)
     if separate:
-        changed += publish_newest(data_dir, archive)
+        changed += publish_newest(data_dir, archive, world)
     log(f"history: {len(out['history'])} cities over {len(snapshots)} snapshot(s), {changed} file(s) changed")
     return changed
 
