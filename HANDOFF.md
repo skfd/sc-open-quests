@@ -3130,6 +3130,8 @@ wording and tab structure as a first draft open to change, not as decided design
   4 GB is another virtual machine (`vmwp`, since 11-21), not WSL's; left. **35 - 17 - 8 leaves room for one engine at a time,
   barely.** Disk nothing deleted: the low will be near 40 GiB again, where `loc advance` and `compact` refuse; those steps
   resume cheaply once disk is there. Candidate, not approved: `.scratch/planet-day/clip-1103` to `-1105`, 7.3 GB.
+  **Deleted at the owner's word, 11-25 about 17:35** (43.2 -> 50.5 GiB free, 11-25's tier 2 `new` just done); `.scratch/planet-day/run*.sh`,
+  one-off scripts of 11-16, still name them and would cut them again from Europe clips that may be gone.
   **Docker must be started again before the 12:15 city run on 11-25.**
 - **11-24's gate PASSED; STOPPED 01:30:14 on 11-25 at `compact`, under the disk floor (39.0 GiB free), nothing written; not
   restarted.** Tier 2 ended 01:01, gate 20 of 32 equal, clip 19,335,063, world 19,335,075 (+12), worst city 0.00177%. Store at
