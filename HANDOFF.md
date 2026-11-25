@@ -3157,6 +3157,15 @@ wording and tab structure as a first draft open to change, not as decided design
     list is reviewed, so a later Overture release cannot drop a place by itself. Counts are unchanged. World-wide pairs
     were not measured. Guelph's other 12 groups have an outline of their own (6 share a plain place's name, such as
     Clairfields: 1.3 against 9.1 km²) and stay.
+  - **Why there are two (owner's question, 2026-11-24): the pairs are two live objects in OSM, not an old version.** For all 38
+    objects the version Overture records equals OSM's at its cutoff (2026-10-13), and all 38 exist in OSM today
+    (`osmhist.py`, `osmhist2.py`; OSM API histories). The kinds: Guelph's plain names are one changeset of 2026-08-22 ("Localities
+    of Guelph (not to be confused with BIAs created earlier)", City of Guelph Open Data) beside the neighbourhood groups
+    of 2025-02-12 (and 2026-08-03); Halifax's military sites drawn in 2019 and again in 2023, 2024 or 2026; Windsor Park and
+    Willow Park: a place=suburb multipolygon of 2024-04-05 over a 2019 boundary; Bayview Woods-Steeles in 2024-03 and 2025-02;
+    Centennial a 2011 relation and a 2016 way; Cantley Village a 2012 CanVec import and a 2024 boundary; Les
+    Bassins du Nouveau Havre in 2017 and 2024. Overture seems to make one division per OSM object (an inference; not documented
+    where I looked). Guelph's are deliberate, so a fix in OSM is not ours to make there.
 - **Squares, safety check (owner leans to drop, wants a check so a place like Superilla del Poblenou is not lost; not decided).**
   Size alone fails: median 1,064 m2, 87 are 10 ha or more, among them Tiananmen and empty plazas. Two checks on every square:
   OSM says residential (19 of the 8,892 whose tags were read: 0.5 ha+, or 20+ building quests, or 100+ open) or building
