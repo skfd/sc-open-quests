@@ -37,11 +37,11 @@ def name_layer(root: Path) -> Path:
     return places
 
 
-def world_day(world: Path, day: str, rows: dict, compressed: bool, gate: str = "days", parts=None) -> None:
+def world_day(world: Path, day: str, rows: dict, compressed: bool, gate: str = "days", parts=None, quests=QUESTS) -> None:
     """rows: (part, quest) -> (open, aged); X is counted but not in the name layer, `city:` a cell"""
     parts = parts or [C, R, A, B, X, E, "city:f0", "osm-town"]
     d = world / "counts" / day
-    write_json(d / "counts.json", {"clock": day + "T00:00:00Z", "measures": MEASURES, "quests": QUESTS,
+    write_json(d / "counts.json", {"clock": day + "T00:00:00Z", "measures": MEASURES, "quests": quests,
                                    "parts": parts})
     keys = sorted(rows)
     m = np.zeros((len(keys), 9), np.int64)
@@ -49,7 +49,7 @@ def world_day(world: Path, day: str, rows: dict, compressed: bool, gate: str = "
         m[i, 0], m[i, 4] = rows[k]
         m[i, 1] = 99  # nodes: not published
     part = np.array([parts.index(p) for p, _ in keys], np.uint32)
-    quest = np.array([QUESTS.index(q) for _, q in keys], np.uint16)
+    quest = np.array([quests.index(q) for _, q in keys], np.uint16)
     (np.savez_compressed if compressed else np.savez)(d / "counts.npz", part=part, quest=quest, m=m)
     if gate == "seed":
         write_json(d / "gate1101.json", {"x": {}})
@@ -122,6 +122,55 @@ class WorldPublishTest(WorldCase):
         self.assertEqual(self.read("children/aa/aa0000000001.json")["places"], {R: {}})
         self.assertEqual(wp.verify(self.world, self.out, self.work, self.places, sample=10), 0)
 
+    def cities(self):
+        ask = {"enabledInCountries": {"type": "AllCountries"}, "support": "full"}
+        return wp.Cities([{"id": "town", "name": "Town", "countryCodes": ["DE"]}], {"town": [B, "ab0000000009"]},
+                         [{"name": "AddBench", **ask}, {"name": "AddLit", **ask, "defaultDisabled": True},
+                          {"name": "OsmNoteQuestType", **ask, "enabledInCountries": {"type": "NoCountriesExcept", "codes": ["CA"]}}])
+
+    def town(self):
+        """the same world with the town counted"""
+        days = [{"AddBench": (5, 1), "AddLit": (4, 0)}, {"AddBench": (5, 1), "OsmNoteQuestType": (9, 0)},
+                {"AddBench": (3, 0)}, {"AddLit": (2, 2)}]
+        for i, ((day, rows), mine) in enumerate(zip(DAYS.items(), days)):
+            world_day(self.world, day, {**rows, **{("osm-town", q): v for q, v in mine.items()}}, bool(i % 2),
+                      gate="seed" if i == 0 else "days")
+        return wp.build(self.world, self.out, self.work, self.places, "2026-10-30", None, self.cities())
+
+    def test_cities(self):
+        self.build()   # without them first, as the cache and the manifest were on 2026-11-25
+        before = self.tree()
+        latest = self.town()
+        self.assertEqual((latest["city"], latest["cityParts"]), ("city/", "city-parts/"))
+        town = self.read("city/town.json")
+        self.assertEqual((town["id"], town["name"], town["first"]), ("town", "Town", "2026-10-30"))
+        self.assertEqual(town["quests"], {"OsmNoteQuestType": [[1, 9, 0], [2, 0, 0]], "AddBench": [[0, 5, 1], [2, 3, 0], [3, 0, 0]],
+                                          "AddLit": [[0, 4, 0], [1, 0, 0], [3, 2, 2]]})
+        self.assertEqual(self.read("city-trends.json")["open"], {"town": [5, 5, 3, 0]})   # AddLit is off by default
+        self.assertEqual(self.read("cities.json")["open"], {"town": 0})
+        q = self.read("city-quests.json")
+        self.assertEqual({q["quests"][int(i)]: v for i, v in q["places"]["town"].items()},
+                         {"AddBench": [0, 0, 5, 1], "AddLit": [2, 2, 4, 0]})
+        parts = self.read("city-parts/town.json")
+        self.assertEqual((parts["noFile"], parts["places"]["ab0000000009"]), (["ab0000000009"], {}))
+        self.assertEqual(parts["places"][B], {"0": [6, 0, 2, 0]})
+        after = self.tree()
+        self.assertEqual({k: v for k, v in after.items() if k in before and k != "latest.json"},
+                         {k: v for k, v in before.items() if k != "latest.json"})   # the places' files stay as they were
+        self.assertEqual(wp.verify(self.world, self.out, self.work, self.places, sample=10, cities=self.cities()), 0)
+
+    def test_a_wrong_city_file_fails_the_check(self):
+        self.town()
+        f = self.out / "city" / "town.json"
+        f.write_text(f.read_text(encoding="utf-8").replace("[0,5,1]", "[0,6,1]"), encoding="utf-8")
+        self.assertEqual(wp.verify(self.world, self.out, self.work, self.places, sample=10, cities=self.cities()), 1)
+
+    def test_a_city_the_world_does_not_count_stops_the_build(self):
+        cities = self.cities()
+        cities.keys["gone"] = wp.city_key("gone")
+        with self.assertRaisesRegex(SystemExit, "gone"):
+            wp.build(self.world, self.out, self.work, self.places, "2026-10-30", None, cities)
+
     def test_incremental_equals_whole(self):
         self.build(through="2026-11-01")
         self.build()
@@ -166,6 +215,17 @@ class WorldPublishTest(WorldCase):
         self.assertEqual((e["from"], e["quests"]), (3, {"AddLit": [[3, 2, 0]]}))
         self.assertEqual(list(wp.read_place(self.out, latest, E)), ["2026-11-02"])
         self.assertEqual(wp.verify(world, self.out, self.work, self.places, sample=10), 0)
+
+    def test_a_quest_added_by_a_release_says_from_when(self):
+        self.assertNotIn("questsFrom", self.build())
+        more = QUESTS[:1] + ["AddNew"] + QUESTS[1:]
+        world_day(self.world, "2026-11-02", {**DAYS["2026-11-02"], (A, "AddNew"): (9, 0)}, False, quests=more)
+        latest = self.build(out=self.out.with_name("o2"), work=self.work.with_name("w2"))
+        self.assertEqual(latest["questsFrom"], {"AddNew": 3})
+        # a list longer than the head read first
+        long = [f"Add{i:06}" for i in range(9000)]
+        write_json(self.world / "counts" / "2026-11-04" / "counts.json", {"clock": "x", "quests": long, "parts": []})
+        self.assertEqual(wp.counted_quests(self.world, "2026-11-04"), long)
 
     def test_only_changed_files_are_written_and_planned(self):
         self.build(through="2026-11-01")

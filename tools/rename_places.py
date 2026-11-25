@@ -6,7 +6,8 @@
 Default: all three. What it rewrites:
 
 - **config**: the `id` of every part in config/parts/*.json, and config/dropped-places.json if there is one;
-- **archive**: the keys of `parts` and `partsAged` in every data/archive/<region>/snapshots/*.json;
+- **archive**: the keys of `parts` and `partsAged` in every data/archive/<region>/snapshots/*.json, and the same in
+  data/archive-world (the cities out of the world's counts);
 - **world**: in .scratch/planet/world-1101, places.json, place-sets.json, every files/<f>/parts/*.json and every
   counts/<day>/counts.json. Cells (`city:...`) and cities (`osm-...`) keep their names. Rows, counts and outlines are not
   touched: a row holds a place-set number, counts.npz a position in counts.json's `parts`, whose order stays.
@@ -44,6 +45,8 @@ PLANET_CUT = ROOT / ".scratch" / "planet-cut"
 WORLD_DAYS = ROOT / ".scratch" / "planet-day" / "world-days"   # planet_store_day.py WDAYS
 WORLD = ROOT / ".scratch" / "planet" / "world-1101"
 ARCHIVE = ROOT / "data" / "archive"
+LOCKS = [ROOT / "data" / "pipeline.lock", ROOT / "data" / "inputs.lock",      # a city run, the inputs run
+         ROOT / ".scratch" / "world-publish" / "work" / "daily.lock"]          # a publish: it goes on after RUNNING is gone
 PARTS = ROOT / "config" / "parts"
 DROPPED = ROOT / "config" / "dropped-places.json"
 
@@ -104,7 +107,8 @@ def jobs(what: str, world: Path, archive: Path, parts: Path) -> list[tuple[Path,
         out = [(p, ID_FIELD) for p in sorted(parts.glob("*.json"))]
         return out + ([(DROPPED, ID_FIELD)] if DROPPED.exists() else [])
     if what == "archive":
-        return [(p, KEY) for p in sorted(archive.glob("*/snapshots/*.json"))]
+        return [(p, KEY) for a in (archive, archive.with_name("archive-world"))
+                for p in sorted(a.glob("*/snapshots/*.json"))]
     out = [(world / "places.json", ID_FIELD)]
     out += [(p, ID_FIELD) for p in sorted(world.glob("files/*/parts/*.json"))]
     out += [(p, STRING) for p in sorted(world.glob("counts/*/counts.json"))]
@@ -175,6 +179,9 @@ def refuse_beside_the_loop() -> None:
         raise SystemExit("a world day is running (.scratch/planet-cut/RUNNING): the rename needs a gap")
     if (PLANET_CUT / "STOPPED").exists():
         raise SystemExit("the loop is STOPPED in a day: close that day first")
+    held = [str(p) for p in LOCKS if p.exists()]
+    if held:
+        raise SystemExit(f"held: {', '.join(held)} (wait for it; if its run died, remove it by hand)")
     days = WORLD_DAYS
     still = sorted(p.name for p in days.iterdir() if p.is_dir()) if days.is_dir() else []
     if still:

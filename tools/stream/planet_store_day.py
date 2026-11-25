@@ -27,7 +27,8 @@ store (its text the reason) makes a run take no day, not a failure: a reader of 
 (tools/stream/store_lock.py). While a run works it keeps RUNNING beside the store, so a reader waits. Waits while
 today's daily run (kk-SCOpenQuests) is still going; no engine or update starts in its window (world_day.quiet).
 Log: logs/planet-store.log; each run's own prints go to logs/planet-store-<started>-<pid>.out (--console: here), so
-start it without a redirect. A day ends by writing its counts as facts (tools/facts.py). The store never moves without the world: there is no flag for that."""
+start it without a redirect. A day ends by writing its counts as facts (tools/facts.py), a run by publishing the
+gated days (run.py site, logs/site.log), also one that took no day or stopped. The store never moves without the world: there is no flag for that."""
 import argparse
 import datetime as dt
 import json
@@ -163,6 +164,16 @@ def daily_run_going():
     lines = [x for x in SCHED.read_text(encoding="utf-8", errors="replace").splitlines() if x.startswith(f"[{today}")]
     started = any("=== download" in x for x in lines)
     return started and not any("update done" in x or "] ERROR:" in x for x in lines[-5:])
+
+
+def inputs_going():
+    """`run.py inputs` is fetching the day's Europe clip, planet diff or notes dump: its lock names a live process"""
+    import run as runmod
+    try:
+        pid = int(runmod.INPUTS_LOCK.read_text(encoding="utf-8").strip())
+    except (OSError, ValueError):
+        return False
+    return runmod.pid_alive(pid)
 
 
 def monthly_going():
@@ -466,6 +477,20 @@ def write_facts() -> None:
         log(f"facts: not written ({e}); python tools/facts.py world makes up for it")
 
 
+def publish() -> None:
+    """the gated days go up: the place files, then the site (run.py site). After RUNNING is gone: it reads only the
+    world's gated counts, so a reader of the store need not wait for the upload (half an hour). Never a stop: `run.py
+    inputs` (11:15) and the next run of this loop make up for a failure."""
+    t = time.time()
+    try:
+        with open(ROOT / "logs" / "site.log", "ab") as out:
+            p = subprocess.run([sys.executable, str(ROOT / "run.py"), "site"], stdout=out, stderr=subprocess.STDOUT,
+                               cwd=ROOT, timeout=3 * 3600)
+        log(f"publish: exit {p.returncode} in {time.time() - t:.0f} s (logs/site.log)")
+    except (OSError, subprocess.TimeoutExpired) as e:
+        log(f"publish: not done ({e}); python run.py site makes up for it")
+
+
 def run_quests() -> Path:
     sys.path.insert(0, str(ROOT))
     import run as runmod
@@ -511,6 +536,12 @@ def main():
             log("today's daily run is going: waiting for it (up to 3 h)")
         time.sleep(60)
         waited += 1
+    waited = 0
+    while not a.no_wait and inputs_going() and waited < 60:
+        if waited == 0:
+            log("today's inputs are being fetched: waiting for them (up to 1 h)")
+        time.sleep(60)
+        waited += 1
     # the monthly planet job and this one both need tens of GB at once: wait for it, or leave the day to the next
     # run (each run catches up every day it finds missing)
     waited = 0
@@ -541,7 +572,8 @@ def main():
         n = days(a.max_days)
     finally:
         RUNNING.unlink(missing_ok=True)
-    log(f"planet store run ended: {n} days")
+        log(f"planet store run ended: {n} days")
+        publish()
 
 
 if __name__ == "__main__":

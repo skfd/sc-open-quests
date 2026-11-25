@@ -154,6 +154,7 @@ class Rename(unittest.TestCase):
         cut.mkdir()
         was, rp.PLANET_CUT = rp.PLANET_CUT, cut
         days, rp.WORLD_DAYS = rp.WORLD_DAYS, cut / "world-days"
+        locks, rp.LOCKS = rp.LOCKS, [cut / "daily.lock"]
         try:
             with self.assertRaises(SystemExit):   # no HOLD
                 rp.refuse_beside_the_loop()
@@ -163,13 +164,13 @@ class Rename(unittest.TestCase):
             with self.assertRaises(SystemExit):
                 rp.refuse_beside_the_loop()
             (cut / "world-days" / "2026-11-24").rmdir()
-            for name in ("STOPPED", "RUNNING"):
+            for name in ("STOPPED", "RUNNING", "daily.lock"):
                 (cut / name).write_text("x")
                 with self.assertRaises(SystemExit):
                     rp.refuse_beside_the_loop()
                 (cut / name).unlink()
         finally:
-            rp.PLANET_CUT, rp.WORLD_DAYS = was, days
+            rp.PLANET_CUT, rp.WORLD_DAYS, rp.LOCKS = was, days, locks
 
     def test_a_hard_linked_copy_keeps_the_old_text(self):
         import os

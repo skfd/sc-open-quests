@@ -78,6 +78,13 @@ The task is named `kk-SCOpenQuests`. It starts when available if the machine was
 is stopped after two hours.
 
 ```powershell
+.\schedule-inputs-add.ps1    # run.py inputs, daily at 11:15, appends to logs\inputs.log
+```
+
+Publishing has no task of its own: the world loop ends with `run.py site` (the place files on sc-data, then the site's
+data, commit, push and deploy; `logs\site.log`), and `inputs` runs it again for what the loop could not publish.
+
+```powershell
 .\schedule-planet-add.ps1      # run.py planet on the first Monday of each month at 07:30, appends to logs\planet.log
 .\schedule-planet-remove.ps1
 ```
@@ -91,6 +98,8 @@ removes the old `kk-SCOpenQuests-weekly`. It never holds the pipeline lock acros
 
 - Code: [GPL-3.0](LICENSE). The engine links StreetComplete's source (GPL-3.0), so the whole project
   is GPL-3.0.
+- Published counts (`docs/data`, the place files): ODbL 1.0, as the data they are made from. The site's
+  privacy and terms pages are `docs/privacy/` and `docs/terms/`.
 - Map data: © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright), ODbL 1.0.
   Extract by [Geofabrik](https://download.geofabrik.de/).
 - City boundaries: from the OpenStreetMap relations listed in `config/cities.json`.

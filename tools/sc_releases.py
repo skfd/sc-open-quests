@@ -7,7 +7,7 @@ keeps the ones that are neither drafts nor prereleases (by flag, or by a tag suc
 GitHub has as a full release), and writes
 {"releases": [{"version": "v63.4", "date": "2026-07-28"}, ...]} oldest first.
 
-`run.py check-release` (the scheduled update's last step) calls stable_releases() and write() too, and
+`run.py check-release` (the last step of `run.py inputs`) calls stable_releases() and write() too, and
 compares the newest with the pinned tag.
 """
 import json
