@@ -877,10 +877,12 @@ its own static page or a Worker that rewrites the head; the state is in the quer
 - **Owner, 11-25: "we should use this one yes".** On `share-previews`: `docs/img/share-card.png` is this card, its `?v=`
   and alt text follow it (`python design/project_card.py && python design/render_share_card.py`, in a gap). The three
   tests of `tests/test_preview_worker.py` pass there; the rest of the suite was not run. **Not merged: merging publishes.**
-- **Open:** (1) it does not redraw itself and carries a date: once per release, monthly or daily; (2) the page's title
-  and `og:title` still say "Canada and Europe" beside a card of the world (the owner's wording); (3) at 360 px wide the
-  headline and left column read, the small labels do not; a centre square crop loses the "577". The branch is 88 commits
-  behind main.
+- **Decided (owner, 11-25):** redrawn **monthly** and on release day; the title is **"Open StreetComplete quests around
+  the world"** (title, `og:title`, the page's heading; the descriptions say "places around the world", Claude's words), on
+  the branch; **merged on release day, after that day's redraw**, so not before.
+- **Left:** (1) nothing redraws it monthly yet: a step or task to write once merged, in a loop gap; (2) the branch's tests
+  were not run after the title change (the loop was running); (3) it was 88 commits behind main on 11-25 (`docs/index.html`,
+  HANDOFF and DESIGN change on both sides). At 360 px wide the small labels do not read; a centre square crop loses "577".
 
 ### Share previews: built on `share-previews`, not merged, not live (2026-11-23, afternoon; owner: "build it, i will upgrade account later")
 
