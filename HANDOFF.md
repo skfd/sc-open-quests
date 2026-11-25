@@ -3136,6 +3136,14 @@ wording and tab structure as a first draft open to change, not as decided design
     10,000 m² in the registry: 407, of which 20 lie in no other part. Proposal: 10,000 m² for squares, no size rule for
     other types (88 non-squares in the registry are under 50,000). Near-duplicates (overlap over 80%): 19 pairs of 4,214,
     6 of them in Guelph, where 18 of 40 parts are "Neighbourhood Group" and the like. `tg.py`, `dups.py`.
+  - **Owner (2026-11-24): drop squares under 10,000 m² (67,106 of 70,684), but only if another place covers them; nothing
+    built.** Checked against every countable non-square outline (`cover_world.py`, `cover_rep.py`, result
+    `cover_world.pkl`): 13,601 lie in a neighbourhood-level place (neighbourhood, macrohood, microhood), 50,199 only in a
+    locality or localadmin, 3,297 only in a county, region or country, 9 in nothing (5 Norway, 1 each MX, GI, KR, PH). County
+    and above were tested by a point inside the square, the rest by outline (over 95%). Ours: of the 407, 20 are in no
+    neighbourhood-level place (Garden Square, Veterans Square and so on), 13 of them in a locality, 7 in a county
+    (Kingston, London and others are counties in Overture). Their own city page counts all 20. Open: what counts as
+    "another region" (any place: 9 stay; a city or smaller: 3,306 stay; a neighbourhood: 53,505 stay).
 - **Squares, safety check (owner leans to drop, wants a check so a place like Superilla del Poblenou is not lost; not decided).**
   Size alone fails: median 1,064 m2, 87 are 10 ha or more, among them Tiananmen and empty plazas. Two checks on every square:
   OSM says residential (19 of the 8,892 whose tags were read: 0.5 ha+, or 20+ building quests, or 100+ open) or building
