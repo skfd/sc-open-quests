@@ -233,9 +233,9 @@ def english(m, cc=None):
     return m["en"] if m["en"] and m["en"] != m["name"] else None
 
 
-def build(rows, counted):
+def build(rows, counted, id_of):
     """-> (index dict, {path: file dict}, stats)."""
-    by_gers = assign(rows)
+    by_gers = assign(rows, id_of)
     homes = country_roots(rows)
     files = {}
     for r in rows:
@@ -409,7 +409,8 @@ def main(argv=None):
     rows = read_divisions(a.src)
     print(f"{len(rows)} divisions with an area", flush=True)
     attach_sc(rows)
-    assign(rows, place_ids.load().id_of)
+    id_of = place_ids.load().id_of
+    assign(rows, id_of)
     for r in rows:
         if not r["files"]:   # neither SC nor Overture names a country there (Senkaku, the Spratlys)
             print(f"left out, no country: {r['gers']} {r['subtype']} {r['name']!r}")
@@ -417,7 +418,7 @@ def main(argv=None):
     print(f"filed differently from Overture's country: {moved}; under two or more countries: "
           f"{sum(1 for r in rows if len(r['cs']) > 1)}", flush=True)
     counted, report = match_cities(rows, cities)
-    index_countries, files, stats = build(rows, counted)
+    index_countries, files, stats = build(rows, counted, id_of)
     write(a.out, overture, index_countries, files)
     found = sum(1 for l in report if "NOT FOUND" not in l and "already" not in l)
     print(f"{len(files)} files, {len(index_countries)} countries; cities matched {found}/{len(cities)}; "

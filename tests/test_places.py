@@ -58,7 +58,7 @@ class BuildTest(unittest.TestCase):
         places.assign(rows, place_ids.old_id)
         counted, self.report = places.match_cities(rows, [
             {"id": "metro", "name": "Metro", "relation": 42, "countryCodes": ["ZZ", "ZZ-P"]}])
-        self.index, self.files, self.stats = places.build(rows, counted)
+        self.index, self.files, self.stats = places.build(rows, counted, place_ids.old_id)
 
     def test_region_file_parents_first_and_skip_arealess_ancestors(self):
         f = self.files["zz/bbbbbbbb0000.json"]
@@ -119,7 +119,7 @@ class CountriesTest(unittest.TestCase):
             r["sc"] = sc[r["gers"]]
         self.by = {r["name"]: r for r in rows}
         places.assign(rows, place_ids.old_id)
-        self.index, self.files, _ = places.build([r for r in rows if r["files"]], {})
+        self.index, self.files, _ = places.build([r for r in rows if r["files"]], {}, place_ids.old_id)
 
     def ids(self, path):
         return [p[1] for p in self.files[path]["places"]]

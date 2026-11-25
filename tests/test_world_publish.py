@@ -346,7 +346,7 @@ class UploadTest(WorldCase):
         self.assertEqual(wp.upload(self.out, self.work), 1)
         self.assertEqual(self.ran, [])
 
-    def test_gone_files_are_deleted_before_latest_json(self):
+    def test_gone_files_are_deleted_after_latest_json(self):
         self.assertEqual(wp.upload(self.out, self.work), 0)
         idx = json.loads((self.places / "index.json").read_text(encoding="utf-8"))
         idx["countries"] = idx["countries"][:1]
@@ -355,8 +355,8 @@ class UploadTest(WorldCase):
         self.ran.clear()
         self.assertEqual(wp.upload(self.out, self.work), 0)
         kinds = [r[0] for r in self.ran]
-        self.assertEqual(kinds.count("deletefile"), 2)
-        self.assertEqual(kinds[-1], "copyto")
+        self.assertEqual(kinds.count("delete"), 1)            # both in one batch
+        self.assertLess(kinds.index("copyto"), kinds.index("delete"))   # latest.json first
         self.assertEqual(wp.plan(self.out, self.work)[:2], ([], []))
 
 
