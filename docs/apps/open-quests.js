@@ -17,6 +17,9 @@
 //
 // A port of the Android widget's model (Summary.kt, Movers.kt), pinned on the same fixtures by
 // ios/test/model.test.js. GPL-3.0. Quest names are StreetComplete's (Tobias Zwick and contributors).
+//
+// Not made by the StreetComplete project. The script fetches only from the two hosts below and sends
+// nothing about you: https://street-complete-statistics.comentality.com/privacy/ and .../terms/
 
 const BASE = "https://street-complete-statistics.comentality.com";
 // The world's daily counts, which the site reads too.

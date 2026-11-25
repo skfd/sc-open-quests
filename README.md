@@ -98,6 +98,8 @@ removes the old `kk-SCOpenQuests-weekly`. It never holds the pipeline lock acros
 
 - Code: [GPL-3.0](LICENSE). The engine links StreetComplete's source (GPL-3.0), so the whole project
   is GPL-3.0.
+- Published counts (`docs/data`, the place files): ODbL 1.0, as the data they are made from. The site's
+  privacy and terms pages are `docs/privacy/` and `docs/terms/`.
 - Map data: © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright), ODbL 1.0.
   Extract by [Geofabrik](https://download.geofabrik.de/).
 - City boundaries: from the OpenStreetMap relations listed in `config/cities.json`.
