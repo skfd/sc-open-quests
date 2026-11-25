@@ -3125,6 +3125,18 @@ wording and tab structure as a first draft open to change, not as decided design
   main, so the dropped column reaches the site then. Docker is running again (`onagri-pg` up).
   Still the city run's: the site deploy (`publish_cloud`) and the city counts. Still open: the owner's word on switching the
   city pages to the world; a new home for the deploy; then the city task off.
+- **The city pages are switched to the world's counts on main (owner, 11-25, 03:20: "yes switch"); fb0d8422 code, 20e9fe45 data;
+  not pushed.** The 12:15 city run pushes and deploys it. `run.py history` for `docs/data` first writes the world's missing
+  days (`data/archive-world`, 19 s each) and always joins them; `migrate_archive`, which each city `count` runs first, would have
+  moved the world's published snapshots into the city archive: it now skips them. 273 tests OK; a second build changes 0 files.
+  Against the files before: 52,728 series before 11-01 identical, no date and no quest lost, Europe's 11-24 +6 of 19,335,063.
+  Wording: the footer says "OpenStreetMap at 00:00 UTC that day", neighbourhoods "from the daily count of the whole world".
+  Toronto, Casa Loma, Berlin, Paris and the compare page opened locally, no page error.
+  - **The pages are one day older for Europe until the deploy moves:** at 12:15 the newest gated day is yesterday's.
+  - The city run still counts all its regions: nothing but `world_compare.py` reads them now.
+  - If 12:15 goes wrong: `git revert 20e9fe45 fb0d8422` brings the city run's numbers back (the archive is whole).
+  Next: the site deploy's new home (after the world's day closes, so the pages are the same evening's), `world_compare.py` rerun
+  in a gap, then the city task off.
 
 ## City neighbourhoods on the world's counts, and places with nothing open (2026-11-24, evening; nothing built)
 
