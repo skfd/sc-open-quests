@@ -3064,7 +3064,18 @@ wording and tab structure as a first draft open to change, not as decided design
   the world's alone. Seven tests OK on made-up data; **not yet run on the real counts** (waits for the loop's day). Nothing
   calls it and `docs/data` is refused without `--live`. The rule for which quests a city counts matches the newest
   snapshot of all 147 cities. The world has no `taggedNodes`/`taggedWays`/`openAllNotes` (the site reads none of them).
-  Next: build into a scratch folder, compare with today's files, then ask the owner before anything goes live.
+  **Run on the real counts 11-25, 01:31-01:45, beside no loop (into a session scratch folder; nothing of main or the site
+  written): it agrees.** 23 days in about 5 min, the build 2 min 36 s, 4,654 files. Against `docs/data`: all 52,728 city
+  series before 11-01 identical; the quest sets and the null pattern identical in all 147 cities; Europe's four regions
+  on the same day, 11-03 to 11-23: sums of `open` +4 to +10 of 19 million, 99.7% of cells equal, `agedOnly` 99.97 to 100%;
+  the other regions (world D+1 against city D) -0.001 to +0.005%, 98 to 99% equal (93% on 11-04, few cities). **11-01 and 11-02
+  step: the city run was on StreetComplete 64.0 on 11-01 and part of it on 11-02, the world is on 64.1 from 11-01**
+  (+0.27% in Europe, nearly all `AddAcceptsCards` and `AddOpeningHours`), so the release step in the charts moves to 11-01.
+  The world fills the days the city run missed (Toronto: 161 dates, 157 before). Parts: the same 4,214 files, the same 86
+  empty, world 11-23 against city 11-22: 200,271 cells equal, 950 differ, sums +571 of 23.8 million. One quest left out:
+  Bratislava's `AddCycleway` (open in the world there, not a quest the city counts). Full tests on the branch: 271 OK.
+  DATA-FORMAT.md written. `coverage.json`, `quest-releases.json` and `sc-releases.json` are not part of this build. **Not done:
+  anything live; the dates' guard needs 11-24 closed. Next: the owner's word on going live.**
 - **Day 11-24 starved, 11-24 19:05 (not stopped yet; the engine room gives up about 19:23).** Tier 2 `new`, about 112 of 127 groups;
   no engine since 18:23: 10 GB of commit left, 16 needed (8 and 8 kept back), disk 42 GiB. Commit was 98.6 of 108.6 GB at 19:04:
   the loop's own python 16.9, 54 claude processes 16, pools 23, Windows Terminal 4.5, WSL/Docker 6 (one container,
