@@ -3193,10 +3193,11 @@ wording and tab structure as a first draft open to change, not as decided design
     `place=neighbourhood`.
   - **Owner (2026-11-24): fix OSM where it should be fixed, in cowork; here, do the proposal.** The OSM side is handed
     to a session in ~/Code/cowork (`osm-duplicate-neighbourhoods/BRIEF.md`; nothing edited in OSM). Here: branch
-    `dropped-places` (worktree `../sc-open-quests-dropped`, sparse: config, tools, tests), commit fbd81524, **not merged and
-    not tested**: `config/dropped-places.json` (16), the registry without them, `run.dropped_places`, readers in
-    `add_parts.py` and `places.py`, `tests/test_dropped_places.py`, DATA-FORMAT "Dropped places". Left: the tests in a gap in the
-    loop, the owner's look at the list, then merge, rebuild the name layer, publish (16 deletions). Merging makes the next
+    `dropped-places` (worktree `../sc-open-quests-dropped`, sparse: config, tools, tests), commit fbd81524, **not merged; its
+    own tests and test_parts and test_places pass (27, 2026-11-24 22:41, in the loop's gap); the whole suite and the real
+    name-layer build with the list have not been run**: `config/dropped-places.json` (16), the registry without them, `run.dropped_places`, readers in
+    `add_parts.py` and `places.py`, `tests/test_dropped_places.py`, DATA-FORMAT "Dropped places". Left: the owner's look at the list, the whole suite at merge, then merge, before `place-ids`, rebuild the name
+    layer, publish (16 deletions). Merging makes the next
     daily run stop the series of the 16 and drop their files; the archive keeps the old counts. The squares can use the same file later (`why` is
     `duplicate` now, and the file's checks must learn the new reason).
 - **Squares, safety check (owner leans to drop, wants a check so a place like Superilla del Poblenou is not lost; not decided).**
