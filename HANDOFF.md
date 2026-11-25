@@ -3146,10 +3146,15 @@ wording and tab structure as a first draft open to change, not as decided design
   history, commit, push and deploy if the site lacks the day or docs/ changed. `inputs` (11:15) runs it again for what failed.
   Tasks `kk-SCOpenQuests-site` and `-worldpub` are removed (XML in `~/Code/.task-backups/*-removed-2026-11-25.xml`). The 20 h and 36 h rules
   went: **a committed docs/ change goes live at the next run.** A catch-up of several days publishes once, at its end.
-  **Step 2, under way (branch `city-from-world`):** the 2017 to 2026-10-31 city history a fixed file, the days from 11-01 read by the page from
-  sc-data (the publisher adds the 147 `osm-<city>` places and a small summary for the list, trends and compare). Additive first:
-  **both widgets read `data/cities.json`, `history/`, `parts/` on the site, so those files go on until the widgets are moved**
-  (Android and the Scriptable script, `../sc-open-quests-widget`).
+  **Step 2, on main (1a7dd1f4, 11-25 12:06):** the page joins the history file's dates before 11-01 to the world's days on sc-data;
+  `world_publish.py` writes `city/`, `city-parts/`, `cities.json`, `city-trends.json`, `city-quests.json` (DESIGN.md, "The counted
+  cities"). Without them (or with sc-data down) the page falls back to today's files. Compared in a browser for all 147 cities,
+  4,214 parts, 193 compare files, trends and totals: 44,355,752 values, 0 different (`.scratch/city-test`). 285 tests OK.
+  **To do after the 12:15 run, before 14:45:** `planet_store_day.py --max-days 0 --no-wait --console` (tries the loop's publish for real; the
+  first build with cities rebuilds the publisher's events cache, all gated days), then check city files live.
+  **Old files still made daily (history/, parts, compare, trends, snapshots): both widgets read `data/cities.json`, `history/`, `parts/` on
+  the site** (`../sc-open-quests-widget`: Android Repository.kt, ios/open-quests.js). The daily build, commit and deploy end once
+  the widgets read sc-data, or at the owner's word that they may go stale. Until then step 2's result is not had.
 - **The site's deploy is its own run, and the world's city pages are live (owner, 11-25: "yes"; 194d497b, 44ec7856).** `run.py site`, task
   `kk-SCOpenQuests-site`, hourly 07:20 to 23:20, log `logs/site.log`: when the newest gated day is not the one in
   `data/site-deployed.json` (not committed) it does history, commit, push (now also with no new data) and deploy; a change of
