@@ -3173,8 +3173,9 @@ wording and tab structure as a first draft open to change, not as decided design
   **Both widgets read sc-data (owner, 11-25: "yes"; `../sc-open-quests-widget` c3cf6d6):** compared with the old files for 147 cities and
   4,214 parts, 10.9 million values, 0 different; Android on the emulator, Scriptable in the preview. APK and script in ~/Dropbox/my-apps.
   They still read the site's `data/cities.json`, `quests.json`, `parts/` and icons.
-  **Left:** (1) the owner's OK to write `docs/apps` (`node tools/apps-page.js ../sc-open-quests/docs/apps` in the widget repo; its check fails
-  until then); (2) the owner's phones on the new builds; (3) then the code: `run.py history` writes `history/`, part series, `trends`, `compare`,
+  **`docs/apps` has the new script (285f9061; owner, 11-25: "yes"),** the widget repo's checks all ok; live with the next `run.py site`
+  (tonight's loop), so check `/apps/open-quests.js` after it. iPhones that have the old script keep it until it is downloaded again.
+  **Left:** (1) the owner's phones on the new builds; (2) then the code: `run.py history` writes `history/`, part series, `trends`, `compare`,
   snapshots only up to 10-31 (frozen) and the lists only when SC, config or parts change, so a day needs no commit and no deploy.
 - **The site's deploy is its own run, and the world's city pages are live (owner, 11-25: "yes"; 194d497b, 44ec7856).** `run.py site`, task
   `kk-SCOpenQuests-site`, hourly 07:20 to 23:20, log `logs/site.log`: when the newest gated day is not the one in
