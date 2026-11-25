@@ -861,7 +861,7 @@ its own static page or a Worker that rewrites the head; the state is in the quer
   cities (about 4,350); Latin, Cyrillic and Greek names; the general card for the rest; no rendering on demand at
   release. Also the owner's: what happens at the Workers limit, and the wording "Canada and Europe".
 
-### General card: the world's numbers (2026-11-25, 13:31; drawn, waiting on the owner)
+### General card: the world's numbers (2026-11-25, 13:31; settled by the owner, on `share-previews`, not merged)
 
 - `design/project-card.svg` and `.png` (2400x1260), written by `design/project_card.py` from the published files on
   sc-data: 576,650,884 open on 2026-11-24 (28,599,114 resurvey), 159 types, 248 countries and dependencies, the six
@@ -874,8 +874,13 @@ its own static page or a Worker that rewrites the head; the state is in the quer
   counted. Rounded to a million the total stands. Gaps (land in no outline) not measured.
 - The first world day is 11-01, so the world has no 2017 line and the strip is flat. Owner, 11-25: ok, "at least
   it looks nice" (taken as: keep it; the version with a bar per day is in git at `f03d87c9`).
-- An illustration so far: whether it becomes the general card of the share previews is the owner's call. Nothing on
-  `share-previews` or in `docs/` changed.
+- **Owner, 11-25: "we should use this one yes".** On `share-previews`: `docs/img/share-card.png` is this card, its `?v=`
+  and alt text follow it (`python design/project_card.py && python design/render_share_card.py`, in a gap). The three
+  tests of `tests/test_preview_worker.py` pass there; the rest of the suite was not run. **Not merged: merging publishes.**
+- **Open:** (1) it does not redraw itself and carries a date: once per release, monthly or daily; (2) the page's title
+  and `og:title` still say "Canada and Europe" beside a card of the world (the owner's wording); (3) at 360 px wide the
+  headline and left column read, the small labels do not; a centre square crop loses the "577". The branch is 88 commits
+  behind main.
 
 ### Share previews: built on `share-previews`, not merged, not live (2026-11-23, afternoon; owner: "build it, i will upgrade account later")
 
