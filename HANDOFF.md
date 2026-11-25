@@ -4276,5 +4276,11 @@ at once to 0.28 GB (40.8 GiB).
 - **Not verified:** nothing was opened in a browser and the Kotlin was not compiled (the world loop was running);
   only tag balance and LF were checked. Merging our branch publishes at the next daily run, since it syncs all of
   `docs/`. Merge both branches together, or the `--check` of `docs/apps` goes stale.
-- **For the owner to read before the merge:** whether GoatCounter's "individual pageviews" setting is off (the page
+- **Merged 2026-11-25, afternoon (owner: "merge"):** both branches are on their mains (ours 21e105f8, the widget's
+  34b0c50, fast-forward) and deleted, the worktree removed; `apps-page.js --check docs/apps` passes. Both pages were
+  then opened headless from `docs/` (phone light, desktop dark: no overflow, no failed request; shots in
+  `.scratch/legal/`). **Live with the daily run of 11-26, 12:15**, which pushes main and syncs `docs/`; after it,
+  open `/privacy/` and `/terms/` on the live site and the footer links. Still not compiled: the two buttons in the
+  widget's `MainActivity.kt`. Neither repo was pushed by hand.
+- **Still for the owner:** whether GoatCounter's "individual pageviews" setting is off (the page
   assumes the default); no governing-law clause was written; contact is a public GitHub issue.
