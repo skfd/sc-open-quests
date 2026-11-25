@@ -4265,4 +4265,16 @@ at once to 0.28 GB (40.8 GiB).
 - **Not needed:** a cookie banner (returns only with ads or cookie-based analytics); DMCA, children's, account or
   refund terms; an imprint.
 - **Open:** whether to ask StreetComplete's maintainer about the name and icon in the Play listing (trademark status
-  not looked up). Next step is the owner's word to draft the pages.
+  not looked up).
+- **Built 2026-11-25 on branch `legal-pages` (c35215ed), not merged, not live (owner: "build the pages please"):**
+  worktree `~/Code/sc-open-quests-legal` (sparse: `docs/*.html`, `docs/apps`, `docs/img`, the md files; new paths
+  there need `git add --sparse`). `docs/privacy/`, `docs/terms/`, their `docs/legal.css`; a footer paragraph in
+  `docs/index.html` (independent, privacy, terms, ODbL); the ODbL line in `DATA-FORMAT.md` and README. GoatCounter's
+  terms were read (help/privacy, dated 2025-06-08) and the page words them as its own claims. The widget repo has a
+  `legal-pages` branch too (34b0c50: apps page generator footer, Scriptable header, two buttons in
+  `MainActivity.kt`); `docs/apps/` on our branch is regenerated from it.
+- **Not verified:** nothing was opened in a browser and the Kotlin was not compiled (the world loop was running);
+  only tag balance and LF were checked. Merging our branch publishes at the next daily run, since it syncs all of
+  `docs/`. Merge both branches together, or the `--check` of `docs/apps` goes stale.
+- **For the owner to read before the merge:** whether GoatCounter's "individual pageviews" setting is off (the page
+  assumes the default); no governing-law clause was written; contact is a public GitHub issue.
