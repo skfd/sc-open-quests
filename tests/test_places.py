@@ -6,6 +6,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 
+import place_ids  # noqa: E402
 import places  # noqa: E402
 
 
@@ -43,18 +44,18 @@ def world():
 
 class PlaceIdTest(unittest.TestCase):
     def test_first_twelve_hex_digits(self):
-        self.assertEqual("087cbb33e54d", places.place_id("087cbb33-e54d-4a5b-9c1d-000000000000"))
+        self.assertEqual("087cbb33e54d", place_ids.old_id("087cbb33-e54d-4a5b-9c1d-000000000000"))
 
     def test_shared_place_id_fails(self):
         rows = world() + [row("eeeeeeee-0000-9999-0000-000000000007", "Twin", "locality", "ZZ", [C])]
         with self.assertRaises(SystemExit):
-            places.assign(rows)
+            places.assign(rows, place_ids.old_id)
 
 
 class BuildTest(unittest.TestCase):
     def setUp(self):
         rows = world()
-        places.assign(rows)
+        places.assign(rows, place_ids.old_id)
         counted, self.report = places.match_cities(rows, [
             {"id": "metro", "name": "Metro", "relation": 42, "countryCodes": ["ZZ", "ZZ-P"]}])
         self.index, self.files, self.stats = places.build(rows, counted)
@@ -117,7 +118,7 @@ class CountriesTest(unittest.TestCase):
         for r in rows:
             r["sc"] = sc[r["gers"]]
         self.by = {r["name"]: r for r in rows}
-        places.assign(rows)
+        places.assign(rows, place_ids.old_id)
         self.index, self.files, _ = places.build([r for r in rows if r["files"]], {})
 
     def ids(self, path):

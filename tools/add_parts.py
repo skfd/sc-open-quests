@@ -47,6 +47,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import run  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import place_ids  # noqa: E402
 
 IMAGE = "name-ru-repair-osmium"
 PART_SUBTYPES = ("borough", "locality", "macrohood", "neighborhood", "microhood")
@@ -60,8 +62,15 @@ MAX_COVER = 0.9
 KEPT_TAGS = ("boundary", "place", "admin_level")
 
 
+_registry = None
+
+
 def place_id(gers: str) -> str:
-    return gers.replace("-", "")[:12]
+    """the place's public id (the registry's; a place it lacks stops the run)"""
+    global _registry
+    if _registry is None:
+        _registry = place_ids.load()
+    return _registry.id_of(gers)
 
 
 # --- Overture ------------------------------------------------------------------------------------

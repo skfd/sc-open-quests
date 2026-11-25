@@ -30,18 +30,13 @@ import unicodedata
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "tools"))
+import place_ids  # noqa: E402
+
 SUBTYPES = ["country", "dependency", "region", "county", "localadmin", "locality",
             "borough", "macrohood", "neighborhood", "microhood"]
 ST = {s: i for i, s in enumerate(SUBTYPES)}
 NO_REGION = "_"
-
-
-def place_id(gers):
-    """First 12 hex digits of the GERS id, dashes removed."""
-    pid = gers.replace("-", "")[:12].lower()
-    if not re.fullmatch(r"[0-9a-f]{12}", pid):
-        raise ValueError(f"not a GERS id: {gers!r}")
-    return pid
 
 
 def r4(v):
@@ -173,14 +168,15 @@ def countries(rows, by_gers):
 
 # --- building ------------------------------------------------------------------------------------
 
-def assign(rows):
-    """Give every place its id, parent (nearest ancestor with an area) and file (cc, region id)."""
+def assign(rows, id_of):
+    """Give every place its id (id_of its GERS id: the registry's), parent (nearest ancestor with an
+    area) and file (cc, region id)."""
     by_gers = {}
     seen = {}
     for r in rows:
         if r["gers"] in by_gers:
             raise SystemExit(f"duplicate GERS id {r['gers']}")
-        r["id"] = place_id(r["gers"])
+        r["id"] = id_of(r["gers"])
         if r["id"] in seen:
             raise SystemExit(f"place id {r['id']} is shared by {seen[r['id']]} and {r['gers']}")
         seen[r["id"]] = r["gers"]
@@ -393,7 +389,7 @@ def write(out_dir, overture, index_countries, files):
         p.write_text(dumps_rows({"schema": 1, "region": f["region"]}, "places", f["places"]),
                      encoding="utf-8", newline="\n")
     (out_dir / "index.json").write_text(
-        dumps_rows({"schema": 1, "overture": overture}, "countries", index_countries),
+        dumps_rows({"schema": 1, "overture": overture, "ids": "guid"}, "countries", index_countries),
         encoding="utf-8", newline="\n")
     for d in sorted((p for p in out_dir.iterdir() if p.is_dir()), reverse=True):
         if not any(d.iterdir()):
@@ -413,7 +409,7 @@ def main(argv=None):
     rows = read_divisions(a.src)
     print(f"{len(rows)} divisions with an area", flush=True)
     attach_sc(rows)
-    assign(rows)
+    assign(rows, place_ids.load().id_of)
     for r in rows:
         if not r["files"]:   # neither SC nor Overture names a country there (Senkaku, the Spratlys)
             print(f"left out, no country: {r['gers']} {r['subtype']} {r['name']!r}")
