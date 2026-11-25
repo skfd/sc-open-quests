@@ -4299,3 +4299,5 @@ at once to 0.28 GB (40.8 GiB).
   that about 1.13M files are uploaded again and old links break). Read as: the rename and the upload, under HOLD, after the
   tests pass. **The deletes of the old bucket files were not named in that question: ask before them**, after the `--dry-run`. `upload`
   as written refuses when the deletes pass `--max-delete`, so it needs a way to upload and keep the old files first.
+- **Order in tonight's gap agreed with the session "City machinery deprecation readiness" (11-25, 17:40):** `freeze-city-files` first; `place-ids`' tests
+  wait for its "merged" or "not merged" (119a95b0), then main is merged into `place-ids` and the whole suite is run. Nothing of `place-ids` runs before.
