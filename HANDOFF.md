@@ -3119,6 +3119,14 @@ wording and tab structure as a first draft open to change, not as decided design
     other microhoods, 14 counties), from a sample of 24 mostly real: RT blocks in Indonesia, farms and hamlets; 4 places are under 1 m² (degenerate outlines, one of them a square). Registry: 334 of 469 squares, and 3 others.
   - A cutoff for squares alone (not for other subtypes) is what the numbers point to; 8,804 squares are 5,000 m² or more
     (Alexanderplatz 78,656; the largest, in Uzbekistan, 7.8 km²). 324 are 50,000 m² or more.
+- **Squares, safety check (owner leans to drop, wants a check so a place like Superilla del Poblenou is not lost; not decided).**
+  Size alone fails: median 1,064 m2, 87 are 10 ha or more, among them Tiananmen and empty plazas. Two checks on every square:
+  OSM says residential (19 of the 8,892 whose tags were read: 0.5 ha+, or 20+ building quests, or 100+ open) or building
+  quests are 20+ and at least half (34); with one that OSM now tags suburb, 46 squares, none in our cities; about 23 look like
+  places people live (a guess from names, tags and numbers). Proposed: a list of kept ids, reviewed once by the owner, checked
+  again only when the Overture release changes. Blind spot: an estate with neither the tag nor open building quests.
+  Superilla: residential, 15.1 ha, 1,345 open (578 tree leaf type); 83% in el Parc i la Llacuna del Poblenou, 17% in el Poblenou (both counted).
+  Scripts and pages: `.scratch/parts-vs-world/` (`area.py`, `check.py`, `keep_page.py`, `keep.html`).
 - Name in the mockups: "Appellplatz" was the real OSM name of a square in Berlin (w26443399, beside the defence ministry),
   one of the 41. A bad example; the mockups use Meyerinckplatz now. The place and its data are unchanged.
 
