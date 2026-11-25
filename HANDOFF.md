@@ -4044,3 +4044,19 @@ at once to 0.28 GB (40.8 GiB).
     11-16. Release 2's monthly backfill recounts on whatever outlines are pinned then.
   - *A reseed costs about 4.5 h* (11-01: 23:27-03:49, HANDOFF "Step 3, the seed at 11-01"), so a monthly move with a reseed is
     affordable on paper. Disk and memory as of tonight are not (40.8 GiB, 9 GB of commit).
+- **Owner, 2026-11-24, 20:20 (discussion, nothing built):** no recount, **the jump in a series at a move is accepted**; 11-18.0 is skipped
+  ("we can skip it and do the reseed on next one", read as 12-16.0). Ids: Overture's will not do, "more permanent ids maybe name based
+  or our internal ones?". Starting point, not a command: at each release match places agentically, suggest replacements for
+  deleted ones, mindful of widgets, place links and social shares.
+  - **Measured for it (`match.py`, 10-21 -> 11-18):** of 1,477 lost ids 676 have the same OSM object, 159 the same name within about
+    2 km, 642 neither. Of the 642, 124 overlap some place (bbox IoU 0.2+, 39 of them 0.5+), 518 overlap none, and for 510 of those the
+    parent lives on. So judgement is needed for some hundreds a month, not a million. 1,009 OSM objects ended in the month.
+  - **Names are worse as ids:** 48,730 places share name and parent with another, 351,901 name and country; 374 renamed and 1,135 moved
+    parent in the month.
+  - **Proposed:** our own id, the 12-hex ones frozen (every link works today), Overture's GERS and OSM ids being attributes that move.
+    Only exceptions are stored (about 700 a month): id, current GERS, OSM object, state (live, ended), successors. `place_id()` in
+    `places.py`, `add_parts.py` and `world_cells.py` becomes one function that reads it. Cities already work like this (`toronto`).
+  - **Not in the idea yet:** a link carries a second id, `?in=<cc>/<regionId>`; the iPhone widget finds a part by name too (aliases
+    for former names); a widget already on a phone knows no new format, so an ended place's file must stay where it is; the Android
+    widget has no place code (cities only, by grep); the share-previews branch needs an ended card; splits and merges have several
+    successors; an id can come back (24 did); squares and duplicates can use the same list ("covered by").
