@@ -3,7 +3,7 @@
 Reads the published files on sc-data (latest.json, children/world.json and the 248 country and dependency files).
 Quests on by default, summed over countries and dependencies: their land outlines (the ones the world run counts in)
 overlap by about 2,000 km2 in all, 1,867 of it the icefield of CL and AR (2026-11-25), so each place counts once as
-far as a rounded number shows. Orange is resurvey. The bars are that sum's net change on each day after `first`.
+far as a rounded number shows. Orange is resurvey. The strip is the same sum on every day since `first`, from zero.
 Standard library only; the PNG beside it is a screenshot.
 """
 import json
@@ -42,7 +42,7 @@ def numbers():
     latest = get("latest.json")
     v, first, last = latest["v"], date.fromisoformat(latest["first"]), date.fromisoformat(latest["date"])
     if latest.get("questsFrom"):
-        raise SystemExit(f"quests not counted from the first day, so the bars would jump: {latest['questsFrom']}")
+        raise SystemExit(f"quests not counted from the first day, so the strip would jump: {latest['questsFrom']}")
     default = {q["name"] for q in load(ROOT / "docs" / "data" / "quests.json")["quests"] if not q["defaultDisabled"]}
     table = get("children/world.json", v)
     types, aged = Counter(), Counter()
@@ -91,15 +91,14 @@ def icon(name, x, y, size):
     return f'<svg x="{x:g}" y="{y:g}" width="{size}" height="{size}" viewBox="{box}">{body}</svg>'
 
 
-def bars(totals, base, height):
-    """The net change of each day after the first. From zero; a falling day stops the script, as it has no place here."""
-    net = [b[0] - a[0] for a, b in zip(totals, totals[1:])]
-    if min(net) < 0:
-        raise SystemExit(f"a day fell, and these bars only go up: {net}")
-    step = (W - 96) / len(net)
-    return max(net), "".join(
-        f'<rect x="{48 + k * step + 3:.1f}" y="{base - n / max(net) * height:.1f}" width="{step - 6:.1f}" '
-        f'height="{n / max(net) * height:.1f}" fill="{SOFT}"/>' for k, n in enumerate(net))
+def hills(totals, height):
+    """The total on every day, resurvey on top, from zero: nearly flat on a few weeks of the world, and kept so (owner)."""
+    top = max(a for a, _ in totals)
+    xs = [k / (len(totals) - 1) * W for k in range(len(totals))]
+    up = [f"{x:.0f},{H - a / top * height:.1f}" for x, (a, _) in zip(xs, totals)]
+    low = [f"{x:.0f},{H - (a - g) / top * height:.1f}" for x, (a, g) in zip(xs, totals)]
+    return (f'<polygon fill="{ORANGE}" points="{" ".join(up + low[::-1])}"/>'
+            f'<polygon fill="{LAV}" points="{" ".join(low)} {W},{H} 0,{H}"/>')
 
 
 def main():
@@ -108,8 +107,7 @@ def main():
     change = total - totals[0][0]
     day = lambda d: f"{d.day} {d:%b}"
     strong = lambda s: f'<tspan font-weight="700" fill="#fff">{s}</tspan>'
-    most, drawn = bars(totals, 568, 88)
-    out = [drawn,
+    out = [hills(totals, 150),
            t(48, 80, "Open StreetComplete quests", 36, weight=700),
            t(44, 206, f"{total / 1e6:.0f}M", 118, weight=800),
            t(48, 250, f"around the world on {day(last)} {last.year}", 26, SOFT),
@@ -125,10 +123,9 @@ def main():
                 f'<rect x="{x + 72}" y="{y + 31}" width="{w - g:.1f}" height="18" fill="{LAV}"/>'
                 f'<rect x="{x + 72 + w - g:.1f}" y="{y + 31}" width="{g:.1f}" height="18" fill="{ORANGE}"/>',
                 t(W - 48, y + 50, millions(k), 27, weight=700, anchor="end")]
-    out += [t(48, 602, f"{day(first)}: {millions(totals[0][0])}", 24, "#fff", 700),
-            t(W - 48, 602, f"{day(last)}: {millions(total)}", 24, "#fff", 700, "end"),
-            t(W / 2, 602, f"net change per day, at most +{most / 1e3:.0f}k &#160;·&#160; data © OpenStreetMap contributors", 18, SOFT,
-              anchor="middle")]
+    out += [t(48, 604, f"{day(first)}: {millions(totals[0][0])}", 26, INK, 700),
+            t(W - 48, 604, f"{day(last)}: {millions(total)}", 26, INK, 700, "end"),
+            t(W / 2, 604, "data © OpenStreetMap contributors", 20, INK, anchor="middle")]
     OUT.write_text(f'<svg viewBox="0 0 {W} {H}" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, -apple-system, '
                    'Roboto, Helvetica, Arial, sans-serif"><defs><linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">'
                    '<stop stop-color="#2b2b80"/><stop offset="1" stop-color="#141442"/></linearGradient></defs>'
