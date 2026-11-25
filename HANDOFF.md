@@ -4060,3 +4060,20 @@ at once to 0.28 GB (40.8 GiB).
     for former names); a widget already on a phone knows no new format, so an ended place's file must stay where it is; the Android
     widget has no place code (cities only, by grep); the share-previews branch needs an ended card; splits and merges have several
     successors; an id can come back (24 did); squares and duplicates can use the same list ("covered by").
+- **Owner, 2026-11-24, 20:35, decided:** (1) **our own GUIDs, generated, the Overture-derived ids replaced everywhere, published files and
+  links included** ("we are in prerelease and can break anything we want including links"); this replaces "the 12-hex ones frozen".
+  (2) At a release a match is a **suggestion an operator judges**; ingesting an Overture release is always a manual agent-operator
+  job (no unattended adoption, no rule that decides alone). (3) The next release taken is **2026-12-16.0**. Not started: code and rename.
+  - **Timing:** Release 1 is about 12-01, so the id change goes **before it** (a pure rename, no reseed: the same places, outlines and
+    counts under other ids); Overture 12-16.0 comes after it, at the reseed due about 2027-01-04.
+  - **Rename surface (read 11-24):** `place_id()` is written three times (`places.py:41`, `add_parts.py:64`, `world_cells.py:177`);
+    `config/parts` (4,214), `docs/places`, `docs/data/{parts,history}`; W's `places.json`, 128 files' `parts/`, `place-sets.json`
+    (314 MB), 23 days' `counts.json` (1,018,647 place ids each, beside 688,181 `city:` and 147 `osm-` ones that do not change);
+    `data/facts` (3.7 GB), the archive's `parts` keys; the bucket (about 1.13M files: `--full`, and over `MAX_DELETE`); fixtures,
+    the issue form, widget. Publisher keys are 48-bit ints (`hexkey`, `idstr`; `app.js:1843`; `run.py:782`): a full GUID as the public
+    id needs those rewritten, the first 12 hex of a random GUID, unique by check, does not.
+  - **Design:** one registry (GUID, public id, GERS, OSM object, name, subtype, state, successors, since), the only source of a new id,
+    backed up to R2 before anything uses it: random ids cannot be derived again. One `tools/place_ids.py` for all readers.
+  - **Proof:** after the rename every place's counts equal the old ones under the map, every day, exactly.
+  - **Clashes:** `dropped-places` (16 ids, unmerged), `world-cities`, `retire-cities` and `share-previews` all hold place ids; merge or
+    translate them first. All of it needs a gap in the loop (RUNNING and starved tonight: 9.6 GB of commit, disk 40.7 GiB).
