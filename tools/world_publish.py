@@ -712,7 +712,7 @@ def plan(out: Path, work: Path) -> tuple[list[tuple[str, str]], list[tuple[str, 
 
 
 def upload(out: Path, work: Path, print_only: bool = False, full: bool = False, trial: int = 0,
-           max_delete: int = MAX_DELETE) -> int:
+           max_delete: int = MAX_DELETE, keep_gone: bool = False) -> int:
     """the changed files in batches (the bucket manifest saved after each), then latest.json, which
     carries the new `v`, so no page asks for the new files before all are there, and last the gone ones deleted"""
     todo, gone, local, bucket = plan(out, work)
@@ -732,6 +732,9 @@ def upload(out: Path, work: Path, print_only: bool = False, full: bool = False, 
         log(f"FAILED: {len(todo):,} files is past DAY_CAP {DAY_CAP:,}; a day changes about 60,000. If the format, "
             f"the name layer or the quest list changed, look at the plan (--print) and pass --full")
         return 1
+    if keep_gone:   # the old files stay in the bucket and in its manifest: a later upload without it deletes them
+        log(f"{len(gone):,} files no longer built are kept")
+        gone = []
     if len(gone) > max_delete:
         log(f"FAILED: {len(gone):,} files to delete is past the cap of {max_delete:,} (--max-delete raises it, for a "
             f"change of every place id)")
@@ -901,6 +904,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--sample", type=int, help="verify: places read back (default 2000); check: files fetched (40)")
     ap.add_argument("--print", action="store_true", help="upload: print the plan, run nothing")
     ap.add_argument("--full", action="store_true", help="upload: allow a plan past DAY_CAP (the first upload)")
+    ap.add_argument("--keep-gone", action="store_true", help="upload: delete nothing")
     ap.add_argument("--max-delete", type=int, default=MAX_DELETE, help="upload: the most files it may delete")
     ap.add_argument("--trial", type=int, default=0, help="upload: only this many files, and not latest.json")
     ap.add_argument("--set", action="store_true", help="cors: write the rule (without: print it)")
@@ -924,7 +928,7 @@ def main(argv: list[str] | None = None) -> int:
         return cors(a.set)
     if a.cmd == "check":
         return check_live(a.out, a.work, a.sample or 40)
-    return upload(a.out, a.work, a.print, a.full, a.trial, a.max_delete)
+    return upload(a.out, a.work, a.print, a.full, a.trial, a.max_delete, a.keep_gone)
 
 
 if __name__ == "__main__":
