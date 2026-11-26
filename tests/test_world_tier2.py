@@ -259,6 +259,33 @@ class CoverTest(unittest.TestCase):
         self.assertEqual(sorted(p["id"] for p in parts), ["near", "osm-x"])
 
 
+class PlaceBboxesTest(unittest.TestCase):
+    def test_parsed_once_and_again_only_when_places_json_changes(self):
+        from unittest import mock
+        with tempfile.TemporaryDirectory() as t:
+            pj, npz = Path(t) / "places.json", Path(t) / "keep" / "place-bboxes.npz"
+            pj.write_text(json.dumps({"places": [{"id": "b", "bbox": [1.0, 2.0, 3.0, 4.0]}, {"id": "a"}]}))
+            ids, bbox = W.place_bboxes(pj, npz)
+            self.assertEqual(ids.tolist(), ["a", "b"])
+            self.assertTrue(np.isnan(bbox[0]).all())
+            self.assertEqual(bbox[1].tolist(), [1.0, 2.0, 3.0, 4.0])
+            with mock.patch.object(W.json, "loads", side_effect=AssertionError("parsed again")):
+                ids2, bbox2 = W.place_bboxes(pj, npz)   # the cache: the same arrays, places.json not read
+            self.assertEqual((ids2.dtype, ids2.tobytes(), bbox2.dtype, bbox2.tobytes()),
+                             (ids.dtype, ids.tobytes(), bbox.dtype, bbox.tobytes()))
+            # a cache with no stamp (the old form, newer than places.json) is not trusted
+            np.savez(npz, ids=np.array(["zz"]), bbox=np.zeros((1, 4)))
+            self.assertEqual(W.place_bboxes(pj, npz)[0].tolist(), ["a", "b"])
+            # places.json changed (its size here; its time alone does it too): parsed again
+            pj.write_text(json.dumps({"places": [{"id": "c", "bbox": [5.0, 6.0, 7.0, 8.0]}]}))
+            self.assertEqual(W.place_bboxes(pj, npz)[0].tolist(), ["c"])
+            os.utime(pj, ns=(pj.stat().st_atime_ns, pj.stat().st_mtime_ns + 5_000_000_000))
+            with mock.patch.object(W.json, "loads", side_effect=AssertionError("parsed again")):
+                with self.assertRaises(AssertionError):
+                    W.place_bboxes(pj, npz)
+            self.assertEqual(sorted(p.name for p in npz.parent.iterdir()), ["place-bboxes.npz"])
+
+
 class P3Test(unittest.TestCase):
     """relations holding a changed way, roads crossing a changed bridge, untouched ways of a moved node"""
 

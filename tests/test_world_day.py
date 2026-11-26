@@ -94,5 +94,95 @@ class RectToCellTest(unittest.TestCase):
             self.assertEqual(got, [["f2c3-0", "f2c3-1"], ["f2c4-0"], ["f10c0-0"]])
 
 
+def poly(w, s, e, n):
+    return f"box\n1\n   {w}   {s}\n   {e}   {s}\n   {e}   {n}\n   {w}   {n}\n   {w}   {s}\nEND\nEND\n"
+
+
+NOTES_DUMP = """<?xml version="1.0" encoding="UTF-8"?>
+<osm-notes>
+<note id="1" lat="43.5" lon="-79.5" created_at="2020-01-01T00:00:00Z">
+  <comment action="opened" timestamp="2020-01-01T00:00:00Z" uid="10" user="a">in file a and region west</comment>
+</note>
+<note id="2" lat="43.5" lon="-78.5" created_at="2021-01-01T00:00:00Z">
+  <comment action="opened" timestamp="2021-01-01T00:00:00Z">in file b and region east</comment>
+  <comment action="closed" timestamp="2026-11-20T00:00:00Z" uid="11" user="b"/>
+</note>
+<note id="3" lat="45.5" lon="-78.5" created_at="2022-01-01T00:00:00Z">
+  <comment action="opened" timestamp="2022-01-01T00:00:00Z" uid="12" user="c">in region east's box only</comment>
+</note>
+</osm-notes>
+"""
+
+
+class RefreshNotesTest(unittest.TestCase):
+    """the gate's notes clips cut in the refresh's own pass over the dump: the bytes world_gate would cut"""
+
+    def setUp(self):
+        import bz2
+        from unittest import mock
+        import world_gate as WG
+        self.WG = WG
+        self.t = tempfile.TemporaryDirectory()
+        self.addCleanup(self.t.cleanup)
+        t = Path(self.t.name)
+        (t / "notes").mkdir()
+        self.dump = t / "notes" / "planet-notes-261125.osn.bz2"
+        self.dump.write_bytes(bz2.compress(NOTES_DUMP.encode("utf-8")))
+        for rid, box in (("west", (-80, 43, -79, 44)), ("east", (-79, 43, -78, 44))):
+            (t / f"{rid}.poly").write_text(poly(*box), encoding="utf-8", newline="\n")
+        self.regions = [{"id": "west", "poly": str(t / "west.poly")}, {"id": "east", "poly": str(t / "east.poly")}]
+        boxes = {"west": [], "east": [[-79.0, 45.0, -78.0, 46.0]]}
+        for target, name, value in ((WG.run, "note_boxes", lambda r: boxes[r["id"]]), (WG.run, "OSM_DATA_DIR", t)):
+            p = mock.patch.object(target, name, value)
+            p.start()
+            self.addCleanup(p.stop)
+
+    def world(self, name):
+        w = Path(self.t.name) / name
+        files = []
+        for fid, box in (("a", (-80, 43, -79, 44)), ("b", (-79, 43, -78, 44))):
+            d = w / "files" / fid
+            d.mkdir(parents=True)
+            (d / "bbox.poly").write_text(poly(*box), encoding="utf-8", newline="\n")
+            (d / "notes.jsonl").write_text('{"source": "planet-notes-261101.osn.bz2", "until": "2026-11-01T00:00:00Z"}\n',
+                                           encoding="utf-8", newline="\n")
+            files.append({"id": fid})
+        (w / "plan.json").write_text(json.dumps({"files": files}), encoding="utf-8")
+        (w / "gate-notes").mkdir()
+        (w / "gate-notes" / "gone.jsonl").write_text('{"source": "planet-notes-261101.osn.bz2"}\n', encoding="utf-8")
+        return w
+
+    def tree(self, w):
+        return {p.relative_to(w).as_posix(): p.read_bytes() for p in sorted(w.rglob("*")) if p.is_file()}
+
+    def test_the_gates_clips_from_the_refresh_are_the_gates_own(self):
+        from unittest import mock
+        WG = self.WG
+        said = []
+        w1, w2 = self.world("with"), self.world("without")
+        WD.refresh_notes(w1, self.dump, said.append, WG.gate_clips(w1, self.regions))
+        WD.refresh_notes(w2, self.dump, said.append)                    # as before: the gate cuts its own
+        self.assertEqual(sorted(p.name for p in (w1 / "gate-notes").iterdir()), ["east.jsonl", "west.jsonl"])
+        self.assertEqual(list((w2 / "gate-notes").iterdir()), [])       # the old clips gone, either way
+        with mock.patch.object(WG.subprocess, "run", side_effect=AssertionError("the dump read a second time")):
+            got = WG.gate_notes(w1, self.regions, said.append)
+        self.assertEqual(sorted(got), ["east", "west"])
+        WG.gate_notes(w2, self.regions, said.append)
+        a, b = self.tree(w1), self.tree(w2)
+        self.assertEqual(sorted(a), sorted(b))
+        self.assertEqual(sorted(a), ["files/a/bbox.poly", "files/a/notes.jsonl", "files/b/bbox.poly",
+                                     "files/b/notes.jsonl", "gate-notes/east.jsonl", "gate-notes/west.jsonl",
+                                     "notes-all.jsonl", "plan.json"])
+        for name in a:
+            self.assertEqual(a[name], b[name], name)
+        east = (w1 / "gate-notes" / "east.jsonl").read_text(encoding="utf-8").splitlines()
+        self.assertEqual([json.loads(l)["id"] for l in east[1:]], [2, 3])   # the poly's note and the box's
+        self.assertEqual(json.loads(east[0])["source"], self.dump.name)
+        # a clip of another dump than the world's (a refresh that stopped half way) is cut again by the gate
+        (w1 / "gate-notes" / "west.jsonl").write_text('{"source": "planet-notes-261101.osn.bz2"}\n', encoding="utf-8")
+        WG.gate_notes(w1, self.regions, said.append)
+        self.assertEqual((w1 / "gate-notes" / "west.jsonl").read_bytes(), b["gate-notes/west.jsonl"])
+
+
 if __name__ == "__main__":
     unittest.main()

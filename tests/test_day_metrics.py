@@ -173,3 +173,30 @@ def test_the_engines_timing_lines(tmp_path):
     assert {k: v for k, v in e.items() if k != "timing"} == plain
     assert e["main"] == {"relation member scan": 0.1, "nodes": 2.9, "ways": 2.0, "relations": 0.3}
     assert (e["pass s"], e["total s"], e["startup s"], e["cities"], e["parts"], e["areas"]) == (12.6, 14.0, 1.3, 428, 4792, 1)
+
+
+def test_the_loops_own_timers_and_the_parts_of_a_step():
+    # the parts of finish's steps are keys of its seconds ("tier 1: engines"); what the loop times on its own is a
+    # `timer:` line, kept under "timers" and taken off nothing; a log without such lines has no "timers"
+    log = """[2026-11-27T00:00:00] == day 2026-11-26: diff 5190 on generation 25; the world at 2026-11-25T00:00:00Z
+[2026-11-27T00:10:00] timer: day.pkl save 41.5 s
+[2026-11-27T00:10:30] timer: day.pkl read back 30.2 s
+[2026-11-27T00:12:00] world prepare 2026-11-26: 720 s; {"read diff": 156}
+[2026-11-27T00:24:00] update 5190: exit 0 in 707 s
+[2026-11-27T00:24:30] timer: day.pkl load 29.8 s
+[2026-11-27T02:24:00] world finish 2026-11-26: 7170 s; {"tier 1: small pbf": 50.1, "tier 1: engines": 628.0, "tier 1: ingest": 12.5, "tier 1: rewrite": 520.3, "tier 1": 1198.4, "tier 2 delta: first pass": 300.0, "tier 2 delta": 819.0, "counts: note engines": 300.2, "sets save": 3.1, "touched and rects": 157.0}
+[2026-11-27T02:30:00] compact: exit 0 in 157 s
+[2026-11-27T02:30:01] timer: engines harvest 12.0 s
+[2026-11-27T02:33:00] timer: day's work deleted beside compact 170.4 s
+[2026-11-27T02:33:00] timer: day's rest deleted 0.4 s
+[2026-11-27T02:33:01] == day 2026-11-26 done: generation 26
+"""
+    r = dm.day_steps(log, "2026-11-26")
+    assert r["timers"] == {"day.pkl save": 41.5, "day.pkl read back": 30.2, "day.pkl load": 29.8, "engines harvest": 12.0,
+                           "day's work deleted beside compact": 170.4, "day's rest deleted": 0.4}
+    assert set(r["steps"]) == {"world prepare", "update", "world finish", "compact"}     # a timer is not a step
+    assert r["unaccounted s"] == r["wall s"] - 720 - 707 - 7170 - 157
+    f = dm.flat(r)
+    assert f["finish: tier 1: rewrite"] == 520.3 and f["finish: touched and rects"] == 157.0 and f["finish: tier 1"] == 1198.4
+    assert "timers" not in dm.day_steps(LOG, "2026-11-12")
+    json.dumps(r)
