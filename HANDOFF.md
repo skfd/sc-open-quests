@@ -4353,3 +4353,13 @@ at once to 0.28 GB (40.8 GiB).
   it saves the bucket manifest after each 50,000, so if it stops, the same command resumes. 1,129,125 old files are kept (old ids, the
   dropped places): until the site is deployed the live pages ask for the old ids, and those files stay. Next: `run.py site`, then the old
   files' deletion only on the owner's word, after `rclone delete --dry-run`.
+- **THE RENAME IS DONE AND LIVE (11-25, 23:20).** Upload 21:24-23:02 (97 min, 1,063,089 files, 22 batches); live check 0 mismatches over 40
+  files. `--keep-gone` now keeps the old files in `bucket.json` "kept" (c820931a), so `daily` plans no deletes: **1,129,125 old files
+  (old ids and the dropped places) are still in sc-data, waiting for the owner's word; then `world_publish.py upload --delete-kept
+  --max-delete 1200000`.** The site: the first `run.py site` stopped at the site bucket's `--max-delete 2000` (6,254 stale docs files;
+  the bucket is a mirror of docs/, so nothing was lost and the old site stayed live); `cloud_publish.py --max-delete 7000` (new option)
+  deleted exactly those 6,254 and deployed (8,169 files), then `run.py site` recorded the deploy and pushed main. `cloud_publish --check`:
+  8,925 files equal. Headless: the Annex by its new id (series from 11-01), Germany by its new id and Toronto load with no error or failed
+  request. **Not done:** `state_checkpoint.py link`/`upload` (R2's checkpoint still has the old ids in place-sets.json: take a new one
+  before relying on it); the `share-previews` branch's test links (old ids); the facts' and archives' R2 copies are refreshed by the
+  11:15 inputs run. **HOLD stays** (world dailies paused by the owner until the new things are built).
