@@ -4832,3 +4832,6 @@ store's day D).**
   store_tail or publish; **HOLD stays (the owner's)**. Expected end about 03:00-04:00. The other session holds
   `overture_switch.py prepare` (DuckDB) until then. If it dies: read `proof.log` and the `A*.out`/`B.out`; rerunning is safe
   (each run restores from `before/`).
+- **5e's resume proof runs all night (from 18:22, harness pid 27752 in RUNNING, `.scratch/resume-proof/proof.log`; ends about
+  03:00-04:00 with `RESULT.txt`).** `prepare` waits for `RESULT.txt` or 5e's message (DuckDB beside the engines risks the 11-23
+  commit-limit failure).
