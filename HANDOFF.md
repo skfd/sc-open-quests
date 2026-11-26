@@ -4483,6 +4483,38 @@ measured: 12,643 s, then the publish 1,155 s.
     two runs of either binary (read in the code, not shown by running the old one twice); `store_context._geo` reads
     them into a dict by id. **Peak commit: old 6.81 GiB, new 7.21 GiB** (working set 7.44 and 7.43): 0.4 GiB more.
     Left of the owed list: a day of its own. Install is still the copy of `tilestore-points-fix-5dc1fbe6.exe`.
+  - **The memory rule: built, branch `perf-room` (dc997ca3, a4e5d271; worktree `.claude/worktrees/agent-a1c0a9c6bc936fa2e`),
+    NOT merged.** `engine_room.py`: an alive engine counts for its cap (`-Xmx` + 0.5 GB) less what its process tree
+    has committed (Toolhelp walk from the launcher's pid; whole when there is no reading); a heap per engine, 1.5 times
+    its highest peak of the newest 3 kept days, 3 g to the day's 8 g (`heap_for`; keys as `harvest` names them,
+    `t2/groups/f12/old`); a memory failure under the day's heap is run once more at the day's heap (`in_room`,
+    `-XX:+ExitOnOutOfMemoryError` on sized-down engines, the failed log kept as `engine-failed.log`); `given.json`
+    beside each log and `"given MB"` in `engines.json`; a line a phase (`engine room: tier 2 old: most 3 at once,
+    waited ... s summed`). **`SCOQ_ROOM_SIZED=0` is the old rule.** `stream.engine` and `notes_day` start the engine
+    with Popen (`run_started`). Tests: pytest 392 passed, 3 skipped (31 new, `tests/test_engine_room_sized.py`).
+    - **On real engines (this session, 08:25, `.scratch/perf-review/room_smoke.py`, log `room-smoke.log`):** main's
+      installed engine on the f10 fixture, three at once at 4 g through `in_room`: the reading reaches `java.exe`
+      (each tree 1.7-1.8 GB, so 2.7 of 4.5 GB still owed), `given.json` written, `state.bin.json` the same in all.
+      **The second run after a memory failure is shown by the stub tests only:** the fixture ran to the same output
+      in a 1 g heap (16 s, peak heap of other runs near 2 GB), so it could not be starved. That also says an
+      engine's need can be well under its peak.
+    - **To watch on its first day:** `"given MB"` under 8192 for most engines (all 8192: the keys did not match);
+      "they can take X g more" under alive times cap; the phase lines; "failed for memory ... once more" lines; no
+      new `hs_err`. The 8 GB kept back is now the only slack for `tilestore read` and the rest.
+  - **The engine loops: built, branch `perf-engine` (8a84d10c, 1c831f03, 1d661f56, 1650e0ca; worktree
+    `.claude/worktrees/agent-a4ec03b1f84c678b7`, its own `installDist`), NOT merged, NOT installed.** Parts grouped by
+    city in one pass (`Cities.partsByCity`); a polygon's bands scaled by its segments (`Polygon.bandsFor`); a city to
+    elements index made once (`CityElements.kt`), read by `AreaPass.elementsOf`; `dateCandidates` over the rectangle's
+    own lists. `-Dopenquests.areaIndex=false` is the old scan, `=verify` does both and fails on a difference. Not
+    built: one file per group, `Output.kt`. Engine tests 115 passed, 4 skipped (109 before).
+    - **Proofs:** the f10 fixture (the agent): `quests.json`, `state.bin.json` byte for byte against main's install,
+      `state.bin` the same 564,816 records, with the index, with the scan and with `verify`. **A gate region (this
+      session, 08:22-08:24, `gate_proof.py europe-east 2026-11-25` in the worktree's `.scratch/perf-engine-proof/`, log
+      `.scratch/perf-review/gate-proof-east.log`): both at `-Xmx27g`, old 58 s, new 51 s, ALL EQUAL** (`state.bin` as a
+      multiset). The index there: 3,498,214 pairs, 13.3 MB. Choosing 0.26 s to 0.00, `dates` 4.56 to 3.87 s; the
+      saving shows only on tier 2's rectangles, which no kept input holds (f10: 0.7 s to 0.05 s).
+    - **Install, when the owner says:** merge and `installDist` in main together, the install folder copied aside
+      first (as on 11-23); until then keep the worktree (its install and scratch are the proof's).
 - **The delete was stopped at the 2-hour limit of a background job (11-26, about 07:00), not finished:** 250,000 of 1,129,125 old files gone,
   879,125 left in `bucket.json` "kept" (the sixth batch was cut mid-way; S3 deletes of a gone file are harmless, so a rerun is safe). A batch
   of 50,000 takes about 20 minutes, so the rest is about 6 hours: it needs a detached run, not a session's background job. Command:
