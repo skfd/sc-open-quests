@@ -4688,3 +4688,8 @@ The 12:15 task `kk-SCOpenQuests` (`run.py update`) is deleted (11-26) and `docs/
   (7 + 8), overlap 276 (294), ended-parent 976 (1,016), ended-none 22 (18). So a skip matches as well, place for place; it is one
   bigger judging session, not a harder one. Needed for a skip: the pinned release's narrow copy (lost places' locations), kept
   in the backed-up releases folder. City parts not meaningful in this test (its ids are not ours).
+- **Owner, 11-26 about 12:05, decided: monthly.** "When Overture releases we review and prepare and on first of the month we switch
+  it. Most of this should be automated algorithmically, judgement should be agentic with Fable, and only exceptional judgement cases
+  go to operator." **This replaces the 11-24 rule** "every match an operator judges, no rule decides alone": now an algorithm
+  decides the clear cases, Fable (claude-fable-5-2) judges the rest, the operator sees only exceptions. Switch day: the 1st, at a
+  reseed (first 2027-01-01 with 12-16.0). Found: no `anthropic` package, no API key, no `ant` CLI here; Claude Code 2.1.332 is.
