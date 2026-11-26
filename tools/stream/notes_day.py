@@ -337,10 +337,11 @@ def empty_pbf(path: Path, clock: str) -> Path:
 
 def note_quests(cities: Path, clip: Path, clock: str, out: Path, parts: Path | None = None,
                 engine: Path | None = None, heap_gb: int = 4, zone: str = "UTC", base: Path = ROOT,
-                parts_cache: Path | None = None) -> dict:
+                parts_cache: Path | None = None, on_start=None, extra_opts: str = "") -> dict:
     """the note quests at the clock, counted by the engine over no elements: per city the note quests at the app's
     default ("showAllNotes": false) and with "show all notes", and per part. Returns
-    {"cities": {id: {"quests": n, "allNotes": n}}, "parts": {part id: n}} from the run's snapshot."""
+    {"cities": {id: {"quests": n, "allNotes": n}}, "parts": {part id: n}} from the run's snapshot.
+    on_start(process) is called once the launcher runs (engine_room reads what its process tree commits, by pid)."""
     engine = engine or ROOT / "engine/build/install/sc-open-quests-engine/bin/sc-open-quests-engine.bat"
     out.mkdir(parents=True, exist_ok=True)
     pbf = empty_pbf(out / "empty.osm.pbf", clock)
@@ -355,11 +356,22 @@ def note_quests(cities: Path, clip: Path, clock: str, out: Path, parts: Path | N
     env = dict(os.environ, JAVA_HOME=os.environ.get("JAVA_HOME", r"C:\Program Files\Android\Android Studio\jbr"),
                JAVA_OPTS=f"-Duser.timezone={zone} -Duser.language=en -Duser.country=CA -Xmx{heap_gb}g"
                          # no elements, so no area pass (it refuses to start without the main pass's nodes)
-                         " -Dopenquests.areaPass=false")
+                         " -Dopenquests.areaPass=false" + (" " + extra_opts if extra_opts else ""))
     with open(out / "engine.log", "w", encoding="utf-8") as f:
-        r = subprocess.run(args, cwd=base, env=env, stdout=f, stderr=subprocess.STDOUT)
-    if r.returncode:
-        raise SystemExit(f"engine failed ({r.returncode}), see {out / 'engine.log'}")
+        # subprocess.run with the process shown to on_start (stream.run_started; this module does not import stream)
+        with subprocess.Popen(args, cwd=base, env=env, stdout=f, stderr=subprocess.STDOUT) as p:
+            try:
+                if on_start:
+                    try:
+                        on_start(p)
+                    except Exception:  # noqa: BLE001  whoever watches is never the engine's failure
+                        pass
+                returncode = p.wait()
+            except:  # noqa: E722
+                p.kill()
+                raise
+    if returncode:
+        raise SystemExit(f"engine failed ({returncode}), see {out / 'engine.log'}")
     return snapshot_notes(next(iter(sorted((out / "out" / "snapshots").glob("*.json")))))
 
 
