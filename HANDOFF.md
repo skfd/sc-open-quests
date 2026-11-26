@@ -4612,3 +4612,6 @@ measured: 12,643 s, then the publish 1,155 s.
     `state_checkpoint.py upload --from-world`, hidden bash pid 60084, log `.scratch/checkpoint-1126.log` (last line `exit 0` when
     whole), to `r2:sc-open-quests-archive/state/2026-11-25`, 52.6 GiB at about 44 MB/s (about 20 min). If it dies: the same command
     again, under the HOLD. The dry run leaves its links in `.scratch/planet/checkpoint/2026-11-25` (the real run reuses and removes them).
+  - **Checkpoint DONE 11:13:21** (10:50-11:13, before the 11:15 inputs run): `2026-11-25: whole` in R2 (new ids), local links
+    removed. `2026-11-14` (old ids) is still there; `prune --keep 1` would drop it, not run. **Left before the lift: the 13:20 check
+    of today's runs, then the owner removes HOLD** (the 14:45 task takes the day if HOLD is gone by then; else start the loop by hand).
