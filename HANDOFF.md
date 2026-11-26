@@ -4807,3 +4807,28 @@ store's day D).**
 - **Merged 19:45 (06ac3b7d4, over sc-open-quests-5e's c3b998fd1; suite 440 passed).** The worktree is removed. 5e is running a
   resume proof on day 11-26 under the HOLD (`world_finish` reads WORLD via `data/world.json`). **Until 5e says done: no
   HOLD lift, no loop, no `prepare`.** Then `overture_switch.py prepare 2026-11-18.0`.
+
+## The world day resumable (owner, 11-26, 18:05: "build a resumability please"; the laptop stays on, only the owner is offline)
+
+- **Built: c3b998fd1** (`tools/stream/day_cache.py`, its docstring is the design; `tests/test_day_cache.py`, 12 tests; suite 432
+  passed, then 440 with `overture-switch` merged in 06ac3b7d4 by the other session). A finish that stops is still put back to
+  `before/` and its world writes (tier 1 rewrite, tier 2 delta, hidden flags, counts) replayed in order, so the place-set
+  numbering stays; what writes nothing into the world is **kept behind a marker** (`done.json` in its own output folder, written
+  last): the cover and rectangles (`t2/`, with `cstats`, `rinfo` and their seconds), tier 1's small PBF (`t1/`), every tier 1
+  engine, every tier 2 group and date (also skipping its `tilestore read`), every note engine (its counts). No marker: the folder
+  is emptied first. **`SCOQ_DAY_CACHE=0` ignores every marker** (the way back). By 11-25's timers a late stop now costs the
+  replay (about 25-35 min) instead of the whole finish (2.8 h).
+- **PAUSE** (`.scratch/planet-cut/PAUSE`, its text the reason): the day stops at the next engine start, room wait or step;
+  engines running end and keep their output; the run ends with "paused:", no STOPPED; while it is there no day is taken or
+  resumed. Delete it and `schtasks /Run /TN kk-SCOpenQuests-planetstore` to go on. HOLD is unchanged (a reader's: the day finishes).
+- **Taking over a dead RUNNING ends its orphans** (`end_orphans`: the dead pid's python, java, tilestore, osmium descendants and
+  any engine or tilestore naming `world-days`), so a killed run's engines no longer write into the work being reused.
+- `day.json`/`world.json` of a resumed day carry `"kept"` (what was reused); its seconds are partly the stopped run's.
+- **The proof, running since 18:22 (detached harness pid 27752, `.scratch/resume-proof/proof.py`, log `proof.log`, its pid in
+  RUNNING, under the HOLD):** A = 11-26's finish killed and resumed at five points (tier 1 engines; tier 2 old; a PAUSE in tier 2
+  new; mid delta; a python-only kill in the note engines with `end_orphans`), then to the end; B = the same from `before/`,
+  uninterrupted, `SCOQ_DAY_CACHE=0` (the day's record). Every world.bin and keys file, place-sets, touched, rects, counts/11-26,
+  and world.json's and day.json's last day (minus seconds and kept) compared: `RESULT.txt`. Then `finished` is written; no gate,
+  store_tail or publish; **HOLD stays (the owner's)**. Expected end about 03:00-04:00. The other session holds
+  `overture_switch.py prepare` (DuckDB) until then. If it dies: read `proof.log` and the `A*.out`/`B.out`; rerunning is safe
+  (each run restores from `before/`).
