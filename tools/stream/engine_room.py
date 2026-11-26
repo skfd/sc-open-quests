@@ -399,10 +399,11 @@ def in_room(run, out: Path, key: str, heap_gb: int, day_heap_gb: int, say=_print
     heap that fails for memory is run once more at the day's heap, its output cleared; any other failure, and a
     failure at the day's heap, stays the failure it is"""
     room = room or ROOM
-    t0 = time.time()
+    t0 = None
     note_given(out, heap_gb)
     try:
         with room.engine(heap_gb, key, say) as slot:
+            t0 = time.time()   # an hs_err file from here on can be this engine's (not one of its wait's)
             return run(heap_gb, slot.started, SIZED_OPTS if heap_gb < day_heap_gb else "")
     except SystemExit as e:
         if heap_gb >= day_heap_gb or not str(e).startswith("engine failed ("):

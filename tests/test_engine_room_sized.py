@@ -353,6 +353,47 @@ class InRoom(unittest.TestCase):
         self.assertEqual(self.runs, [])
 
 
+class Launch(unittest.TestCase):
+    """stream.engine and notes_day.note_quests as they start a launcher: a .bat that says a line and ends with 3"""
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.d = Path(self.tmp.name)
+        self.bat = self.d / "engine.bat"
+        self.bat.write_text("@echo off\r\necho opts %JAVA_OPTS%\r\nexit /b 3\r\n", encoding="utf-8", newline="")
+        (self.d / "x").write_text("{}", encoding="utf-8")
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    @unittest.skipUnless(sys.platform == "win32", "a .bat")
+    def test_stream_engine_fails_as_before_and_shows_its_process(self):
+        seen = []
+        with self.assertRaises(SystemExit) as e:
+            S.engine(self.d / "x", self.d / "out", "2026-11-26T00:00:00Z", self.d / "x", "UTC", None, area_pass=False,
+                     heap_gb=5, quests=self.d / "x", base=self.d, extra_opts="-Dx=1", exe=self.bat, on_start=seen.append)
+        self.assertEqual(str(e.exception), f"engine failed (3), see {(self.d / 'out').resolve() / 'engine.log'}")
+        self.assertEqual((self.d / "out" / "engine.log").read_text(encoding="utf-8").strip(),
+                         "opts -Duser.timezone=UTC -Duser.language=en -Duser.country=CA -Xmx5g "
+                         "-Dopenquests.areaPass=false -Dx=1")
+        self.assertEqual(len(seen), 1)
+        self.assertIsInstance(seen[0].pid, int)
+
+    @unittest.skipUnless(sys.platform == "win32", "a .bat")
+    def test_note_quests_fails_as_before_and_shows_its_process(self):
+        import notes_day as N
+        seen = []
+        (self.d / "data" / "quests").mkdir(parents=True)
+        (self.d / "data" / "quests" / "v1.json").write_text("{}", encoding="utf-8")
+        with self.assertRaises(SystemExit) as e:
+            N.note_quests(self.d / "x", self.d / "x", "2026-11-26T00:00:00Z", self.d / "out", engine=self.bat,
+                          heap_gb=3, base=self.d, on_start=seen.append, extra_opts=ER.SIZED_OPTS)
+        self.assertEqual(str(e.exception), f"engine failed (3), see {self.d / 'out' / 'engine.log'}")
+        self.assertEqual((self.d / "out" / "engine.log").read_text(encoding="utf-8").strip(),
+                         "opts -Duser.timezone=UTC -Duser.language=en -Duser.country=CA -Xmx3g "
+                         "-Dopenquests.areaPass=false -XX:+ExitOnOutOfMemoryError")
+        self.assertEqual(len(seen), 1)
+
+
 class WorldDay(unittest.TestCase):
     """world_day.engine_dump and counts_at's engines: the key, the heap and the process reach the room"""
     def setUp(self):
@@ -397,6 +438,31 @@ class WorldDay(unittest.TestCase):
         self.assertEqual(self.pids, [77])
         self.assertEqual(json.loads((self.work / "t1/f1" / ER.GIVEN).read_text(encoding="utf-8")), {"given MB": 3072})
         self.assertEqual(ER.ROOM.phase_line("tier 1"), "engine room: tier 1: most 1 at once, waited 0 s summed (3 engines)")
+
+    def test_the_notes_engines_go_through_the_room_with_their_own_heap(self):
+        WD = self.WD
+        kept(self.w, "2026-11-24", {"notes/f1": 900})
+        ER._heaps.clear()
+        ER.SIZED = True
+        got = []
+
+        class Seen(Exception):
+            pass
+
+        def note_quests(cities, clip, clock, out, **kw):
+            kw["on_start"](P(78))
+            got.append((out, kw["heap_gb"], kw["extra_opts"], list(ER.ROOM.alive), [s.pid for s in ER.ROOM.slots]))
+            raise Seen()
+        saved = (WD.N.note_quests, WD.files_of)
+        WD.N.note_quests, WD.files_of = note_quests, lambda w: [{"id": "f1"}]
+        try:
+            with self.assertRaises(Seen):
+                WD.counts_at(self.w, "2026-11-26T00:00:00Z", None, [], self.work / "notes", None, 8)
+        finally:
+            WD.N.note_quests, WD.files_of = saved
+        self.assertEqual(got, [(self.work / "notes" / "f1", 3, ER.SIZED_OPTS, [3], [78])])
+        self.assertEqual(ER.ROOM.alive, [])
+        self.assertEqual(ER.ROOM.phase_line("notes"), "engine room: notes: most 1 at once, waited 0 s summed (1 engines)")
 
     def test_the_switch_off_gives_every_engine_the_days_heap(self):
         ER.SIZED = False
