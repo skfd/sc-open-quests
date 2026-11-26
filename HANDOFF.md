@@ -4559,10 +4559,34 @@ measured: 12,643 s, then the publish 1,155 s.
     main with `perf-room` and `perf-steps` merged** (two conflicts in `world_day.py`, both sides kept: the room's
     phase line beside the new timers). **pytest there: 410 passed, 3 skipped.** Not merged into main. `run.py`
     imports `tools/stream` modules, so a merge reaches the 11:15 inputs run and the 12:15 city run as well.
-  - **State at 08:45 on 11-26: all four built, each proven as far as it can be without a world day; NOTHING
-    installed, nothing merged into main, the HOLD untouched, nothing running.** Installs wait for the owner's word and
-    order (proposed: day 1 the points fix and the memory rule, day 2 the Python steps, day 3 the engine). Worktrees
-    kept: the three agents' and `perf-python`; the engine one holds a gradle build.
+  - **ALL FOUR INSTALLED IN MAIN (11-26, 09:06-09:12; owner, wizard, about 09:00: "Everything now", told that
+    today's 11:15 inputs run and 12:15 city run then import the changed Python and run the new engine, and that the
+    first catch-up day has four suspects).** The machine was still (no RUNNING, tasks Ready, HOLD there).
+    - `perf-python` merged (81df89fd: the memory rule and the Python steps); pytest in main 412 passed, 1 skipped.
+    - `tilestore/target/release/tilestore.exe` is now the proven points-fix binary (sha256 a3c49f7e..., copied, not
+      built); the one before (6249b9b1...) is `.scratch/perf-review/tilestore-before-points-fix.exe` and
+      `.scratch/anomalies/tilestore-points-counters-edb0521e.exe`. The loop copies the binary at its next start.
+    - `perf-engine` merged (9330eee8) and `installDist` run in main; `engine_is_stale()` False; the engine's tests
+      pass in main. **The installed engine run once on europe-east (11-25's clip, `-Xmx27g`, 49 s): ALL EQUAL to the
+      proof's outputs** (`.scratch/perf-review/engine-proof/gate/europe-east/installed`). The install before it:
+      `.scratch/perf-review/engine-install-before-perf-1126/`.
+    - **To undo, each by itself:** the points fix: copy `tilestore-before-points-fix.exe` back. The memory rule:
+      `SCOQ_ROOM_SIZED=0` in the loop's environment (or revert). The pools: `WORLD_FILE_POOL=1` (the timers, the
+      delete beside `compact`, the gate clips cut with the refresh and the bbox cache have no switch: revert
+      81df89fd with `-m 1`). The engine's index: `-Dopenquests.areaIndex=false` in the engines' options, or copy
+      the old install back and `git revert -m 1 9330eee8` (else the next city run rebuilds from source).
+    - **To check after today's runs:** `inputs done` in `logs/inputs.log` (11:15) and `update done` in
+      `logs/scheduler.log` (12:15, the first city run on the new engine: its counts against yesterday's).
+    - **To check on the first world day after the HOLD is lifted (the owner's to lift; four suspects if the gate
+      fails):** the gate; `engine room: ... most N at once, waited ... s` a phase (11-25: tier 2 waited 6,190 s a
+      phase at 1-2 alive); `"given MB"` in `engines.json`; "failed for memory ... once more" lines; the `points`
+      seconds in the two "store context at generation" lines (11-25: 210 s and 228 s); the new `timer:` lines and
+      `tier 1:`, `tier 2 delta:`, `counts:` splits; `area cities` timers `ways chosen`, `tagged nodes chosen`, `city
+      sets holding the city`, `dates` and `engine: parts of each city` summed over tier 2 (11-25: 213, 159, 165,
+      179, 106 s a phase); the day's wall against 12,643 s; free commit and disk at their lows.
+    - Worktrees and branches of this work removed (no links in them); nothing pushed. Outputs kept:
+      `.scratch/perf-review/` (logs, scripts, the engine proof, the two installs before; the points and room check
+      outputs deleted, their logs kept).
 - **The delete was stopped at the 2-hour limit of a background job (11-26, about 07:00), not finished:** 250,000 of 1,129,125 old files gone,
   879,125 left in `bucket.json` "kept" (the sixth batch was cut mid-way; S3 deletes of a gone file are harmless, so a rerun is safe). A batch
   of 50,000 takes about 20 minutes, so the rest is about 6 hours: it needs a detached run, not a session's background job. Command:
