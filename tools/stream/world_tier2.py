@@ -52,6 +52,7 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from tier2 import M_LAT, CELL, PAD, RING, merge_rects  # noqa: E402
+import file_pool as FP  # noqa: E402
 
 DLAT = CELL / M_LAT
 MAX_COS_LAT = 85.0  # a cell's width is taken at 85 degrees at most, as the rings are (world_cells.padded)
@@ -893,9 +894,12 @@ class PartBoxes:
 
 
 def write_engine_files(rects: dict[int, np.ndarray], cells: list[dict], world: Path, work: Path, base: Path,
-                       boxes: PartBoxes) -> tuple[Path, Path, dict]:
+                       boxes: PartBoxes, pool: int | None = None) -> tuple[Path, Path, dict]:
     """work/cities.json (every rectangle a city), work/cells/<id>.json (its boundary), work/parts/<id>.json (the
-    cell's parts whose bbox meets it; a part with no known bbox is kept). Returns (cities file, parts dir, stats)."""
+    cell's parts whose bbox meets it; a part with no known bbox is kept). Returns (cities file, parts dir, stats).
+    Every file's text is made here, in the rectangles' order; the boundary and parts files are written `pool` at a
+    time (file_pool.SmallFiles; FP.FILE_POOL when None; 1: one after another, as they were), all of them before
+    cities.json and before this returns."""
     cdir, pdir = work / "cells", work / "parts"
     for d in (cdir, pdir):
         d.mkdir(parents=True, exist_ok=True)
@@ -904,31 +908,32 @@ def write_engine_files(rects: dict[int, np.ndarray], cells: list[dict], world: P
     rid = 970_000_000
     eng = []
     st = Counter()
-    for k, rs in rects.items():
-        cell = cells[k]
-        pf = world / "files" / cell["file"] / "parts" / f"{cell['id']}.json"
-        entries = json.loads(pf.read_text(encoding="utf-8"))["parts"] if pf.exists() else []
-        pb = boxes.of([e["id"] for e in entries]) if entries else np.zeros((0, 4))
-        unknown = ~np.isfinite(pb).all(axis=1)
-        st["part entries without a bbox (kept)"] += int(unknown.sum())
-        for j, (s, w, n, e) in enumerate(rs.tolist()):
-            cid = f"{cell['id']}-{j}"
-            ring = [{"lat": s, "lon": w}, {"lat": s, "lon": e}, {"lat": n, "lon": e}, {"lat": n, "lon": w}, {"lat": s, "lon": w}]
-            bpath = cdir / f"{cid}.json"
-            bpath.write_text(json.dumps({"type": "relation", "id": rid, "bounds": {"minlat": s, "minlon": w, "maxlat": n, "maxlon": e},
-                                         "members": [{"type": "way", "ref": rid, "role": "outer", "geometry": ring}],
-                                         "tags": {"name": cid}}), encoding="utf-8")
-            eng.append({"id": cid, "name": cid, "relation": rid, "adminLevel": 2, "countryCodes": None,
-                        "timeZone": cell["timeZone"], "population": 1, "landAreaKm2": 1.0,
-                        "boundary": Path(os.path.relpath(bpath, base)).as_posix(), "region": "tier2", "box": [s, w, n, e]})
-            if entries:
-                meet = unknown | ((pb[:, 0] <= e) & (pb[:, 2] >= w) & (pb[:, 1] <= n) & (pb[:, 3] >= s))
-                ps = [entries[x] for x in np.flatnonzero(meet)]
-                if ps:
-                    (pdir / f"{cid}.json").write_text(json.dumps({"schema": 1, "city": cid, "parts": ps}), encoding="utf-8")
-                    st["rectangles with parts"] += 1
-                    st["part entries"] += len(ps)
-            rid += 1
+    with FP.SmallFiles(pool) as out:
+        for k, rs in rects.items():
+            cell = cells[k]
+            pf = world / "files" / cell["file"] / "parts" / f"{cell['id']}.json"
+            entries = json.loads(pf.read_text(encoding="utf-8"))["parts"] if pf.exists() else []
+            pb = boxes.of([e["id"] for e in entries]) if entries else np.zeros((0, 4))
+            unknown = ~np.isfinite(pb).all(axis=1)
+            st["part entries without a bbox (kept)"] += int(unknown.sum())
+            for j, (s, w, n, e) in enumerate(rs.tolist()):
+                cid = f"{cell['id']}-{j}"
+                ring = [{"lat": s, "lon": w}, {"lat": s, "lon": e}, {"lat": n, "lon": e}, {"lat": n, "lon": w}, {"lat": s, "lon": w}]
+                bpath = cdir / f"{cid}.json"
+                out.put(bpath, json.dumps({"type": "relation", "id": rid, "bounds": {"minlat": s, "minlon": w, "maxlat": n, "maxlon": e},
+                                           "members": [{"type": "way", "ref": rid, "role": "outer", "geometry": ring}],
+                                           "tags": {"name": cid}}))
+                eng.append({"id": cid, "name": cid, "relation": rid, "adminLevel": 2, "countryCodes": None,
+                            "timeZone": cell["timeZone"], "population": 1, "landAreaKm2": 1.0,
+                            "boundary": Path(os.path.relpath(bpath, base)).as_posix(), "region": "tier2", "box": [s, w, n, e]})
+                if entries:
+                    meet = unknown | ((pb[:, 0] <= e) & (pb[:, 2] >= w) & (pb[:, 1] <= n) & (pb[:, 3] >= s))
+                    ps = [entries[x] for x in np.flatnonzero(meet)]
+                    if ps:
+                        out.put(pdir / f"{cid}.json", json.dumps({"schema": 1, "city": cid, "parts": ps}))
+                        st["rectangles with parts"] += 1
+                        st["part entries"] += len(ps)
+                rid += 1
     cf = work / "cities.json"
     cf.write_text(json.dumps({"cities": eng}), encoding="utf-8")
     st["rectangles"] = len(eng)

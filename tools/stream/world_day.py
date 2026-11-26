@@ -488,22 +488,49 @@ def changed_groups(old: np.ndarray, new: np.ndarray) -> tuple[np.ndarray, np.nda
     return cand, np.isin(cand, co), np.isin(cand, cn)
 
 
+def tier1_rewrite(w: Path, files: list[dict], parts: list[np.ndarray], touched: np.ndarray, tier1: np.ndarray,
+                  new1: np.ndarray, added: dict[str, set], pool: int | None = None) -> tuple[int, int]:
+    """tier 1 into the files: in each, the touched elements' tier 1 rows dropped and its part of the new rows put in
+    (world_state.replace_in_file). Returns (rows dropped, rows added) and notes the new rows' codes in `added`.
+    `pool` files at a time (FP.FILE_POOL when None; 1: one after another, as it was); the sums and `added` are
+    made here in the files' order. A worker holds one file as replace_in_file does (its rows, the rows kept and
+    the merged rows at its most) and returns two numbers."""
+    def one(a):
+        f, idx = a
+        return WS.replace_in_file(w / "files" / f["id"] / WS.WORLD_BIN, touched, tier1, new1[idx], dtype=P.WREC,
+                                  keys_name=WS.WORLD_KEYS)
+
+    d1 = a1 = 0
+    for (f, idx), (d_, a_) in zip(zip(files, parts), FP.ordered(one, zip(files, parts), pool)):
+        d1, a1 = d1 + d_, a1 + a_
+        if len(idx):
+            added[f["id"]] |= set(codes_of(new1[idx]).tolist())
+    return d1, a1
+
+
 def delta_w(w: Path, old: np.ndarray, new: np.ndarray, files: list[dict], added: dict[str, set],
-            T: dict | None = None) -> dict:
+            T: dict | None = None, pool: int | None = None) -> dict:
     """tier2.delta on the world's WREC files: per (element, quest), the recount's change from D-1 to D applied; a group
     the recount changed but the state lacks is kept out (a recount-vs-whole disagreement), as tier2.delta does.
     T: the day's seconds, given the delta's own parts (the changed groups, the first pass over the files that finds
-    what the state holds, the second that rewrites them, and of the second the writes alone)"""
+    what the state holds, the second that rewrites them, and of the second the writes alone, summed over the
+    pool's threads). Both passes take `pool` files at a time (FP.FILE_POOL when None; 1: one after another, as
+    they were); what they return is put together here in the files' order. A worker of the first pass holds one
+    file's rows and their codes and returns the few codes found; one of the second holds a file as the serial loop
+    did (rows, codes, the rows kept, the merged rows) and returns a number."""
     T = {} if T is None else T
     t = time.time()
     cand, has_old, has_new = changed_groups(old, new)
     T["tier 2 delta: changed groups"] = time.time() - t
     t = time.time()
     held: set[int] = set()
+    def held_in(f):
+        fc = codes_of(np.fromfile(w / "files" / f["id"] / WS.WORLD_BIN, P.WREC))
+        return fc[np.isin(fc, cand)]
+
     if len(cand):
-        for f in files:
-            fc = codes_of(np.fromfile(w / "files" / f["id"] / WS.WORLD_BIN, P.WREC))
-            held |= set(fc[np.isin(fc, cand)].tolist())
+        for h in FP.ordered(held_in, files, pool):
+            held |= set(h.tolist())
     T["tier 2 delta: first pass"] = time.time() - t
     st = Counter()
     put, gone = set(), set()
@@ -529,17 +556,26 @@ def delta_w(w: Path, old: np.ndarray, new: np.ndarray, files: list[dict], added:
     st["rows added"], st["unrouted"] = len(add), unrouted
     t = time.time()
     wrote = 0.0
-    for f, idx in zip(files, parts):
+
+    def rewrite(a):
+        """one file: None when nothing of it changes (it is not written), else (rows dropped, seconds writing)"""
+        f, idx = a
         p = w / "files" / f["id"] / WS.WORLD_BIN
         r = np.fromfile(p, P.WREC)
         drop = np.isin(codes_of(r), both)
         if not drop.any() and not len(idx):
-            continue
-        st["rows dropped"] += int(drop.sum())
+            return None
+        dropped = int(drop.sum())
         r = WS.merge(r[~drop], add[idx])
         tw = time.time()
         WS.write_rows(p, r)
-        wrote += time.time() - tw
+        return dropped, time.time() - tw
+
+    for (f, idx), res in zip(zip(files, parts), FP.ordered(rewrite, zip(files, parts), pool)):
+        if res is None:
+            continue
+        st["rows dropped"] += res[0]
+        wrote += res[1]
         added[f["id"]] |= set(codes_of(add[idx]).tolist())
     T["tier 2 delta: second pass"] = time.time() - t
     T["tier 2 delta: rewrite"] = wrote
@@ -749,13 +785,7 @@ def finish(day: Day) -> dict:
     parts, unrouted1 = WS.route(new1, files)
     T["tier 1: ingest"] = time.time() - t1
     t1 = time.time()
-    d1 = a1 = 0
-    for f, idx in zip(files, parts):
-        d_, a_ = WS.replace_in_file(w / "files" / f["id"] / WS.WORLD_BIN, touched, tier1, new1[idx], dtype=P.WREC,
-                                    keys_name=WS.WORLD_KEYS)
-        d1, a1 = d1 + d_, a1 + a_
-        if len(idx):
-            added[f["id"]] |= set(codes_of(new1[idx]).tolist())
+    d1, a1 = tier1_rewrite(w, files, parts, touched, tier1, new1, added)
     T["tier 1: rewrite"] = time.time() - t1
     T["tier 1"] = time.time() - t
     log(f"tier 1: {d1:,} rows of touched elements dropped, {a1:,} added; {unrouted1:,} in no file; {dict(pst)}")
