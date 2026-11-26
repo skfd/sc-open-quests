@@ -4719,3 +4719,12 @@ The 12:15 task `kk-SCOpenQuests` (`run.py update`) is deleted (11-26) and `docs/
   `JUDGE_MODEL = "claude-opus-5-5"`, `JUDGE_EFFORT = "high"` (`claude -p --model ... --effort high`), ea0e20ee. The 11-18.0
   results moved from the trial into `data/place-ids/releases/` (registry hash checked equal), backed up; the 102 operator rows
   sent back to the judge once with the improved `look`; 256 rows judged by Opus from about 13:30.
+- **11-18.0 judged and STAGED (11-26, 13:30-14:20).** Opus at high effort judged the 256 waiting rows (28 min): 53 left for the
+  operator, of which 45 only doubted an ended place's successor. **Owner (wizard): a successor in doubt is not the
+  operator's** (`settle_successors`: the first high-confidence answer, else the parent the proposal names, else the first
+  answer). The **8 "same place or not" rows judged by the owner**: El Túnel follows its name (same acb3c3b2); Gancho de Camino
+  Nº 2 ended to La Poma Nº 2; 15 Temmuz Millet Meydanı ended to the bazaar (not `same`, against the recommendation); Уэлен,
+  Кислино, Villa Argentina- Barrio Cervecero, 6 de Julio, San Emilio `same`. `apply`: **1,086,698 places, 1,085,945 live
+  (the release), same 725, ended 753, minted 4,386 (+25 whose same proposal was turned down), former names +566**;
+  `place_ids.py check` clean; backed up. **The live registry is untouched (b3d75207...).** It goes live only at the 12-01
+  switch, which is NOT built (adopt, pin, pulls, small squares, places build in a new folder, the reseed). HOLD stays.
