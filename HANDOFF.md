@@ -4728,3 +4728,9 @@ The 12:15 task `kk-SCOpenQuests` (`run.py update`) is deleted (11-26) and `docs/
   (the release), same 725, ended 753, minted 4,386 (+25 whose same proposal was turned down), former names +566**;
   `place_ids.py check` clean; backed up. **The live registry is untouched (b3d75207...).** It goes live only at the 12-01
   switch, which is NOT built (adopt, pin, pulls, small squares, places build in a new folder, the reseed). HOLD stays.
+- **State at 16:45 on 11-26 (read-only check; owner: "what's left to do before we resume world dailies?").** The 13:20 check, done
+  late: the 11:15 inputs run ended `inputs done` at 11:28 (Europe clip at 11-26 00:00, diff 5188); the 12:15 city run no longer
+  exists (task deleted 11:15), so its half of the check is moot. The sc-data delete ended `exit 0` at 15:11. The 14:45 task
+  started, logged "held", took no day. No RUNNING, no STOPPED; HOLD still holds the 11-25 note. Main is 2 commits ahead of origin
+  (the next `run.py site` pushes). **One day (11-26) is waiting.** Nothing technical is left before the lift; the open
+  question is the owner's: does the HOLD also wait for the 12-01 switch (`adopt`), which is not built?
