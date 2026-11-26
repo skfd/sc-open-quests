@@ -3298,6 +3298,10 @@ wording and tab structure as a first draft open to change, not as decided design
     city or smaller (neighbourhood-level, locality or localadmin) must cover it**, so 63,800 are dropped and 3,306 stay
     (3,297 only in a county or larger, 9 in nothing); ours: 400 of 407 dropped, 7 stay. Not built; the traps above
     (`MAX_DELETE`, `DAY_CAP`, the registry) come first, and the owner's go. **Owner, 2026-11-24: not yet, handoff only.**
+  - **Merged into main 2026-11-25, dae1a357 (not pushed):** main's renamed `config/parts` minus 416 parts (400 squares, 16
+    twins), ids of `dropped-places.json` translated, whole suite 313 passed, 1 skipped. The name layer, history and publisher
+    are the place-ids session's rebuild after it (told; it asked that nobody else runs them). Worktree
+    `../sc-open-quests-dropped` can go.
   - **Owner, 2026-11-25: drop the small squares, no review, by a rule in code; the duplicates merge; OSM is left as is**
     (cowork closed: `~/Code/cowork/osm-duplicate-neighbourhoods/FOLLOW-UP.md`). Built on branch `dropped-places`
     (worktree `../sc-open-quests-dropped`, main merged in at 14426bf8): `tools/small_squares.py` (`build`: 63,800 of 81,372
