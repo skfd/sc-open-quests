@@ -861,7 +861,7 @@ its own static page or a Worker that rewrites the head; the state is in the quer
   cities (about 4,350); Latin, Cyrillic and Greek names; the general card for the rest; no rendering on demand at
   release. Also the owner's: what happens at the Workers limit, and the wording "Canada and Europe".
 
-**MERGED INTO MAIN 2026-11-26 05:30 (owner, wizard: "merge into main today", not on release day; 4c052008).** The card is
+**MERGED INTO MAIN 2026-11-26 05:26 (owner, wizard: "merge into main today", not on release day; 4c052008).** The card is
 the one drawn on 11-25; it goes live with the next daily run. Still open of the list below: 2 (the release-day redraw, now on
 main), 4 (the monthly redraw) and 5 (the Worker's deploy). Branch and worktree `../sc-open-quests-previews` removed.
 
@@ -899,7 +899,7 @@ main), 4 (the monthly redraw) and 5 (the Worker's deploy). Branch and worktree `
   country and dependency entry, possibly its placeholders too. **Known limits, left as they are:** at 360 px wide the small
   labels do not read; a centre square crop loses "577".
 
-### Share previews: built on `share-previews`, not merged, not live (2026-11-23, afternoon; owner: "build it, i will upgrade account later")
+### Share previews: built on `share-previews`, merged 11-26 (the Worker not deployed) (2026-11-23, afternoon; owner: "build it, i will upgrade account later")
 
 - **Workers Paid: the owner says subscribed; Workers spending limit $5 set (2026-11-23, by Claude in the owner's Chrome).**
   Billing, Spend limits: blocks all Workers on the account past $5 of usage in a billing period (Nov 10 to Dec 9 now),
@@ -4368,7 +4368,7 @@ at once to 0.28 GB (40.8 GiB).
   deleted exactly those 6,254 and deployed (8,169 files), then `run.py site` recorded the deploy and pushed main. `cloud_publish --check`:
   8,925 files equal. Headless: the Annex by its new id (series from 11-01), Germany by its new id and Toronto load with no error or failed
   request. **Not done:** `state_checkpoint.py link`/`upload` (R2's checkpoint still has the old ids in place-sets.json: take a new one
-  before relying on it); the `share-previews` branch's test links (old ids); the facts' and archives' R2 copies are refreshed by the
+  before relying on it); the `share-previews` branch's test links (old ids; done 11-26, d269fe58); the facts' and archives' R2 copies are refreshed by the
   11:15 inputs run. **HOLD stays** (world dailies paused by the owner until the new things are built).
 - **Owner (wizard, 11-26, about 00:00): delete the old sc-data files now.** Dry run of one batch first: 50,000 of 50,000 named, all from the list,
   none of the kept also built. Running: `world_publish.py upload --delete-kept --max-delete 1200000` (1,129,125 files, log
@@ -4376,11 +4376,12 @@ at once to 0.28 GB (40.8 GiB).
 - **Branches fixed and merged (owner, 11-26 05:20: "lets fix and merge branches"; two answers by wizard).** Done while
   the sc-data delete runs, under the HOLD; nothing built or installed:
   - `share-previews`: main merged into it with no conflict, the whole suite green there (317, 3 skipped), then merged into
-    main (4c052008) **today, not on release day: the owner's answer.** It goes live with the 12:15 run. Its live checks
+    main (4c052008) **today, not on release day: the owner's answer.** It goes live with the 12:15 run: that run deploys `cloudflare/wrangler.jsonc` (assets only, unchanged); the
+    preview Worker (`wrangler.previews.jsonc`) is deployed by nothing scheduled. Its live checks
     (`cloudflare/test/browser_parity.py`, the README's curl) now name places by their new ids (d269fe58); the node tests keep
     their fixtures' ids.
   - The points fix: source only into main (2596a3ae); `tilestore.exe` not touched (see "11-26" under the 11-24 entry).
   - Removed (worktree and branch): `syspath-leak`, `world-stable` (its one commit is in main as cf3cf87e), the heap and
     disk agent's, `a9b8a34` (merged), the points fix's, `share-previews`. No links in any; main's `.scratch` checked.
   - **Kept:** `agent-a9b152...` (P3's 28.6 GB rehearsal data, kept for the three traces), `place-ids` (the Overture
-    session's), `pages-redirect` (an orphan on origin: what Pages serves, never merged). Nothing pushed by this session.
+    session's), `pages-redirect` (an orphan branch, also on origin; never meant for main). Nothing pushed by this session.
