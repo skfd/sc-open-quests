@@ -4697,3 +4697,11 @@ The 12:15 task `kk-SCOpenQuests` (`run.py update`) is deleted (11-26) and `docs/
   subscription); the algorithm decides **only clear cases** (new, back, same OSM object with same name and subtype, or same OSM
   object with the name or subtype changed and the outlines overlapping well); **the operator gets only rows Fable is unsure of**
   (low confidence, or two runs disagree); the **first switch on the 1st is watched** (2027-01-01), later ones unattended.
+- **Owner (wizard, about 12:25):** **the first monthly switch is 12-01 with 11-18.0** (not 01-01 with 12-16.0); the
+  operator is reached by **a session the watcher opens** (`SessionCli new --in <repo> --prompt ...`, once a release,
+  `operator-session.txt`); **the HOLD stays on** (not lifted after the 13:20 check).
+- **Built (12:10-12:30):** `auto` (the clear classes), `agent` (Fable through `claude -p`, two runs a batch), `look`,
+  `exceptions`, `watch` (402525435, f1b857365 and the session call). Fable on a 40-row sample of 11-18.0 (12:12-12:17, 5 min,
+  about $3 at list prices on the subscription): 39 of 40 taken, 1 to the operator (the same OSM relation already ours under
+  another id); it found Armenian communities merged into Goris and Stepanavan by their villages' new parent, dropped Moxico
+  from Cuando Cubango's successors. The full 834 rows running since about 12:20 in `.scratch/overture-fable-trial/`.
