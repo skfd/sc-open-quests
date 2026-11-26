@@ -4473,6 +4473,16 @@ measured: 12,643 s, then the publish 1,155 s.
   - **Under way, in worktrees under `.claude/worktrees/` (branches `perf-room`, `perf-steps`, `perf-engine`):** three
     agents; builds and tests only until 11:00 (the inputs run is 11:15, the city run 12:15), heavy proofs one at a time
     by this session. The points fix's owed checks are this session's.
+  - **The points fix's owed checks (1) and (2): done 08:03-08:12, as a reader under the HOLD
+    (`.scratch/perf-review/points_owed.py 24`, log `points-owed.log`, outputs `points-owed/`).** One call as a day's
+    `after` has it, generation 24: 464,929 nodes with their places, 227,703 ways and 40,637 relations of diff 5187,
+    11-21's 25,358 kept points, `--rel-geometry --vertex-ways`. Old binary 455 s (points 318), new 60 s (points 16).
+    **40 of 47 output files the same bytes; the kept counters and every other stat equal. The seven `v_*` files (vertex
+    ways) hold the same 220,164 ways, each with the same refs, places and tags, in another order:** that order is a hash
+    map's (`context.rs:662`, `by_tile.keys()` unsorted, the same line in the old source), so it differs between any
+    two runs of either binary (read in the code, not shown by running the old one twice); `store_context._geo` reads
+    them into a dict by id. **Peak commit: old 6.81 GiB, new 7.21 GiB** (working set 7.44 and 7.43): 0.4 GiB more.
+    Left of the owed list: a day of its own. Install is still the copy of `tilestore-points-fix-5dc1fbe6.exe`.
 - **The delete was stopped at the 2-hour limit of a background job (11-26, about 07:00), not finished:** 250,000 of 1,129,125 old files gone,
   879,125 left in `bucket.json` "kept" (the sixth batch was cut mid-way; S3 deletes of a gone file are harmless, so a rerun is safe). A batch
   of 50,000 takes about 20 minutes, so the rest is about 6 hours: it needs a detached run, not a session's background job. Command:
