@@ -132,17 +132,22 @@ def read_json(p: Path):
 
 # --- places --------------------------------------------------------------------------------------
 
-def places(country: str | None, out: Path) -> None:
+def places(country: str | None, out: Path, release: str | None = None) -> None:
     """Every countable division (an area, its own source an OSM relation or way) as places.json and one
     GeoJSON file each under geo/<first two id digits>/. With a country, Overture's country pull
     (data/overture/); without, the world (data/overture/world/, its outlines from overture_pull.py
-    --outlines). Rows are streamed: a million outlines do not fit in memory at once."""
+    --outlines). Rows are streamed: a million outlines do not fit in memory at once. With a release other than
+    the pinned one (a world built ahead of a switch): its pull and its staged registry, into a new folder."""
     import duckdb
-    ids = place_ids.load()
+    inputs = place_ids.release_inputs(release)
+    if release and country:
+        raise SystemExit("--release builds the world, not a country")
+    place_ids.refuse_live(out, inputs)
+    ids = place_ids.load(inputs.registry)
     con = duckdb.connect()
     con.sql("LOAD spatial")
     con.sql("SET memory_limit = '8GB'; SET preserve_insertion_order = false")
-    src = (OVERTURE if country else OVERTURE / "world").as_posix()
+    src = (OVERTURE if country else inputs.src).as_posix()
     area_file = f"{src}/division_area.parquet" if country else f"{src}/division_area_outlines.parquet"
     if not country and not Path(area_file).exists():
         raise SystemExit(f"{area_file} missing: run tools/overture_pull.py <release> --outlines")
@@ -192,7 +197,7 @@ def places(country: str | None, out: Path) -> None:
         if len(seen) % 100_000 < 2000:
             print(f"places: {len(seen):,} of {total:,}, {time.time() - t:.0f} s", flush=True)
     result.sort(key=lambda p: p["id"])
-    write_json(out / "places.json", {"country": country, "overture": read_json(ROOT / "config/places.json")["overture"],
+    write_json(out / "places.json", {"country": country, "overture": inputs.release,
                                      "places": result})
     by = collections.Counter(p["subtype"] for p in result)
     print(f"{len(result)} places ({dict(by)}); skipped geometries {dict(skipped)}; {time.time() - t:.0f} s")
@@ -863,6 +868,7 @@ def main(argv=None) -> None:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     sub = ap.add_subparsers(dest="cmd", required=True)
     a = sub.add_parser("places"); a.add_argument("--country", help="a country code; the world without"); a.add_argument("--out", type=Path, required=True)
+    a.add_argument("--release", help="an Overture release other than the pinned one (place_ids.release_inputs)")
     a = sub.add_parser("plan"); a.add_argument("--grid", type=Path, required=True); a.add_argument("--out", type=Path, required=True)
     a.add_argument("--file-nodes", type=float, default=130e6); a.add_argument("--cell-nodes", type=float, default=15e6)
     a.add_argument("--cities", help="comma-separated city ids: the parts to check against, instead of a country's")
@@ -890,7 +896,7 @@ def main(argv=None) -> None:
     a.add_argument("--archive", help="a date: hold the cities against their published snapshots of that day")
     o = ap.parse_args(argv)
     if o.cmd == "places":
-        places(o.country, o.out)
+        places(o.country, o.out, o.release)
     elif o.cmd == "plan":
         plan(o.grid, o.out, o.file_nodes, o.cell_nodes, o.cities.split(",") if o.cities else None)
     elif o.cmd == "cut":

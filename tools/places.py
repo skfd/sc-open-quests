@@ -414,21 +414,26 @@ def write(out_dir, overture, index_countries, files):
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("cmd", choices=["build"])
-    ap.add_argument("--src", default=str(ROOT / "data" / "overture" / "world"))
+    ap.add_argument("--release", help="an Overture release other than the pinned one: its own pull, staged registry and "
+                    "squares (place_ids.release_inputs); --out must then be a new folder")
+    ap.add_argument("--src", help="default: the release's pull (data/overture/world for the pinned one)")
     ap.add_argument("--out", default=str(ROOT / "docs" / "places"))
     ap.add_argument("--report", help="write the city matching report here too")
     a = ap.parse_args(argv)
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # place names on a cp1252 console
-    overture = json.loads((ROOT / "config" / "places.json").read_text(encoding="utf-8"))["overture"]
+    inputs = place_ids.release_inputs(a.release)
+    place_ids.refuse_live(Path(a.out), inputs)
+    a.src = a.src or str(inputs.src)
+    overture = inputs.release
     cities = json.loads((ROOT / "config" / "cities.json").read_text(encoding="utf-8"))["cities"]
     rows = read_divisions(a.src)
     print(f"{len(rows)} divisions with an area", flush=True)
     sys.path.insert(0, str(ROOT))
     import run
-    rows, left_out = leave_out(rows, run.left_out_places())
-    print(f"left out by config/dropped-places.json and config/small-squares.json: {left_out}", flush=True)
+    rows, left_out = leave_out(rows, run.left_out_places(squares=inputs.squares))
+    print(f"left out by config/dropped-places.json and {inputs.squares.name}: {left_out}", flush=True)
     attach_sc(rows)
-    id_of = place_ids.load().id_of
+    id_of = place_ids.load(inputs.registry).id_of
     assign(rows, id_of)
     for r in rows:
         if not r["files"]:   # neither SC nor Overture names a country there (Senkaku, the Spratlys)
