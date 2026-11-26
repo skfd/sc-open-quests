@@ -187,12 +187,13 @@ def test_the_loops_own_timers_and_the_parts_of_a_step():
 [2026-11-27T02:24:00] world finish 2026-11-26: 7170 s; {"tier 1: small pbf": 50.1, "tier 1: engines": 628.0, "tier 1: ingest": 12.5, "tier 1: rewrite": 520.3, "tier 1": 1198.4, "tier 2 delta: first pass": 300.0, "tier 2 delta": 819.0, "counts: note engines": 300.2, "sets save": 3.1, "touched and rects": 157.0}
 [2026-11-27T02:30:00] compact: exit 0 in 157 s
 [2026-11-27T02:30:01] timer: engines harvest 12.0 s
-[2026-11-27T02:33:00] timer: day's work deleted 170.4 s
+[2026-11-27T02:33:00] timer: day's work deleted beside compact 170.4 s
+[2026-11-27T02:33:00] timer: day's rest deleted 0.4 s
 [2026-11-27T02:33:01] == day 2026-11-26 done: generation 26
 """
     r = dm.day_steps(log, "2026-11-26")
     assert r["timers"] == {"day.pkl save": 41.5, "day.pkl read back": 30.2, "day.pkl load": 29.8, "engines harvest": 12.0,
-                           "day's work deleted": 170.4}
+                           "day's work deleted beside compact": 170.4, "day's rest deleted": 0.4}
     assert set(r["steps"]) == {"world prepare", "update", "world finish", "compact"}     # a timer is not a step
     assert r["unaccounted s"] == r["wall s"] - 720 - 707 - 7170 - 157
     f = dm.flat(r)
