@@ -303,6 +303,50 @@ def world_gate(dd: Path, nxt: str, oracle: Path) -> None:
              f"missing {res['missing']} (see {dd / 'gate' / 'gate.json'})")
 
 
+RECORDED = "recorded"       # in a day's folder: its engines.json and day.json are kept with the world
+BULK = ("work", "before")   # what of a day's folder is large (both dates' map data and the dumps; D-1's rows)
+
+
+def record_work(dd: Path, nxt: str) -> None:
+    """what must be read off the day's work before it goes, kept with the world (W/days/<D>/): each engine's numbers
+    (day_metrics.py) and day.json. Once: RECORDED says it is done, and a run that resumes after it finds the work
+    deleted or half deleted, which must not be read into an engines.json again. gate.json is not copied here: it
+    is what says a day is gated (world_publish, facts, archive_backup), and it goes in when the day's checks end."""
+    keep = WORLD / "days" / nxt
+    keep.mkdir(parents=True, exist_ok=True)
+    if (dd / RECORDED).exists():
+        return
+    t = time.time()
+    try:  # what each engine did, read off its log before the logs go (day_metrics.py); never a stop
+        DM.write(WORLD, nxt, dd / "work", log)
+    except Exception as e:  # noqa: BLE001
+        log(f"engines: not recorded ({type(e).__name__}: {e})")
+    log(f"timer: engines harvest {time.time() - t:.1f} s")
+    src = dd / "work" / "day.json"
+    if src.exists():
+        shutil.copy2(src, keep / src.name)
+    (dd / RECORDED).write_text("", encoding="utf-8")
+
+
+def delete_bulk(dd: Path):
+    """the day's large folders (BULK) deleted in a thread of its own, started here; join it, then `.seconds` is how
+    long it took. The rest of the day's folder stays: `finished` and gate/gate.json are what a resumed run goes by
+    (without them it would skip the store's checks, or run the gate's engines again), so they go last, by the
+    caller, when the day is done."""
+    import threading
+
+    def go():
+        t = time.time()
+        for n in BULK:
+            shutil.rmtree(dd / n, ignore_errors=True)
+        th.seconds = time.time() - t
+
+    th = threading.Thread(target=go, name="day-work-delete")
+    th.seconds = 0.0
+    th.start()
+    return th
+
+
 def store_tail(dd: Path, nxt: str, seq: int, osc: Path, oracle: Path, g: int) -> None:
     """the node file to D and the store's own checks of D, then compaction; the day's work given back"""
     if (Path(str(LOC) + ".state")).read_text().strip() != f"{nxt}T00:00:00Z":
@@ -325,24 +369,25 @@ def store_tail(dd: Path, nxt: str, seq: int, osc: Path, oracle: Path, g: int) ->
     if w["notExplained"]:
         stop(f"day {nxt}: tiles not explained by ways the clip lacks: {w['notExplained']}")
     shutil.rmtree(clip, ignore_errors=True)
-    run([EXE, "compact", "--store", STORE, "--min-dead", "0.25"], "compact")
-    # the day's record kept with the world; its work (both dates' map data, the dumps, D-1's rows) given back
+    # the gate and the store's checks of D have passed: the day's record is kept with the world, and its work (both
+    # dates' map data, the dumps, D-1's rows; 170 s to delete on 11-25) is given back beside compaction, in a
+    # thread, joined before the disk's free space is asked and before anything else of the day ends
+    record_work(dd, nxt)
+    deleting = delete_bulk(dd)
+    try:
+        run([EXE, "compact", "--store", STORE, "--min-dead", "0.25"], "compact")
+    finally:  # also when compact stops the run: no thread is left deleting behind a STOPPED
+        deleting.join()
+    log(f"timer: day's work deleted beside compact {deleting.seconds:.1f} s")
     keep = WORLD / "days" / nxt
-    keep.mkdir(parents=True, exist_ok=True)
-    t = time.time()
-    try:  # what each engine did, read off its log before the logs go (day_metrics.py); never a stop
-        DM.write(WORLD, nxt, dd / "work", log)
-    except Exception as e:  # noqa: BLE001
-        log(f"engines: not recorded ({type(e).__name__}: {e})")
-    log(f"timer: engines harvest {time.time() - t:.1f} s")
-    for src in (dd / "work" / "day.json", dd / "gate" / "gate.json"):
-        if src.exists():
-            shutil.copy2(src, keep / src.name)
+    src = dd / "gate" / "gate.json"
+    if src.exists():
+        shutil.copy2(src, keep / src.name)
     pins_edit(drop=[oracle.name])
     (WORLD / WD.NOTES_PREV).unlink(missing_ok=True)  # the day after a notes refresh is done: D-1's clip not needed
     t = time.time()
     shutil.rmtree(dd, ignore_errors=True)
-    log(f"timer: day's work deleted {time.time() - t:.1f} s")
+    log(f"timer: day's rest deleted {time.time() - t:.1f} s")
     # punch only gives dead space in pack-0000 back to the disk, at about 0.5 s a dead range on the planet (11-02's first:
     # 15,654 ranges; 11-03's daily one: over 16,000 in 2 h, both stopped by hand), so it runs only when the disk is
     # short, measured after the day's work (D-1's links, about 56 GB) is given back
