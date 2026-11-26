@@ -108,6 +108,16 @@ def phase_of(rel: str) -> str:
     return p[0]
 
 
+def given(folder: Path) -> dict:
+    """the heap the engine was given (engine_room.note_given leaves given.json beside its log): "given MB", and
+    "first given MB" when a first run on less failed for memory; {} for a day run before 2026-11-26"""
+    try:
+        g = json.loads((folder / "given.json").read_text(encoding="utf-8"))
+        return {k: int(g[k]) for k in ("given MB", "first given MB") if k in g}
+    except (OSError, ValueError, TypeError, AttributeError):
+        return {}
+
+
 def harvest(work: Path) -> dict:
     engines, unfinished = {}, []
     for log in sorted(work.rglob("engine.log")):
@@ -116,6 +126,7 @@ def harvest(work: Path) -> dict:
         if e is None:
             unfinished.append(rel)
         else:
+            e.update(given(log.parent))
             engines[rel] = e
     phases: dict[str, dict] = {}
     watch: list[str] = []

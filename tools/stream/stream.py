@@ -266,9 +266,27 @@ def write_small_pbf(path: Path, stamp: str, last_node, last_way, locs: Locations
     return stats
 
 
+def run_started(args, on_start=None, **kw) -> int:
+    """subprocess.run(args, **kw).returncode, with the process shown to on_start(process) once it runs. As
+    subprocess.run: it waits; on anything raised meanwhile the child is killed and the error passed on"""
+    with subprocess.Popen(args, **kw) as p:
+        try:
+            if on_start:
+                try:
+                    on_start(p)
+                except Exception:  # noqa: BLE001  whoever watches is never the engine's failure
+                    pass
+            return p.wait()
+        except:  # noqa: E722  (subprocess.run's own: KeyboardInterrupt too)
+            p.kill()
+            raise
+
+
 def engine(pbf: Path, out: Path, today: str, cities: Path, zone: str, notes: Path | None, area_pass: bool,
            heap_gb: int = 8, quests: Path | None = None, base: Path | None = None, extra_opts: str = "",
-           parts: Path | None = None, parts_cache: Path | None = None, exe: Path | None = None) -> Path:
+           parts: Path | None = None, parts_cache: Path | None = None, exe: Path | None = None,
+           on_start=None) -> Path:
+    # on_start(process): called once the launcher runs (engine_room reads what its process tree commits, by pid)
     # the engine runs where the cities file's data is (its boundaries are relative paths; data/ is not all in git)
     pbf, out, cities = pbf.resolve(), out.resolve(), cities.resolve()
     notes = notes.resolve() if notes else None
@@ -289,9 +307,9 @@ def engine(pbf: Path, out: Path, today: str, cities: Path, zone: str, notes: Pat
                          + ("" if area_pass else " -Dopenquests.areaPass=false") + (" " + extra_opts if extra_opts else ""))
     t = time.time()
     with open(out / "engine.log", "w", encoding="utf-8") as f:
-        r = subprocess.run(args, cwd=base, env=env, stdout=f, stderr=subprocess.STDOUT)
-    if r.returncode:
-        sys.exit(f"engine failed ({r.returncode}), see {out / 'engine.log'}")
+        returncode = run_started(args, on_start, cwd=base, env=env, stdout=f, stderr=subprocess.STDOUT)
+    if returncode:
+        sys.exit(f"engine failed ({returncode}), see {out / 'engine.log'}")
     log(f"engine over {pbf.name} in {time.time() - t:.1f} s")
     return dump
 

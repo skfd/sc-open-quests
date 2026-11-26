@@ -1,4 +1,6 @@
-"""tools/stream/engine_room.py: the world day's engines enter only when the commit charge holds them."""
+"""tools/stream/engine_room.py: the world day's engines enter only when the commit charge holds them.
+The rule here is the one of SCOQ_ROOM_SIZED=0 (every engine counted by its whole heap), which has to stay what it
+was; the sized rule is in test_engine_room_sized.py."""
 import sys
 import threading
 import unittest
@@ -29,7 +31,7 @@ def room(commit, clock=None, wait_minutes=60):
         seen.append(v)
         return (50.0, v, 88.0)
 
-    r = ER.Room(status=status, clock=clock, poll_seconds=0, wait_minutes=wait_minutes)
+    r = ER.Room(status=status, clock=clock, poll_seconds=0, wait_minutes=wait_minutes, sized=False)
     wait = r.cond.wait
 
     def waiting(timeout=None):   # a poll: 30 s pass on the test's clock, no real sleep
@@ -58,7 +60,7 @@ class Fits(unittest.TestCase):
         self.assertFalse(r.fits(8)[0])
 
     def test_no_reading_lets_every_engine_in(self):
-        r = ER.Room(status=lambda: None)
+        r = ER.Room(status=lambda: None, sized=False)
         r.alive = [8] * 20
         self.assertEqual(r.fits(8), (True, None))
 
@@ -105,7 +107,7 @@ class Enter(unittest.TestCase):
         self.assertIn("1 of our engines alive (8 g)", said[0])
 
     def test_leaving_wakes_the_one_that_waits(self):
-        r = ER.Room(status=lambda: (50.0, 23.0, 88.0), poll_seconds=5)   # 23 - 8 = 15: one engine, not two
+        r = ER.Room(status=lambda: (50.0, 23.0, 88.0), poll_seconds=5, sized=False)   # 23 - 8 = 15: one engine, not two
         r.enter(8)
         entered = threading.Event()
         t = threading.Thread(target=lambda: (r.enter(8, "second", lambda m: None), entered.set()))

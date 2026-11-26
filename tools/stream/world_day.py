@@ -298,10 +298,21 @@ def engine_dump(day: Day, pbf: Path, out: Path, clock: str, cities: Path, parts:
                 extra_opts: str = "") -> Path:
     """one engine run, its state dump's path (thread-safe: the engine is passed, not set on `stream`)"""
     quiet(20)
-    # in only when the commit charge holds this heap beside the engines alive (four died together on 2026-11-23)
-    with engine_room.ROOM.engine(day.heap_gb, f"{out.parent.name}/{out.name}", day.log):
-        return S.engine(pbf, out, clock, cities, "UTC", None, area_pass=area_pass, heap_gb=day.heap_gb, base=ROOT,
-                        extra_opts=extra_opts, parts=parts, parts_cache=P.parts_cache(day.w), exe=day.engine)
+    try:  # the engine's name in the day's work, as day_metrics.harvest writes it: t1/f12, t2/groups/f12/old
+        key = out.resolve().relative_to(day.work.resolve()).as_posix()
+    except ValueError:
+        key = f"{out.parent.name}/{out.name}"
+    # its heap from what it used on the last kept days (the day's with no history, or with SCOQ_ROOM_SIZED=0)
+    heap = engine_room.heap_for(day.w, day.today, key, day.heap_gb)
+
+    def run(heap_gb, on_start, more):
+        return S.engine(pbf, out, clock, cities, "UTC", None, area_pass=area_pass, heap_gb=heap_gb, base=ROOT,
+                        extra_opts=" ".join(o for o in (extra_opts, more) if o), parts=parts,
+                        parts_cache=P.parts_cache(day.w), exe=day.engine, on_start=on_start)
+
+    # in only when the commit charge holds this engine beside the engines alive (four died together on 2026-11-23);
+    # one that fails for memory on less than the day's heap runs once more on the day's
+    return engine_room.in_room(run, out, key, heap, day.heap_gb, day.log, cwd=ROOT)
 
 
 def engine_rows(day: Day, pbf: Path, out: Path, clock: str, cities: Path, parts: Path, area_pass: bool,
@@ -393,6 +404,8 @@ def rect_rows(day: Day, cities: Path, parts: Path, gen: int, clock: str, stamp: 
             dumps.append(d)
             if day.log:
                 day.log(f"tier 2 {which}: group {gid} ({mb:,.0f} MB) engine {s:.0f} s; {i} of {len(futs)} done")
+    if day.log:
+        day.log(engine_room.ROOM.phase_line(f"tier 2 {which}"))
     rows = [dump_rows(d, sets, names, rects=True) for d in dumps]
     st = {k: round(v, 1) if isinstance(v, float) else v for k, v in st.items()}
     return (np.unique(np.concatenate(rows)) if rows else np.zeros(0, P.WREC)), st
@@ -599,9 +612,15 @@ def counts_at(w: Path, clock: str, sets: P.PlaceSets, names: list[str], work: Pa
     def one(f):
         d = w / "files" / f["id"]
         quiet(5)
-        with engine_room.ROOM.engine(heap_gb, f"notes/{f['id']}"):
+        key = f"{work.name}/{f['id']}"   # notes/f12 in a day's work, as day_metrics.harvest writes it
+
+        def run(gb, on_start, more):
             return N.note_quests(d / "cities.json", d / "notes.jsonl", clock, work / f["id"], parts=d / "parts",
-                                 engine=engine, heap_gb=heap_gb, parts_cache=P.parts_cache(w))
+                                 engine=engine, heap_gb=gb, parts_cache=P.parts_cache(w), on_start=on_start,
+                                 extra_opts=more)
+
+        return engine_room.in_room(run, work / f["id"], key, engine_room.heap_for(w, clock, key, heap_gb), heap_gb,
+                                   cwd=ROOT)
 
     from concurrent.futures import ThreadPoolExecutor
     with ThreadPoolExecutor(max(1, T2_WORKERS)) as ex:
@@ -686,10 +705,12 @@ def finish(day: Day) -> dict:
     # T2_WORKERS at a time; the dumps ingested in file order, so the place-set numbering does not depend on which
     # engine ends first
     from concurrent.futures import ThreadPoolExecutor
+    engine_room.ROOM.phase()  # the room's count per phase starts here
     with ThreadPoolExecutor(max(1, T2_WORKERS)) as ex:
         futs = [ex.submit(engine_dump, day, t1w / "touched.osm.pbf", t1w / f["id"], day.today,
                           w / "files" / f["id"] / "cities.json", w / "files" / f["id"] / "parts", False) for f in files]
         dumps1 = [f_.result() for f_ in futs]
+    log(engine_room.ROOM.phase_line("tier 1"))
     new1 = (np.concatenate([dump_rows(d_, sets, names) for d_ in dumps1]) if files else np.zeros(0, P.WREC))
     new1 = np.unique(new1)
     tier1 = WS.tier1_mask(names)
@@ -742,6 +763,7 @@ def finish(day: Day) -> dict:
     T["notes"] = time.time() - t
     t = time.time()
     counts_at(w, day.today, sets, names, day.work / "notes", day.engine, day.heap_gb)
+    log(engine_room.ROOM.phase_line("notes"))
     T["counts and note quests"] = time.time() - t
 
     locs.save()  # a region's overlay moves to D (the planet's node file is read only: the store moves it)
