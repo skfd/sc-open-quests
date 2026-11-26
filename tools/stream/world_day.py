@@ -478,15 +478,23 @@ def changed_groups(old: np.ndarray, new: np.ndarray) -> tuple[np.ndarray, np.nda
     return cand, np.isin(cand, co), np.isin(cand, cn)
 
 
-def delta_w(w: Path, old: np.ndarray, new: np.ndarray, files: list[dict], added: dict[str, set]) -> dict:
+def delta_w(w: Path, old: np.ndarray, new: np.ndarray, files: list[dict], added: dict[str, set],
+            T: dict | None = None) -> dict:
     """tier2.delta on the world's WREC files: per (element, quest), the recount's change from D-1 to D applied; a group
-    the recount changed but the state lacks is kept out (a recount-vs-whole disagreement), as tier2.delta does"""
+    the recount changed but the state lacks is kept out (a recount-vs-whole disagreement), as tier2.delta does.
+    T: the day's seconds, given the delta's own parts (the changed groups, the first pass over the files that finds
+    what the state holds, the second that rewrites them, and of the second the writes alone)"""
+    T = {} if T is None else T
+    t = time.time()
     cand, has_old, has_new = changed_groups(old, new)
+    T["tier 2 delta: changed groups"] = time.time() - t
+    t = time.time()
     held: set[int] = set()
     if len(cand):
         for f in files:
             fc = codes_of(np.fromfile(w / "files" / f["id"] / WS.WORLD_BIN, P.WREC))
             held |= set(fc[np.isin(fc, cand)].tolist())
+    T["tier 2 delta: first pass"] = time.time() - t
     st = Counter()
     put, gone = set(), set()
     for c, ho, hn in zip(cand.tolist(), has_old.tolist(), has_new.tolist()):
@@ -509,6 +517,8 @@ def delta_w(w: Path, old: np.ndarray, new: np.ndarray, files: list[dict], added:
     add = new[np.isin(codes_of(new), put_a)]
     parts, unrouted = WS.route(add, files)
     st["rows added"], st["unrouted"] = len(add), unrouted
+    t = time.time()
+    wrote = 0.0
     for f, idx in zip(files, parts):
         p = w / "files" / f["id"] / WS.WORLD_BIN
         r = np.fromfile(p, P.WREC)
@@ -517,8 +527,12 @@ def delta_w(w: Path, old: np.ndarray, new: np.ndarray, files: list[dict], added:
             continue
         st["rows dropped"] += int(drop.sum())
         r = WS.merge(r[~drop], add[idx])
+        tw = time.time()
         WS.write_rows(p, r)
+        wrote += time.time() - tw
         added[f["id"]] |= set(codes_of(add[idx]).tolist())
+    T["tier 2 delta: second pass"] = time.time() - t
+    T["tier 2 delta: rewrite"] = wrote
     return dict(st)
 
 
@@ -589,9 +603,12 @@ def refresh_notes(w: Path, dump: Path, log=_log) -> None:
 
 
 def counts_at(w: Path, clock: str, sets: P.PlaceSets, names: list[str], work: Path, engine: Path | None = None,
-              heap_gb: int = 8) -> Path:
+              heap_gb: int = 8, T: dict | None = None) -> Path:
     """the counts per place and per cell at the clock (W/counts/<day>/): the state's rows through place_counts, the
-    note quests counted by the engine over the notes alone (notes_day.note_quests) added per place and per cell"""
+    note quests counted by the engine over the notes alone (notes_day.note_quests) added per place and per cell.
+    T: the day's seconds, given this step's own parts (the note engines, the sets' save, the files counted, the save)"""
+    T = {} if T is None else T
+    t_engines = time.time()
     # one engine run per plan file, its cells and its parts (all of a world's parts in one run do not fit: Europe
     # alone has 502,597 part entries); each note is in one cell, so the files' counts add up
     nq = {"cities": {}, "parts": Counter()}
@@ -608,17 +625,24 @@ def counts_at(w: Path, clock: str, sets: P.PlaceSets, names: list[str], work: Pa
         for r in ex.map(one, files_of(w)):  # in file order: the sums do not depend on which run ends first
             nq["cities"].update(r["cities"])
             nq["parts"].update(r["parts"])
+    T["counts: note engines"] = time.time() - t_engines
     if NOTE_QUEST not in names:
         names.append(NOTE_QUEST)
     qi = names.index(NOTE_QUEST)
     vec = lambda n: np.array([n] + [0] * (len(C.MEASURES) - 1), np.int64)  # noqa: E731
     extra = [(sets.part(f"city:{cid}"), qi, vec(v["quests"])) for cid, v in nq["cities"].items() if v["quests"]]
     extra += [(sets.part(pid), qi, vec(n)) for pid, n in nq["parts"].items() if n]
+    t = time.time()
     sets.save()
+    T["counts: sets save"] = time.time() - t
+    t = time.time()
     paths = [w / "files" / f["id"] / WS.WORLD_BIN for f in files_of(w)]
     codes_c, sums = C.count_files(paths, P.WREC, S.minute(clock), sets.sets, len(names), extra=extra)
+    T["counts: count files"] = time.time() - t
+    t = time.time()
     cdir = w / "counts" / clock[:10]
     C.write(cdir, codes_c, sums, len(names), clock, names, sets.parts)
+    T["counts: save"] = time.time() - t
     return cdir
 
 
@@ -682,6 +706,8 @@ def finish(day: Day) -> dict:
     t1w = day.work / "t1"
     t1w.mkdir(parents=True, exist_ok=True)
     pst = S.write_small_pbf(t1w / "touched.osm.pbf", day.today, day.last_node, day.last_way, locs, unplaced)
+    T["tier 1: small pbf"] = time.time() - t
+    t1 = time.time()
     # one engine run per plan file over the same small PBF (its cells and parts; elements outside them are skipped),
     # T2_WORKERS at a time; the dumps ingested in file order, so the place-set numbering does not depend on which
     # engine ends first
@@ -690,6 +716,8 @@ def finish(day: Day) -> dict:
         futs = [ex.submit(engine_dump, day, t1w / "touched.osm.pbf", t1w / f["id"], day.today,
                           w / "files" / f["id"] / "cities.json", w / "files" / f["id"] / "parts", False) for f in files]
         dumps1 = [f_.result() for f_ in futs]
+    T["tier 1: engines"] = time.time() - t1
+    t1 = time.time()
     new1 = (np.concatenate([dump_rows(d_, sets, names) for d_ in dumps1]) if files else np.zeros(0, P.WREC))
     new1 = np.unique(new1)
     tier1 = WS.tier1_mask(names)
@@ -697,6 +725,8 @@ def finish(day: Day) -> dict:
     touched = np.unique(np.concatenate([np.fromiter(day.last_node, np.int64, len(day.last_node)) * 4,
                                         np.fromiter(day.last_way, np.int64, len(day.last_way)) * 4 + 1]))
     parts, unrouted1 = WS.route(new1, files)
+    T["tier 1: ingest"] = time.time() - t1
+    t1 = time.time()
     d1 = a1 = 0
     for f, idx in zip(files, parts):
         d_, a_ = WS.replace_in_file(w / "files" / f["id"] / WS.WORLD_BIN, touched, tier1, new1[idx], dtype=P.WREC,
@@ -704,6 +734,7 @@ def finish(day: Day) -> dict:
         d1, a1 = d1 + d_, a1 + a_
         if len(idx):
             added[f["id"]] |= set(codes_of(new1[idx]).tolist())
+    T["tier 1: rewrite"] = time.time() - t1
     T["tier 1"] = time.time() - t
     log(f"tier 1: {d1:,} rows of touched elements dropped, {a1:,} added; {unrouted1:,} in no file; {dict(pst)}")
 
@@ -722,11 +753,13 @@ def finish(day: Day) -> dict:
         log(f"tier 2 groups: {gst_old['groups']}, map data {gst_old['pbf MB']:,.0f} MB at D-1 and "
             f"{gst_new['pbf MB']:,.0f} MB at D")
         t = time.time()
-        t2s = delta_w(w, old, new, files, added)
+        t2s = delta_w(w, old, new, files, added, T)
         T["tier 2 delta"] = time.time() - t
         log(f"tier 2: {rinfo['rectangles']:,} rectangles, {rinfo['rectKm2']:,} km2; recount rows {len(old):,} at D-1, "
             f"{len(new):,} at D; {t2s}")
+    t = time.time()
     sets.save()
+    T["sets save"] = time.time() - t
 
     # notes at D: hidden flags (only rows at notes that opened or closed, and the day's new rows), note quests
     t = time.time()
@@ -741,7 +774,7 @@ def finish(day: Day) -> dict:
                                  prev_table=N.notes_table(prev_clip) if prev_clip.exists() else None))
     T["notes"] = time.time() - t
     t = time.time()
-    counts_at(w, day.today, sets, names, day.work / "notes", day.engine, day.heap_gb)
+    counts_at(w, day.today, sets, names, day.work / "notes", day.engine, day.heap_gb, T)
     T["counts and note quests"] = time.time() - t
 
     locs.save()  # a region's overlay moves to D (the planet's node file is read only: the store moves it)
@@ -756,12 +789,16 @@ def finish(day: Day) -> dict:
     (w / WS.WORLD_META).write_text(json.dumps(meta, indent=1), encoding="utf-8")
     (day.work / "day.json").write_text(json.dumps(rec, indent=1), encoding="utf-8")
     # what the check splits differences by: every key a day touched, every rectangle
+    t = time.time()
     tf = w / "touched.npy"
     keys = T2.changed_keys(day.last_node, day.last_way, day.last_rel)
     np.save(tf, np.union1d(np.load(tf), keys) if tf.exists() else keys)
     rf = w / "rects.npy"
     rn = np.load(t2w / "rects.npy") if (t2w / "rects.npy").exists() else np.zeros((0, 5))
     np.save(rf, np.concatenate([np.load(rf), rn]) if rf.exists() else rn)
+    # timed after day.json and world.json were written: in the day's log line and the record returned, not in them
+    T["touched and rects"] = time.time() - t
+    rec["seconds"]["touched and rects"] = round(T["touched and rects"], 1)
     log(f"day {day.today[:10]} done: {json.dumps(rec['seconds'])}")
     return rec
 

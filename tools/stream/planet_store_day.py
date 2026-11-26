@@ -279,7 +279,9 @@ def guarded(what, fn, *args, **kw):
 
 
 def world_finish(dd: Path, nxt: str) -> None:
+    t = time.time()
     day = WD.load_day(dd / "day.pkl", log=log)
+    log(f"timer: day.pkl load {time.time() - t:.1f} s")
     if day.today != f"{nxt}T00:00:00Z":
         stop(f"{dd / 'day.pkl'} is for {day.today}, not {nxt}")
     if (dd / "finishing").exists() or world_clock() != day.prev:  # a finish began before: its writes undone first
@@ -327,16 +329,20 @@ def store_tail(dd: Path, nxt: str, seq: int, osc: Path, oracle: Path, g: int) ->
     # the day's record kept with the world; its work (both dates' map data, the dumps, D-1's rows) given back
     keep = WORLD / "days" / nxt
     keep.mkdir(parents=True, exist_ok=True)
+    t = time.time()
     try:  # what each engine did, read off its log before the logs go (day_metrics.py); never a stop
         DM.write(WORLD, nxt, dd / "work", log)
     except Exception as e:  # noqa: BLE001
         log(f"engines: not recorded ({type(e).__name__}: {e})")
+    log(f"timer: engines harvest {time.time() - t:.1f} s")
     for src in (dd / "work" / "day.json", dd / "gate" / "gate.json"):
         if src.exists():
             shutil.copy2(src, keep / src.name)
     pins_edit(drop=[oracle.name])
     (WORLD / WD.NOTES_PREV).unlink(missing_ok=True)  # the day after a notes refresh is done: D-1's clip not needed
+    t = time.time()
     shutil.rmtree(dd, ignore_errors=True)
+    log(f"timer: day's work deleted {time.time() - t:.1f} s")
     # punch only gives dead space in pack-0000 back to the disk, at about 0.5 s a dead range on the planet (11-02's first:
     # 15,654 ranges; 11-03's daily one: over 16,000 in 2 h, both stopped by hand), so it runs only when the disk is
     # short, measured after the day's work (D-1's links, about 56 GB) is given back
@@ -437,12 +443,17 @@ def one_day():
     t = time.time()
     d_ = guarded(f"world prepare {nxt}", WD.prepare, WORLD, STORE, osc, f"{nxt}T00:00:00Z", LOC, dd / "work", 8,
                  None, log)
+    ts = time.time()
     guarded("save the prepared day", WD.save_day, d_, dd / "day.pkl")
+    t_save, ts = time.time() - ts, time.time()
     back = guarded("load the prepared day", WD.load_day, dd / "day.pkl", log)
+    t_load = time.time() - ts
     if (back.diff, back.gen_before, back.today, len(back.last_node), len(back.old_rows)) != \
             (d_.diff, d_.gen_before, d_.today, len(d_.last_node), len(d_.old_rows)):
         stop(f"{dd / 'day.pkl'} does not read back as the prepared day")
     del back
+    log(f"timer: day.pkl save {t_save:.1f} s")
+    log(f"timer: day.pkl read back {t_load:.1f} s")
     log(f"world prepare {nxt}: {time.time() - t:.0f} s; {json.dumps({k: round(v) for k, v in d_.T.items()})}")
     del d_  # finish reads the day back, as a resume does; the update (about 20 GiB) gets the memory
     import gc

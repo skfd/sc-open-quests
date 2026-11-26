@@ -218,6 +218,9 @@ WORLD_STEP = re.compile(r"^world (snapshot|prepare|finish)(?: \S+)?: ([\d.]+) s(
 GATE = re.compile(r"^gate: (\S+) counted on \S+ in ([\d.]+) s$")
 READ = re.compile(r"^tilestore read: ([\d.]+) s$")
 UPDATE = re.compile(r"^update to \S+: (\{.*\})\s*$")
+# a part of a step the loop times on its own (`timer: <what> <seconds> s`): inside a step or beside one, so it is
+# kept under "timers" and taken off nothing
+TIMER = re.compile(r"^timer: (.+?) ([\d.]+) s$")
 PACK = re.compile(r"^(pack|rel) (\d+): ([\d.]+) GiB written, ([\d.]+) GiB live \(([\d.]+)% dead\)")
 # a step this many times its median over the earlier kept days, and this many seconds over it, is worth a look
 STEP_TIMES, STEP_SECONDS = 2.0, 300
@@ -278,6 +281,11 @@ def day_steps(log_text: str, day: str) -> dict | None:
         x = GATE.match(body)
         if x:
             rec["gate"][x[1]] = float(x[2])
+            continue
+        x = TIMER.match(body)
+        if x:
+            tm = rec.setdefault("timers", {})
+            tm[x[1]] = round(tm.get(x[1], 0.0) + float(x[2]), 1)
             continue
         x = READ.match(body)
         if x:
