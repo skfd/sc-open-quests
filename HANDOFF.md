@@ -4374,7 +4374,7 @@ at once to 0.28 GB (40.8 GiB).
   none of the kept also built. Running: `world_publish.py upload --delete-kept --max-delete 1200000` (1,129,125 files, log
   `.scratch/overture-next/delete.log`; the manifest is saved after each batch, so a rerun resumes).
 - **Branches fixed and merged (owner, 11-26 05:20: "lets fix and merge branches"; two answers by wizard).** Done in the
-  delete's run, under the HOLD, nothing built or installed:
+  the sc-data delete runs, under the HOLD; nothing built or installed:
   - `share-previews`: main merged into it with no conflict, the whole suite green there (317, 3 skipped), then merged into
     main (4c052008) **today, not on release day: the owner's answer.** It goes live with the 12:15 run. Its live checks
     (`cloudflare/test/browser_parity.py`, the README's curl) now name places by their new ids (d269fe58); the node tests keep
