@@ -4804,3 +4804,6 @@ store's day D).**
   `engine_room.py`, `day_cache.py`); asked to say when committed. Then: merge, `prepare 2026-11-18.0` (only between world
   days or under the HOLD), the f47 canary on the new list, a publish dry run counting deletes. `config/parts` not rebuilt
   (our ids are stable; ended parts show as `noFile`): a follow-up, so the regional extracts are not needed for the switch.
+- **Merged 19:45 (06ac3b7d4, over sc-open-quests-5e's c3b998fd1; suite 440 passed).** The worktree is removed. 5e is running a
+  resume proof on day 11-26 under the HOLD (`world_finish` reads WORLD via `data/world.json`). **Until 5e says done: no
+  HOLD lift, no loop, no `prepare`.** Then `overture_switch.py prepare 2026-11-18.0`.
