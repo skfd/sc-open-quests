@@ -60,7 +60,6 @@
 ["b0209336bc56","Keçeci Mahallesi",7,32,30.5459,37.7456,30.5519,37.7599,null,null],
 ["5e8a12afa261","Kurtuluş Mahallesi",7,32,30.5535,37.757,30.5579,37.7608,null,null],
 ["58873aad4d9b","Kutlubey Mahallesi",7,32,30.553,37.763,30.5583,37.768,null,null],
-["89829a71f169","Atatürk Meydanı",9,60,30.5561,37.7639,30.557,37.7646,null,null],
 ["097484a05848","Mehmet Tönge Mahallesi",7,32,30.5037,37.8164,30.5248,37.8304,null,null],
 ["d35bf5835c33","Modernevler Mahallesi",7,32,30.5438,37.7744,30.5548,37.7913,null,null],
 ["28b879e747f7","Muzaffer Türkeş Mahallesi",7,32,30.5114,37.7679,30.5337,37.7817,null,null],
@@ -85,5 +84,5 @@
 ["1e6f73245f17","Yalvaç",3,0,30.7341,38.1207,31.4049,38.5053,null,null],
 ["6c22d8dc9839","Yenişarbademli",3,0,31.2228,37.6616,31.4623,37.8722,null,null],
 ["2d50a0f144cb","Şarkikaraağaç",3,0,31.1246,37.849,31.5397,38.1967,null,null],
-["bbc6c787e90e","Kumluca Mahallesi",8,85,31.3475,37.8671,31.3847,37.9067,null,null]
+["bbc6c787e90e","Kumluca Mahallesi",8,84,31.3475,37.8671,31.3847,37.9067,null,null]
 ]}

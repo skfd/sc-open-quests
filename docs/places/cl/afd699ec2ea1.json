@@ -13,11 +13,8 @@
 ["3fa506f47be4","Condominio Pacífico Norte 4",8,2,-70.2964,-18.4424,-70.2954,-18.4416,null,null],
 ["98f486c385a5","Condominio Portal del Sol",8,2,-70.2982,-18.4373,-70.2964,-18.4353,null,null],
 ["108f76822ff3","Condominio Puertas del Pacífico II",8,2,-70.2983,-18.4465,-70.2968,-18.4449,null,null],
-["d11b069cd7a0","Plaza 7 de Junio",9,2,-70.2934,-18.4729,-70.2928,-18.4723,null,null],
-["1f74bdf4453a","Plaza Tocopilla",9,2,-70.2904,-18.4711,-70.2899,-18.4706,null,null],
-["3e922cace420","Plaza Villa Azolas",9,2,-70.294,-18.4692,-70.2934,-18.4686,null,null],
 ["37961d04559f","Camarones",5,1,-70.3514,-19.229,-69.0464,-18.6977,null,null],
 ["e8506d78a64d","Provincia de Parinacota",3,0,-69.8261,-19.0341,-68.9114,-17.4984,"Parinacota Province",null],
-["6b9e79f13891","General Lagos",5,18,-69.8261,-18.167,-69.2756,-17.4984,null,null],
-["397a68f7f602","Putre",5,18,-69.6952,-19.0341,-68.9114,-17.954,null,null]
+["6b9e79f13891","General Lagos",5,15,-69.8261,-18.167,-69.2756,-17.4984,null,null],
+["397a68f7f602","Putre",5,15,-69.6952,-19.0341,-68.9114,-17.954,null,null]
 ]}

@@ -22,15 +22,13 @@
 ["e4300bf91c69","Santa Ana",8,5,-70.9273,-53.1387,-70.926,-53.138,null,null],
 ["5bed2373e0f7","Villa Hernando de Magallanes",8,5,-70.9112,-53.1292,-70.9068,-53.1265,null,null],
 ["5219ee2b7f1a","Villa Pudeto",8,5,-70.9224,-53.1224,-70.9177,-53.12,null,null],
-["73e5a25bd839","Hito de la Mitad De Chile",9,5,-70.9459,-53.5985,-70.9451,-53.5979,null,null],
 ["e95958d56f02","Río Verde",5,3,-74.12,-53.5551,-71.3178,-52.3392,null,null],
 ["2533de2af980","San Gregorio",5,3,-70.9331,-52.7927,-68.4184,-51.9998,null,null],
 ["efbf921f64cb","Provincia de Tierra del Fuego",3,0,-71.117,-54.7922,-68.6057,-52.4541,"Tierra del Fuego Province",null],
-["f56d9d60f2d9","Porvenir",5,26,-70.7112,-53.7999,-68.6064,-52.8983,null,null],
-["67d1f5c6293d","Paseo Costanera de Porvenir",9,27,-70.3679,-53.2996,-70.367,-53.299,null,null],
-["e3113b0db0f5","Primavera",5,26,-70.5702,-53.0513,-68.5148,-52.3697,null,null],
-["480b8b77afde","Timaukel",5,26,-71.1215,-54.7922,-68.6057,-53.532,null,null],
+["f56d9d60f2d9","Porvenir",5,25,-70.7112,-53.7999,-68.6064,-52.8983,null,null],
+["e3113b0db0f5","Primavera",5,25,-70.5702,-53.0513,-68.5148,-52.3697,null,null],
+["480b8b77afde","Timaukel",5,25,-71.1215,-54.7922,-68.6057,-53.532,null,null],
 ["856c8c877909","Provincia de Última Esperanza",3,0,-75.711,-52.8221,-71.6459,-48.5954,"Última Esperanza Province",null],
-["087148b0d396","Natales",5,31,-75.7527,-52.8425,-71.6459,-48.5822,null,null],
-["95681e9f5199","Torres del Paine",5,31,-73.4688,-51.5637,-72.246,-50.6017,null,null]
+["087148b0d396","Natales",5,29,-75.7527,-52.8425,-71.6459,-48.5822,null,null],
+["95681e9f5199","Torres del Paine",5,29,-73.4688,-51.5637,-72.246,-50.6017,null,null]
 ]}

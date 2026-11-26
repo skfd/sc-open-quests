@@ -54,15 +54,14 @@
 ["ab8c22c3bc7a","Dr.İhsan Göknal Mahallesi",7,47,36.2112,37.0768,36.2402,37.099,null,null],
 ["1ed49dc6edc3","Dumlupınar Mahallesi",7,47,36.2351,37.0856,36.2504,37.1042,null,null],
 ["890bf8c9730f","Esenevler Mahallesi",7,47,36.233,37.0718,36.2485,37.0818,null,null],
-["c64c6cc6dab0","15 Temmuz Şehitler Anıtı Meydanı",9,54,36.2447,37.0741,36.246,37.0751,null,null],
 ["5891c5abfd8d","Alibeyli Mahallesi",8,47,36.2428,37.0685,36.2522,37.0757,null,null],
 ["66efc1272172","Cumhuriyet Meydanı",9,47,36.2501,37.0745,36.251,37.0752,null,null],
 ["ac744f92fe12","Rahime Hatun Meydanı",9,47,36.2518,37.0736,36.2529,37.0754,null,null],
 ["00be5d8f2bb4","Şehit Ömer Halisdemir Meydanı",9,47,36.2263,37.0435,36.2272,37.0443,null,null],
 ["0812e4f1fad6","Sumbas",3,0,35.9193,37.3885,36.2066,37.7499,null,null],
 ["2ee10210fe34","Toprakkale",3,0,36.0554,37.0001,36.1815,37.1288,null,null],
-["08f7ab36090d","Kumarlı Mahallesi",7,61,36.1535,37.0556,36.1815,37.0841,null,null],
-["b87db01b98b3","Kışla Mahallesi",7,61,36.1207,37.0195,36.1761,37.062,null,null],
-["950f1494dc3b","Tepe Mahallesi",7,61,36.1315,37.0585,36.1505,37.0622,null,null],
-["2802c0ef113b","Çamlıkevler Mahallesi",7,61,36.1552,37.0383,36.1815,37.0561,null,null]
+["08f7ab36090d","Kumarlı Mahallesi",7,60,36.1535,37.0556,36.1815,37.0841,null,null],
+["b87db01b98b3","Kışla Mahallesi",7,60,36.1207,37.0195,36.1761,37.062,null,null],
+["950f1494dc3b","Tepe Mahallesi",7,60,36.1315,37.0585,36.1505,37.0622,null,null],
+["2802c0ef113b","Çamlıkevler Mahallesi",7,60,36.1552,37.0383,36.1815,37.0561,null,null]
 ]}

@@ -22,7 +22,6 @@
 ["bc57cb5ed3dd","Kampung Bharu",7,0,101.6981,3.1557,101.715,3.1679,null,null],
 ["ea8c3a73a98e","Mont Kiara",7,0,101.6415,3.1651,101.6613,3.1769,null,null],
 ["2fcafd378258","Casa Kiara",8,21,101.6472,3.1686,101.6491,3.1692,null,null],
-["0f923e1b6f97","Plaza Mont Kiara Garden Courtyard",9,21,101.6514,3.1655,101.6519,3.1658,null,null],
 ["9aa8827df2ea","Taman Tun Dr Ismail",7,0,101.6155,3.1354,101.6318,3.1568,null,null],
 ["720729186188","1K Tricourt",8,0,101.6511,3.0702,101.653,3.0718,null,null],
 ["5b826814da0b","Alam Sutera",8,0,101.6596,3.0503,101.6662,3.0556,null,null],
@@ -32,8 +31,6 @@
 ["7e779da96ead","Bangsar Hill Park",8,0,101.6748,3.1283,101.6766,3.1299,null,null],
 ["250881303e4d","Bukit Bangsar",8,0,101.6748,3.1278,101.6802,3.1327,null,null],
 ["df4d15cae2f8","Bukit Kiara",8,0,101.6318,3.1284,101.6571,3.1592,"Kiara Hills",null],
-["567035a48510","Dataran Serbaguna",9,32,101.6327,3.1485,101.633,3.1488,"Multipurpose Square",null],
-["787cd6e482c4","Dek Kayu",9,32,101.6327,3.1492,101.6328,3.1494,"Decking",null],
 ["60785eb8ea2e","Bukit OUG Townhouse",8,0,101.6639,3.0592,101.6686,3.0615,null,null],
 ["3088d925a37d","Bukit Pantai",8,0,101.662,3.1187,101.669,3.1303,"Pantai Hills",null],
 ["786077ff4ac9","Bukit Persekutuan",8,0,101.6727,3.13,101.6854,3.1461,"Federal Hill",null],
@@ -88,7 +85,6 @@
 ["1cc8c511872c","Taman Bunga Raya",8,0,101.726,3.2093,101.7315,3.2152,null,null],
 ["068cca52c152","Taman Damansara Endah",8,0,101.6639,3.1462,101.6681,3.151,null,null],
 ["d75117ded14c","Taman Danau Kota",8,0,101.7122,3.1992,101.7237,3.2107,"翠湖园",null],
-["8c68934a91ca","Plaza Utama",9,88,101.7183,3.2052,101.7187,3.2055,"Main Plaza",null],
 ["b0a5f48e5b35","Taman Desa Bakti",8,0,101.6582,3.2397,101.6627,3.2423,null,null],
 ["6c2568f77cff","Taman Desa Kerinchi",8,0,101.6662,3.1055,101.6677,3.1083,null,null],
 ["40665a7857b4","Taman Desa Setapak",8,0,101.7295,3.2034,101.7355,3.21,null,null],
@@ -159,7 +155,6 @@
 ["98d0798e7ae2","Rhapsody Square",9,0,101.7209,3.1398,101.7213,3.1401,null,null],
 ["f50874f2b559","Segitiga Bersejarah",9,0,101.6965,3.1459,101.697,3.1467,"Historic Triangle",null],
 ["5ee1160ba096","Singgah Sana Plaza",9,0,101.719,3.1408,101.7194,3.1411,null,null],
-["59cbfd7389c5","Stargazing Plaza",9,0,101.7169,3.1556,101.7172,3.156,null,null],
 ["e453f7f1ab83","The Concourse",9,0,101.673,3.1936,101.6732,3.1937,null,null],
 ["070c5379a32d","The Starhill Piazza",9,0,101.7129,3.1477,101.7133,3.148,null,null]
 ]}

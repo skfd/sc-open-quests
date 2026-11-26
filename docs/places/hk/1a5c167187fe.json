@@ -1,7 +1,4 @@
 {"schema":1,"region":"1a5c167187fe","places":[
 ["1a5c167187fe","荃灣區 Tsuen Wan District",2,-1,113.9946,22.3125,114.1692,22.4176,"Tsuen Wan District",null],
-["b720a3804064","馬灣 Ma Wan",5,0,114.0539,22.3424,114.0662,22.3559,"Ma Wan",null],
-["33b0782568c2","主廣場 Welcome Plaza",9,1,114.0605,22.3475,114.0607,22.3477,"Welcome Plaza",null],
-["161b810b498b","挪亞方舟入口廣場 Noah's Ark Entrance Plaza",9,1,114.0601,22.3474,114.0604,22.3476,"Noah's Ark Entrance Plaza",null],
-["8f6ebaeccf5b","金律廣場 Golden Mean Plaza",9,1,114.0604,22.348,114.0608,22.3484,"Golden Mean Plaza",null]
+["b720a3804064","馬灣 Ma Wan",5,0,114.0539,22.3424,114.0662,22.3559,"Ma Wan",null]
 ]}

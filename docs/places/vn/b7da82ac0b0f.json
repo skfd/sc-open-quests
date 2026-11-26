@@ -1,7 +1,6 @@
 {"schema":1,"region":"b7da82ac0b0f","places":[
 ["b7da82ac0b0f","Thành phố Bắc Ninh",2,-1,105.8806,20.9693,107.0336,21.6263,"Bắc Ninh City",null],
 ["d433baaa7793","Phường Bắc Giang",5,0,106.1838,21.2632,106.2559,21.3128,"Bac Giang Ward",null],
-["43a096a53b05","hoàng hoa thám",9,1,106.2062,21.274,106.207,21.2748,null,null],
 ["6d0c25f8cee3","Phường Bố Hạ",5,0,106.1714,21.4227,106.288,21.4937,"Bố Hạ",null],
 ["b9aef9c044fa","Phường Bồng Lai",5,0,106.1294,21.0967,106.2014,21.1426,"Bong Lai Ward",null],
 ["3466f83d7751","Phường Chi Lăng",5,0,106.0895,21.0738,106.1514,21.1406,"Chi Lang Ward",null],
@@ -9,7 +8,6 @@
 ["e5bd360b1f07","Phường Cảnh Thụy",5,0,106.233,21.1439,106.3046,21.2285,null,null],
 ["308257f64181","Phường Gia Bình",5,0,106.1367,21.0123,106.2162,21.0847,"Gia Binh Ward",null],
 ["13505becfce2","Phường Hiệp Hòa",5,0,105.9502,21.2579,106.0394,21.3761,"Hiep Hoa Ward",null],
-["4edd7da5507d","Quảng Trường Phường Hiệp Hòa",9,9,105.9785,21.3555,105.9795,21.3565,null,null],
 ["adc1313ffd8c","Phường Hạp Lĩnh",5,0,106.0406,21.1226,106.0909,21.1608,"Hap Linh Ward",null],
 ["422b3276594d","Phường Kinh Bắc",5,0,106.0326,21.1722,106.0874,21.228,"Kinh Bac Ward",null],
 ["92ee9d63af80","Phường Kép",5,0,106.2442,21.3691,106.3499,21.4605,"Kép",null],
