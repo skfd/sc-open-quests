@@ -197,17 +197,19 @@ class Judges(Base):
 
         t = orl.agent(NEW, OLD, self.root, self.registry, runs=2, batch=3, workers=2, runner=runner)
         rows = {r["key"]: r for r in orl.read_rows(self.root / NEW / "proposals.tsv")}
-        taken = {k for k, r in rows.items() if r["judged"].startswith(("judge", "fable"))}
+        taken = {k for k, r in rows.items() if r["judged"].startswith(("judge", "fable")) and "by rule" not in r["judged"]}
         self.assertEqual({i[g(4)], i[g(12)], i[g(9)]}, taken)
         operator = {k for k, r in rows.items() if not r["verdict"]}
-        self.assertEqual({i[g(7)], i[g(8)], i[g(11)], i[g(5)], i[g(6)]}, operator)
-        self.assertIn("unsure", rows[i[g(7)]]["judged"])
-        self.assertIn("disagree", rows[i[g(8)]]["judged"])
+        self.assertEqual({i[g(11)], i[g(5)], i[g(6)]}, operator, "doubts about the same place only")
+        # every answer ended the place: only the successor was in doubt, settled by rule (owner, 2026-11-26)
+        self.assertEqual("ended " + i[g(1)], rows[i[g(8)]]["verdict"])   # the high answer of the two
+        self.assertEqual("ended " + i[g(1)], rows[i[g(7)]]["verdict"])             # its proposal names the parent
+        self.assertIn("successor chosen by rule", rows[i[g(7)]]["judged"])
         self.assertIn("not a new GERS id", rows[i[g(11)]]["judged"])
         self.assertIn("two rows take", rows[i[g(5)]]["judged"])
-        self.assertEqual((3, 5), (t["judged"], t["operator"]))
+        self.assertEqual((3, 3), (t["judged"], t["operator"]))
         ex = (self.root / NEW / "exceptions.md").read_text(encoding="utf-8")
-        self.assertIn("5 rows for the operator", ex)
+        self.assertIn("3 rows for the operator", ex)
         # a second run judges nothing again: the operator's rows wait for the operator
         self.assertEqual({"judged": 0, "operator": 0}, orl.agent(NEW, OLD, self.root, self.registry, runner=runner))
 

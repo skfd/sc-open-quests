@@ -875,10 +875,52 @@ def agent(release: str, old: str, root: Path = RELEASES, registry: Path = place_
                 tally["judged"] -= 1
                 tally["operator"] += 1
     write_rows(path, rows)
+    tally["operator"] -= settle_successors(release, root, registry)
     exceptions(release, root)
     log(f"the judge: {tally['judged']:,} judged, {tally['operator']:,} to the operator; about "
         f"${tally['cost']:.2f} at list prices")
     return tally
+
+
+ANSWER = re.compile(r"`((?:same|ended|revive|new)\b[^`]*)` \((high|low)\)")
+
+
+def settle_successors(release: str, root: Path = RELEASES, registry: Path = place_ids.REGISTRY) -> int:
+    """Rows the judge sent to the operator although every answer ends the place: only the successor (a link on the
+    ended page) was in doubt, and that is not the operator's (owner, 2026-11-26). Take the first high-confidence answer,
+    else the proposal when it names the surviving parent (class ended-parent), else the first answer; each must be
+    valid. The operator keeps only the doubts about whether a place is the same place."""
+    here = folder(release, root)
+    path = here / "proposals.tsv"
+    rows = read_rows(path)
+    con = connect()
+    fresh = {g for (g,) in con.execute(
+        f"SELECT gers FROM '{(here / 'places.parquet').as_posix()}' WHERE gers NOT IN "
+        f"(SELECT gers FROM '{ids_cache(here, registry).as_posix()}')").fetchall()}
+    n = 0
+    for r in rows:
+        if r["verdict"] or not r["judged"].startswith("operator"):
+            continue
+        answers = ANSWER.findall(r["note"])
+        if not answers or any(not v.startswith("ended") for v, _ in answers):
+            continue
+        order = [v for v, c in answers if c == "high"]
+        if r["class"] == "ended-parent" and r["proposal"].startswith("ended"):
+            order.append(r["proposal"])
+        order += [v for v, _ in answers]
+        for v in order:
+            try:
+                parse_verdict(v, r["class"])
+            except ValueError:
+                continue
+            if any(GERS.fullmatch(a) and a not in fresh for a in re.split(r"[,\s]+", v)[1:]):
+                continue
+            r["verdict"], r["judged"] = v.strip(), stamp("judge: successor chosen by rule (every answer ends it)")
+            n += 1
+            break
+    write_rows(path, rows)
+    log(f"successors settled by rule: {n:,} rows the judge only doubted the successor of")
+    return n
 
 
 def exceptions(release: str, root: Path = RELEASES) -> Path:
