@@ -4796,3 +4796,11 @@ store's day D).**
   checking whether `config/parts` needs them). Ended places: **files kept as they are (unmarked, frozen), nothing deleted,
   "ended" marking later** (so `daily` must publish with keep-gone before the first day on NEW). The laptop is back later
   tonight; the HOLD stays the owner's.
+- **Built, on branch `overture-switch` (worktree `../sc-open-quests-switch`), not merged yet (19:30):** `data/world.json` names
+  the world folder once (seven constants read it); `daily` publishes with keep-gone; `place_ids.release_inputs`/`refuse_live`
+  and `--release` on `places.py build`, `world_cells.py places`, `small_squares.py build`; **`tools/overture_switch.py`**
+  `prepare | cutover | adopt | status RELEASE`, resumable by markers in `<new world>/switch/`. Suite 426 passed. **Waiting to
+  merge:** session sc-open-quests-5e has uncommitted loop edits in main (`planet_store_day.py`, `world_day.py`,
+  `engine_room.py`, `day_cache.py`); asked to say when committed. Then: merge, `prepare 2026-11-18.0` (only between world
+  days or under the HOLD), the f47 canary on the new list, a publish dry run counting deletes. `config/parts` not rebuilt
+  (our ids are stable; ended parts show as `noFile`): a follow-up, so the regional extracts are not needed for the switch.
