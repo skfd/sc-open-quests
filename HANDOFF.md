@@ -4462,7 +4462,17 @@ measured: 12,643 s, then the publish 1,155 s.
   read, `.scratch/anomalies/t2-reads/NOTES.txt`), the gate's four engines (279 s).
 - **The crash files in the repo root** (`hs_err_pid{11428,26484,55252,57228}.log`, two `replay_pid*.log`, 2 MB,
   untracked) are 11-23's four engines, diagnosed; they may go when the owner says.
-- **Asked of the owner (wizard, 07:30):** which of these to build first. Nothing is scheduled by this session.
+- **Owner (wizard, 11-26, about 07:55): build all four** (the engine memory rule, the points fix's install, the Python
+  steps in pools, the engine loops). Read as: build and prove; **the HOLD stays and is the owner's to lift.**
+  - **Decided before the fan-out (08:05):** (i) the 558,000 small files stay as they are this round: the Python part
+    writes them through a pool, the engine's "one file per group" is not built; (ii) file passes use a pool of 4 and the
+    Python part reports its peak memory, since the loop's own python reached 17 GB on 11-24; (iii) engine source stays on
+    its branch until proof and `installDist` go together (`engine_is_stale`); (iv) **one suspect a day, proposed order for
+    the catch-up days, the owner's to change:** day 1 the points fix and the memory rule (neither can change a count: one
+    is proven byte for byte, the other only moves when engines start), day 2 the Python steps, day 3 the engine.
+  - **Under way, in worktrees under `.claude/worktrees/` (branches `perf-room`, `perf-steps`, `perf-engine`):** three
+    agents; builds and tests only until 11:00 (the inputs run is 11:15, the city run 12:15), heavy proofs one at a time
+    by this session. The points fix's owed checks are this session's.
 - **The delete was stopped at the 2-hour limit of a background job (11-26, about 07:00), not finished:** 250,000 of 1,129,125 old files gone,
   879,125 left in `bucket.json` "kept" (the sixth batch was cut mid-way; S3 deletes of a gone file are harmless, so a rerun is safe). A batch
   of 50,000 takes about 20 minutes, so the rest is about 6 hours: it needs a detached run, not a session's background job. Command:
