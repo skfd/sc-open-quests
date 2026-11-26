@@ -4363,3 +4363,6 @@ at once to 0.28 GB (40.8 GiB).
   request. **Not done:** `state_checkpoint.py link`/`upload` (R2's checkpoint still has the old ids in place-sets.json: take a new one
   before relying on it); the `share-previews` branch's test links (old ids); the facts' and archives' R2 copies are refreshed by the
   11:15 inputs run. **HOLD stays** (world dailies paused by the owner until the new things are built).
+- **Owner (wizard, 11-26, about 00:00): delete the old sc-data files now.** Dry run of one batch first: 50,000 of 50,000 named, all from the list,
+  none of the kept also built. Running: `world_publish.py upload --delete-kept --max-delete 1200000` (1,129,125 files, log
+  `.scratch/overture-next/delete.log`; the manifest is saved after each batch, so a rerun resumes).
