@@ -4594,3 +4594,17 @@ measured: 12,643 s, then the publish 1,155 s.
   `python tools/world_publish.py upload --delete-kept --max-delete 1200000` (resumes). Nothing reads the remaining files.
 - **The rest of the delete runs detached (owner, 11-26, 07:55: "start"):** bash pid 36972 (hidden), log `.scratch/overture-next/delete2.log`,
   879,125 files in 18 batches, expected done about 14:00; its last line is `exit 0` when finished. If it dies, start the same command again.
+- **Before lifting the HOLD (read-only review, 11-26, 09:25-09:45; owner: "anything else we need to do before we enable world
+  dailies?").** The machine: HOLD (11-25 20:02, the owner's pause), no RUNNING, no STOPPED; store and world at 11-25, no open day;
+  `place-ids` and the other branches have nothing left unmerged; worktrees left are `agent-a9b152...` (kept) and `place-ids` (merged).
+  C: 130 GB free (a day's lows on 11-25: 129-131 GiB).
+  - **Owed by the rename's runbook (step 7, before "HOLD off"): a new state checkpoint.** `state_checkpoint.py list` has only
+    2026-11-14, which holds the old place ids. `link` refuses on this disk (twice the rows and 40 GiB), so it is `upload --from-world`
+    with the loop held (about 1.5 h standstill, about 48 GB up). Not run: needs a slot outside 11:15 and 12:15.
+  - **Wait for the 13:20 check first:** the four speed-ups have not run on anything scheduled yet.
+  - **The sc-data delete** (`upload --delete-kept`, no `daily.lock`) ends about 14:40-15:00 by its pace; it and a world day's
+    `world_publish daily` both save `bucket.json` from their own copy, so the delete should show `exit 0` before the first day's
+    publish (about 3.5 h after a 14:45 start, so no overlap expected). A clash only costs a re-upload.
+  - `.scratch/world-places/world/places.json` (old ids, 11-13) is read by nothing in the loop, only `world_tier2.py`'s CLI defaults.
+  - **Not built and possibly on the owner's "all the new things" list:** the Overture 12-16.0 ingest tool, the city run's retirement.
+  - **After the first day:** the first-day checks above (gate, engine room lines, `given MB`, timers) and `rename_places.py check` again.
