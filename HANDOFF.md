@@ -3204,7 +3204,8 @@ wording and tab structure as a first draft open to change, not as decided design
   own day; no error but the blocked fetches. **After:** `run.py site` once: history 0 files, nothing committed, 1 file deployed
   (`app.js`, live equal), pushed; a second run "nothing to do", pushed.
   **`kk-SCOpenQuests` (12:15, `run.py update`) disabled 11-26 11:15 (owner: "yes", then "can you do it now while we are on hold for
-  world dailies?"),** before its run of 11-26, so the new code was never seen under `update`; not deleted, `schedule-remove.ps1` would.
+  world dailies?"),** before its run of 11-26, so the new code was never seen under `update`. **Deleted 11-26 (owner: "delete task"):**
+  `schedule-add.ps1` makes it again.
   It downloaded the city extracts, counted them, published and backed up `data/archive`; `data/archive` and its 2017-2026 history stay
   as they are, and `tools/backfill_history.py` still works by hand. Back on: `Enable-ScheduledTask kk-SCOpenQuests`.
   **Not yet seen:** a loop day taken under the new code (the world dailies are on HOLD since 11-25 20:05): its publish should be place
@@ -4618,3 +4619,24 @@ measured: 12,643 s, then the publish 1,155 s.
   - **Checkpoint DONE 11:13:21** (10:50-11:13, before the 11:15 inputs run): `2026-11-25: whole` in R2 (new ids), local links
     removed. `2026-11-14` (old ids) is still there; `prune --keep 1` would drop it, not run. **Left before the lift: the 13:20 check
     of today's runs, then the owner removes HOLD** (the 14:45 task takes the day if HOLD is gone by then; else start the loop by hand).
+
+## The city run's clean-up, after the world dailies run well (owner, 2026-11-26: "handoff the further cleanup")
+
+The 12:15 task `kk-SCOpenQuests` (`run.py update`) is deleted (11-26) and `docs/data`'s city files end on 2026-11-25
+(`config/city-files.json`). What is left of the city run is code, docs and files nobody runs. **Not before:** the HOLD lifted
+(the owner's word) and a few world days taken under the new code, each publish showing in `logs/site.log` place files only,
+"docs/ and config/ are as deployed; nothing to do", no data commit, main pushed. Before Release 1 (about 12-01) is fine, not needed.
+
+- **Code to take out of `run.py`:** `update`, `download`, `count`, `backfill` and their CLI entries; `publish_site`'s and
+  `backup_archive`'s callers once `update` is gone (check what `site` and `inputs` still call first); the `daily.lock`
+  wait, if only `update` takes it. **Keep:** `history`, `site`, `inputs`, `planet`?, `check-release`, `migrate-archive`?,
+  `dated_extracts` and `read_json` (`tools/backfill_history.py` uses them), `data/archive` and its 2017-2026 history.
+- **Tests:** the `download`/`backfill` cases in `tests/test_planet.py` and `tests/test_regions.py`; the rest of the suite must
+  stay green (290 + `place-ids`' on 11-26).
+- **Scripts and docs:** `schedule-add.ps1`, `schedule-remove.ps1`, README's "Scheduling" part on `kk-SCOpenQuests`, `logs/scheduler.log`
+  (keep or archive), REPIN.md's "let the 12:15 run do it", DESIGN.md's daily-run parts (mark as history, do not delete).
+- **To decide on the way:** `kk-SCOpenQuests-planet` (disabled; `run.py planet`, monthly) is it still needed for the
+  monthly backfill, or does the world store replace it? `tools/add_parts.py` needs another extract source once the
+  regional fetches stop. `backup_archive` backs up `data/archive`; does `data/archive-world` have a backup of its own?
+- **Disk:** the regional extracts in `~/Code/.osm-data` (Ontario, Quebec, BC, Alberta, the German states, about 55 GB) are
+  no longer downloaded and age out on the store's 14-day retention; Ontario is shared with `kk-ontario-update`. Delete nothing by hand.
