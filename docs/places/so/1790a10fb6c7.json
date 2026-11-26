@@ -1,0 +1,12 @@
+{"schema":1,"region":"1790a10fb6c7","places":[
+["1790a10fb6c7","Jubbada Hoose جوبا السفلى",2,-1,40.9933,-1.6596,43.1879,1.32,"Lower Juba",null],
+["5fd8b9c0b3e8","Afmadow افمادوو",3,0,40.9933,-0.1997,42.7259,1.32,"Afmadow District",null],
+["8b0855d6761f","Badhaadhe بدهاذ",3,0,40.9934,-1.6621,42.0078,-0.15,"Badhadhe District",null],
+["46b236c7bd3f","Manaaraani",5,2,41.7128,-1.4387,41.7163,-1.4325,null,null],
+["38fce15f8dae","قدو",5,2,41.6116,-1.5859,41.6177,-1.5795,null,null],
+["5b292b55e8ec","قدو",5,2,41.6114,-1.5872,41.6122,-1.5858,null,null],
+["c13bf09a0a36","قدو",5,2,41.6202,-1.5782,41.6218,-1.5767,null,null],
+["bcf9c3bdd698","Jamaame جمامة",3,0,42.5294,-0.1699,43.189,0.3269,"Jamame District",null],
+["0dc16d710fa5","Kismayo",3,0,41.29,-1.0391,42.7193,-0.0205,"Kismayo District",null],
+["cf1b0bcc73db","New Kismayo",8,8,42.5283,-0.3287,42.5329,-0.3239,null,null]
+]}

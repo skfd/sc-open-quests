@@ -4,7 +4,7 @@ Everything the engine counts with is pinned to one StreetComplete (SC) tag: the 
 (`engine/SC-VERSION.txt`), the ports of the custom quests (`engine/PORTED-QUESTS.txt`), the registry
 dump (`data/quests/v<tag>.json`), the icons and titles (`docs/icons/`) and the release pins on the
 timeline (`docs/data/sc-releases.json`). Moving all of them to a new tag is a **repin**. The scheduled
-update's last step, `python run.py check-release`, opens the issue "Repin to StreetComplete vX.Y"
+inputs run's last step, `python run.py check-release`, opens the issue "Repin to StreetComplete vX.Y"
 when a stable release is newer than the pin; this is the routine it points at. Expect half a day:
 most steps are checks, not typing. The v64.0 repin (2026-10-21) is the worked example.
 
@@ -83,7 +83,9 @@ either: old snapshots keep them, the site shows them while the newest registry h
 
 ## 5. Site assets and pins
 
-- `python tools/sc_assets.py <checkout>` after the first count wrote the new `docs/data/quests.json`
+- `python tools/site_quests.py take data/archive/bremen/quests.json` (any engine's `quests.json` of the new
+  version; also after a port changes a quest's support), then `build`; commit `config/site-quests.json`.
+- `python tools/sc_assets.py <checkout>` after that wrote the new `docs/data/quests.json`
   (it reads the quest names from there): icons, titles, authors.
 - `python run.py check-release` refreshes `docs/data/sc-releases.json`; with the new pin in
   `SC-VERSION.txt` it reports the pin as current and opens nothing.
@@ -106,7 +108,8 @@ either: old snapshots keep them, the site shows them while the newest registry h
   which is what players saw. For each region:
   `python tools/backfill_history.py recount --region <r> --since <release date YYYY-MM-DD>`, then
   `python tools/backfill_history.py merge --region <r>`; then `python run.py history` and `publish` via
-  `update`, or let the 12:15 run do it. Close the issue with the data commit. About 10 minutes of counting
+  `update`, or let the 12:15 run do it (`docs/data`'s city files end on `config/city-files.json`'s day; the days after
+  it are the world's, on sc-data). Close the issue with the data commit. About 10 minutes of counting
   per day recounted for all regions together; no history file is read (none is kept since 2026-11-16).
   **Repin within 14 days of the release:** the store keeps a region's extracts 14 days, and a snapshot
   whose extract is gone is left as counted (the recount names it). The issue is opened by the scheduled run

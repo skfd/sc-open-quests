@@ -119,7 +119,7 @@ def remote_count(env: dict[str, str]) -> int:
     return int(json.loads(r.stdout)["count"])
 
 
-def sync(dry_run: bool = False, docs: Path = DOCS) -> None:
+def sync(dry_run: bool = False, docs: Path = DOCS, max_delete: int = MAX_DELETE) -> None:
     env = rclone_env(read_env())
     files = local_files(docs)
     count = remote_count(env)
@@ -134,7 +134,7 @@ def sync(dry_run: bool = False, docs: Path = DOCS) -> None:
             return
     log(f"docs/ {len(files)} files, bucket {count} objects; syncing")
     args = ["sync", str(docs), f"r2:{BUCKET}", "--checksum", "--transfers", "16", "--checkers", "32",
-            "--max-delete", str(MAX_DELETE), "--stats-one-line", "--stats", "0", "-v",
+            "--max-delete", str(max_delete), "--stats-one-line", "--stats", "0", "-v",
             "--exclude", ".DS_Store", "--exclude", "Thumbs.db"]
     if dry_run:
         args.append("--dry-run")
@@ -242,11 +242,13 @@ def main() -> int:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--dry-run", action="store_true")
     p.add_argument("--check", action="store_true", help="compare every file over HTTPS; change nothing")
+    p.add_argument("--max-delete", type=int, default=MAX_DELETE,
+                   help="the most objects the sync may delete (once, for a change of every place id)")
     a = p.parse_args()
     try:
         if a.check:
             return 1 if check() else 0
-        sync(dry_run=a.dry_run)      # first: it holds the guard against a partial docs/
+        sync(dry_run=a.dry_run, max_delete=a.max_delete)      # first: it holds the guard against a partial docs/
         deploy(dry_run=a.dry_run)
         return 0
     except RuntimeError as e:

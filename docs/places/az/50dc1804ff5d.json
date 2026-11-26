@@ -1,0 +1,22 @@
+{"schema":1,"region":"50dc1804ff5d","places":[
+["50dc1804ff5d","Bakı",2,-1,49.7597,40.2984,50.0013,40.4413,"Baku",null],
+["28ff708ba737","Nizami rayonu",5,0,49.8819,40.3894,49.9693,40.4264,"Nizami Raion",null],
+["dce51e32fa04","Keşlə",7,1,49.887,40.3899,49.9082,40.4047,null,null],
+["116e2d24aeaa","Nərimanov rayonu",5,0,49.8252,40.3833,49.9167,40.4377,null,null],
+["be1f6e753388","Montin Qəsəbəsi",7,3,49.8671,40.3895,49.8863,40.4022,null,null],
+["4546abf58c60","205-ci Qəsəbə",9,3,49.8956,40.4173,49.8988,40.4201,null,null],
+["8c1b75e27f10","Nəsimi rayonu",5,0,49.8024,40.334,49.8764,40.4209,"Nasimi Raion",null],
+["2e1ed5ace0ba","1-ci Alatava",9,6,49.8203,40.4001,49.8308,40.4091,null,null],
+["70350ad13232","1-ci mikrorayon",9,6,49.8041,40.4048,49.8116,40.4111,"1st microdistrict",null],
+["e4946978b1ef","2-ci mikrorayon",9,6,49.8145,40.4107,49.8222,40.416,"2nd microdistrict",null],
+["9a20cc6f678b","3-cü mikrorayon",9,6,49.8139,40.4062,49.8236,40.412,"3rd microdistrict",null],
+["070a4aaa0c0c","4-cü mikrorayon",9,6,49.8039,40.4114,49.825,40.4209,"4th microdistrict",null],
+["b4ec5cd1667e","5-ci mikrorayon",9,6,49.8052,40.4063,49.8155,40.4156,"5th microdisctrict",null],
+["82b705782359","Azadlıq Meydanı",9,6,49.8504,40.3722,49.8551,40.3753,"Freedom Square",null],
+["5b7550e6b8dd","Yasamal rayonu",5,0,49.786,40.3537,49.836,40.4152,"Yasamal Raion",null],
+["c17a11cfee9a","2-ci Alatava",7,14,49.7895,40.3969,49.8023,40.4142,null,null],
+["63fe7ba60b49","Yasamal",7,14,49.7905,40.3736,49.805,40.4,null,null],
+["d0c00b024516","Mirvari Park kompleksi",9,14,49.8148,40.3824,49.8161,40.3842,null,null],
+["7f4381acde7c","Park Yasamal YK",9,14,49.7941,40.3711,49.8014,40.3787,null,null],
+["e2a777e8448b","Yeni Yasamal",9,14,49.7863,40.3852,49.7973,40.4001,null,null]
+]}

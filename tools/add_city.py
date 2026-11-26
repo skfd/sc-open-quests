@@ -25,6 +25,9 @@ region is the Geofabrik extract id whose .pbf holds the city. If config/<region>
 relation's bounds must lie inside its bbox (else an error), and every boundary vertex is tested against
 the polygon itself; vertices outside it are a warning with the largest distance.
 
+The site has a page for it once config/city-files.json's `until` is a day the world counted it (`run.py history`
+says so until then).
+
 Note that landAreaKm2 is the area of the OSM boundary as drawn: where a boundary runs out to sea (e.g.
 Hamburg's Neuwerk ring, which takes in the Wadden Sea) it is far above the official land area.
 """

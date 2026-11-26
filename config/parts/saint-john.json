@@ -1,7 +1,7 @@
 {"schema": 1, "city": "saint-john", "overture": "2026-10-21.0", "parts": [
-  {"id": "4aad9523433e", "gers": "4aad9523-433e-4ff3-86b8-1433f1ef1c96", "name": "Belmont", "en": null, "subtype": "neighborhood", "osm": "w983253028", "geometry": "data/boundaries/parts/saint-john/w983253028.geojson"},
-  {"id": "733939e8ba08", "gers": "733939e8-ba08-4e17-aab8-1491c5f2dcac", "name": "Manawagonish Island", "en": null, "subtype": "neighborhood", "osm": "r9699160", "geometry": "data/boundaries/parts/saint-john/r9699160.geojson"},
-  {"id": "c74c4fd11331", "gers": "c74c4fd1-1331-4fac-98ae-17fe75980191", "name": "Martinon", "en": null, "subtype": "neighborhood", "osm": "r1835368", "geometry": "data/boundaries/parts/saint-john/r1835368.geojson"},
-  {"id": "dce6dcbd0eec", "gers": "dce6dcbd-0eec-4a1a-a0af-ee0fbd0379af", "name": "Midwood", "en": null, "subtype": "neighborhood", "osm": "w1027498518", "geometry": "data/boundaries/parts/saint-john/w1027498518.geojson"},
-  {"id": "609efbae4926", "gers": "609efbae-4926-43ac-9349-63695928ecef", "name": "Thumb Cap", "en": null, "subtype": "neighborhood", "osm": "r9699165", "geometry": "data/boundaries/parts/saint-john/r9699165.geojson"}
+  {"id": "61231a44b99d", "gers": "4aad9523-433e-4ff3-86b8-1433f1ef1c96", "name": "Belmont", "en": null, "subtype": "neighborhood", "osm": "w983253028", "geometry": "data/boundaries/parts/saint-john/w983253028.geojson"},
+  {"id": "a02f194fbd85", "gers": "733939e8-ba08-4e17-aab8-1491c5f2dcac", "name": "Manawagonish Island", "en": null, "subtype": "neighborhood", "osm": "r9699160", "geometry": "data/boundaries/parts/saint-john/r9699160.geojson"},
+  {"id": "767facaf44cd", "gers": "c74c4fd1-1331-4fac-98ae-17fe75980191", "name": "Martinon", "en": null, "subtype": "neighborhood", "osm": "r1835368", "geometry": "data/boundaries/parts/saint-john/r1835368.geojson"},
+  {"id": "a4f4841fdfee", "gers": "dce6dcbd-0eec-4a1a-a0af-ee0fbd0379af", "name": "Midwood", "en": null, "subtype": "neighborhood", "osm": "w1027498518", "geometry": "data/boundaries/parts/saint-john/w1027498518.geojson"},
+  {"id": "92a0a81f0ee8", "gers": "609efbae-4926-43ac-9349-63695928ecef", "name": "Thumb Cap", "en": null, "subtype": "neighborhood", "osm": "r9699165", "geometry": "data/boundaries/parts/saint-john/r9699165.geojson"}
 ]}

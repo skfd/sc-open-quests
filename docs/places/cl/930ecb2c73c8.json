@@ -1,0 +1,17 @@
+{"schema":1,"region":"930ecb2c73c8","places":[
+["930ecb2c73c8","Región de Antofagasta",2,-1,-70.7371,-26.0611,-66.9905,-20.9344,"Antofagasta Region",null],
+["6d312618c86b","Provincia de Antofagasta",3,0,-70.7371,-26.0611,-68.067,-22.4251,"Antofagasta Province",null],
+["0f071fe45936","Antofagasta",5,1,-70.6286,-25.3985,-68.067,-23.0583,null,null],
+["197d28fe843c","Condominio Mar Andino",8,2,-70.3867,-23.5728,-70.3854,-23.5709,null,null],
+["6b1f5493d594","Mejillones",5,1,-70.6065,-23.3609,-69.8938,-22.4251,null,null],
+["e06ccb3b69c8","Sierra Gorda",5,1,-70.0475,-23.9229,-68.6177,-22.5781,null,null],
+["03803795884b","Taltal",5,1,-70.7371,-26.0611,-68.9847,-24.5481,null,null],
+["4882e0e95c12","Provincia de El Loa",3,0,-69.1933,-24.3282,-66.9905,-20.9344,"El Loa Province",null],
+["349cc25ebdd7","Calama",5,7,-69.1933,-23.1361,-67.9155,-21.065,null,null],
+["7fe66a01dbc7","Toma El Vergel",8,8,-68.9172,-22.4831,-68.9133,-22.4795,null,null],
+["50b1b6d8a21d","Ollagüe",5,7,-68.5342,-21.9825,-68.0597,-20.9344,null,null],
+["afa42a722242","San Pedro de Atacama",5,7,-68.7175,-24.3282,-66.9905,-22.3815,null,null],
+["af1816dd1d9d","Provincia de Tocopilla",3,0,-70.285,-22.8807,-68.8606,-21.2855,"Tocopilla Province",null],
+["19cf1eb185d5","María Elena",5,12,-69.9853,-22.8807,-68.8606,-21.2855,null,null],
+["d836422fc45b","Tocopilla",5,12,-70.285,-22.6369,-69.7418,-21.423,null,null]
+]}

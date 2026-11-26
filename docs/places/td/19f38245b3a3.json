@@ -1,0 +1,9 @@
+{"schema":1,"region":"19f38245b3a3","places":[
+["19f38245b3a3","Barh el Gazel بحر الغزال",2,-1,15.602,13.023,18.051,16.242,"Bahr el Gazel",null],
+["bf9c3a9ed898","Barh-El-Gazel Nord",3,0,15.9847,13.662,17.9937,16.0351,null,null],
+["4f537024661f","Barh-El-Gazel Ouest",3,0,15.876,13.023,16.6173,13.7474,null,null],
+["0d8526f20b24","Dougoul Kréda",5,2,16.0069,13.3892,16.0162,13.401,null,null],
+["cc03c80206c6","Legueligue",5,2,16.0217,13.4109,16.0234,13.4138,null,null],
+["2a19915f2cca","Letémé Naga",5,2,16.0179,13.4189,16.0198,13.4219,null,null],
+["1e4757869fd7","Barh-El-Gazel Sud",3,0,15.602,13.07,17.271,14.3237,null,null]
+]}

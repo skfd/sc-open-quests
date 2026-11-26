@@ -10,11 +10,15 @@ data/grid/
 .preview/
 docs/data/*/quests.json
 data/archive/
+data/archive-world/
 .scratch/
 data/cities/
 data/overture/
 .backup/
 data/pipeline.lock
+data/site-deployed.json
 .wrangler/
 data/facts/
 data/cities.paused
+# our place ids (tools/place_ids.py): 74 MB, random, backed up to R2 by archive_backup.py --only place-ids
+data/place-ids/

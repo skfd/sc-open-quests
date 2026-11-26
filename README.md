@@ -43,7 +43,8 @@ the JSON.
 python run.py download   # osm-extracts fetch <extract> once per distinct extract (it skips an unchanged one)
 python run.py count      # engine on each region's newest extract -> data/archive/<region>/snapshots/ (skipped if counted)
 python run.py backfill   # count every dated extract still in the store
-python run.py history    # archive -> docs/data/history/<city>.json, cities.json, compare/<quest>.json, newest snapshots
+python run.py history    # archive -> docs/data/history/<city>.json, cities.json, compare/<quest>.json, newest snapshots,
+                         # up to config/city-files.json's day
 python run.py update     # all three, then commit "data <asOfDate>" and push (--no-push: commit only)
 python run.py planet     # monthly: osm-extracts fetch planet-history, osm-extracts recut (every clip), the
                          # months the regions on clips lack, the "cadence": "weekly" regions -> archive,
@@ -78,6 +79,13 @@ The task is named `kk-SCOpenQuests`. It starts when available if the machine was
 is stopped after two hours.
 
 ```powershell
+.\schedule-inputs-add.ps1    # run.py inputs, daily at 11:15, appends to logs\inputs.log
+```
+
+Publishing has no task of its own: the world loop ends with `run.py site` (the place files on sc-data; the site's
+data, commit and deploy only when `docs/` or `config/` changed; push; `logs\site.log`), and `inputs` runs it again for what the loop could not publish.
+
+```powershell
 .\schedule-planet-add.ps1      # run.py planet on the first Monday of each month at 07:30, appends to logs\planet.log
 .\schedule-planet-remove.ps1
 ```
@@ -91,6 +99,8 @@ removes the old `kk-SCOpenQuests-weekly`. It never holds the pipeline lock acros
 
 - Code: [GPL-3.0](LICENSE). The engine links StreetComplete's source (GPL-3.0), so the whole project
   is GPL-3.0.
+- Published counts (`docs/data`, the place files): ODbL 1.0, as the data they are made from. The site's
+  privacy and terms pages are `docs/privacy/` and `docs/terms/`.
 - Map data: © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright), ODbL 1.0.
   Extract by [Geofabrik](https://download.geofabrik.de/).
 - City boundaries: from the OpenStreetMap relations listed in `config/cities.json`.

@@ -19,12 +19,16 @@ For each day D (the store, its node file and the world all at D-1):
      (its day.json and gate.json kept in W/days/<D>/).
 A run that stops after the update resumes: with the store at D and the world at D-1 it puts the world back from
 `before/` and runs `finish` again from `day.pkl`; with both at D and the node file at D-1 it goes on from the gate.
-Any failure writes STOPPED beside the store and every later run refuses until a person removes it. HOLD beside the
+Any failure writes STOPPED beside the store and every later run refuses until a person removes it. Two things end a
+run with no STOPPED, because nothing is wrong and the next run goes on: a gate region whose engine the machine cannot
+spare the heap for after the wait (run.MemoryBusy; the day resumes at its gate), and a new day the disk has no room
+for (DAY_NEEDS_GB over DISK_FLOOR_GB; a resumed day is not asked). HOLD beside the
 store (its text the reason) makes a run take no day, not a failure: a reader of the store
 (tools/stream/store_lock.py). While a run works it keeps RUNNING beside the store, so a reader waits. Waits while
 today's daily run (kk-SCOpenQuests) is still going; no engine or update starts in its window (world_day.quiet).
 Log: logs/planet-store.log; each run's own prints go to logs/planet-store-<started>-<pid>.out (--console: here), so
-start it without a redirect. A day ends by writing its counts as facts (tools/facts.py). The store never moves without the world: there is no flag for that."""
+start it without a redirect. A day ends by writing its counts as facts (tools/facts.py), a run by publishing the
+gated days (run.py site, logs/site.log), also one that took no day or stopped. The store never moves without the world: there is no flag for that."""
 import argparse
 import datetime as dt
 import json
@@ -56,6 +60,11 @@ EXE = WORK / "tilestore-daily.exe"
 WORLD = ROOT / ".scratch/planet/world-1101"  # the world state seeded at 2026-11-01 (HANDOFF, "Release goals", step 3)
 WDAYS = WORK / "world-days"  # per day: day.pkl, before/, work/, gate/
 PUNCH_BELOW_GB = 60  # free GiB on the store's disk under which a day ends with `punch`
+# No new day is taken with less than DAY_NEEDS_GB + DISK_FLOOR_GB free (115 GiB). A day failed in its middle for
+# want of disk on 11-16 and 11-21 (HANDOFF): that is a STOPPED and a person; not taking the day is neither.
+DAY_NEEDS_GB = 75    # GiB a day takes from the disk at its low: `before/` (D-1's rows, about 56) and the work.
+#                      Days that began with 124 to 142 GiB free had 45 to 54 left at their low, in tier 2
+DISK_FLOOR_GB = 40   # GiB free under which tilestore's update, loc advance and compact refuse (nodefile.rs)
 QUESTS = "v64.1.json"  # the seed's quests file; a new StreetComplete release means a reseed, not a day
 PINS = EUROPE / "pins.json"
 PIN_REASON = ("sc-open-quests release 1: oracle for the world's daily backfill from 11-02 (HANDOFF, Release goals); "
@@ -95,6 +104,23 @@ def stop(reason):
     STOPPED.write_text(f"{dt.datetime.now().isoformat(timespec='seconds')} {reason}\n", encoding="utf-8")
     log(f"STOPPED: {reason} (remove {STOPPED} once it is understood)")
     sys.exit(1)
+
+
+def free_gb(path: Path | None = None) -> float:
+    """GiB free on the store's disk (the world, its days' work and the node file are on it too)"""
+    return shutil.disk_usage(path or STORE).free / 2**30
+
+
+def day_disk_short(day: str, free=free_gb) -> str | None:
+    """None when the disk has room for a new day; else the line to log instead of taking it. `free`: a reader of
+    the free GiB (a test gives its own). Asked only before a new day: a resumed day's steps keep their own
+    checks (the 40 GiB floor in tilestore), and what a day already holds is given back only by ending it."""
+    have, need = free(), DAY_NEEDS_GB + DISK_FLOOR_GB
+    if have >= need:
+        return None
+    return (f"day {day} not taken: {have:.0f} GiB free on the store's disk, and a day needs {need} (about "
+            f"{DAY_NEEDS_GB} at its low, over the {DISK_FLOOR_GB} GiB floor update and compact refuse under); "
+            f"no STOPPED, done for now: free {need - have:.0f} GiB and the next run takes it")
 
 
 def run(args, what, ok_codes=(0,)):
@@ -138,6 +164,16 @@ def daily_run_going():
     lines = [x for x in SCHED.read_text(encoding="utf-8", errors="replace").splitlines() if x.startswith(f"[{today}")]
     started = any("=== download" in x for x in lines)
     return started and not any("update done" in x or "] ERROR:" in x for x in lines[-5:])
+
+
+def inputs_going():
+    """`run.py inputs` is fetching the day's Europe clip, planet diff or notes dump: its lock names a live process"""
+    import run as runmod
+    try:
+        pid = int(runmod.INPUTS_LOCK.read_text(encoding="utf-8").strip())
+    except (OSError, ValueError):
+        return False
+    return runmod.pid_alive(pid)
 
 
 def monthly_going():
@@ -226,9 +262,13 @@ def restore(before: Path, day: str) -> None:
 # --- one day --------------------------------------------------------------------------------------------------
 
 def guarded(what, fn, *args, **kw):
-    """a step of the world day: any failure (world_day raises SystemExit, asserts, CalledProcessError) is a STOP"""
+    """a step of the world day: any failure (world_day raises SystemExit, asserts, CalledProcessError) is a STOP.
+    Not run.MemoryBusy: no engine was started (only the gate's engines ask for a heap, storecheck_cities.engine),
+    so nothing is half done; it goes up to `days`, which ends the run"""
     try:
         return fn(*args, **kw)
+    except WG.run.MemoryBusy:
+        raise
     except BaseException as e:  # noqa: BLE001
         if STOPPED.exists():  # a stop() inside the step: its reason stands
             raise
@@ -362,6 +402,10 @@ def one_day():
     if seq is None:
         log(f"store and world at {day}, generation {gen}: no diff to {nxt} on disk yet; done for now")
         return False
+    short = day_disk_short(nxt)  # before anything of the day is written (the notes refresh, the diff kept, before/)
+    if short:
+        log(short)
+        return False
     if f"{nxt}T00:00:00Z" > WD.notes_until(WORLD):  # the world's notes end before D: cut them from a newer dump
         dump = run_notes_dump()
         if dump is None or dump.name == WG.world_dump(WORLD).name:
@@ -433,6 +477,20 @@ def write_facts() -> None:
         log(f"facts: not written ({e}); python tools/facts.py world makes up for it")
 
 
+def publish() -> None:
+    """the gated days go up: the place files, then the site (run.py site). After RUNNING is gone: it reads only the
+    world's gated counts, so a reader of the store need not wait for the upload (half an hour). Never a stop: `run.py
+    inputs` (11:15) and the next run of this loop make up for a failure."""
+    t = time.time()
+    try:
+        with open(ROOT / "logs" / "site.log", "ab") as out:
+            p = subprocess.run([sys.executable, str(ROOT / "run.py"), "site"], stdout=out, stderr=subprocess.STDOUT,
+                               cwd=ROOT, timeout=3 * 3600)
+        log(f"publish: exit {p.returncode} in {time.time() - t:.0f} s (logs/site.log)")
+    except (OSError, subprocess.TimeoutExpired) as e:
+        log(f"publish: not done ({e}); python run.py site makes up for it")
+
+
 def run_quests() -> Path:
     sys.path.insert(0, str(ROOT))
     import run as runmod
@@ -442,6 +500,23 @@ def run_quests() -> Path:
 def run_notes_dump() -> Path | None:
     import run as runmod
     return runmod.notes_dump()
+
+
+def days(max_days: int, day=None) -> int:
+    """day after day until one says there is no more to do (`day`: one_day; a test gives its own); the days done.
+    run.MemoryBusy ends the run and is not a STOP: it comes from the gate before an engine starts (world_gate.
+    clip_side), with the store and the world at D, `finished` written and the node file at D-1, which is the state
+    one_day resumes from ("resuming", then the gate only: gate.json is not there yet, the regions already counted
+    keep their `done`), so the next run does the gate again and nothing else of the day twice."""
+    n = 0
+    try:
+        while n < max_days and (day or one_day)():
+            n += 1
+    except WG.run.MemoryBusy as e:
+        # not the text "STOPPED:" in this line: store_lock.run_going reads that in the log as a run's end by a stop
+        log(f"not now: {e}. No STOPPED written, since nothing failed and nothing is half written; the next run "
+            f"resumes the day at its gate")
+    return n
 
 
 def main():
@@ -459,6 +534,12 @@ def main():
     while not a.no_wait and daily_run_going() and waited < 180:
         if waited == 0:
             log("today's daily run is going: waiting for it (up to 3 h)")
+        time.sleep(60)
+        waited += 1
+    waited = 0
+    while not a.no_wait and inputs_going() and waited < 60:
+        if waited == 0:
+            log("today's inputs are being fetched: waiting for them (up to 1 h)")
         time.sleep(60)
         waited += 1
     # the monthly planet job and this one both need tens of GB at once: wait for it, or leave the day to the next
@@ -488,11 +569,11 @@ def main():
     n = 0
     RUNNING.write_text(f"{dt.datetime.now().isoformat(timespec='seconds')} {os.getpid()}\n", encoding="utf-8")
     try:
-        while n < a.max_days and one_day():
-            n += 1
+        n = days(a.max_days)
     finally:
         RUNNING.unlink(missing_ok=True)
-    log(f"planet store run ended: {n} days")
+        log(f"planet store run ended: {n} days")
+        publish()
 
 
 if __name__ == "__main__":

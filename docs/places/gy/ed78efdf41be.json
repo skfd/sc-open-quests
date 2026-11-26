@@ -1,0 +1,20 @@
+{"schema":1,"region":"ed78efdf41be","places":[
+["ed78efdf41be","Cuyuni-Mazaruni",2,-1,-61.3828,5.1751,-58.5697,7.2026,null,null],
+["10f947244390","Agatash",3,0,-58.6754,6.3595,-58.6154,6.4012,null,null],
+["b5d7ee65b605","Tumering - Mongrippo (East)",5,1,-58.6398,6.3609,-58.6154,6.4008,null,null],
+["794328ff1932","Tumering - Mongrippo (West)",5,1,-58.6754,6.3595,-58.6276,6.4012,null,null],
+["9287b014a513","Arau",3,0,-61.1683,6.2287,-61.0008,6.4588,null,null],
+["31a002bce3f7","Bartica",3,0,-58.6349,6.3963,-58.6171,6.4113,null,null],
+["2a8bfbdc4829","Bartica - West",5,5,-58.6349,6.4008,-58.6244,6.4113,null,null],
+["60b85875ac4f","Bartica East - North",5,5,-58.6218,6.4012,-58.6171,6.4092,null,null],
+["9286d55a0af2","Bartica East - South",5,5,-58.6233,6.3963,-58.6188,6.402,null,null],
+["54e046e566e7","Bartica East Central",5,5,-58.628,6.3968,-58.6199,6.4089,null,null],
+["e27b93f36bbb","Bartica West Central - North",5,5,-58.6254,6.4063,-58.6197,6.4106,null,null],
+["136d96f231cb","Bartica West Central - South",5,5,-58.627,6.401,-58.6218,6.4073,null,null],
+["1f2991ce4e74","Jawalla - Kubenang River",3,0,-60.5672,5.6839,-60.2588,5.9552,null,null],
+["7b8c045cf604","Kamarang - Kuku River",3,0,-60.8554,5.7165,-60.4018,6.4246,null,null],
+["d9394babde52","Karambaru - Kukui River - Pipillipai",3,0,-60.5687,5.1751,-59.8978,5.7223,null,null],
+["b209fb5c6b8e","Paruima",3,0,-61.3828,5.5369,-60.7732,6.0241,null,null],
+["f60f31d72ad8","Rest of Region 7",3,0,-61.3785,5.1918,-58.5697,7.2026,null,null],
+["24f18065d1eb","Waramadong",3,0,-60.8526,5.7989,-60.7108,5.9314,null,null]
+]}

@@ -130,6 +130,15 @@ def _random_notes(rnd, n):
 
 
 class Table(unittest.TestCase):
+    def test_a_changed_clip_replaces_its_cache(self):
+        rnd = random.Random(12)
+        with tempfile.TemporaryDirectory() as d:
+            clip = Path(d) / "c.jsonl"
+            for n in (50, 80):  # the second clip finds the first one's cache, stale: it has to be closed to be replaced
+                _clip(clip, _random_notes(rnd, n))
+                self.assertEqual(len(N.notes_table(clip)["key"]), n)
+            self.assertEqual(len(N.notes_table(clip)["key"]), 80)
+
     def test_open_keys_equal_open_at(self):
         rnd = random.Random(11)
         ns = _random_notes(rnd, 3000)

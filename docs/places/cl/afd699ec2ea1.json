@@ -1,0 +1,20 @@
+{"schema":1,"region":"afd699ec2ea1","places":[
+["afd699ec2ea1","Región de Arica y Parinacota",2,-1,-70.3779,-19.229,-68.9114,-17.4984,"Arica y Parinacota Region",null],
+["940fe1c8d809","Provincia de Arica",3,0,-70.3779,-19.229,-69.0464,-18.0458,"Arica Province",null],
+["82a0b5ed0d78","Arica",5,1,-70.3779,-18.904,-69.489,-18.0458,null,null],
+["d85b8ce501c4","Condominio Bello Horizonte",8,2,-70.2993,-18.4474,-70.2984,-18.4449,null,null],
+["1241918f9c01","Condominio Doña Bernardita",8,2,-70.2979,-18.4413,-70.2965,-18.4401,null,null],
+["56c7ef4fa8ad","Condominio Doña Laura",8,2,-70.2964,-18.4412,-70.2954,-18.4399,null,null],
+["1d680bde2eed","Condominio Doña Margarita",8,2,-70.2964,-18.4401,-70.2954,-18.4392,null,null],
+["70c0ce2a3e16","Condominio Doña Victoria",8,2,-70.2964,-18.4392,-70.2954,-18.4384,null,null],
+["ab10aaa02d6d","Condominio Pacífico Norte 1",8,2,-70.2977,-18.4425,-70.2965,-18.4414,null,null],
+["eadf6b91e443","Condominio Pacífico Norte 2",8,2,-70.2987,-18.4426,-70.2974,-18.4417,null,null],
+["473a87908f70","Condominio Pacífico Norte 3",8,2,-70.2988,-18.4434,-70.2971,-18.4422,null,null],
+["3fa506f47be4","Condominio Pacífico Norte 4",8,2,-70.2964,-18.4424,-70.2954,-18.4416,null,null],
+["98f486c385a5","Condominio Portal del Sol",8,2,-70.2982,-18.4373,-70.2964,-18.4353,null,null],
+["108f76822ff3","Condominio Puertas del Pacífico II",8,2,-70.2983,-18.4465,-70.2968,-18.4449,null,null],
+["37961d04559f","Camarones",5,1,-70.3514,-19.229,-69.0464,-18.6977,null,null],
+["e8506d78a64d","Provincia de Parinacota",3,0,-69.8261,-19.0341,-68.9114,-17.4984,"Parinacota Province",null],
+["6b9e79f13891","General Lagos",5,15,-69.8261,-18.167,-69.2756,-17.4984,null,null],
+["397a68f7f602","Putre",5,15,-69.6952,-19.0341,-68.9114,-17.954,null,null]
+]}

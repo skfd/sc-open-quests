@@ -1,0 +1,15 @@
+{"schema":1,"region":"dc0857c181c9","places":[
+["dc0857c181c9","Midlands",2,-1,27.9767,-21.0474,30.8825,-17.125,"Midlands Province",null],
+["fe140598c213","Chirumhanzu",3,0,30.0565,-19.869,30.8825,-18.8425,null,null],
+["2d4d5d0423c8","Holy Cross Mission",5,1,30.5741,-19.5714,30.5793,-19.5667,null,null],
+["b42a0e988fda","St Joseph's Mission",5,1,30.6219,-19.7232,30.6334,-19.7148,null,null],
+["0dd6c71b85c9","Gokwe North",3,0,28.0684,-18.0699,29.4073,-17.125,null,null],
+["18fddb68f9b4","Gokwe South",3,0,27.9767,-18.6348,29.4152,-17.6521,null,null],
+["a8ad341c063e","Gweru",3,0,29.0936,-19.9913,30.2131,-19.0898,null,null],
+["d3f210d518ad","Kwekwe",3,0,28.8778,-19.3195,30.3788,-18.27,null,null],
+["9991ff9c79f1","Mberengwa",3,0,29.4623,-21.0474,30.4819,-20.3435,null,null],
+["d3e355811db5","Don Bosco Mission",5,8,30.051,-20.7961,30.0527,-20.7933,null,null],
+["44253bbf26c8","Shurugwi",3,0,29.7854,-20.0784,30.4883,-19.4293,null,null],
+["1db685453a20","Mission",5,10,30.1969,-19.7265,30.2013,-19.721,null,null],
+["debdbc5df6cf","Zvishawane",3,0,29.7745,-20.645,30.4612,-19.9488,null,null]
+]}

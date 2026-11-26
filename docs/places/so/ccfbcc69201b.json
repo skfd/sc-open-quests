@@ -1,0 +1,20 @@
+{"schema":1,"region":"ccfbcc69201b","places":[
+["ccfbcc69201b","Mudug مدج",2,-1,46.5215,4.3347,49.6447,7.71,"Mudug",null],
+["5a5303abfac8","Galdogob جلدجب",3,0,46.8729,6.73,47.53,7.3826,"Galdogob District",null],
+["77ca6ddaa764","Galkaacyo جالكعيو",3,0,46.5215,6.28,48.5304,7.5609,"Galkayo District",null],
+["2f42cefe2653","Alla'Amin 1 & 2",5,2,47.4247,6.8465,47.4269,6.8489,null,null],
+["acf49d021473","Bulo-agon",5,2,47.4259,6.8483,47.4271,6.8499,null,null],
+["55b81483090c","Mustaqbal 2B",5,2,47.4224,6.8465,47.4249,6.8493,null,null],
+["ab0e7f06869d","Hobyo هبيا",3,0,47.3507,5.0285,49.1542,6.77,"Hobyo District",null],
+["530bf2398bed","Ceel-Dibir",5,6,48.3353,5.8762,48.3533,5.8932,null,null],
+["974cdee3efaa","Gal-barwaaqo",5,6,47.6697,6.1166,47.6889,6.1387,null,null],
+["365584cb15e3","Gawaan",5,6,48.2874,5.3048,48.3002,5.3139,null,null],
+["e81fc4638bc0","Jilable",5,6,47.8333,6.4032,47.85,6.4158,null,null],
+["6a150b665f28","Lamaxarar",5,6,48.3152,5.4006,48.3295,5.4134,null,null],
+["1695106be481","Xin Barwaqo",5,6,48.3455,5.11,48.3529,5.1194,null,null],
+["25e8c5bf9ad4","Jariiban جاريبان",3,0,48.49,6.6002,49.6447,7.71,"Jariban District",null],
+["566a16f6dbe2","Garcad",5,13,49.307,6.9408,49.3244,6.9534,null,null],
+["b546c987eac9","Il-Foocshe",5,13,49.4697,7.1681,49.4757,7.1746,null,null],
+["b51a6b3d1f8f","Xarardheere",3,0,47.5,4.3347,48.2892,5.2,"Harardhere District",null],
+["faccbe165de9","Qosol Tire",5,16,48.2134,4.9233,48.2177,4.9273,null,null]
+]}

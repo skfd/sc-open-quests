@@ -33,6 +33,7 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 sys.path.insert(0, str(HERE))
 import notes_day as N  # noqa: E402
+import engine_room  # noqa: E402
 import place_counts as C  # noqa: E402
 import placesets as P  # noqa: E402
 import stream as S  # noqa: E402
@@ -50,7 +51,9 @@ def _log(msg):
 
 def quiet(ahead_minutes: int = 0):
     """no engine starts in (or runs into) the daily update's window: world_cells.quiet"""
-    sys.path.insert(0, str(ROOT / "tools"))
+    tools = str(ROOT / "tools")
+    if tools not in sys.path:      # once: this is called for every engine, and a pool's workers get sys.path whole
+        sys.path.insert(0, tools)
     import world_cells
     world_cells.quiet(ahead_minutes)
 
@@ -295,8 +298,10 @@ def engine_dump(day: Day, pbf: Path, out: Path, clock: str, cities: Path, parts:
                 extra_opts: str = "") -> Path:
     """one engine run, its state dump's path (thread-safe: the engine is passed, not set on `stream`)"""
     quiet(20)
-    return S.engine(pbf, out, clock, cities, "UTC", None, area_pass=area_pass, heap_gb=day.heap_gb, base=ROOT,
-                    extra_opts=extra_opts, parts=parts, parts_cache=P.parts_cache(day.w), exe=day.engine)
+    # in only when the commit charge holds this heap beside the engines alive (four died together on 2026-11-23)
+    with engine_room.ROOM.engine(day.heap_gb, f"{out.parent.name}/{out.name}", day.log):
+        return S.engine(pbf, out, clock, cities, "UTC", None, area_pass=area_pass, heap_gb=day.heap_gb, base=ROOT,
+                        extra_opts=extra_opts, parts=parts, parts_cache=P.parts_cache(day.w), exe=day.engine)
 
 
 def engine_rows(day: Day, pbf: Path, out: Path, clock: str, cities: Path, parts: Path, area_pass: bool,
@@ -594,8 +599,9 @@ def counts_at(w: Path, clock: str, sets: P.PlaceSets, names: list[str], work: Pa
     def one(f):
         d = w / "files" / f["id"]
         quiet(5)
-        return N.note_quests(d / "cities.json", d / "notes.jsonl", clock, work / f["id"], parts=d / "parts",
-                             engine=engine, heap_gb=heap_gb, parts_cache=P.parts_cache(w))
+        with engine_room.ROOM.engine(heap_gb, f"notes/{f['id']}"):
+            return N.note_quests(d / "cities.json", d / "notes.jsonl", clock, work / f["id"], parts=d / "parts",
+                                 engine=engine, heap_gb=heap_gb, parts_cache=P.parts_cache(w))
 
     from concurrent.futures import ThreadPoolExecutor
     with ThreadPoolExecutor(max(1, T2_WORKERS)) as ex:
