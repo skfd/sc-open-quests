@@ -1,14 +1,27 @@
-"""Take an Overture release into our place registry: the tool proposes, the operator judges, nothing is adopted alone.
+"""Take an Overture release into our place registry: an algorithm decides the clear cases, Fable judges the rest, the
+operator sees only the exceptions.
 
-Each release is a manual job of an agent and an operator (owner, 2026-11-24; HANDOFF.md, "The Overture release tool"). The
-files live in data/place-ids/releases/<release>/, backed up to R2 with the registry (archive_backup.py --only place-ids):
+Monthly (owner, 2026-11-26): when Overture publishes a release it is prepared (`watch`, daily), and on the 1st the staged
+registry goes live at a reseed. The files live in data/place-ids/releases/<release>/, backed up to R2 with the registry
+(archive_backup.py --only place-ids):
 
+    python tools/overture_release.py watch                         daily: a release newer than the pin, prepared up to the
+                                                                   operator (narrow, propose, auto, agent, apply)
     python tools/overture_release.py narrow RELEASE [--src DIR]    the release's places, narrow (S3, or a local world pull)
     python tools/overture_release.py propose RELEASE [--old R]     the registry against the release: proposals.tsv, report.md
+    python tools/overture_release.py auto RELEASE                  the algorithm: the clear classes (AUTO) take their proposal
+    python tools/overture_release.py agent RELEASE                 the Fable judge (Claude Code headless) for the rest
+    python tools/overture_release.py look RELEASE KEY              one row's context (the judge's tool)
+    python tools/overture_release.py exceptions RELEASE            exceptions.md: the rows waiting for the operator
     python tools/overture_release.py status RELEASE                what is judged and what is not, by class
     python tools/overture_release.py accept RELEASE --class C ...  every unjudged row of class C takes its proposal as verdict
-    python tools/overture_release.py judge RELEASE KEY VERDICT     one row's verdict
+    python tools/overture_release.py judge RELEASE KEY VERDICT     one row's verdict (the operator's)
     python tools/overture_release.py apply RELEASE                 every row judged: the staged registry (the live one untouched)
+
+**Who decides.** `auto` takes the proposal of the clear classes (same-osm, same-osm-changed, back, new). `agent` gives every
+other row to Fable (claude-fable-5-2 through `claude -p`, tools: `look` and OSM's site), in batches, each batch judged twice
+independently: a verdict stands only when both runs give it with high confidence and it is valid; any doubt, disagreement,
+failed run, or a new GERS id two rows take leaves the row to the operator, with Fable's answers in its note.
 
 **What a release does to a place.** A place is ours (place_ids.py): its GERS id is an attribute. A registry place whose GERS id
 is still in the release is *kept* and takes the release's name, subtype, OSM object and country (a changed name goes to the
@@ -19,12 +32,12 @@ former names). The rest need a verdict, one row each in proposals.tsv:
 - a *new* GERS id that no lost row proposes to take: `new` (a new id is minted for it);
 - an ended place whose GERS id is *back*: `revive`, or `new` (it stays ended and the GERS id gets a new place).
 
-**Classes** say how strong a proposal is, so the operator can accept a whole class in one command (`accept`) and judge the
-rest row by row (`judge`, or by editing the file's `verdict` column). `contested` rows (two lost places propose the same new
-GERS id) are never accepted in bulk.
+**Classes** say how strong a proposal is. `accept` takes a whole class by hand, `judge` one row (or edit the file's `verdict`
+column). `contested` rows (two lost places propose the same new GERS id) are never accepted in bulk.
 
     same-osm          lost; one new GERS id on the same OSM object, same name and subtype          -> same <gers>
-    same-osm-changed  lost; the same OSM object, but the name or the subtype changed               -> same <gers>
+    same-osm-changed  lost; the same OSM object, name or subtype changed, boxes overlap 0.5+      -> same <gers>
+    same-osm-far      lost; the same OSM object, name or subtype changed, boxes overlap less     -> same <gers>
     same-name-near    lost; no OSM match; one new place of the same name and country within 2 km   -> same <gers>
     contested         lost; its new GERS id is also proposed for another lost place                 -> same <gers> (judge)
     overlap           lost; places of the release overlap it (bbox IoU 0.2+): the best up to three -> ended <successors>
@@ -763,7 +776,7 @@ def _norm(v: str) -> str:
 
 
 def agent(release: str, old: str, root: Path = RELEASES, registry: Path = place_ids.REGISTRY, runs: int = 2,
-          batch: int = 40, workers: int = 3, model: str = FABLE, runner=None) -> dict:
+          batch: int = 40, workers: int = 3, model: str = FABLE, runner=None, limit: int | None = None) -> dict:
     """The Fable judge: every row neither decided nor waiting for the operator, in batches, each batch judged `runs` times
     independently. A verdict is taken when every run gives it with high confidence; any doubt, disagreement, missing or
     invalid verdict, or a new GERS id two rows take, leaves the row to the operator (`judged` says why)."""
@@ -783,6 +796,7 @@ def agent(release: str, old: str, root: Path = RELEASES, registry: Path = place_
         f"SELECT gers FROM '{(here / 'places.parquet').as_posix()}' WHERE gers NOT IN "
         f"(SELECT gers FROM '{(here / 'ids.parquet').as_posix()}')").fetchall()}
     todo.sort(key=lambda r: (r["country"], r["class"], r["key"]))
+    todo = todo[:limit] if limit else todo   # a rehearsal on a sample
     batches = [todo[i:i + batch] for i in range(0, len(todo), batch)]
     lock = threading.Lock()
     tally = {"judged": 0, "operator": 0, "cost": 0.0}
@@ -964,6 +978,7 @@ def main(argv: list[str] | None = None) -> int:
     g.add_argument("--batch", type=int, default=40)
     g.add_argument("--workers", type=int, default=3)
     g.add_argument("--model", default=FABLE)
+    g.add_argument("--limit", type=int, help="only the first N rows (a rehearsal)")
     sub.add_parser("exceptions").add_argument("release")
     w = sub.add_parser("watch", help="daily: prepare a release newer than the pin, up to the operator's exceptions")
     w.add_argument("--runs", type=int, default=2)
@@ -986,7 +1001,7 @@ def main(argv: list[str] | None = None) -> int:
     elif a.cmd == "look":
         print(look(a.release, a.key, a.old or pin(), a.look_root or a.root, a.registry))
     elif a.cmd == "agent":
-        agent(a.release, a.old or pin(), a.root, a.registry, a.runs, a.batch, a.workers, a.model)
+        agent(a.release, a.old or pin(), a.root, a.registry, a.runs, a.batch, a.workers, a.model, limit=a.limit)
     elif a.cmd == "exceptions":
         log(str(exceptions(a.release, a.root)))
     elif a.cmd == "watch":
