@@ -4347,3 +4347,9 @@ at once to 0.28 GB (40.8 GiB).
 - **Order agreed with "Overture place sizes by area" (11-25, about 20:45):** it merges `dropped-places` now (the 16 duplicates and, by the
   owner's new decision, 63,800 small squares by a rule, `tools/small_squares.py`, read by GERS id; it translates `dropped-places.json`'s
   ids itself). Then this session rebuilds the name layer and history once more, rebuilds the publisher's files and uploads once.
+- **Rename, continued (11-25, 21:25):** facts rewritten and verified (2,375 days, 0 different). After `dropped-places` (dae1a357; suite 362 passed)
+  the name layer and history were rebuilt again without 63,816 places (b6baff26). The publisher's build (`site2`, v f1b38408abd4) verified:
+  0 mismatches. **Uploading** since 21:25: `world_publish.py upload --full --keep-gone`, 1,063,089 files, log `.scratch/overture-next/upload.log`;
+  it saves the bucket manifest after each 50,000, so if it stops, the same command resumes. 1,129,125 old files are kept (old ids, the
+  dropped places): until the site is deployed the live pages ask for the old ids, and those files stay. Next: `run.py site`, then the old
+  files' deletion only on the owner's word, after `rclone delete --dry-run`.
