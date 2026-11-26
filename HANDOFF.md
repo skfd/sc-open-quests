@@ -4480,7 +4480,8 @@ measured: 12,643 s, then the publish 1,155 s.
     **40 of 47 output files the same bytes; the kept counters and every other stat equal. The seven `v_*` files (vertex
     ways) hold the same 220,164 ways, each with the same refs, places and tags, in another order:** that order is a hash
     map's (`context.rs:662`, `by_tile.keys()` unsorted, the same line in the old source), so it differs between any
-    two runs of either binary (read in the code, not shown by running the old one twice); `store_context._geo` reads
+    two runs of either binary (**shown 08:38: the new binary run again on the same inputs, the same seven files
+    differ, the other 40 the same**); `store_context._geo` reads
     them into a dict by id. **Peak commit: old 6.81 GiB, new 7.21 GiB** (working set 7.44 and 7.43): 0.4 GiB more.
     Left of the owed list: a day of its own. Install is still the copy of `tilestore-points-fix-5dc1fbe6.exe`.
   - **The memory rule: built, branch `perf-room` (dc997ca3, a4e5d271; worktree `.claude/worktrees/agent-a1c0a9c6bc936fa2e`),
@@ -4495,9 +4496,14 @@ measured: 12,643 s, then the publish 1,155 s.
     - **On real engines (this session, 08:25, `.scratch/perf-review/room_smoke.py`, log `room-smoke.log`):** main's
       installed engine on the f10 fixture, three at once at 4 g through `in_room`: the reading reaches `java.exe`
       (each tree 1.7-1.8 GB, so 2.7 of 4.5 GB still owed), `given.json` written, `state.bin.json` the same in all.
-      **The second run after a memory failure is shown by the stub tests only:** the fixture ran to the same output
-      in a 1 g heap (16 s, peak heap of other runs near 2 GB), so it could not be starved. That also says an
-      engine's need can be well under its peak.
+      The fixture ran to the same output in a 1 g heap (16 s; other runs' peak near 2 GB): an engine's need can be
+      well under its peak.
+    - **The second run after a memory failure, on a real engine (08:37, `checks2.py A`, the
+      first attempt starved by a later `-Xmx64m`):** "retried failed for memory at 4 g (OutOfMemoryError); once
+      more at 8 g", `given.json` with both heaps, `engine-failed.log` kept, `state.bin.json` the same as the other
+      runs', no `hs_err` file.
+    - **Its sizing on 11-25's real engine names (`heap_for`, history 11-22 to 11-24):** tier 2 a mean of 5.8 g (78
+      of 256 at 8), tier 1 4.3 g, the notes 3.1 g; 2 of 256 tier 2 peaks of 11-25 pass the heap given.
     - **To watch on its first day:** `"given MB"` under 8192 for most engines (all 8192: the keys did not match);
       "they can take X g more" under alive times cap; the phase lines; "failed for memory ... once more" lines; no
       new `hs_err`. The 8 GB kept back is now the only slack for `tilestore read` and the rest.
@@ -4538,12 +4544,21 @@ measured: 12,643 s, then the publish 1,155 s.
     - *The agent's small benchmark (8 files of 1.5M rows, pool 1 to 4):* tier 1 rewrite 2.2 to 0.8 s, delta 4.7 to
       2.4 s, counts 8.4 to 6.2 s, old rows 0.8 to 0.4 s, 20,000 small files 16.9 to 11.9 s (the writes themselves
       do not scale with threads: `engine files` will save well under the 400 s guessed above). Peak commit not
-      measured; `WORLD_FILE_POOL=1` or `2` is the knob on a starved day.
+      measured by the agent; `WORLD_FILE_POOL=1` or `2` is the knob on a starved day.
+    - **On the real world (this session, 08:38-08:54, `checks2.py C`, log `.scratch/perf-review/checks2.log`):** the
+      counts' per-file sums (`by_set` through `file_pool.ordered`) over all 128 `world.bin`, 52.6 GiB: **pool 1
+      397 s and 366 s, pool 4 172 s; the same 25,475,506 sums in the same order (one sha256); peak commit 2.8 GiB
+      against 5.8 GiB.** So about 200 s of `counts` for 3 GiB more commit; the rewrites hold more a file (about three
+      copies of its rows a worker) and are not measured on real data.
+    - **Changed by this session (ceea7e76 on `perf-python`, the commit before it on `perf-steps`):** `before/` (52 GB,
+      few files) is deleted before `compact` starts, `work/` beside it: the thread took the small files first, and
+      compaction asks for the disk's free space as it starts.
     - *Not built, as decided:* tier 1's engines beside cover and rectangles, the note engines beside the delta,
       dropping `tilestore ways`, folding tier 1's rewrite into the delta's: after a day of the timers.
   - **Both Python branches together: branch `perf-python` (15c6a2cd; worktree `~/Code/sc-open-quests-perf-python`),
     main with `perf-room` and `perf-steps` merged** (two conflicts in `world_day.py`, both sides kept: the room's
-    phase line beside the new timers). **pytest there: 410 passed, 3 skipped.** Not merged into main.
+    phase line beside the new timers). **pytest there: 410 passed, 3 skipped.** Not merged into main. `run.py`
+    imports `tools/stream` modules, so a merge reaches the 11:15 inputs run and the 12:15 city run as well.
   - **State at 08:45 on 11-26: all four built, each proven as far as it can be without a world day; NOTHING
     installed, nothing merged into main, the HOLD untouched, nothing running.** Installs wait for the owner's word and
     order (proposed: day 1 the points fix and the memory rule, day 2 the Python steps, day 3 the engine). Worktrees
