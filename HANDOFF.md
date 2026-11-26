@@ -4395,11 +4395,12 @@ read-only agents read the code (the world day's Python steps, the engine's loops
 `.scratch/perf-review/{crunch,room}.py`. **Every saving below is a guess unless it says measured.** 11-25 is the day
 measured: 12,643 s, then the publish 1,155 s.
 
-- **(1) The engines wait for memory: the largest cost, about 50 min of the day (measured waits, guessed saving).** On
+- **(1) The engines wait for memory: the largest cost, about 45-50 min of the day (measured waits, guessed saving).** On
   11-25 the engine room made tier 1's engines wait 1,849 s summed and tier 2's 6,190 s and 6,193 s (old, new). Tier 1
-  never had more than 1 alive when the next started; tier 2 had 1 or 2. Tier 2's two phases took 5,384 s of wall for
-  6,696 s of engine and 1,074 s of reads: about 1.5 at a time, where 11-15 to 11-20 on 4 workers ran about 3.5. At 3.5
-  again tier 2 is about 2,200 s (3,100 s saved) and tier 1's engines about 350 s less.
+  ran strictly one at a time (all 127 starts say "1 alive", which counts the one starting); tier 2 ran alone at 137 of
+  254 starts and two at a time at the rest. Tier 2's two phases took 5,384 s of wall for 6,696 s of engine and 1,074 s
+  of reads: about 1.5 at a time, where 11-15 to 11-20 on 4 workers ran about 3.5. At 2.8 at a time (levers (a) and (b)
+  below) tier 2 is about 2,800 s (2,600 s saved) and tier 1's engines about 350 s less; 3.5 needs more commit, (c).
   - **Why:** `engine_room.fits` asks `left - 8 >= heap + sum(alive)` with every engine at 8 g. The commit left was 16-26
   GB (median 24), so 24 - 8 = 16 holds one alive and one new at best, and the alive one's commit is already out of
   `left`: counted twice, as the docstring says. The engines get `-Xmx8g` and no `-Xms` (`stream.py:288`), so they commit
@@ -4408,11 +4409,14 @@ measured: 12,643 s, then the publish 1,155 s.
   - **Levers, not exclusive:** (a) count an alive engine by what it can still take (its `-Xmx` less its own commit, read by
   pid) instead of whole; (b) a heap per group from its last days' peak, 8 g again on `Java heap space`: at 1.5 times the
   three-day peak tier 2's mean is 5.7 g (78 of 256 stay at 8, 7 would have passed 90% of theirs on 11-25; a group's peak
-  moves 0.56 to 1.57 times day to day, and it follows the heap given, so the need is lower than the peak); tier 1's mean
-  4.3 g, the notes' 2.4; (c) more commit: the limit is 108.6 GB (87.6 RAM, a 21.5 GB system-managed page file on C:),
+  moves 0.56 to 1.57 times day to day, p5 to p95, at most 2.41, hence the retry; the gate's peak follows the heap
+  given, so the need may be lower than the peak: not measured for tier 2); tier 1's mean 4.3 g, the notes' 2.4; (c) more commit: the limit is 108.6 GB (87.6 RAM, a 21.5 GB system-managed page file on C:),
   77 GB taken at rest (49 `claude` processes 14 GB, WindowsTerminal 4.6, vmmem 5.9), 42 GB of RAM free: a larger page file
-  raises the limit with no RAM, and G: has 124 GB free where C: must keep 115 for a day. (a) and (b) together give about
-  3.5 at a time on a 24 GB day; (c) alone gives 4. `ROOM.most` and `ROOM.waited_s` are still written nowhere.
+  raises the limit with no RAM, but C: is the only disk (G: is Google Drive) and must keep 115 GiB free for a day to be
+  taken, so each GB of page file is a GB off that; closing sessions and Docker is the other way (11-24, 23:06: 26 to 35
+  GB). The budget on 11-25 was 16-17 GB (23-25 left with none alive, less 8): (a) and (b) together hold about 2.8 tier 2
+  engines in it. **On a day like 11-24 (9 GB left, the loop's own python at 17 GB in tier 2 `new`; "Day 11-24
+  starved") (a) and (b) do nothing: only (c) helps.** `ROOM.most` and `ROOM.waited_s` are still written nowhere.
 - **(2) The points fix, ready, the owner's go: about 410 s a day (measured).** 11-25's two `points` calls took 210 s and
   228 s of store context's 363 s and 459 s; the proven binary does such lists in 11-13 s. Its three owed items stand
   (the entry "THE POINTS FIX IS BUILT AND PROVEN").
