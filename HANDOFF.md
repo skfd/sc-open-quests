@@ -4608,3 +4608,7 @@ measured: 12,643 s, then the publish 1,155 s.
   - `.scratch/world-places/world/places.json` (old ids, 11-13) is read by nothing in the loop, only `world_tier2.py`'s CLI defaults.
   - **Not built and possibly on the owner's "all the new things" list:** the Overture 12-16.0 ingest tool, the city run's retirement.
   - **After the first day:** the first-day checks above (gate, engine room lines, `given MB`, timers) and `rename_places.py check` again.
+  - **Checkpoint running (owner, wizard: "Now, before 11:15"; started 10:50, later than planned because the question waited):**
+    `state_checkpoint.py upload --from-world`, hidden bash pid 60084, log `.scratch/checkpoint-1126.log` (last line `exit 0` when
+    whole), to `r2:sc-open-quests-archive/state/2026-11-25`, 52.6 GiB at about 44 MB/s (about 20 min). If it dies: the same command
+    again, under the HOLD. The dry run leaves its links in `.scratch/planet/checkpoint/2026-11-25` (the real run reuses and removes them).
