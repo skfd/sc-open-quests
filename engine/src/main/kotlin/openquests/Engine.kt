@@ -144,7 +144,7 @@ class Engine(val registry: Registry, val cities: List<City>, val parts: List<Par
     init { initLap.to("city index") }
 
     /** each city's parts (indices into [parts]) and an index over their polygons (null for a city without) */
-    val partsOfCity: Array<IntArray> = Array(cities.size) { c -> parts.filter { it.city == c }.map { it.index }.toIntArray() }
+    val partsOfCity: Array<IntArray> = partsByCity(cities.size, parts)
     init { initLap.to("parts of each city") }
     private val partIndex: Array<PolygonIndex?> = Array(cities.size) { c ->
         // clipped to the city: every point asked of a city's parts lies in the city
