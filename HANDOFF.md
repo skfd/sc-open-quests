@@ -4791,3 +4791,8 @@ store's day D).**
   and behaviour unchanged before the flip; the cutover as a detached chain with step markers (background jobs die at 2 h);
   rehearsal = the full prepare + the f47 canary on the new list + a publish dry run counting deletes; before the first loop
   day on NEW (no way back): `world_gate` at D, and old vs new counts at D for the kept ids.
+- **Owner, 18:35 (wizard):** disk: **the old world's `world.bin` files go once the new world passes its gate at D**, and **the
+  regional extracts may be deleted early** (not Ontario, shared with kk-ontario-update; only if the space is needed, after
+  checking whether `config/parts` needs them). Ended places: **files kept as they are (unmarked, frozen), nothing deleted,
+  "ended" marking later** (so `daily` must publish with keep-gone before the first day on NEW). The laptop is back later
+  tonight; the HOLD stays the owner's.
