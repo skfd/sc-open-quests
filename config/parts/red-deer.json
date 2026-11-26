@@ -5,7 +5,6 @@
   {"id": "b9273d29163a", "gers": "b9273d29-163a-4222-bb26-e401ee93d71e", "name": "Aspen Ridge", "en": null, "subtype": "neighborhood", "osm": "r18660160", "geometry": "data/boundaries/parts/red-deer/r18660160.geojson"},
   {"id": "c4d321765ff4", "gers": "c4d32176-5ff4-4b71-8391-1ba72c9a5f39", "name": "Bower", "en": null, "subtype": "macrohood", "osm": "r18663560", "geometry": "data/boundaries/parts/red-deer/r18663560.geojson"},
   {"id": "640bfb2fd8a3", "gers": "640bfb2f-d8a3-4e39-bca9-b02a008a79c2", "name": "Bower Ponds Recreation Area", "en": null, "subtype": "neighborhood", "osm": "r18664302", "geometry": "data/boundaries/parts/red-deer/r18664302.geojson"},
-  {"id": "39b2b4d616a7", "gers": "39b2b4d6-16a7-4109-801e-ca6b9c0c60b0", "name": "Canada 150 Square", "en": null, "subtype": "microhood", "osm": "w1199621452", "geometry": "data/boundaries/parts/red-deer/w1199621452.geojson"},
   {"id": "e1cb7defe73d", "gers": "e1cb7def-e73d-4cfe-8dbe-45d9d040d34e", "name": "Capstone", "en": null, "subtype": "microhood", "osm": "r18664089", "geometry": "data/boundaries/parts/red-deer/r18664089.geojson"},
   {"id": "bb678846421e", "gers": "bb678846-421e-4989-9706-464aca94cb82", "name": "Central Park", "en": null, "subtype": "neighborhood", "osm": "r18665016", "geometry": "data/boundaries/parts/red-deer/r18665016.geojson"},
   {"id": "a3ddeddbe158", "gers": "a3ddeddb-e158-4ece-9aab-aa7a2aad5e02", "name": "Chiles Industrial Park", "en": null, "subtype": "neighborhood", "osm": "r18665017", "geometry": "data/boundaries/parts/red-deer/r18665017.geojson"},

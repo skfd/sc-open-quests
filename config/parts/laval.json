@@ -7,7 +7,6 @@
   {"id": "94a68ec060fc", "gers": "94a68ec0-60fc-46db-91be-8565c5de3a3d", "name": "Laval-des-Rapides", "en": null, "subtype": "macrohood", "osm": "r8797481", "geometry": "data/boundaries/parts/laval/r8797481.geojson"},
   {"id": "c417edb4a9d8", "gers": "c417edb4-a9d8-4ecc-914a-8f8d84f4a858", "name": "Laval-sur-le-Lac", "en": null, "subtype": "macrohood", "osm": "r2812709", "geometry": "data/boundaries/parts/laval/r2812709.geojson"},
   {"id": "3b64177bdead", "gers": "3b64177b-dead-4122-99de-898ce55314fc", "name": "Le Boisé Champêtre", "en": null, "subtype": "neighborhood", "osm": "w1162303175", "geometry": "data/boundaries/parts/laval/w1162303175.geojson"},
-  {"id": "2c0d8581545f", "gers": "2c0d8581-545f-4227-a262-b6c9b0700e96", "name": "Place Claude-Léveillée", "en": null, "subtype": "microhood", "osm": "w724036288", "geometry": "data/boundaries/parts/laval/w724036288.geojson"},
   {"id": "ebf9ca4e928d", "gers": "ebf9ca4e-928d-44a0-9144-c455435fee0a", "name": "Pont-Viau", "en": null, "subtype": "macrohood", "osm": "r8797405", "geometry": "data/boundaries/parts/laval/r8797405.geojson"},
   {"id": "d36ae44b06bd", "gers": "d36ae44b-06bd-43c3-ac05-2c91566e5e30", "name": "Saint-François", "en": null, "subtype": "macrohood", "osm": "r8797273", "geometry": "data/boundaries/parts/laval/r8797273.geojson"},
   {"id": "a2ff0f5aa082", "gers": "a2ff0f5a-a082-46d8-ae3a-4ea44b4905b9", "name": "Saint-Vincent-de-Paul", "en": null, "subtype": "neighborhood", "osm": "r13983280", "geometry": "data/boundaries/parts/laval/r13983280.geojson"},

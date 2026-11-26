@@ -3,7 +3,6 @@
   {"id": "8d45562bbd7f", "gers": "8d45562b-bd7f-4797-a1aa-c65e0bb98259", "name": "Downtown", "en": null, "subtype": "neighborhood", "osm": "r3431131", "geometry": "data/boundaries/parts/victoria/r3431131.geojson"},
   {"id": "748c3dbe9c29", "gers": "748c3dbe-9c29-4e95-8208-696e09be8324", "name": "Fairfield", "en": null, "subtype": "neighborhood", "osm": "r3431132", "geometry": "data/boundaries/parts/victoria/r3431132.geojson"},
   {"id": "abb921f593de", "gers": "abb921f5-93de-4f1a-a291-1da914206594", "name": "Fernwood", "en": null, "subtype": "neighborhood", "osm": "r3431133", "geometry": "data/boundaries/parts/victoria/r3431133.geojson"},
-  {"id": "f63def9b7ea0", "gers": "f63def9b-7ea0-4568-a457-3218b66508b6", "name": "Fernwood Square", "en": null, "subtype": "microhood", "osm": "w27054999", "geometry": "data/boundaries/parts/victoria/w27054999.geojson"},
   {"id": "bbc63aa9292a", "gers": "bbc63aa9-292a-4bec-84ed-db7fd9bdaf99", "name": "Gonzales", "en": null, "subtype": "neighborhood", "osm": "r3431134", "geometry": "data/boundaries/parts/victoria/r3431134.geojson"},
   {"id": "095559ff083f", "gers": "095559ff-083f-4e81-b3ad-85e6fc56ff1a", "name": "Harris Green", "en": null, "subtype": "neighborhood", "osm": "r3431135", "geometry": "data/boundaries/parts/victoria/r3431135.geojson"},
   {"id": "dab100b20f13", "gers": "dab100b2-0f13-4de1-8a83-b654c6a24424", "name": "Hillside/Quadra", "en": null, "subtype": "neighborhood", "osm": "r3431136", "geometry": "data/boundaries/parts/victoria/r3431136.geojson"},

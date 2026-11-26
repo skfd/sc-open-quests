@@ -1,7 +1,8 @@
 """Small squares: the squares we leave out of the name layer and the parts registry (owner, 2026-11-25).
 
     <overture venv>/python tools/small_squares.py build [--src data/overture/world] [--out config/small-squares.json]
-    python tools/small_squares.py prune      drop the listed squares from config/parts/*.json
+    python tools/small_squares.py prune      drop every left-out place (these squares and config/dropped-places.json's
+                                             twins, run.left_out_places) from config/parts/*.json, by GERS id
 
 A square is a microhood whose `local_type` is "square" in Overture's division.parquet (OSM place=square). It is left out
 when its outline is under MAX_M2 and other places of a city's size or smaller cover it: a neighbourhood, macrohood,
@@ -156,7 +157,9 @@ def main(argv=None):
         print(f"squares {doc['squares']:,}; under {MAX_M2:,} m2 and nobody's parent {doc['small']:,}; "
               f"covered, so left out {len(doc['places']):,} -> {a.out}")
     else:
-        got = prune(PARTS, load(a.out))
+        sys.path.insert(0, str(ROOT))
+        import run
+        got = prune(PARTS, set(run.left_out_places(squares=a.out)))
         print(f"dropped {sum(got.values())} parts from {len(got)} cities: {got}")
     return 0
 

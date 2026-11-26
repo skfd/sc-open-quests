@@ -1,5 +1,4 @@
 {"schema": 1, "city": "ajax", "overture": "2026-10-21.0", "parts": [
-  {"id": "d22094ced186", "gers": "d22094ce-d186-49b6-a724-df616323c1b0", "name": "Ajax Heritage Square", "en": null, "subtype": "microhood", "osm": "w1095939810", "geometry": "data/boundaries/parts/ajax/w1095939810.geojson"},
   {"id": "f1185900754f", "gers": "f1185900-754f-44eb-9970-b1d28a234a2d", "name": "Applecroft", "en": null, "subtype": "neighborhood", "osm": "r14407069", "geometry": "data/boundaries/parts/ajax/r14407069.geojson"},
   {"id": "a6637c031cf5", "gers": "a6637c03-1cf5-497e-952d-14fbd27b8790", "name": "Audley North", "en": null, "subtype": "neighborhood", "osm": "r14407070", "geometry": "data/boundaries/parts/ajax/r14407070.geojson"},
   {"id": "0a3a5b300a0e", "gers": "0a3a5b30-0a0e-48cf-9a8e-ee7979a3e750", "name": "Audley Road Business Area", "en": null, "subtype": "neighborhood", "osm": "r14407071", "geometry": "data/boundaries/parts/ajax/r14407071.geojson"},

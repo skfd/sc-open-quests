@@ -101,7 +101,6 @@
   {"id": "f5b8c15ec503", "gers": "f5b8c15e-c503-462e-93e0-b6e9562493a9", "name": "The Glebe", "en": null, "subtype": "macrohood", "osm": "w369581475", "geometry": "data/boundaries/parts/ottawa/w369581475.geojson"},
   {"id": "b9134c74185c", "gers": "b9134c74-185c-4bcd-b85d-02a16927cf86", "name": "The Orchard", "en": null, "subtype": "neighborhood", "osm": "w474116237", "geometry": "data/boundaries/parts/ottawa/w474116237.geojson"},
   {"id": "0b0314aa065f", "gers": "0b0314aa-065f-41b3-9e33-2fb42f776be7", "name": "Tudor Gate", "en": null, "subtype": "neighborhood", "osm": "r7057788", "geometry": "data/boundaries/parts/ottawa/r7057788.geojson"},
-  {"id": "7a65c7bfffca", "gers": "7a65c7bf-ffca-4df8-86b5-08f91dc50e54", "name": "University Square", "en": null, "subtype": "microhood", "osm": "w733418590", "geometry": "data/boundaries/parts/ottawa/w733418590.geojson"},
   {"id": "049ce37fa0ff", "gers": "049ce37f-a0ff-4b9c-a5b0-81c8f195e8b8", "name": "Wateridge Village", "en": null, "subtype": "neighborhood", "osm": "r13793405", "geometry": "data/boundaries/parts/ottawa/r13793405.geojson"},
   {"id": "ba079873539d", "gers": "ba079873-539d-4927-98c8-4fdf2faa5c36", "name": "Wellington Village", "en": null, "subtype": "neighborhood", "osm": "r17850337", "geometry": "data/boundaries/parts/ottawa/r17850337.geojson"},
   {"id": "4ba69e566894", "gers": "4ba69e56-6894-461e-bc56-96b6e758d929", "name": "West Carleton-March", "en": null, "subtype": "neighborhood", "osm": "r7099086", "geometry": "data/boundaries/parts/ottawa/r7099086.geojson"},
