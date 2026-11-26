@@ -76,7 +76,8 @@ Two PowerShell scripts manage a Task Scheduler entry. Run them as Administrator.
 ```
 
 The task is named `kk-SCOpenQuests`. It starts when available if the machine was off at 13:15 and
-is stopped after two hours.
+is stopped after two hours. **Disabled since 2026-11-26:** the world's day counts the cities now, and `docs/data`'s city
+files end on `config/city-files.json`'s day (DESIGN.md); `Enable-ScheduledTask kk-SCOpenQuests` turns it back on.
 
 ```powershell
 .\schedule-inputs-add.ps1    # run.py inputs, daily at 11:15, appends to logs\inputs.log

@@ -3203,9 +3203,12 @@ wording and tab structure as a first draft open to change, not as decided design
   sc-data down: Toronto, picker, compare (175-185 kinds), Berlin, map, a part (Agincourt North), the parts card from the files'
   own day; no error but the blocked fetches. **After:** `run.py site` once: history 0 files, nothing committed, 1 file deployed
   (`app.js`, live equal), pushed; a second run "nothing to do", pushed.
-  **Not yet seen:** 11:15 `inputs` and the 12:15 city run on 11-26 (history should change 0 files, no data commit), and the loop's
-  publish of 11-26 (place files only, no commit, no deploy, main pushed). **Then:** the owner's yes to turn off `kk-SCOpenQuests`
-  (12:15); `data/archive` and the monthly backfill stay. **Left:** the owner's phones on the new builds (Android not confirmed).
+  **`kk-SCOpenQuests` (12:15, `run.py update`) disabled 11-26 11:15 (owner: "yes", then "can you do it now while we are on hold for
+  world dailies?"),** before its run of 11-26, so the new code was never seen under `update`; not deleted, `schedule-remove.ps1` would.
+  It downloaded the city extracts, counted them, published and backed up `data/archive`; `data/archive` and its 2017-2026 history stay
+  as they are, and `tools/backfill_history.py` still works by hand. Back on: `Enable-ScheduledTask kk-SCOpenQuests`.
+  **Not yet seen:** a loop day taken under the new code (the world dailies are on HOLD since 11-25 20:05): its publish should be place
+  files only, no commit, no deploy, main pushed. **Left:** the owner's phones on the new builds (Android not confirmed).
 - **The site's deploy is its own run, and the world's city pages are live (owner, 11-25: "yes"; 194d497b, 44ec7856).** `run.py site`, task
   `kk-SCOpenQuests-site`, hourly 07:20 to 23:20, log `logs/site.log`: when the newest gated day is not the one in
   `data/site-deployed.json` (not committed) it does history, commit, push (now also with no new data) and deploy; a change of
