@@ -360,5 +360,24 @@ class UploadTest(WorldCase):
         self.assertEqual(wp.plan(self.out, self.work)[:2], ([], []))
 
 
+    def test_kept_files_wait_in_their_own_list_until_delete_kept(self):
+        self.assertEqual(wp.upload(self.out, self.work), 0)
+        idx = json.loads((self.places / "index.json").read_text(encoding="utf-8"))
+        idx["countries"] = idx["countries"][:1]
+        write_json(self.places / "index.json", idx)
+        self.build()
+        self.ran.clear()
+        self.assertEqual(wp.upload(self.out, self.work, keep_gone=True), 0)
+        self.assertNotIn("delete", [r[0] for r in self.ran])
+        self.assertEqual(wp.plan(self.out, self.work)[:2], ([], []))     # the daily run sees nothing to delete
+        bucket = wp.load_manifest(self.work / "bucket.json")
+        self.assertEqual(sum(len(v) for v in bucket["kept"].values()), 2)
+        self.ran.clear()
+        self.assertEqual(wp.upload(self.out, self.work, delete_kept=True), 0)
+        self.assertEqual([r[0] for r in self.ran].count("delete"), 1)
+        bucket = wp.load_manifest(self.work / "bucket.json")
+        self.assertEqual(sum(len(v) for v in bucket["kept"].values()), 0)
+
+
 if __name__ == "__main__":
     unittest.main()
