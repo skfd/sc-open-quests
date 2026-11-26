@@ -316,6 +316,17 @@ class AreaPass(
         lap.to("relations collected")
 
         if (unit == AreaUnit.TILES) { runTiles(); lap.to("tiles"); log(areaTiming.line()); return }
+        // the sets are final (no way, node or relation gets a set after this): each city's elements, once for all
+        if (areaIndex != "false") {
+            t0 = System.nanoTime()
+            val index = ElementIndex.of(citySets, cities.size, ways.cities, taggedCities, nodes.tagged, relationSets)
+            elementIndex = index
+            if (index == null) log("area: city elements not indexed: more (city, element) pairs than one array holds; each city reads every element's set")
+            else timing("area: city elements", t0, "%,d (city, element) pairs in %d cities: %,d of %d ways, %,d of %d tagged nodes, %,d of %d relations; %.1f MB".format(
+                index.ways.size.toLong() + index.tagged.size + index.relations.size, cities.size, index.ways.size, ways.size,
+                index.tagged.size, taggedCities.size, index.relations.size, relations.size, index.bytes / 1048576.0))
+            lap.to("city elements")
+        }
         // what the cities' runs are made of, summed over the cities (wall time when they run one after the other)
         val cityTiming = Timing(if (AREA_CITIES <= 1 || cities.size == 1) "area cities" else "area cities summed over $AREA_CITIES at once")
         val mapDataTiming = Timing("area map data")
@@ -328,9 +339,10 @@ class AreaPass(
             val enabledQuests = areaQuests.filter { engine.enabled[c.index][it] }
             cityLap.to("enabled quests")
             if (enabledQuests.isEmpty()) return
-            val mapData = buildMapData(c.index, cityLap, mapDataTiming)
+            val elements = elementsOf(c.index, cityLap)
+            val mapData = buildMapData(c.index, elements, cityLap, mapDataTiming)
             val built = (System.nanoTime() - t0) / 1e9
-            countCity(c, mapData, enabledQuests, cityLap, threadTiming)
+            countCity(c, mapData, elements, enabledQuests, cityLap, threadTiming)
             engine.stats.timings["area: ${c.id}"] = (System.nanoTime() - t0) / 1e9
             log("area: %-18s %6.1f s  (map data %.1f s: %d nodes, %d ways, %d relations)".format(
                 c.id, (System.nanoTime() - t0) / 1e9, built, mapData.nodes.size, mapData.ways.size, mapData.relations.size))
@@ -357,6 +369,8 @@ class AreaPass(
             timing("area: cities", t0, "${cities.size} cities, $AREA_CITIES at once")
         }
         if (VERIFY_FAST) log("area: fast twins matched their ports on ${verifiedTwins.get()} map data runs")
+        if (areaIndex == "verify") log("area: the city index gave ${engine.stats.cityListsVerified.get()} cities the lists the scan gives" +
+            "; ${engine.stats.cityDatesVerified.get()} cities' dates had the scan's records in their tiles")
         lap.to("cities")
         log(areaTiming.line())
         log(cityTiming.line())
@@ -638,7 +652,7 @@ class AreaPass(
      * undated (counted). Then the days in between are halved, the candidates of a tile and quest together, one run
      * per distinct middle day. Each date is a [StateDump.due] row at the default setting.
      */
-    private fun dateCandidates(city: City, candidates: List<Candidate>) {
+    private fun dateCandidates(city: City, candidates: List<Candidate>, lists: CityLists) {
         engine.state?.areaDueDays = AREA_DUE_DAYS
         if (candidates.isEmpty()) return
         val t0 = System.nanoTime()
@@ -652,7 +666,41 @@ class AreaPass(
                 .map { (it.x.toLong() shl 32) or (it.y.toLong() and 0xffffffffL) }.toList().also { needed += it }
         }
         // the city's records in the needed tiles, as runTiles buckets them
-        val inCity = citySets.membersOf(city.index)
+        val buckets = if (areaIndex == "false") scannedBuckets(city.index, needed) else bucketsOf(lists, needed)
+        if (areaIndex == "verify") {
+            val scanned = scannedBuckets(city.index, needed)
+            check(scanned.keys == buckets.keys && scanned.all { (k, b) ->
+                val o = buckets.getValue(k)
+                b.ways.toArray().contentEquals(o.ways.toArray()) && b.nodes.toArray().contentEquals(o.nodes.toArray()) &&
+                    b.relations.toArray().contentEquals(o.relations.toArray())
+            }) { "area dates: the city's own lists and the scan differ for ${city.id}" }
+            engine.stats.cityDatesVerified.incrementAndGet()
+        }
+        val groups = byTile.entries.toList()
+        val zone = engine.zones[city.index]
+        val dated = AtomicInteger(); val undated = AtomicInteger(); val runs = AtomicInteger()
+        parallelMap(0, groups.size) { gi ->
+            EngineZone.at(zone) {
+                val (k, cs) = groups[gi]
+                val w = java.util.TreeSet<Int>(); val n = java.util.TreeSet<Int>(); val r = java.util.TreeSet<Int>()
+                for (t in tilesOf.getValue(k)) buckets[t]?.let { b ->
+                    b.ways.toArray().forEach { w += it }; b.nodes.toArray().forEach { n += it }; b.relations.toArray().forEach { r += it }
+                }
+                val small = assemble(ringOf(k), w.toIntArray(), n.toIntArray(), r.map { relations[it] })
+                dateIn(small, cs, dated, undated, runs)
+            }
+        }
+        log("area dates: %-18s %d candidates in %d tiles: %d dated, %d undated (the small map data disagreed at asOf or at +%d days); %d runs, %.1f s".format(
+            city.id, candidates.size, groups.size, dated.get(), undated.get(), AREA_DUE_DAYS, runs.get(), (System.nanoTime() - t0) / 1e9))
+        engine.stats.timings["area dates: ${city.id}"] = (System.nanoTime() - t0) / 1e9
+    }
+
+    /** The records of city [city] in the tiles [needed], by tile, read off every way's, tagged node's and relation's
+     *  set as before the cities had lists of their own: `-Dopenquests.areaIndex=false`, and what `verify` holds
+     *  [bucketsOf] against. */
+    private fun scannedBuckets(city: Int, needed: Set<Long>): HashMap<Long, Bucket> {
+        fun key(lat7: Int, lon7: Int) = tileKey(lat7, lon7)
+        val inCity = citySets.membersOf(city)
         val wayTiles: List<LongArray> = parallelMap(0, ways.size) { i ->
             if (!inCity[ways.cities[i]]) return@parallelMap LongArray(0)
             val keys = LongArray(ways.refCount(i))
@@ -686,23 +734,49 @@ class AreaPass(
             }
             for (k in keys) bucket(k).relations.add(i)
         }
-        val groups = byTile.entries.toList()
-        val zone = engine.zones[city.index]
-        val dated = AtomicInteger(); val undated = AtomicInteger(); val runs = AtomicInteger()
-        parallelMap(0, groups.size) { gi ->
-            EngineZone.at(zone) {
-                val (k, cs) = groups[gi]
-                val w = java.util.TreeSet<Int>(); val n = java.util.TreeSet<Int>(); val r = java.util.TreeSet<Int>()
-                for (t in tilesOf.getValue(k)) buckets[t]?.let { b ->
-                    b.ways.toArray().forEach { w += it }; b.nodes.toArray().forEach { n += it }; b.relations.toArray().forEach { r += it }
-                }
-                val small = assemble(ringOf(k), w.toIntArray(), n.toIntArray(), r.map { relations[it] })
-                dateIn(small, cs, dated, undated, runs)
+        return buckets
+    }
+
+    /** The records of [lists], a city's own, in the tiles [needed], by tile: what [scannedBuckets] gives, each list in
+     *  the same order, without reading the other cities' elements (a tier 2 phase's rectangles: 179 s summed). */
+    private fun bucketsOf(lists: CityLists, needed: Set<Long>): HashMap<Long, Bucket> {
+        fun key(lat7: Int, lon7: Int) = tileKey(lat7, lon7)
+        val cityWays = lists.ways
+        val wayTiles: List<LongArray> = parallelMap(0, cityWays.size) { at ->
+            val i = cityWays[at]
+            val keys = LongArray(ways.refCount(i))
+            var n = 0
+            for (j in ways.refStart[i] until ways.refStart[i + 1]) {
+                val c = nodeIndex[ways.refs[j]]
+                if (c == NO_COORD) continue
+                val k = key(unpackLat7(c), unpackLon7(c))
+                if (k in needed) keys[n++] = k
             }
+            keys.copyOf(n).also { it.sort() }.distinctSorted()
         }
-        log("area dates: %-18s %d candidates in %d tiles: %d dated, %d undated (the small map data disagreed at asOf or at +%d days); %d runs, %.1f s".format(
-            city.id, candidates.size, groups.size, dated.get(), undated.get(), AREA_DUE_DAYS, runs.get(), (System.nanoTime() - t0) / 1e9))
-        engine.stats.timings["area dates: ${city.id}"] = (System.nanoTime() - t0) / 1e9
+        val buckets = HashMap<Long, Bucket>()
+        fun bucket(k: Long) = buckets.getOrPut(k) { Bucket() }
+        for (at in cityWays.indices) for (k in wayTiles[at]) bucket(k).ways.add(cityWays[at])
+        for (i in lists.tagged) {
+            val k = key(unpackLat7(nodes.coords[i]), unpackLon7(nodes.coords[i]))
+            if (k in needed) bucket(k).nodes.add(i)
+        }
+        for (i in lists.relations) {
+            val keys = HashSet<Long>()
+            for (m in relations[i].members) when (m.type) {
+                // a member way that is not the city's has no tiles here, as the scan gave it none
+                ElementType.WAY -> wayIds.binarySearch(m.ref).let { w ->
+                    val at = if (w >= 0) cityWays.binarySearch(w) else -1
+                    if (at >= 0) wayTiles[at].forEach { k -> keys += k }
+                }
+                ElementType.NODE -> memberNodeAt(m.ref).let {
+                    if (it >= 0) key(unpackLat7(nodes.coords[it]), unpackLon7(nodes.coords[it])).let { k -> if (k in needed) keys += k }
+                }
+                ElementType.RELATION -> {}
+            }
+            for (k in keys) bucket(k).relations.add(i)
+        }
+        return buckets
     }
 
     /** the candidates [cs] of one small map data, dated by halving (see [dateCandidates]) */
@@ -737,7 +811,71 @@ class AreaPass(
     // ---------------------------------------------------------------------------------------------
     // per city
 
-    private fun buildMapData(city: Int, lap: Timing.Lap, mapDataTiming: Timing): MapDataWithGeometry {
+    /** A city's elements, each list ascending: its ways (indices into [ways]), its tagged nodes (indices into
+     *  [nodes]) and its relations (indices into [relations]). */
+    private class CityLists(val ways: IntArray, val tagged: IntArray, val relations: IntArray)
+
+    /** every city's [CityLists], as three [CityElements] */
+    private class ElementIndex(val ways: CityElements, val tagged: CityElements, val relations: CityElements) {
+        val bytes get() = ways.bytes + tagged.bytes + relations.bytes
+
+        companion object {
+            /** null when one of the three is too large for an array */
+            fun of(sets: CitySets, cityCount: Int, waySets: IntArray, taggedSets: IntArray, taggedAt: IntArray, relationSets: IntArray): ElementIndex? {
+                val made = parallelMap(0, 3) {
+                    when (it) {
+                        0 -> CityElements.of(sets, cityCount, waySets)
+                        1 -> CityElements.of(sets, cityCount, taggedSets, taggedAt)
+                        else -> CityElements.of(sets, cityCount, relationSets)
+                    }
+                }
+                return ElementIndex(made[0] ?: return null, made[1] ?: return null, made[2] ?: return null)
+            }
+        }
+    }
+
+    /** `-Dopenquests.areaIndex`: `true` (the default) reads a city's elements off [elementIndex], made once for all
+     *  cities; `false` reads every way's, tagged node's and relation's set for each city, as before the index (the
+     *  way back: the same lists, cities times elements); `verify` does both and fails where they differ. */
+    private val areaIndex: String = System.getProperty("openquests.areaIndex") ?: "true"
+    private var elementIndex: ElementIndex? = null
+    /** per relation of [relations], its [CitySets] id */
+    private val relationSets: IntArray by lazy { IntArray(relations.size) { relations[it].cities } }
+
+    /** city [city]'s lists as reading every element's set gives them */
+    private fun scannedElements(city: Int, lap: Timing.Lap?): CityLists {
+        val inCity = citySets.membersOf(city)
+        lap?.to("city sets holding the city")
+        val areaWays = CityElements.scan(inCity, ways.cities)
+        lap?.to("ways chosen")
+        val tagged = CityElements.scan(inCity, taggedCities, nodes.tagged)
+        lap?.to("tagged nodes chosen")
+        val areaRelations = CityElements.scan(inCity, relationSets)
+        lap?.to("relations chosen")
+        return CityLists(areaWays, tagged, areaRelations)
+    }
+
+    private fun elementsOf(city: Int, lap: Timing.Lap): CityLists {
+        val index = elementIndex ?: return scannedElements(city, lap)
+        lap.to("city sets holding the city")
+        val areaWays = index.ways.of(city)
+        lap.to("ways chosen")
+        val tagged = index.tagged.of(city)
+        lap.to("tagged nodes chosen")
+        val areaRelations = index.relations.of(city)
+        lap.to("relations chosen")
+        if (areaIndex == "verify") {
+            val scanned = scannedElements(city, null)
+            check(scanned.ways.contentEquals(areaWays) && scanned.tagged.contentEquals(tagged) && scanned.relations.contentEquals(areaRelations)) {
+                "area: the city index and the scan differ for ${cities[city].id}"
+            }
+            engine.stats.cityListsVerified.incrementAndGet()
+            lap.skip()
+        }
+        return CityLists(areaWays, tagged, areaRelations)
+    }
+
+    private fun buildMapData(city: Int, elements: CityLists, lap: Timing.Lap, mapDataTiming: Timing): MapDataWithGeometry {
         // the raster's squares start at the box's corner, and SC's point-in-polygon test counts some points
         // outside a polygon (on a vertex's latitude) as inside, so which squares a query reads moves counts:
         // the box cannot be cut down to the data without changing them (DESIGN.md, "The whole planet, made
@@ -748,25 +886,8 @@ class AreaPass(
             "area: ${cities[city].id}'s box spans %.2f by %.2f degrees, a LatLonRaster of %,d slots (at most %,d): cut it smaller".format(
                 box.max.latitude - box.min.latitude, box.max.longitude - box.min.longitude, slots, MAX_RASTER_SLOTS)
         }
-        val inCity = citySets.membersOf(city)
-        lap.to("city sets holding the city")
-        // the city's ways and tagged nodes, read off int columns
-        val wayCities = ways.cities
-        var n = 0
-        for (set in wayCities) if (inCity[set]) n++
-        val areaWays = IntArray(n)
-        n = 0
-        for (i in wayCities.indices) if (inCity[wayCities[i]]) areaWays[n++] = i
-        lap.to("ways chosen")
-        n = 0
-        for (set in taggedCities) if (inCity[set]) n++
-        val tagged = IntArray(n)
-        n = 0
-        for (t in taggedCities.indices) if (inCity[taggedCities[t]]) tagged[n++] = nodes.tagged[t]
-        lap.to("tagged nodes chosen")
-        val areaRelations = relations.filter { inCity[it.cities] }
-        lap.to("relations chosen")
-        return assemble(box, areaWays, tagged, areaRelations, parallel = true, timing = mapDataTiming).also { lap.to("map data assembled") }
+        val areaRelations = elements.relations.map { relations[it] }
+        return assemble(box, elements.ways, elements.tagged, areaRelations, parallel = true, timing = mapDataTiming).also { lap.to("map data assembled") }
     }
 
     /** Map data of the ways at [areaWays] (indices into [ways]) with all their nodes, the nodes at [taggedNodes]
@@ -895,7 +1016,9 @@ class AreaPass(
     private inline fun safeGeometry(create: () -> ElementGeometry?): ElementGeometry? =
         try { create() } catch (e: RuntimeException) { null }
 
-    private fun countCity(city: City, mapData: MapDataWithGeometry, questIndices: List<Int>, lap: Timing.Lap, threadTiming: Timing) {
+    private fun countCity(
+        city: City, mapData: MapDataWithGeometry, elements: CityLists, questIndices: List<Int>, lap: Timing.Lap, threadTiming: Timing,
+    ) {
         val box = mapData.boundingBox!!
         engine.dumpAreaElements(city, mapData)
         lap.to("elements dumped")
@@ -942,7 +1065,7 @@ class AreaPass(
             }
         }.flatten()
         lap.to("results counted")
-        if (dating) dateCandidates(city, candidates)
+        if (dating) dateCandidates(city, candidates, elements)
         lap.to("dates")
         if (trace != null) synchronized(TASK_TRACE!!) {
             TASK_TRACE.appendText(trace.joinToString("") {

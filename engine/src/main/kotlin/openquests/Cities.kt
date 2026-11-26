@@ -59,6 +59,17 @@ fun loadCities(file: File, baseDir: File, lap: Timing.Lap? = null): List<City> {
  *  position is inside [polygon], nothing of its own. [index] is its place among all parts of the run. */
 class Part(val index: Int, val id: String, val city: Int, val polygon: Polygon)
 
+/** Each city's parts as their [Part.index], in the order of [parts]: one pass over the parts (counted, then
+ *  filled) where a filter per city was cities times parts (106 s summed over a tier 2 phase's rectangles). */
+fun partsByCity(cityCount: Int, parts: List<Part>): Array<IntArray> {
+    val counts = IntArray(cityCount)
+    for (p in parts) if (p.city in 0 until cityCount) counts[p.city]++
+    val out = Array(cityCount) { IntArray(counts[it]) }
+    val filled = IntArray(cityCount)
+    for (p in parts) if (p.city in 0 until cityCount) out[p.city][filled[p.city]++] = p.index
+    return out
+}
+
 /** The parts of [cities] from `<dir>/<cityId>.json` where that file exists (DATA-FORMAT.md, "Places
  *  and parts"); geometry paths are relative to [baseDir]. In city order, each city's in registry order. */
 fun loadParts(dir: File, cities: List<City>, baseDir: File, cache: PartsCache.Reader? = null, lap: Timing.Lap? = null): List<Part> {

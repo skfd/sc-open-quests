@@ -14,8 +14,9 @@ import kotlin.math.floor
  *  together form closed rings. Segments are bucketed into latitude bands for speed. */
 class Polygon(
     private val segs: DoubleArray, /* lat1, lon1, lat2, lon2 repeated */
-    /** latitude bands; a city boundary takes the default, a small part polygon fewer */
-    private val bandCount: Int = 4096,
+    /** latitude bands: [bandsFor] the segments unless given. [contains] answers the same with any number of them
+     *  (a segment the test counts lies in the point's band, however high the bands are); only its time differs. */
+    private val bandCount: Int = bandsFor(segs.size / 4),
 ) {
     val minLat: Double; val maxLat: Double; val minLon: Double; val maxLon: Double
     private val bandHeight: Double
@@ -51,6 +52,11 @@ class Polygon(
     }
 
     companion object {
+        /** The latitude bands of a polygon of [segments] segments: one per four segments, 4,096 at most. A rectangle
+         *  city's four segments take one band where the 4,096 once given to every boundary were about 100 KB and
+         *  most of the time of making it (a tier 2 phase's rectangles: 50 s summed, over 1 GB in the largest group). */
+        fun bandsFor(segments: Int): Int = (segments / 4).coerceIn(1, 4096)
+
         /** Reads relation [relationId] from an Overpass `out geom` JSON file: either a bare
          *  relation element (data/boundaries/<id>.json) or a whole response with `elements`
          *  (ontario-farmland's cache/boundaries.json). Fails if its member ways do not form closed
@@ -120,14 +126,14 @@ class Polygon(
         }
 
         /** A polygon of loose segments from closed rings (lat, lon pairs): each ring's consecutive points as one
-         *  segment, rings in order, the band count of a part outline. */
+         *  segment, rings in order. */
         fun fromRings(rings: List<DoubleArray>): Polygon {
             val segs = DoubleArray(4 * rings.sumOf { it.size / 2 - 1 })
             var k = 0
             for (r in rings) for (i in 0 until r.size / 2 - 1) {
                 segs[k++] = r[2 * i]; segs[k++] = r[2 * i + 1]; segs[k++] = r[2 * i + 2]; segs[k++] = r[2 * i + 3]
             }
-            return Polygon(segs, bandCount = (segs.size / 16).coerceIn(1, 4096))
+            return Polygon(segs)
         }
     }
 }
