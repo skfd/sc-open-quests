@@ -894,6 +894,33 @@ def exceptions(release: str, root: Path = RELEASES) -> Path:
 # --- the watcher: a new release, prepared up to the operator's exceptions
 
 
+SESSION_CLI = Path(r"C:/Users/kk/AppData/Local/Programs/SkySessionClaude/SessionCli.exe")
+OPERATOR_PROMPT = """Overture {release}: {n} rows of the place-id release wait for the operator (the owner); the algorithm
+and the Fable judge decided the rest. Read data/place-ids/releases/{release}/exceptions.md and walk the owner through the
+rows, a few at a time, with your recommendation for each (`python tools/overture_release.py look {release} KEY` shows a row's
+context). Record each verdict the owner gives with `python tools/overture_release.py judge {release} KEY "VERDICT"`. When none
+is left: `python tools/overture_release.py apply {release}`, then `python tools/archive_backup.py --only place-ids`, and add
+a line to HANDOFF.md. The staged registry goes live at the reseed on the 1st, not before."""
+
+
+def call_operator(release: str, n: int, here: Path) -> None:
+    """Opens a Claude session in this repo that walks the owner through the exceptions (owner, 2026-11-26), once a
+    release: operator-session.txt says when it was opened."""
+    import subprocess
+    mark = here / "operator-session.txt"
+    if mark.exists():
+        log(f"watch: the operator's session for {release} was opened {mark.read_text(encoding='utf-8').strip()}")
+        return
+    if not SESSION_CLI.exists():
+        log(f"watch: {SESSION_CLI} is missing: no session opened; exceptions.md waits")
+        return
+    r = subprocess.run([str(SESSION_CLI), "new", "--in", str(ROOT), "--prompt", OPERATOR_PROMPT.format(release=release, n=n)],
+                       capture_output=True, text=True, timeout=300)
+    log(f"watch: the operator's session for {release}: SessionCli exit {r.returncode} {(r.stdout + r.stderr).strip()[-300:]}")
+    if r.returncode == 0:
+        mark.write_text(dt.datetime.now().isoformat(timespec="minutes") + "\n", encoding="utf-8", newline="\n")
+
+
 def releases_on_s3() -> list[str]:
     import subprocess
     r = subprocess.run(["rclone", "lsf", ":s3,provider=AWS,region=us-west-2,env_auth=false:overturemaps-us-west-2/release/",
@@ -930,6 +957,8 @@ def watch(root: Path = RELEASES, registry: Path = place_ids.REGISTRY, runs: int 
     left = [r for r in read_rows(here / "proposals.tsv") if not r["verdict"]]
     if left:
         log(f"OPERATOR: {len(left)} rows of {rel} wait for a human: {exceptions(rel, root)}")
+        if root == RELEASES:
+            call_operator(rel, len(left), here)
         return 2
     apply(rel, registry, FORMER if root == RELEASES else root.parent / "former-names.tsv", root)
     if root == RELEASES:
