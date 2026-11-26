@@ -4385,3 +4385,77 @@ at once to 0.28 GB (40.8 GiB).
     disk agent's, `a9b8a34` (merged), the points fix's, `share-previews`. No links in any; main's `.scratch` checked.
   - **Kept:** `agent-a9b152...` (P3's 28.6 GB rehearsal data, kept for the three traces), `place-ids` (the Overture
     session's), `pages-redirect` (an orphan branch, also on origin; never meant for main). Nothing pushed by this session.
+
+## Performance review of the traces and logs (2026-11-26, 06:15-07:30; owner: "lets review the traces and logs for performance improvements")
+
+Read-only, under the HOLD: nothing edited but this file, nothing built, run or installed; proposals wait for the owner.
+Read: 11-22 to 11-25's `engines.json` and `steps.json`, 11-25's day in `logs/planet-store.log` (cut out as
+`.scratch/perf-review/day-1125.log`), `logs/site.log`, the tail of `logs/scheduler.log`, the four `hs_err` files. Three
+read-only agents read the code (the world day's Python steps, the engine's loops, the publish and city run). Scripts:
+`.scratch/perf-review/{crunch,room}.py`. **Every saving below is a guess unless it says measured.** 11-25 is the day
+measured: 12,643 s, then the publish 1,155 s.
+
+- **(1) The engines wait for memory: the largest cost, about 50 min of the day (measured waits, guessed saving).** On
+  11-25 the engine room made tier 1's engines wait 1,849 s summed and tier 2's 6,190 s and 6,193 s (old, new). Tier 1
+  never had more than 1 alive when the next started; tier 2 had 1 or 2. Tier 2's two phases took 5,384 s of wall for
+  6,696 s of engine and 1,074 s of reads: about 1.5 at a time, where 11-15 to 11-20 on 4 workers ran about 3.5. At 3.5
+  again tier 2 is about 2,200 s (3,100 s saved) and tier 1's engines about 350 s less.
+  - **Why:** `engine_room.fits` asks `left - 8 >= heap + sum(alive)` with every engine at 8 g. The commit left was 16-26
+  GB (median 24), so 24 - 8 = 16 holds one alive and one new at best, and the alive one's commit is already out of
+  `left`: counted twice, as the docstring says. The engines get `-Xmx8g` and no `-Xms` (`stream.py:288`), so they commit
+  as they grow: the `hs_err` files of 11-23 show 5.0 and 6.7 GB of commit at 67 s. Peaks on 11-25, tier 2: median 2.8 GB,
+  p90 5.0, 4-5 of 128 over 6 GB; tier 1 median 2.4, notes 0.9.
+  - **Levers, not exclusive:** (a) count an alive engine by what it can still take (its `-Xmx` less its own commit, read by
+  pid) instead of whole; (b) a heap per group from its last days' peak, 8 g again on `Java heap space`: at 1.5 times the
+  three-day peak tier 2's mean is 5.7 g (78 of 256 stay at 8, 7 would have passed 90% of theirs on 11-25; a group's peak
+  moves 0.56 to 1.57 times day to day, and it follows the heap given, so the need is lower than the peak); tier 1's mean
+  4.3 g, the notes' 2.4; (c) more commit: the limit is 108.6 GB (87.6 RAM, a 21.5 GB system-managed page file on C:),
+  77 GB taken at rest (49 `claude` processes 14 GB, WindowsTerminal 4.6, vmmem 5.9), 42 GB of RAM free: a larger page file
+  raises the limit with no RAM, and G: has 124 GB free where C: must keep 115 for a day. (a) and (b) together give about
+  3.5 at a time on a 24 GB day; (c) alone gives 4. `ROOM.most` and `ROOM.waited_s` are still written nowhere.
+- **(2) The points fix, ready, the owner's go: about 410 s a day (measured).** 11-25's two `points` calls took 210 s and
+  228 s of store context's 363 s and 459 s; the proven binary does such lists in 11-13 s. Its three owed items stand
+  (the entry "THE POINTS FIX IS BUILT AND PROVEN").
+- **(3) The world day's Python steps are serial file work (the agent's reading of the code; splits not logged).** The
+  world's 52.6 GiB of rows is read whole five times a day and written twice, one file after another.
+  - tier 1 (1,198 s) is 50 s of PBF, 628 s of engines and 520 s of serial `replace_in_file`; its engines need nothing
+    of cover, rectangles or engine files (1,600 s of main thread before them) and could run beside those: about 600 s.
+    The rewrite through a pool: about 350 s.
+  - `engine files` 624 s: about 558,000 small files written on one thread (`world_tier2.py:885-926`); a pool: about 400 s.
+    `place-bboxes.npz` is deleted with the day's work, so `places.json` (395 MB) is parsed daily: 30 s.
+  - `tier 2 delta` 819 s (`world_day.py:481-522`): each `world.bin` read twice and rewritten, serial; a pool: about 400 s.
+  - `counts and note quests` 737 s: the note engines beside the delta or `count_files`, `by_set` in a pool: about 350 s.
+  - `old ways` and `member ways` (158 + 142 s): `tilestore ways` asks what the store context already holds; assert the
+    two equal for a day, then drop the calls: about 300 s. Medium risk until the assert has passed.
+  - the day's end: `rmtree` of the work, 170 s in no step (beside the store's checks); `touched.npy` 157 s untimed at the
+    end of finish; `cut`, `subcmp`, `why` beside `loc check`: 107 s.
+  - `places and old rows` 160 s: the threaded `world_tier2.old_rows` in place of `rows_of_keys`: about 100 s.
+  - the notes dump is decompressed twice a day (337 s before the day, 99 s at the gate, which finds its clips unlinked):
+    about 95 s; `world_notes` parses 2.4 GB of JSON for `id`: 40 s; both notes tables rebuilt daily: 35 s.
+  - `read diff` 162 s and `cover` 254 s are the work itself. The rows overlap: together perhaps 2,000-2,500 s, not the sum.
+- **(4) The engine's loops (11-25, one tier 2 phase: 3,349 s summed; the agent read `engine/src/main`).** The ranking of
+  11-23 holds on 11-22 to 11-25. About 1,100 s of the 3,349 can go with the same output; in wall time that is divided by
+  the engines at a time.
+  - per-rectangle choosing 587 s (`AreaPass.kt:751-768`, `Cities.kt:285`): an index city to elements, made once: about 540.
+  - `dates` 179 s (`AreaPass.kt:655-688`) repeats the same scans: 90-140.
+  - start-up file reads 309 s (`Polygon.kt:59`, `Cities.kt:70,73`): one file per group; needs the Python writer too: 250.
+  - `parts of each city` 106 s (`Engine.kt:147`, cities times parts): one pass, 5-8 lines: 105.
+  - `boundary polygon` 50 s (`Polygon.kt:83`): 4,096 bands for a rectangle's four segments; one line, and about 100 KB
+    less heap a rectangle (over 1 GB in f116): 45.
+  - `snapshot made` and `quests.json` 172 s (`Output.kt:91-163`): 60-110.
+  - `pass: nodes` and `pass: ways` 736 s are the file's full decode, already over threads: nothing cheap.
+- **(5) The publish (1,155 s on 11-25).** Its history, git and cloud tail (259 s) should no longer run for a new day
+  (`run.py` deploys only on a `docs/` or `config/` change); no run confirms it yet: read the next `logs/site.log`.
+  - `verify` is the one term that grows: 9.4-12.6 s a kept day, 285 s at 25 days; newest day, the `back` day and a few
+    rotating ones: flat near 100 s. Its 2,000 places are the same every day (seed 1).
+  - build: the day before's state recomputed (42 s); text and hash made for 1,018,688 places to write 33,829 (90 s).
+  - upload 283 s for 46,873 files (33,829 place, 12,901 children, 143 cities): about $0.21 a day, 1.4M Class A a month.
+    Packs by id prefix would be about 8,000 a day (pack size a guess). **From 11-30 `back = di - 28` starts to move and
+    the children uploads may double (a forecast).**
+- **(6) The city run:** downloads are about 70% (1,598 s of 2,307 s on 11-25, Geofabrik's speed); it is to be retired, no
+  win worth making.
+- **Not looked at:** the Rust `update` (708 s: find 302, rule 214, write 131), tier 2 reads (1,074 s; the index per
+  read, `.scratch/anomalies/t2-reads/NOTES.txt`), the gate's four engines (279 s).
+- **The crash files in the repo root** (`hs_err_pid{11428,26484,55252,57228}.log`, two `replay_pid*.log`, 2 MB,
+  untracked) are 11-23's four engines, diagnosed; they may go when the owner says.
+- **Asked of the owner (wizard, 07:30):** which of these to build first. Nothing is scheduled by this session.
