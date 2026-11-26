@@ -4681,3 +4681,10 @@ The 12:15 task `kk-SCOpenQuests` (`run.py update`) is deleted (11-26) and `docs/
 - **12-16.0, the first real use, in order:** `narrow 2026-10-21.0 --src data/overture/world` (the pin's copy, once), `narrow
   2026-12-16.0`, `propose 2026-12-16.0`, read `report.md`, `accept --class ...`, `judge` the rest in a session with the owner,
   `apply`, `archive_backup.py --only place-ids`. The swap-in waits for the reseed.
+- **Is skipping a release safe? Measured (11:57-11:59, owner's question; throwaway registry minted from 09-23.1's narrow copies
+  in `.scratch/overture-next`, outputs `.scratch/overture-skip-test/`):** one month 09-23 -> 10-21: 1,199 lost, 607 strong
+  `same` (51%), contested 7, overlap 132, ended-parent 443, ended-none 10. Two months 09-23 -> 11-18 (10-21 skipped): **2,594
+  lost (the two single months sum to 2,677: ids that flicker away and back cancel), 1,305 strong `same` (50%)**, contested 15
+  (7 + 8), overlap 276 (294), ended-parent 976 (1,016), ended-none 22 (18). So a skip matches as well, place for place; it is one
+  bigger judging session, not a harder one. Needed for a skip: the pinned release's narrow copy (lost places' locations), kept
+  in the backed-up releases folder. City parts not meaningful in this test (its ids are not ours).
