@@ -58,7 +58,7 @@ path is still a static asset served without it. Tests: `node --test cloudflare/t
    - `python tools/cloud_publish.py --check` (the home page and every file byte-equal);
    - `curl -s 'https://street-complete-statistics.comentality.com/?city=toronto' | grep og:title` names
      Toronto's number, and so does the same link with `/index.html?city=toronto`;
-   - `curl -s 'https://street-complete-statistics.comentality.com/?place=be76926172b2&in=ca/eb1eed766420' | grep og:title`
+   - `curl -s 'https://street-complete-statistics.comentality.com/?place=3550b7b198a7&in=ca/ec52fcb974ff' | grep og:title`
      names Blind River's number: the fetch from Cloudflare to `sc-data` is the one path no local run
      took, and it fails quietly into the site's own title;
    - `curl -sI 'https://street-complete-statistics.comentality.com/?city=toronto' | grep -i cache-control`

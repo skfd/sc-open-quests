@@ -8,12 +8,12 @@ from playwright.sync_api import sync_playwright
 BASE = sys.argv[1] if len(sys.argv) > 1 else "http://127.0.0.1:8791"
 LINKS = [
     "?city=toronto",
-    "?city=toronto&part=dbb37f753302",
+    "?city=toronto&part=d99e33025010",
     "?city=toronto&off=AddHousenumber,AddPathSurface",
     "?city=berlin&base=all",
-    "?place=be76926172b2&in=ca/eb1eed766420",
-    "?place=dbb37f753302&in=ca/eb1eed766420",
-    "?place=9fc3a6b4bdda&in=ca/eb1eed766420",
+    "?place=3550b7b198a7&in=ca/ec52fcb974ff",
+    "?place=d99e33025010&in=ca/ec52fcb974ff",
+    "?place=cdeece264a53&in=ca/ec52fcb974ff",
 ]
 
 
