@@ -57,7 +57,7 @@ LOG = ROOT / "logs/planet-store.log"
 SCHED = ROOT / "logs/scheduler.log"
 EXE_SRC = ROOT / "tilestore/target/release/tilestore.exe"
 EXE = WORK / "tilestore-daily.exe"
-WORLD = ROOT / ".scratch/planet/world-1101"  # the world state seeded at 2026-11-01 (HANDOFF, "Release goals", step 3)
+WORLD = ROOT / json.loads((ROOT / "data/world.json").read_text(encoding="utf-8"))["world"]  # the world folder: data/world.json says which (a reseed flips it there)
 WDAYS = WORK / "world-days"  # per day: day.pkl, before/, work/, gate/
 PUNCH_BELOW_GB = 60  # free GiB on the store's disk under which a day ends with `punch`
 # No new day is taken with less than DAY_NEEDS_GB + DISK_FLOOR_GB free (115 GiB). A day failed in its middle for

@@ -43,7 +43,7 @@ GRID = ROOT / "data" / "grid"
 FACTS = ROOT / "data" / "facts"   # tools/facts.py: every count as Parquet, cities and world
 PLACE_IDS = ROOT / "data" / "place-ids"   # tools/place_ids.py: our place ids, random, so the only copy there is
 SOURCES = [(ARCHIVE, "archive"), (GRID, "grid"), (FACTS, "facts"), (PLACE_IDS, "place-ids")]   # folder, its prefix in the bucket
-WORLD = ROOT / ".scratch" / "planet" / "world-1101"
+WORLD = ROOT / json.loads((ROOT / "data/world.json").read_text(encoding="utf-8"))["world"]  # the world folder: data/world.json says which (a reseed flips it there)
 WORLD_TOP = ["plan.json", "world.json"]   # what a day's counts are read with: the cells, the world's clock
 MIN_FILES = 1000          # the archive held 1,497 files when it was split off; fewer is a broken checkout
 

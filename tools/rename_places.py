@@ -43,7 +43,7 @@ import place_ids  # noqa: E402
 
 PLANET_CUT = ROOT / ".scratch" / "planet-cut"
 WORLD_DAYS = ROOT / ".scratch" / "planet-day" / "world-days"   # planet_store_day.py WDAYS
-WORLD = ROOT / ".scratch" / "planet" / "world-1101"
+WORLD = ROOT / json.loads((ROOT / "data/world.json").read_text(encoding="utf-8"))["world"]  # the world folder: data/world.json says which (a reseed flips it there)
 ARCHIVE = ROOT / "data" / "archive"
 LOCKS = [ROOT / "data" / "pipeline.lock", ROOT / "data" / "inputs.lock",      # a city run, the inputs run
          ROOT / ".scratch" / "world-publish" / "work" / "daily.lock"]          # a publish: it goes on after RUNNING is gone

@@ -48,7 +48,7 @@ from pathlib import Path
 import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
-WORLD = ROOT / ".scratch" / "planet" / "world-1101"
+WORLD = ROOT / json.loads((ROOT / "data/world.json").read_text(encoding="utf-8"))["world"]  # the world folder: data/world.json says which (a reseed flips it there)
 OUT = ROOT / ".scratch" / "world-publish" / "site2"
 WORK = ROOT / ".scratch" / "world-publish" / "work"
 PLACES = ROOT / "docs" / "places"
@@ -876,7 +876,8 @@ def cors(set_rule: bool) -> int:
 
 def daily(world: Path, out: Path, work: Path, places: Path, first: str, sample: int, cities: Cities) -> int:
     """The world loop's last step (run.py site): build to the newest gated day; if the bucket is behind, verify a sample, upload the
-    changed files and read a sample back over HTTPS. `work/daily.lock` keeps two runs apart. Never --full: a plan
+    changed files and read a sample back over HTTPS. Files no longer built (a place that ended) stay in the bucket,
+    moved to "kept" (owner, 2026-11-26), never deleted here. `work/daily.lock` keeps two runs apart. Never --full: a plan
     past DAY_CAP stops here and waits for somebody."""
     work.mkdir(parents=True, exist_ok=True)
     lock = work / "daily.lock"
@@ -893,7 +894,7 @@ def daily(world: Path, out: Path, work: Path, places: Path, first: str, sample: 
         if verify(world, out, work, places, sample, cities=cities):
             log("FAILED: verify found mismatches; not uploading")
             return 1
-        if upload(out, work):
+        if upload(out, work, keep_gone=True):   # the owner, 11-26: an ended place's files stay as they are (no delete)
             return 1
         return check_live(out, work, 40)
     finally:
