@@ -4463,3 +4463,7 @@ measured: 12,643 s, then the publish 1,155 s.
 - **The crash files in the repo root** (`hs_err_pid{11428,26484,55252,57228}.log`, two `replay_pid*.log`, 2 MB,
   untracked) are 11-23's four engines, diagnosed; they may go when the owner says.
 - **Asked of the owner (wizard, 07:30):** which of these to build first. Nothing is scheduled by this session.
+- **The delete was stopped at the 2-hour limit of a background job (11-26, about 07:00), not finished:** 250,000 of 1,129,125 old files gone,
+  879,125 left in `bucket.json` "kept" (the sixth batch was cut mid-way; S3 deletes of a gone file are harmless, so a rerun is safe). A batch
+  of 50,000 takes about 20 minutes, so the rest is about 6 hours: it needs a detached run, not a session's background job. Command:
+  `python tools/world_publish.py upload --delete-kept --max-delete 1200000` (resumes). Nothing reads the remaining files.
