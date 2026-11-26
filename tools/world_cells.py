@@ -68,6 +68,7 @@ sys.path.insert(0, str(ROOT))
 import run  # noqa: E402
 sys.path.insert(0, str(ROOT / "tools"))
 import backfill_history as bh  # noqa: E402
+import place_ids  # noqa: E402
 
 PAD_M = 2000.0  # around a file's cells: more than the engine's 1 km ring
 # kk-SCOpenQuests-sidebyside, 15:10 local daily until 2026-11-14, about 12 minutes (HANDOFF.md, item 8)
@@ -137,6 +138,7 @@ def places(country: str | None, out: Path) -> None:
     (data/overture/); without, the world (data/overture/world/, its outlines from overture_pull.py
     --outlines). Rows are streamed: a million outlines do not fit in memory at once."""
     import duckdb
+    ids = place_ids.load()
     con = duckdb.connect()
     con.sql("LOAD spatial")
     con.sql("SET memory_limit = '8GB'; SET preserve_insertion_order = false")
@@ -174,7 +176,7 @@ def places(country: str | None, out: Path) -> None:
     t = time.time()
     while rows := cur.fetchmany(2000):
         for gers, name, subtype, cc, parent, osm, g, xmin, ymin, xmax, ymax in rows:
-            pid = gers.replace("-", "")[:12].lower()
+            pid = ids.id_of(gers)
             if pid in seen:
                 raise SystemExit(f"place id {pid} twice")
             seen.add(pid)

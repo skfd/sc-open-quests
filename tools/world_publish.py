@@ -97,6 +97,7 @@ class NameLayer:
     def __init__(self, places: Path = PLACES):
         idx = json.loads((places / "index.json").read_text(encoding="utf-8"))
         self.overture = idx.get("overture")
+        self.ids = idx.get("ids", "gers")  # whose place ids these are: a change makes every cached day another
         self.meta: dict[str, tuple[str, str, str]] = {}  # id -> (name, subtype, cc)
         self.parents: dict[str, list[str]] = {}
 
@@ -290,7 +291,7 @@ def load_events(world: Path, work: Path, days: list[str], quests: list[str], nam
     counted on any of the days (sorted keys) with the index of the first day each was counted"""
     ev = work / "events"
     ev.mkdir(parents=True, exist_ok=True)
-    stamp = dumps({"quests": quests, "first": days[0], "overture": names.overture,
+    stamp = dumps({"quests": quests, "first": days[0], "overture": names.overture, "ids": names.ids,
                    **({"cities": sorted(cities.keys)} if cities.keys else {})})
     sfile = work / "events.key"
     if not sfile.exists() or sfile.read_text(encoding="utf-8") != stamp:
@@ -710,9 +711,10 @@ def plan(out: Path, work: Path) -> tuple[list[tuple[str, str]], list[tuple[str, 
     return todo, gone, local, bucket
 
 
-def upload(out: Path, work: Path, print_only: bool = False, full: bool = False, trial: int = 0) -> int:
-    """the changed files in batches (the bucket manifest saved after each), then the gone ones deleted, and
-    latest.json last: it carries the new `v`, so no page asks for the new files before all are there"""
+def upload(out: Path, work: Path, print_only: bool = False, full: bool = False, trial: int = 0,
+           max_delete: int = MAX_DELETE, keep_gone: bool = False) -> int:
+    """the changed files in batches (the bucket manifest saved after each), then latest.json, which
+    carries the new `v`, so no page asks for the new files before all are there, and last the gone ones deleted"""
     todo, gone, local, bucket = plan(out, work)
     remote = f"r2:{BUCKET}"
     log(f"plan: {len(todo):,} files to upload of {len(local['p']) + len(local['c']):,}, {len(gone):,} to delete; "
@@ -730,8 +732,12 @@ def upload(out: Path, work: Path, print_only: bool = False, full: bool = False, 
         log(f"FAILED: {len(todo):,} files is past DAY_CAP {DAY_CAP:,}; a day changes about 60,000. If the format, "
             f"the name layer or the quest list changed, look at the plan (--print) and pass --full")
         return 1
-    if len(gone) > MAX_DELETE:
-        log(f"FAILED: {len(gone):,} files to delete is past MAX_DELETE {MAX_DELETE:,}")
+    if keep_gone:   # the old files stay in the bucket and in its manifest: a later upload without it deletes them
+        log(f"{len(gone):,} files no longer built are kept")
+        gone = []
+    if len(gone) > max_delete:
+        log(f"FAILED: {len(gone):,} files to delete is past the cap of {max_delete:,} (--max-delete raises it, for a "
+            f"change of every place id)")
         return 1
     if trial:   # a few of each kind, and neither deletes nor latest.json: the bucket's pages see nothing
         todo = ([x for x in todo if x[0] == "p"][:trial // 2] + [x for x in todo if x[0] == "c"][:trial - trial // 2])
@@ -762,13 +768,6 @@ def upload(out: Path, work: Path, print_only: bool = False, full: bool = False, 
     if trial:
         log(f"trial: {len(todo):,} files uploaded; latest.json untouched")
         return 0
-    for kind, pid in gone:
-        r = subprocess.run(["rclone", "deletefile", f"{remote}/{rel(kind, pid)}"], env=env,
-                           capture_output=True, text=True)
-        if r.returncode:
-            log(f"FAILED: delete {rel(kind, pid)}: {r.stderr.strip()[-300:]}")
-            return 1
-        del bucket[kind][pid]
     log("rclone copyto latest.json")
     r = subprocess.run(["rclone", "copyto", str(out / "latest.json"), f"{remote}/latest.json",
                         "--header-upload", f"Cache-Control: {CACHE_LATEST_JSON}", *JSON_TYPE],
@@ -776,6 +775,19 @@ def upload(out: Path, work: Path, print_only: bool = False, full: bool = False, 
     if r.returncode:
         log(f"FAILED: {r.stderr.strip()[-1000:]}")
         return 1
+    # latest.json first: no page asks for a file that is about to go
+    for i in range(0, len(gone), BATCH):
+        batch = gone[i:i + BATCH]
+        write_text(listing, "".join(rel(kind, pid) + "\n" for kind, pid in batch))
+        log(f"rclone delete: files {i + 1:,} to {i + len(batch):,} of {len(gone):,}")
+        r = subprocess.run(["rclone", "delete", remote, "--files-from", str(listing), "--no-traverse",
+                            "--transfers", "64"], env=env, capture_output=True, text=True)
+        if r.returncode:
+            log(f"FAILED: delete: {r.stderr.strip()[-1000:]}")
+            return 1
+        for kind, pid in batch:
+            del bucket[kind][pid]
+        save_manifest(work / "bucket.json", bucket)
     bucket["v"], bucket["date"] = local.get("v"), local.get("date")
     save_manifest(work / "bucket.json", bucket)
     log(f"uploaded {local.get('date')} (v {local.get('v')})")
@@ -892,6 +904,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--sample", type=int, help="verify: places read back (default 2000); check: files fetched (40)")
     ap.add_argument("--print", action="store_true", help="upload: print the plan, run nothing")
     ap.add_argument("--full", action="store_true", help="upload: allow a plan past DAY_CAP (the first upload)")
+    ap.add_argument("--keep-gone", action="store_true", help="upload: delete nothing")
+    ap.add_argument("--max-delete", type=int, default=MAX_DELETE, help="upload: the most files it may delete")
     ap.add_argument("--trial", type=int, default=0, help="upload: only this many files, and not latest.json")
     ap.add_argument("--set", action="store_true", help="cors: write the rule (without: print it)")
     ap.add_argument("--report", type=Path, default=ROOT.parent / "sc-open-quests" / ".scratch" / "planet"
@@ -914,7 +928,7 @@ def main(argv: list[str] | None = None) -> int:
         return cors(a.set)
     if a.cmd == "check":
         return check_live(a.out, a.work, a.sample or 40)
-    return upload(a.out, a.work, a.print, a.full, a.trial)
+    return upload(a.out, a.work, a.print, a.full, a.trial, a.max_delete, a.keep_gone)
 
 
 if __name__ == "__main__":
