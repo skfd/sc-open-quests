@@ -4467,3 +4467,5 @@ measured: 12,643 s, then the publish 1,155 s.
   879,125 left in `bucket.json` "kept" (the sixth batch was cut mid-way; S3 deletes of a gone file are harmless, so a rerun is safe). A batch
   of 50,000 takes about 20 minutes, so the rest is about 6 hours: it needs a detached run, not a session's background job. Command:
   `python tools/world_publish.py upload --delete-kept --max-delete 1200000` (resumes). Nothing reads the remaining files.
+- **The rest of the delete runs detached (owner, 11-26, 07:55: "start"):** bash pid 36972 (hidden), log `.scratch/overture-next/delete2.log`,
+  879,125 files in 18 batches, expected done about 14:00; its last line is `exit 0` when finished. If it dies, start the same command again.
