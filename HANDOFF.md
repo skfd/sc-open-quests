@@ -4329,3 +4329,6 @@ at once to 0.28 GB (40.8 GiB).
   stayed current. **Name layer** rebuilt (f9ae6961): the same as before under the map, 707 files only reordered (ties sorted by id).
   **History** (run.py history) byte for byte the old files under the map. Running: facts `--force` and verify, the publisher's build.
   Left: publisher verify, upload `--full --keep-gone` (deletes wait for the owner), `run.py site`, checkpoint, message the two sessions.
+- **Order agreed with "Overture place sizes by area" (11-25, about 20:45):** it merges `dropped-places` now (the 16 duplicates and, by the
+  owner's new decision, 63,800 small squares by a rule, `tools/small_squares.py`, read by GERS id; it translates `dropped-places.json`'s
+  ids itself). Then this session rebuilds the name layer and history once more, rebuilds the publisher's files and uploads once.
