@@ -654,7 +654,7 @@ def look(release: str, key: str, old: str, root: Path = RELEASES, registry: Path
             hit = q(f"SELECT name, subtype, parent FROM {table} WHERE gers = ?", gers)
             if not hit:
                 break
-            names.append(f"{hit[0][0]} ({hit[0][1]})")
+            names.append(f"{hit[0][0]} ({hit[0][1]}, {tag(gers)})")
             gers = hit[0][2]
         return " < ".join(names) or "none"
 
