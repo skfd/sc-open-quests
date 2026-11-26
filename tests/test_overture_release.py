@@ -32,6 +32,7 @@ OLD_ROWS = [
     (g(9), "r9", "Juliet", "locality", "XX", None, FAR),                          # lost; nothing
     (g(10), "r10", "Lima", "locality", "DE", None, (15.0, 55.0, 15.01, 55.01)),     # ended in the registry, back now
     (g(11), "r11", "Mike", "neighborhood", "XX", g(9), (120.0, -30.0, 120.01, -29.99)),  # lost; its parent Juliet too
+    (g(12), "r12", "November", "microhood", "DE", g(1), (17.0, 57.0, 17.01, 57.01)),  # lost; same OSM, far outline
 ]
 NEW_ROWS = [
     (g(1), "r1", "Alpha Stadt", "locality", "DE", None, (9.9, 49.9, 10.2, 50.2)),
@@ -41,6 +42,7 @@ NEW_ROWS = [
     (g(105), "r50", "Echo-Foxtrot", "neighborhood", "DE", g(1), (13.0, 53.0, 13.01, 53.01)),
     (g(110), "r110", "Kilo \"K\"", "locality", "DE", None, (16.0, 56.0, 16.01, 56.01)),   # new
     (g(10), "r10", "Lima", "locality", "DE", None, (15.0, 55.0, 15.01, 55.01)),
+    (g(112), "r12", "November", "neighborhood", "DE", g(1), (17.5, 57.5, 17.6, 57.6)),
 ]
 
 
@@ -56,7 +58,7 @@ def write_places(path: Path, rows) -> None:
     con.execute(f"COPY t TO '{path.as_posix()}' (FORMAT parquet)")
 
 
-class Release(unittest.TestCase):
+class Base(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         t = Path(self.tmp.name)
@@ -79,6 +81,8 @@ class Release(unittest.TestCase):
         orl.propose(NEW, OLD, self.registry, self.root)
         return {r["key"]: r for r in orl.read_rows(self.root / NEW / "proposals.tsv")}
 
+
+class Release(Base):
     def test_each_kind_of_change_gets_its_class_and_proposal(self):
         rows = self.propose()
         cls = {k: (r["class"], r["proposal"]) for k, r in rows.items()}
@@ -96,7 +100,8 @@ class Release(unittest.TestCase):
         self.assertEqual(("back", "revive"), cls[i[g(10)]])
         self.assertEqual(("new", "new"), cls[g(110)])
         self.assertNotIn(i[g(1)], rows)   # kept: no row
-        self.assertEqual(11, len(rows))   # nine lost, one back, one new
+        self.assertEqual(("same-osm-far", f"same {g(112)}"), cls[i[g(12)]])
+        self.assertEqual(12, len(rows))   # ten lost, one back, one new
         self.assertTrue((self.root / NEW / "report.md").exists())
 
     def test_contested_rows_are_never_accepted_in_bulk_and_bad_verdicts_stop(self):
@@ -133,7 +138,7 @@ class Release(unittest.TestCase):
         self.assertEqual((NEW, "r110", "Kilo \"K\""), (kilo.since, kilo.osm, kilo.name))
         former = (self.root / NEW / "former-names.tsv").read_text(encoding="utf-8").splitlines()
         self.assertIn(f"{i[g(1)]}\tAlpha\t{NEW}", former)
-        self.assertEqual((1, 4, 5, 1), (s["minted"], s["same"], s["ended"], s["revived"]))
+        self.assertEqual((1, 5, 5, 1), (s["minted"], s["same"], s["ended"], s["revived"]))
 
         # again, after the operator turns Bravo's same down: Kilo keeps the id it was given, Bravo's new GERS id gets one
         orl.judge(NEW, i[g(2)], "ended", root=self.root)
@@ -153,3 +158,74 @@ class Release(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class Judges(Base):
+    """the algorithm's clear cases, then the Fable judge (a fake runner here), then what is left for the operator"""
+
+    def test_the_algorithm_decides_only_the_clear_classes(self):
+        self.propose()
+        self.assertEqual(4, orl.auto(NEW, self.root))   # Bravo, Charlie, Lima back, Kilo new
+        rows = {r["key"]: r for r in orl.read_rows(self.root / NEW / "proposals.tsv")}
+        decided = {k for k, r in rows.items() if r["verdict"]}
+        i = self.id
+        self.assertEqual({i[g(2)], i[g(3)], i[g(10)], g(110)}, decided)
+        self.assertTrue(all(rows[k]["judged"].startswith("algorithm") for k in decided))
+
+    def test_fable_verdicts_stand_only_when_every_run_agrees_with_high_confidence(self):
+        self.propose()
+        orl.auto(NEW, self.root)
+        i = self.id
+        answers = {
+            i[g(4)]: [("same " + g(104), "high")] * 2,                               # agreed: taken
+            i[g(12)]: [("same " + g(112), "high")] * 2,                              # agreed: taken
+            i[g(7)]: [("ended " + i[g(1)], "low")] * 2,                              # unsure: operator
+            i[g(8)]: [("ended " + i[g(1)], "high"), ("ended", "high")],              # disagree: operator
+            i[g(9)]: [("ended", "high")] * 2,                                        # agreed: taken
+            i[g(11)]: [("same " + g(1), "high")] * 2,                                # not a new GERS id: operator
+            i[g(5)]: [("same " + g(105), "high")] * 2,                               # both take g(105): operator
+            i[g(6)]: [("same " + g(105), "high")] * 2,
+        }
+        calls = []
+
+        def runner(prompt):
+            run = sum(1 for c in calls if c == prompt)
+            calls.append(prompt)
+            keys = [line.split(" | ")[0] for line in prompt.splitlines() if " | " in line and not line.startswith("Rows")]
+            return {"verdicts": [{"key": k, "verdict": answers[k][run][0], "confidence": answers[k][run][1],
+                                  "reason": "test"} for k in keys if k in answers], "_cost": 0.5}
+
+        t = orl.agent(NEW, OLD, self.root, self.registry, runs=2, batch=3, workers=2, runner=runner)
+        rows = {r["key"]: r for r in orl.read_rows(self.root / NEW / "proposals.tsv")}
+        taken = {k for k, r in rows.items() if r["judged"].startswith("fable")}
+        self.assertEqual({i[g(4)], i[g(12)], i[g(9)]}, taken)
+        operator = {k for k, r in rows.items() if not r["verdict"]}
+        self.assertEqual({i[g(7)], i[g(8)], i[g(11)], i[g(5)], i[g(6)]}, operator)
+        self.assertIn("unsure", rows[i[g(7)]]["judged"])
+        self.assertIn("disagree", rows[i[g(8)]]["judged"])
+        self.assertIn("not a new GERS id", rows[i[g(11)]]["judged"])
+        self.assertIn("two rows take", rows[i[g(5)]]["judged"])
+        self.assertEqual((3, 5), (t["judged"], t["operator"]))
+        ex = (self.root / NEW / "exceptions.md").read_text(encoding="utf-8")
+        self.assertIn("5 rows for the operator", ex)
+        # a second run judges nothing again: the operator's rows wait for the operator
+        self.assertEqual({"judged": 0, "operator": 0}, orl.agent(NEW, OLD, self.root, self.registry, runner=runner))
+
+    def test_a_failed_run_sends_its_rows_to_the_operator(self):
+        self.propose()
+        orl.auto(NEW, self.root)
+
+        def runner(prompt):
+            raise RuntimeError("no network")
+
+        t = orl.agent(NEW, OLD, self.root, self.registry, runs=1, runner=runner)
+        self.assertEqual(0, t["judged"])
+        rows = orl.read_rows(self.root / NEW / "proposals.tsv")
+        self.assertTrue(all("a run failed" in r["judged"] for r in rows if not r["verdict"]))
+
+    def test_look_shows_a_rows_context(self):
+        self.propose()
+        text = orl.look(NEW, self.id[g(7)], OLD, self.root, self.registry)
+        self.assertIn("Hotel", text)
+        self.assertIn("Alpha Stadt", text)   # what overlaps it in the release
+        self.assertIn(f"our {self.id[g(1)]}", text)

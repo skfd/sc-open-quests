@@ -65,9 +65,14 @@ RELEASES = ROOT / "data" / "place-ids" / "releases"
 FORMER = ROOT / "data" / "place-ids" / "former-names.tsv"
 S3 = "s3://overturemaps-us-west-2/release"
 GERS = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
-CLASSES = ("same-osm", "same-osm-changed", "same-name-near", "contested", "overlap", "ended-parent", "ended-none",
-           "back", "new")
+CLASSES = ("same-osm", "same-osm-changed", "same-osm-far", "same-name-near", "contested", "overlap", "ended-parent",
+           "ended-none", "back", "new")
 NO_BULK = {"contested"}
+# the clear cases the algorithm decides alone (owner, 2026-11-26); every other row goes to the Fable judge
+AUTO = ("same-osm", "same-osm-changed", "back", "new")
+CHANGED_IOU = 0.5   # same OSM object, name or subtype changed: the same place only if the outlines' boxes overlap this much
+FABLE = "claude-fable-5-2"
+OSM_TOOL = "WebFetch(domain:www.openstreetmap.org)"
 COLUMNS = ("key", "class", "proposal", "verdict", "judged", "id", "gers_old", "name", "subtype", "country", "osm",
            "candidates", "note")
 NEAR_KM = 2.0
@@ -151,6 +156,13 @@ def _registry_table(con, registry: Path) -> None:
     con.unregister("r_arrow")
 
 
+def _iou(a: dict, b: dict) -> float:
+    i = max(0.0, min(a["x1"], b["x1"]) - max(a["x0"], b["x0"])) * max(0.0, min(a["y1"], b["y1"]) - max(a["y0"], b["y0"]))
+    aa = max((a["x1"] - a["x0"]) * (a["y1"] - a["y0"]), 1e-12)
+    ab = max((b["x1"] - b["x0"]) * (b["y1"] - b["y0"]), 1e-12)
+    return i / (aa + ab - i)
+
+
 def _km(lx1, ly1, lx2, ly2) -> float:
     import math
     return math.hypot((lx1 - lx2) * math.cos(math.radians((ly1 + ly2) / 2)), ly1 - ly2) * 111.2
@@ -223,7 +235,9 @@ def propose(release: str, old: str, registry: Path = place_ids.REGISTRY, root: P
         if len(osm_c) == 1:
             c = osm_c[0]
             same = c["name"] == p["name"] and c["subtype"] == p["subtype"]
-            p["_cls"], p["_target"], p["_c"] = ("same-osm" if same else "same-osm-changed"), c["gers"], osm_c
+            c["iou"] = _iou(p, c) if p["x0"] is not None else 0.0
+            cls = "same-osm" if same else "same-osm-changed" if c["iou"] >= CHANGED_IOU else "same-osm-far"
+            p["_cls"], p["_target"], p["_c"] = cls, c["gers"], osm_c
         elif not osm_c and len(near_c) == 1:
             p["_cls"], p["_target"], p["_c"] = "same-name-near", near_c[0]["gers"], near_c
         else:
@@ -568,6 +582,349 @@ def apply(release: str, registry: Path = place_ids.REGISTRY, former: Path = FORM
     return summary
 
 
+# --- the algorithm: the clear cases (owner, 2026-11-26)
+
+
+def auto(release: str, root: Path = RELEASES) -> int:
+    """every unjudged row of an AUTO class takes its proposal; the rest is the Fable judge's"""
+    path = folder(release, root) / "proposals.tsv"
+    rows = read_rows(path)
+    n = 0
+    for row in rows:
+        if row["class"] in AUTO and not row["verdict"]:
+            row["verdict"], row["judged"] = row["proposal"], stamp("algorithm")
+            n += 1
+    write_rows(path, rows)
+    log(f"the algorithm decided {n:,} rows ({', '.join(AUTO)})")
+    return n
+
+
+# --- context for a judge: `look`
+
+
+def ids_cache(here: Path, registry: Path) -> Path:
+    """the registry's GERS ids, our ids and states as parquet beside the release, for `look`"""
+    out = here / "ids.parquet"
+    if out.exists() and out.stat().st_mtime >= registry.stat().st_mtime:
+        return out
+    con = connect()
+    _registry_table(con, registry)
+    tmp = out.with_suffix(".part")
+    con.execute(f"COPY (SELECT gers, id, state FROM r) TO '{tmp.as_posix()}' (FORMAT parquet)")
+    os.replace(tmp, out)
+    return out
+
+
+def look(release: str, key: str, old: str, root: Path = RELEASES, registry: Path = place_ids.REGISTRY) -> str:
+    """what a judge needs to see about one row: the place, its parents and children, what the release has around it"""
+    here = folder(release, root)
+    rows = {r["key"]: r for r in read_rows(here / "proposals.tsv")}
+    if key not in rows:
+        raise SystemExit(f"no row {key!r}")
+    row = rows[key]
+    con = connect()
+    n, o = (here / "places.parquet").as_posix(), (folder(old, root) / "places.parquet").as_posix()
+    ids = ids_cache(here, registry).as_posix()
+    con.execute(f"CREATE TEMP TABLE n AS SELECT * FROM '{n}'")
+    con.execute(f"CREATE TEMP TABLE o AS SELECT * FROM '{o}'")
+    con.execute(f"CREATE TEMP TABLE ids AS SELECT * FROM '{ids}'")
+    q = lambda s, *a: con.execute(s, list(a)).fetchall()  # noqa: E731
+    L = [f"row {key}: class {row['class']}, proposal `{row['proposal']}`",
+         f"  {row['name']!r} ({row['subtype']}, {row['country']}, OSM {row['osm'] or 'none'})",
+         f"  candidates: {row['candidates'] or 'none'}", f"  note: {row['note'] or '-'}"]
+
+    def chain(table: str, gers: str | None) -> str:
+        names = []
+        for _ in range(8):
+            if not gers:
+                break
+            hit = q(f"SELECT name, subtype, parent FROM {table} WHERE gers = ?", gers)
+            if not hit:
+                break
+            names.append(f"{hit[0][0]} ({hit[0][1]})")
+            gers = hit[0][2]
+        return " < ".join(names) or "none"
+
+    def tag(gers: str) -> str:
+        hit = q("SELECT id, state FROM ids WHERE gers = ? ORDER BY state = 'live' DESC", gers)
+        if not hit:
+            return f"new GERS {gers}"
+        return f"our {hit[0][0]}" + ("" if hit[0][1] == "live" else " (ended)")
+
+    if row["class"] == "new":
+        me = q("SELECT x0, y0, x1, y1, parent FROM n WHERE gers = ?", key)[0]
+        L.append(f"  in {release}: bbox {me[0]:.4f},{me[1]:.4f},{me[2]:.4f},{me[3]:.4f}; parents {chain('n', me[4])}")
+        table, box = "o", me
+        L.append(f"  places of {old} its box overlaps (IoU 0.05+):")
+    else:
+        me = q("SELECT x0, y0, x1, y1, parent FROM o WHERE gers = ?", row["gers_old"])
+        if not me:
+            return "\n".join(L + [f"  not in {old}: no location"])
+        me = me[0]
+        L.append(f"  in {old}: bbox {me[0]:.4f},{me[1]:.4f},{me[2]:.4f},{me[3]:.4f}; parents {chain('o', me[4])}")
+        kids = q("SELECT o.name, o.subtype, o.gers, n.parent FROM o LEFT JOIN n USING (gers) WHERE o.parent = ? "
+                 "ORDER BY o.name LIMIT 12", row["gers_old"])
+        total = q("SELECT count(*) FROM o WHERE parent = ?", row["gers_old"])[0][0]
+        L.append(f"  its children in {old}: {total:,}" + (", e.g." if kids else ""))
+        for name, st, g, newpar in kids:
+            where = "gone" if newpar is None and not q("SELECT 1 FROM n WHERE gers = ?", g) else \
+                f"now under {chain('n', newpar).split(' < ')[0]}" if newpar else "kept, no parent"
+            L.append(f"    {name} ({st}): {where}")
+        table, box = "n", me
+        L.append(f"  places of {release} its box overlaps (IoU 0.05+):")
+    for name, st, g, osm, iou in q(f"""SELECT name, subtype, gers, osm, i / (aa + ab - i) AS iou FROM (
+            SELECT name, subtype, gers, osm,
+              greatest(0, least(x1, ?) - greatest(x0, ?)) * greatest(0, least(y1, ?) - greatest(y0, ?)) AS i,
+              greatest((x1 - x0) * (y1 - y0), 1e-12) AS aa, greatest((? - ?) * (? - ?), 1e-12) AS ab
+            FROM {table} WHERE x0 < ? AND x1 > ? AND y0 < ? AND y1 > ?) WHERE i / (aa + ab - i) >= 0.05
+            ORDER BY iou DESC LIMIT 12""", box[2], box[0], box[3], box[1], box[2], box[0], box[3], box[1],
+                                        box[2], box[0], box[3], box[1]):
+        L.append(f"    {name} ({st}, OSM {osm or 'none'}): IoU {iou:.2f}, {tag(g)}")
+    if row["name"]:
+        lx, ly = (box[0] + box[2]) / 2, (box[1] + box[3]) / 2
+        same = q(f"SELECT name, subtype, gers, osm, lx, ly FROM {table} WHERE name = ? AND abs(ly - ?) < 0.3 "
+                 f"AND abs(lx - ?) < 0.5 LIMIT 8", row["name"], ly, lx)
+        L.append(f"  the same name within about 30 km in {release if table == 'n' else old}: {len(same)}")
+        for name, st, g, osm, x, y in same:
+            L.append(f"    {name} ({st}, OSM {osm or 'none'}): {_km(lx, ly, x, y):.1f} km, {tag(g)}")
+    return "\n".join(L)
+
+
+# --- the Fable judge
+
+
+SCHEMA = {"type": "object", "additionalProperties": False, "required": ["verdicts"], "properties": {"verdicts": {
+    "type": "array", "items": {"type": "object", "additionalProperties": False,
+                               "required": ["key", "verdict", "confidence", "reason"],
+                               "properties": {"key": {"type": "string"}, "verdict": {"type": "string"},
+                                              "confidence": {"type": "string", "enum": ["high", "low"]},
+                                              "reason": {"type": "string"}}}}}}
+
+PROMPT = """You judge how an Overture Maps release ({release}) maps onto our registry of places (administrative and
+named areas: countries, regions, counties, localities, neighbourhoods, microhoods). Each place has our own id (12 hex
+digits); Overture's GERS id and the OSM object are attributes that change. Our ids are in public links, in day-by-day
+quest counts that make a series per place, and in phone widgets, so keep an id when the place is still the same place a
+person would recognise (the same area, renamed or re-typed, or re-created under a new GERS id), and end it when the place is
+gone, split or merged. Overture loses about 1,500 places a month; most were re-created under a new id.
+
+Each row below is one place of ours (or one new GERS id). Give each a verdict:
+- `same <gers>`: our place lives on as that NEW GERS id of {release} (only GERS ids marked "new GERS" qualify; each new
+  GERS id can be taken by one place only);
+- `ended` or `ended <s1>,<s2>`: the place ends; successors are where a visitor of its page should go: the parts it split
+  into, the place it merged into, else the place that now covers it. Successors are our ids (12 hex, places that live on)
+  or new GERS ids of {release};
+- for a row of class `back` (an ended place of ours whose GERS id returned): `revive` or `new`.
+
+Confidence: "high" only when you would bet on it; "low" sends the row to a human operator, which is fine for real doubt.
+Keep each reason to one sentence a human can check.
+
+Tools: `python tools/overture_release.py look {release} <key> --old {old} --root {root}` prints a row's context (its parents
+and children, what overlaps it in the release, same names nearby, which ids are ours). Use it for any row you are not sure
+of. You may also read an OSM object's history at https://www.openstreetmap.org/api/0.6/relation/<n>/history (or way/node).
+Do not change any file.
+
+Rows (key | class | proposal | our place | candidates | note):
+{rows}
+
+Return a verdict for every key.
+"""
+
+
+def _row_line(r: dict) -> str:
+    me = f"{r['name']!r} ({r['subtype']}, {r['country']}, OSM {r['osm'] or 'none'})"
+    return " | ".join([r["key"], r["class"], r["proposal"], me, r["candidates"] or "-", r["note"] or "-"])
+
+
+def run_claude(prompt: str, model: str = FABLE, timeout: int = 3600) -> dict:
+    """one headless Claude Code call with the verdict schema; only `look` and OSM's site as tools"""
+    import shutil
+    import subprocess
+    exe = shutil.which("claude")
+    if not exe:
+        raise RuntimeError("claude (Claude Code) is not on PATH")
+    cmd = [exe, "-p", "--model", model, "--output-format", "json", "--no-session-persistence",
+           "--json-schema", json.dumps(SCHEMA), "--tools", "Bash,WebFetch",
+           "--allowedTools", "Bash(python tools/overture_release.py look:*)", OSM_TOOL]
+    r = subprocess.run(cmd, input=prompt.encode("utf-8"), capture_output=True, cwd=ROOT, timeout=timeout)
+    out = r.stdout.decode("utf-8", errors="replace")
+    try:
+        d = json.loads(out)
+    except json.JSONDecodeError:
+        raise RuntimeError(f"claude exit {r.returncode}: {out[-500:]} {r.stderr.decode('utf-8', 'replace')[-500:]}")
+    if d.get("is_error") or not isinstance(d.get("structured_output"), dict):
+        raise RuntimeError(f"claude: {d.get('subtype')}: {str(d.get('result'))[:500]}")
+    d["structured_output"]["_cost"] = d.get("total_cost_usd", 0)
+    return d["structured_output"]
+
+
+def _norm(v: str) -> str:
+    word, _, rest = v.strip().partition(" ")
+    return " ".join([word] + sorted(a for a in re.split(r"[,\s]+", rest) if a))
+
+
+def agent(release: str, old: str, root: Path = RELEASES, registry: Path = place_ids.REGISTRY, runs: int = 2,
+          batch: int = 40, workers: int = 3, model: str = FABLE, runner=None) -> dict:
+    """The Fable judge: every row neither decided nor waiting for the operator, in batches, each batch judged `runs` times
+    independently. A verdict is taken when every run gives it with high confidence; any doubt, disagreement, missing or
+    invalid verdict, or a new GERS id two rows take, leaves the row to the operator (`judged` says why)."""
+    import threading
+    from concurrent.futures import ThreadPoolExecutor
+    runner = runner or (lambda p: run_claude(p, model))
+    here = folder(release, root)
+    path = here / "proposals.tsv"
+    rows = read_rows(path)
+    todo = [r for r in rows if not r["verdict"] and not r["judged"].startswith("operator")]
+    if not todo:
+        log("the Fable judge: nothing to judge")
+        return {"judged": 0, "operator": 0}
+    ids_cache(here, registry)
+    con = connect()
+    fresh = {g for (g,) in con.execute(
+        f"SELECT gers FROM '{(here / 'places.parquet').as_posix()}' WHERE gers NOT IN "
+        f"(SELECT gers FROM '{(here / 'ids.parquet').as_posix()}')").fetchall()}
+    todo.sort(key=lambda r: (r["country"], r["class"], r["key"]))
+    batches = [todo[i:i + batch] for i in range(0, len(todo), batch)]
+    lock = threading.Lock()
+    tally = {"judged": 0, "operator": 0, "cost": 0.0}
+    by_key = {r["key"]: r for r in rows}
+    log(f"the Fable judge ({model}): {len(todo):,} rows in {len(batches)} batches, {runs} runs each, {workers} at once")
+
+    def one(b: list[dict]) -> None:
+        prompt = PROMPT.format(release=release, old=old, root=Path(os.path.relpath(root, ROOT)).as_posix(),
+                               rows="\n".join(_row_line(r) for r in b))
+        answers, errors = [], []
+        for _ in range(runs):
+            try:
+                a = runner(prompt)
+                tally["cost"] += a.pop("_cost", 0) or 0
+                answers.append({v["key"]: v for v in a.get("verdicts", [])})
+            except Exception as e:  # a failed run sends its rows to the operator, it does not stop the others
+                errors.append(str(e)[:300])
+        with lock:
+            for r in b:
+                got = [a.get(r["key"]) for a in answers]
+                why = ""
+                if errors:
+                    why = f"a run failed ({errors[0]})"
+                elif any(g is None for g in got):
+                    why = "no verdict from every run"
+                else:
+                    vs = {_norm(g["verdict"]) for g in got}
+                    if len(vs) > 1:
+                        why = "the runs disagree"
+                    elif any(g["confidence"] != "high" for g in got):
+                        why = "Fable is unsure"
+                    else:
+                        try:
+                            word, args = parse_verdict(got[0]["verdict"], r["class"])
+                            bad = [a for a in args if GERS.fullmatch(a) and a not in fresh]
+                            if bad:
+                                why = f"{bad[0]} is not a new GERS id of {release}"
+                        except ValueError as e:
+                            why = f"invalid verdict ({e})"
+                said = "; ".join(f"Fable: `{g['verdict']}` ({g['confidence']}) {g['reason']}" for g in got if g)
+                row = by_key[r["key"]]
+                if why:
+                    row["judged"] = stamp(f"operator: {why};")
+                    tally["operator"] += 1
+                else:
+                    row["verdict"], row["judged"] = got[0]["verdict"].strip(), stamp(f"fable {model}")
+                    tally["judged"] += 1
+                if said:
+                    row["note"] = (row["note"] + "; " if row["note"] else "") + said
+            write_rows(path, rows)
+            log(f"  batch of {len(b)} done: {tally['judged']:,} judged, {tally['operator']:,} to the operator so far")
+
+    with ThreadPoolExecutor(max_workers=workers) as ex:
+        list(ex.map(one, batches))
+    # a new GERS id taken by two Fable verdicts: neither stands
+    takers = defaultdict(list)
+    others = Counter()   # new GERS ids already taken by the algorithm's or the operator's verdicts
+    for r in rows:
+        if r["verdict"].startswith("same "):
+            if r["judged"].startswith("fable"):
+                takers[r["verdict"].split()[1]].append(r)
+            else:
+                others[r["verdict"].split()[1]] += 1
+    for g, rs in takers.items():
+        if len(rs) > 1 or others[g]:
+            for r in rs:
+                r["note"] += f"; Fable gave `{r['verdict']}`, which another row takes too"
+                r["verdict"], r["judged"] = "", stamp("operator: a new GERS id two rows take;")
+                tally["judged"] -= 1
+                tally["operator"] += 1
+    write_rows(path, rows)
+    exceptions(release, root)
+    log(f"the Fable judge: {tally['judged']:,} judged, {tally['operator']:,} to the operator; about "
+        f"${tally['cost']:.2f} at list prices")
+    return tally
+
+
+def exceptions(release: str, root: Path = RELEASES) -> Path:
+    """exceptions.md: the rows waiting for the operator, with what Fable said and how to judge them"""
+    here = folder(release, root)
+    rows = [r for r in read_rows(here / "proposals.tsv") if not r["verdict"]]
+    L = [f"# Overture {release}: {len(rows)} rows for the operator", "",
+         f"Judge each with `python tools/overture_release.py judge {release} KEY \"VERDICT\"` (same <gers> | ended "
+         f"[successors] | new | revive), or ask a session to walk through them; then `apply {release}`.", ""]
+    for r in rows:
+        L += [f"## {r['name'] or '(no name)'} ({r['subtype']}, {r['country']}): `{r['key']}`", "",
+              f"- class {r['class']}, proposal `{r['proposal']}`, OSM {r['osm'] or 'none'}",
+              f"- why it is here: {r['judged'] or 'not judged yet'}",
+              f"- candidates: {r['candidates'] or 'none'}", f"- note: {r['note'] or '-'}", ""]
+    out = here / "exceptions.md"
+    out.write_text("\n".join(L), encoding="utf-8", newline="\n")
+    return out
+
+
+# --- the watcher: a new release, prepared up to the operator's exceptions
+
+
+def releases_on_s3() -> list[str]:
+    import subprocess
+    r = subprocess.run(["rclone", "lsf", ":s3,provider=AWS,region=us-west-2,env_auth=false:overturemaps-us-west-2/release/",
+                        "--dirs-only"], capture_output=True, text=True, timeout=300)
+    if r.returncode:
+        raise RuntimeError(f"rclone lsf: {r.stderr.strip()[-300:]}")
+    return sorted(x.strip("/") for x in r.stdout.split() if re.fullmatch(r"\d{4}-\d{2}-\d{2}\.\d+/?", x))
+
+
+def watch(root: Path = RELEASES, registry: Path = place_ids.REGISTRY, runs: int = 2, model: str = FABLE) -> int:
+    """Daily: when Overture has a release newer than the pin, prepare it: narrow, propose, the algorithm, the Fable judge,
+    and `apply` when nothing is left for the operator. Each step is skipped when done, so a rerun resumes. The switch to the
+    staged registry is not done here: that is the reseed on the 1st."""
+    pin = json.loads((ROOT / "config" / "places.json").read_text(encoding="utf-8"))["overture"]
+    newer = [r for r in releases_on_s3() if r > pin]
+    if not newer:
+        log(f"watch: nothing newer than the pin {pin}")
+        return 0
+    rel = newer[-1]
+    here = folder(rel, root)
+    if (here / "apply.json").exists():
+        log(f"watch: {rel} is staged ({here / 'registry.tsv.gz'}); it goes live at the next reseed on the 1st")
+        return 0
+    log(f"watch: {rel} is newer than the pin {pin}")
+    if not (folder(pin, root) / "places.parquet").exists():
+        pull = ROOT / "data" / "overture" / "world"   # the pin's own pull
+        narrow(pin, pull if (pull / "division.parquet").exists() else None, root)
+    if not (here / "places.parquet").exists():
+        narrow(rel, None, root)
+    if not (here / "proposals.tsv").exists():
+        propose(rel, pin, registry, root)
+    auto(rel, root)
+    agent(rel, pin, root, registry, runs=runs, model=model)
+    left = [r for r in read_rows(here / "proposals.tsv") if not r["verdict"]]
+    if left:
+        log(f"OPERATOR: {len(left)} rows of {rel} wait for a human: {exceptions(rel, root)}")
+        return 2
+    apply(rel, registry, FORMER if root == RELEASES else root.parent / "former-names.tsv", root)
+    if root == RELEASES:
+        import subprocess
+        r = subprocess.run([sys.executable, str(ROOT / "tools" / "archive_backup.py"), "--only", "place-ids"], cwd=ROOT)
+        log(f"watch: backup of data/place-ids exit {r.returncode}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -593,20 +950,49 @@ def main(argv: list[str] | None = None) -> int:
     j.add_argument("--note", default="")
     y = sub.add_parser("apply")
     y.add_argument("release")
+    u = sub.add_parser("auto", help="the algorithm decides the clear classes")
+    u.add_argument("release")
+    k = sub.add_parser("look", help="one row's context, for a judge")
+    k.add_argument("release")
+    k.add_argument("key")
+    k.add_argument("--old", help="default: config/places.json's pin")
+    k.add_argument("--root", dest="look_root", type=Path, help="same as the global --root")
+    g = sub.add_parser("agent", help="the Fable judge for every row the algorithm left")
+    g.add_argument("release")
+    g.add_argument("--old")
+    g.add_argument("--runs", type=int, default=2)
+    g.add_argument("--batch", type=int, default=40)
+    g.add_argument("--workers", type=int, default=3)
+    g.add_argument("--model", default=FABLE)
+    sub.add_parser("exceptions").add_argument("release")
+    w = sub.add_parser("watch", help="daily: prepare a release newer than the pin, up to the operator's exceptions")
+    w.add_argument("--runs", type=int, default=2)
+    w.add_argument("--model", default=FABLE)
     a = ap.parse_args(argv)
+    pin = lambda: json.loads((ROOT / "config" / "places.json").read_text(encoding="utf-8"))["overture"]  # noqa: E731
+    former = a.root.parent / "former-names.tsv" if a.root != RELEASES else FORMER
     if a.cmd == "narrow":
         narrow(a.release, a.src, a.root)
     elif a.cmd == "propose":
-        old = a.old or json.loads((ROOT / "config" / "places.json").read_text(encoding="utf-8"))["overture"]
-        propose(a.release, old, a.registry, a.root)
+        propose(a.release, a.old or pin(), a.registry, a.root)
     elif a.cmd == "status":
         log(status_text(read_rows(folder(a.release, a.root) / "proposals.tsv")))
     elif a.cmd == "accept":
         accept(a.release, a.classes, a.root)
     elif a.cmd == "judge":
         judge(a.release, a.key, a.verdict, a.note, a.root)
+    elif a.cmd == "auto":
+        auto(a.release, a.root)
+    elif a.cmd == "look":
+        print(look(a.release, a.key, a.old or pin(), a.look_root or a.root, a.registry))
+    elif a.cmd == "agent":
+        agent(a.release, a.old or pin(), a.root, a.registry, a.runs, a.batch, a.workers, a.model)
+    elif a.cmd == "exceptions":
+        log(str(exceptions(a.release, a.root)))
+    elif a.cmd == "watch":
+        return watch(a.root, a.registry, a.runs, a.model)
     else:
-        apply(a.release, a.registry, a.root / ".." / "former-names.tsv" if a.root != RELEASES else FORMER, a.root)
+        apply(a.release, a.registry, former, a.root)
     return 0
 
 
