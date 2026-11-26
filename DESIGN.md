@@ -2550,7 +2550,8 @@ has the commands.
   owner's zone-wide setting, left as it is. Toronto, Berlin, Montreal and London load in headless
   Chromium with no page errors and no failed requests.
 - **Daily:** `run.py update` and `planet` sync to R2 after the git push. A failure is logged as
-  "cloud publish FAILED" and doesn't stop the run, because Pages is still the fallback. `docs/` stays
+  "cloud publish FAILED" and doesn't stop the run, because Pages is still the fallback. Since 2026-11-25
+  `run.py site`, the world loop's last step, does both once a new day of the world is gated. `docs/` stays
   in git for now: the dual write is what makes Pages a fallback.
 - **The flip:** after one scheduled run has uploaded by itself (from Task Scheduler, reading the token
   file), the old address `skfd.github.io/sc-open-quests/` gets a redirect that keeps path, query and
@@ -5803,8 +5804,41 @@ file for its own last days: a country page downloaded `latest/<date>/world.json`
 | `place/<id[:2]>/<id>.json` | `id`, `name`, `subtype`, `cc`, `first`, `from` when not 0, and `quests`: the place's whole series as change points `[day, open, aged]` | when its bytes changed | `max-age=86400` |
 | `children/<p[:2]>/<parent>.json` | `quests`, the names this file uses, in the world's order; `places`: child id to `{<index into quests>: [open, aged, openBack, agedBack]}` | when its bytes changed | `max-age=86400` |
 
+**The counted cities (2026-11-25).** The world counts each of config/cities.json's cities inside its own boundary
+(`osm-<cityId>`), and the same build publishes them: the page reads a city's days from `first` on here, and only the
+dates before it from the site's `docs/data/history/<cityId>.json`. `latest.json` then has `city` and `cityParts`.
+
+| file | holds |
+|---|---|
+| `city/<cityId>.json` | a place file's form: `id`, `name`, `first`, `from` when not 0, `quests` |
+| `city-parts/<cityId>.json` | a children file's form over the city's registered parts (config/parts), and `noFile`: the parts with no place file, which have had no quest on any day |
+| `cities.json` | `open`: each city's open quests on `date`, over the quests asked there and on by default |
+| `city-trends.json` | `open`: the same on every day from `first` |
+| `city-quests.json` | a children file's form over the cities, for the compare view |
+
+A part's own days are its place's, `place/<id>`. A quest a file leaves out is 0 where `quests.json` says the site
+counts it in the city, and a quest it says is not asked there is not shown. Checked 2026-11-25 against that day's
+`docs/data` for every city, part, quest and date: 44,355,752 values, 0 different.
+
+**`docs/data`'s own city files end on a set day (2026-11-25 on, `config/city-files.json`'s `until`).** `history/`,
+`trends.json`, `compare/`, the region snapshots and `cities.json`'s counts are built from the days up to it, so `run.py
+history` writes the same bytes whatever the newest day is, and a new day needs no commit and no deploy of the site:
+`run.py site` publishes the place files each day and deploys only when the tree of `docs/` or `config/` is not the one
+deployed last (`data/site-deployed.json`). What is still made from `config/`: `quests.json` (a release), `parts/`,
+`coverage.json`, the list in `cities.json`.
+
+- The page reads the files for the dates before `latest.json`'s `first`, names and areas. Without sc-data it shows
+  them as they are, under their own date. Widgets from before 2026-11-25 stop at that day, also under their own date.
+- `until` is the last day published before the change, not the last before `first`, so the change moved no byte of
+  `docs/data`, and what is shown without sc-data is as new as it can be without a daily build.
+- **To add a city, set `until` on** to a day the world counted it: without any day it has no files, and `history`
+  stops and says so. `until` can go on, never back (`history` refuses to lose a published date).
+- To undo: revert the commit; the next `run.py site` writes every day since, from the world's counts.
+
 - **Days are numbers.** The published days are every day from `first` through `date` with no gap, so day 0 is
-  `first` and a point's `day` needs no date list. The build stops if the gated days have a gap.
+  `first` and a point's `day` needs no date list. `latest.json`'s `questsFrom` (there when not empty) is the day
+  number from which the world counts a quest a StreetComplete release added after `first`: before it, no count
+  (null, not 0), so a release does not draw a jump or enter a change. The build stops if the gated days have a gap.
 - **`v` is the publish's token** (a hash of the date and every file's hash). The page asks for every file but
   `latest.json` as `<path>?v=<v>`. Cloudflare's cache keys on the query string (checked on the bucket: MISS, then
   HIT), so each publish is a new address and yesterday's cached copy is never served for today's `v`. The files

@@ -6,7 +6,8 @@
 //
 // How many StreetComplete quests are open in a city or one of its neighbourhoods, or for one quest type
 // there, how that moved over four weeks, and which quests moved this week. Data:
-// https://street-complete-statistics.comentality.com (a day or more old: the widget always says "as of").
+// https://street-complete-statistics.comentality.com and its daily count of the whole world,
+// https://sc-data.comentality.com (a day or more old: the widget always says "as of").
 //
 // Install: get Scriptable from the App Store, put this file in Scriptable (iCloud Drive › Scriptable,
 // or paste it into a new script), add a Scriptable widget to the home screen, long-press it › Edit
@@ -16,8 +17,13 @@
 //
 // A port of the Android widget's model (Summary.kt, Movers.kt), pinned on the same fixtures by
 // ios/test/model.test.js. GPL-3.0. Quest names are StreetComplete's (Tobias Zwick and contributors).
+//
+// Not made by the StreetComplete project. The script fetches only from the two hosts below and sends
+// nothing about you: https://street-complete-statistics.comentality.com/privacy/ and .../terms/
 
 const BASE = "https://street-complete-statistics.comentality.com";
+// The world's daily counts, which the site reads too.
+const WORLD = "https://sc-data.comentality.com";
 const DEFAULT_CITY = "Toronto";
 const VERSION = "0.1.0";
 
@@ -29,28 +35,60 @@ function epochDay(iso) {
   return Math.round(Date.UTC(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10)) / 86400000);
 }
 
+/** epochDay's inverse. */
+function isoDate(day) {
+  return new Date(day * 86400000).toISOString().slice(0, 10);
+}
+
 /**
- * One city's series from data/history/<cityId>.json, or one part's from data/history/<cityId>/<partId>.json
- * (the same shape, plus the part's id and the name-layer file the site finds it by). A missing count
- * stays null, never 0.
+ * The newest published day, from the world's latest.json: v is the publish's token, first is day 0 of every
+ * series, questsFrom the first counted day's number of a quest StreetComplete added after it. (The format is
+ * in sc-open-quests' DESIGN.md.) Throws on a schema this script does not read, so the last good copy stays.
  */
-function parseHistory(json) {
+function parseLatest(json) {
   const root = typeof json === "string" ? JSON.parse(json) : json;
-  const n = root.dates.length;
+  if (root.schema !== 2 || !root.v || !root.city) throw new Error("latest.json is not one this script reads");
+  const { v, date, first, city, place, cityParts } = root;
+  return { v, date, first, city, place, cityParts, questsFrom: root.questsFrom || {} };
+}
+
+/**
+ * A city's or neighbourhood's series from its world file, whose quests hold change points [day, open, aged],
+ * each good until the next. The quests are those [counted] (the site counts them in the city): one the file
+ * leaves out has been 0 on every day. Points past [latest]'s date are not read, so a file newer than [latest]
+ * gives that day's numbers. Before a quest's first counted day it is null, never 0. [place]: { cityId, name,
+ * part }, part being { id, in } or null.
+ */
+function worldHistory(latest, file, counted, place) {
+  const first = epochDay(latest.first);
+  const days = [];
+  for (let k = file.from || 0; k <= epochDay(latest.date) - first; k++) days.push(k);
   const quests = {};
-  for (const name of Object.keys(root.quests)) {
-    const q = root.quests[name];
-    const fill = (a) => Array.from({ length: n }, (_, i) => (a && i < a.length && a[i] != null ? a[i] : null));
-    quests[name] = { open: fill(q.open), agedOnly: fill(q.agedOnly) };
+  for (const name of counted) {
+    const points = file.quests[name] || [];
+    const since = latest.questsFrom[name] || 0;
+    const open = [], agedOnly = [];
+    let next = 0, o = 0, a = 0;
+    for (const day of days) {
+      while (next < points.length && points[next][0] <= day) [, o, a] = points[next++];
+      open.push(day < since ? null : o);
+      agedOnly.push(day < since ? null : a);
+    }
+    quests[name] = { open, agedOnly };
   }
-  const part = root.part ? { id: root.part, in: root.in || null } : null;
-  return { cityId: root.city || "", name: root.en || root.name || "", part, dates: root.dates, quests };
+  return { ...place, dates: days.map((k) => isoDate(first + k)), quests };
 }
 
 /** The names of the quests on by default, from the site's data/quests.json. */
 function parseDefaultOn(json) {
   const root = typeof json === "string" ? JSON.parse(json) : json;
   return new Set(root.quests.filter((q) => !q.defaultDisabled).map((q) => q.name));
+}
+
+/** The names of the quests the site counts in a city, from the same file. */
+function parseCounted(json, cityId) {
+  const root = typeof json === "string" ? JSON.parse(json) : json;
+  return root.quests.filter((q) => q.status && q.status[cityId] === "counted").map((q) => q.name);
 }
 
 const WINDOW_DAYS = 28;
@@ -135,7 +173,7 @@ function movers(h, defaultOn, asOf = null) {
   // Name order (as the site writes them) settles ties the same way as the mockup.
   const names = Object.keys(h.quests).filter((n) => defaultOn.has(n)).sort();
   const top = names
-    .filter((n) => h.quests[n].open[b] != null)
+    .filter((n) => h.quests[n].open[b] > 0)
     .map((n) => [n, h.quests[n].open[b]])
     .sort((x, y) => y[1] - x[1]) // stable: ties stay in name order
     .slice(0, 3);
@@ -284,7 +322,7 @@ function fold(s) {
   return s.normalize("NFD").replace(/\p{Mn}+/gu, "").toLowerCase();
 }
 
-/** The cities in data/cities.json: id, name, group, aka. */
+/** The cities in data/cities.json: id, name, group, aka, and the name-layer file its parts' pages are found by. */
 function parseCities(json) {
   const root = typeof json === "string" ? JSON.parse(json) : json;
   const regionGroup = {};
@@ -294,6 +332,7 @@ function parseCities(json) {
     name: c.name,
     group: c.group || regionGroup[c.region] || "",
     aka: c.aka || [],
+    in: c.in || null,
   }));
 }
 
@@ -395,21 +434,58 @@ async function cached(fm, dir, key, url, maxAgeMs, derive) {
   }
 }
 
+/**
+ * A world file and the latest.json it was fetched under, kept together: a series says when values change, so
+ * yesterday's file under today's date would read as a day without changes. Fetched when [latest] is a newer
+ * publish than the kept one's; the kept one when that fails.
+ */
+async function worldFile(fm, dir, key, latest, name) {
+  const path = fm.joinPath(dir, "world-" + key + ".json");
+  const have = fm.fileExists(path) ? JSON.parse(fm.readString(path)) : null;
+  if (have && have.latest.v === latest.v) return have;
+  try {
+    const req = new Request(`${WORLD}/${name}?v=${encodeURIComponent(latest.v)}`);
+    req.timeoutInterval = 20;
+    const text = await req.loadString();
+    if (req.response.statusCode !== 200) throw new Error(`HTTP ${req.response.statusCode}`);
+    const value = { latest, file: JSON.parse(text) };
+    fm.writeString(path, JSON.stringify(value));
+    return value;
+  } catch (e) {
+    if (have && !/HTTP 404/.test(String(e.message))) return have;
+    throw e;
+  }
+}
+
+/** A neighbourhood's world file. One in its city's noFile has had no quest open on any day. */
+async function partFile(fm, dir, latest, cityId, partId) {
+  try {
+    return await worldFile(fm, dir, "place-" + partId, latest, `${latest.place}${partId.slice(0, 2)}/${partId}.json`);
+  } catch (e) {
+    if (!/HTTP 404/.test(String(e.message))) throw e;
+    const parts = await worldFile(fm, dir, "parts-" + cityId, latest, `${latest.cityParts}${encodeURIComponent(cityId)}.json`);
+    if (!(parts.file.noFile || []).includes(partId)) throw e;
+    return { latest: parts.latest, file: { quests: {} } };
+  }
+}
+
 async function load(param) {
   const fm = FileManager.local();
   const dir = fm.joinPath(fm.documentsDirectory(), "open-quests");
   if (!fm.fileExists(dir)) fm.createDirectory(dir, true);
   const p = parseParameter(param);
 
-  const cities = await cached(fm, dir, "cities", `${BASE}/data/cities.json`, 24 * HOUR, (t) => parseCities(t));
+  const cities = await cached(fm, dir, "cities-2", `${BASE}/data/cities.json`, 24 * HOUR, (t) => parseCities(t));
   const city = findCity(cities, p.city);
   if (!city) return { error: `No city called “${p.city}”.`, hint: "Long-press › Edit Widget › Parameter" };
-  // Only the set is kept: quests.json is 742 KB, mostly per-city status the widget does not need.
-  const defaultOn = new Set(await cached(fm, dir, "default-on", `${BASE}/data/quests.json`, 24 * HOUR,
-    (t) => [...parseDefaultOn(t)]));
+  // Only the names are kept: quests.json is 742 KB, mostly the status in every other city.
+  const { on, counted } = await cached(fm, dir, "quests-" + city.id, `${BASE}/data/quests.json`, 24 * HOUR, (t) => {
+    const root = JSON.parse(t);
+    return { on: [...parseDefaultOn(root)], counted: parseCounted(root, city.id) };
+  });
+  const defaultOn = new Set(on);
   let place = city.name;
-  let key = city.id;
-  let url = `${BASE}/data/history/${encodeURIComponent(city.id)}.json`;
+  let part = null;
   if (p.part) {
     let parts;
     try {
@@ -419,22 +495,21 @@ async function load(param) {
       if (/HTTP 404/.test(String(e.message))) return { error: `${city.name} has no neighbourhoods counted.` };
       throw e;
     }
-    const part = findPart(parts, p.part);
-    if (!part) return { error: `No neighbourhood “${p.part}” in ${city.name}.`, hint: "Its name as on the city’s page" };
-    place = part.en || part.name;
-    key = `${city.id}-${part.id}`;
-    url = `${BASE}/data/history/${encodeURIComponent(city.id)}/${encodeURIComponent(part.id)}.json`;
+    const found = findPart(parts, p.part);
+    if (!found) return { error: `No neighbourhood “${p.part}” in ${city.name}.`, hint: "Its name as on the city’s page" };
+    place = found.en || found.name;
+    part = { id: found.id, in: city.in };
   }
-  let raw;
+  const latest = await cached(fm, dir, "latest", `${WORLD}/latest.json`, 2 * HOUR, (t) => parseLatest(t));
+  let got;
   try {
-    raw = await cached(fm, dir, "history-" + key, url, 2 * HOUR, (t) => JSON.parse(t));
+    got = part ? await partFile(fm, dir, latest, city.id, part.id)
+      : await worldFile(fm, dir, "city-" + city.id, latest, `${latest.city}${encodeURIComponent(city.id)}.json`);
   } catch (e) {
-    if (p.part && /HTTP 404/.test(String(e.message))) return { error: `No data for ${place} yet.` };
+    if (part && /HTTP 404/.test(String(e.message))) return { error: `No data for ${place} yet.` };
     throw e;
   }
-  const h = parseHistory(raw);
-  if (!h.name) h.name = place;
-  if (!h.cityId) h.cityId = city.id;
+  const h = worldHistory(got.latest, got.file, counted, { cityId: city.id, name: place, part });
 
   let quest = null;
   if (p.quest) {
@@ -774,7 +849,7 @@ async function makeWidget(param, family) {
   else if (family === "small") buildSmall(w, s, result.week, locale);
   else if (family === "large" || family === "extraLarge") buildLarge(w, s, result.week, locale);
   else buildMedium(w, s, result.week, locale);
-  // The site publishes once a day (about 13:00 Toronto); iOS decides when this really runs.
+  // The counts are published once a day; iOS decides when this really runs.
   w.refreshAfterDate = new Date(Date.now() + 3 * HOUR);
   return w;
 }

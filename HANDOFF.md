@@ -861,6 +861,40 @@ its own static page or a Worker that rewrites the head; the state is in the quer
   cities (about 4,350); Latin, Cyrillic and Greek names; the general card for the rest; no rendering on demand at
   release. Also the owner's: what happens at the Workers limit, and the wording "Canada and Europe".
 
+### General card: the world's numbers (2026-11-25, 13:31; settled by the owner, on `share-previews`, not merged)
+
+- `design/project-card.svg` and `.png` (2400x1260), written by `design/project_card.py` from the published files on
+  sc-data: 576,650,884 open on 2026-11-24 (28,599,114 resurvey), 159 types, 248 countries and dependencies, the six
+  largest types, +1,568,038 since 11-01, a strip of the total per day. The table and the 248 series agree. The
+  PNG is a headless Edge screenshot, taken with no loop and no city run.
+- **Owner, 11-24 and 11-25:** statistics on it; **no world map** ("world stock image"); B's and C's data together;
+  **the world, not 147 cities**. The 147-city card is in git at `2b8ac4bb`, mockups A, B and C at `84057012`.
+- **The overlaps of the world total, measured:** the land outlines of the 248 (one each, 248 codes) overlap in 11 pairs,
+  about 1,993 km2, 1,867 of it CL and AR (the icefield), then HR and RS 108. So about 125 km2 elsewhere; its quests were not
+  counted. Rounded to a million the total stands. Gaps (land in no outline) not measured.
+- The first world day is 11-01, so the world has no 2017 line and the strip is flat. Owner, 11-25: ok, "at least
+  it looks nice" (taken as: keep it; the version with a bar per day is in git at `f03d87c9`).
+- **Owner, 11-25: "we should use this one yes".** On `share-previews`: `docs/img/share-card.png` is this card, its `?v=`
+  and alt text follow it (`python design/project_card.py && python design/render_share_card.py`, in a gap). The three
+  tests of `tests/test_preview_worker.py` pass there; the rest of the suite was not run. **Not merged: merging publishes.**
+- **Decided (owner, 11-25):** redrawn **monthly** and on release day; the title is **"Open StreetComplete quests around
+  the world"** (title, `og:title`, the page's heading; the descriptions say "places around the world", Claude's words), on
+  the branch; **merged on release day, after that day's redraw**, so not before.
+- **To do, for the next session (owner, 11-25: "we will pick up in next session"), in this order.** 1 to 3 in a gap of
+  the world loop:
+  1. Run the branch's tests: none were run since the title change (`55cdd007`; the loop was running), and before it only
+     the three of `tests/test_preview_worker.py`.
+  2. Release day (about 12-01): on the branch, `python design/project_card.py && python design/render_share_card.py`,
+     look at `docs/img/share-card.png`, commit.
+  3. Merge `share-previews` into main (the owner's yes of 11-25 is for release day, after the redraw; merging publishes
+     the tags and the card with the next daily run). It was 88 commits behind on 11-25; `docs/index.html`, HANDOFF and
+     DESIGN change on both sides, and `design/project-card.*` and `project_card.py` are on both.
+  4. After the merge: write what redraws the card monthly, in a loop gap. Nothing does yet.
+  5. The Worker's deploy is separate and needs the owner's go (with the $5 limit question above).
+- **Owner's, if wanted:** the descriptions' wording (Claude's words); "248 countries and territories" counts every Overture
+  country and dependency entry, possibly its placeholders too. **Known limits, left as they are:** at 360 px wide the small
+  labels do not read; a centre square crop loses "577".
+
 ### Share previews: built on `share-previews`, not merged, not live (2026-11-23, afternoon; owner: "build it, i will upgrade account later")
 
 - **Workers Paid: the owner says subscribed; Workers spending limit $5 set (2026-11-23, by Claude in the owner's Chrome).**
@@ -3055,7 +3089,18 @@ wording and tab structure as a first draft open to change, not as decided design
   the world's alone. Seven tests OK on made-up data; **not yet run on the real counts** (waits for the loop's day). Nothing
   calls it and `docs/data` is refused without `--live`. The rule for which quests a city counts matches the newest
   snapshot of all 147 cities. The world has no `taggedNodes`/`taggedWays`/`openAllNotes` (the site reads none of them).
-  Next: build into a scratch folder, compare with today's files, then ask the owner before anything goes live.
+  **Run on the real counts 11-25, 01:31-01:45, beside no loop (into a session scratch folder; nothing of main or the site
+  written): it agrees.** 23 days in about 5 min, the build 2 min 36 s, 4,654 files. Against `docs/data`: all 52,728 city
+  series before 11-01 identical; the quest sets and the null pattern identical in all 147 cities; Europe's four regions
+  on the same day, 11-03 to 11-23: sums of `open` +4 to +10 of 19 million, 99.7% of cells equal, `agedOnly` 99.97 to 100%;
+  the other regions (world D+1 against city D) -0.001 to +0.005%, 98 to 99% equal (93% on 11-04, few cities). **11-01 and 11-02
+  step: the city run was on StreetComplete 64.0 on 11-01 and part of it on 11-02, the world is on 64.1 from 11-01**
+  (+0.27% in Europe, nearly all `AddAcceptsCards` and `AddOpeningHours`), so the release step in the charts moves to 11-01.
+  The world fills the days the city run missed (Toronto: 161 dates, 157 before). Parts: the same 4,214 files, the same 86
+  empty, world 11-23 against city 11-22: 200,271 cells equal, 950 differ, sums +571 of 23.8 million. One quest left out:
+  Bratislava's `AddCycleway` (open in the world there, not a quest the city counts). Full tests on the branch: 271 OK.
+  DATA-FORMAT.md written. `coverage.json`, `quest-releases.json` and `sc-releases.json` are not part of this build. **Not done:
+  anything live; the dates' guard needs 11-24 closed. Next: the owner's word on going live.**
 - **Day 11-24 starved, 11-24 19:05 (not stopped yet; the engine room gives up about 19:23).** Tier 2 `new`, about 112 of 127 groups;
   no engine since 18:23: 10 GB of commit left, 16 needed (8 and 8 kept back), disk 42 GiB. Commit was 98.6 of 108.6 GB at 19:04:
   the loop's own python 16.9, 54 claude processes 16, pools 23, Windows Terminal 4.5, WSL/Docker 6 (one container,
@@ -3063,6 +3108,113 @@ wording and tab structure as a first draft open to change, not as decided design
   after TaskStop said they were stopped (their `.exe` children outlive it); ended at 19:04, about 2 GB came back. The
   neighbourhoods session was also running scripts (`areas_to.py`, about 3 GB) from 18:30 on. Owner, 19:06, asked what may be
   closed: **"Nothing, let it stop"**; resume in a quiet gap. `retire-cities` waits for the day to close, not for its stop.
+  **Corrected 20:50: it stops about 22:24, not 19:23.** Each of the four workers gives up after its own hour and takes the next
+  group: f112, f114 to f116 gave up about 19:22, f117 to f120 about 20:22, f121 to f124 wait until about 21:22, then f125 to f127.
+  `rect_rows` leaves its pool without cancelling what is queued. f112's failure is already recorded, so this run ends in STOPPED
+  even if memory comes back (read from the code; not waited out). 112 of 127 groups have an engine's result. 20:47: commit 99.8
+  of 108.6 GB, disk 40.7 GiB, 0.7 over the floor under which `loc advance` and `compact` refuse.
+- **STOPPED 22:23:37 on 11-24, 11-24 in `world finish` (tier 2 `new`, f112 first), for want of commit; not restarted, owner
+  asked.** Copy: `.scratch/anomalies/STOPPED-2026-11-24.txt`; STOPPED is still in place. The process freed its memory by
+  22:25; task Ready. `day.pkl` there, `finished` absent: the documented resume redoes `finish`. **At rest, 22:27: 26.4 GB of
+  commit left (82.2 of 108.6 committed), and the loop's python itself reached 17 GB in tier 2 `new`: a resume now would
+  stand at 9 GB again and starve the same way.** It needs about 34 GB at rest for one engine at a time, 41 for two (11-23 at
+  rest: 37). Read off the log: 22 GB left at 17:20 (`old`, one engine alive), 16 at 17:30 as `new` began, falling to 7.
+  **Disk 40.3 GiB:** all 127 of `before/`'s files (52.6 GB) are already replaced, so the resume's restore gives about 52 GB
+  back and finish takes it again: expect about the same low, on the 40 GiB floor. It wants about 10 GiB more free first.
+  Nothing closed or deleted. When both are there: remove STOPPED, start the loop with `WORLD_T2_WORKERS=2`.
+- **Resumed 23:06:34 on 11-24 (owner, 23:00: "yes enable and start engine to run. we want to progress", to closing Docker/WSL
+  and idle sessions).** Loop pid 62096, `WORLD_T2_WORKERS=2`, two group workers; the world was put back to 11-23 at 23:07:50,
+  disk 40 -> 93 GiB. Commit at rest 35 GB (26 before): Docker Desktop and WSL stopped (`docker desktop stop`, so `onagri-pg`
+  comes back with Docker), and seven finished sessions closed: Osmium Windows speed, Skills and steward review, Weekly advisor
+  11-23, Should the done-check exist, Task Beholder, Crs Guessing Game, mapsme-fork-watch-2d (transcripts kept). `vmmem`'s
+  4 GB is another virtual machine (`vmwp`, since 11-21), not WSL's; left. **35 - 17 - 8 leaves room for one engine at a time,
+  barely.** Disk nothing deleted: the low will be near 40 GiB again, where `loc advance` and `compact` refuse; those steps
+  resume cheaply once disk is there. Candidate, not approved: `.scratch/planet-day/clip-1103` to `-1105`, 7.3 GB.
+  **Deleted at the owner's word, 11-25 about 17:35** (43.2 -> 50.5 GiB free, 11-25's tier 2 `new` just done); `.scratch/planet-day/run*.sh`,
+  one-off scripts of 11-16, still name them and would cut them again from Europe clips that may be gone.
+  **Docker must be started again before the 12:15 city run on 11-25.**
+- **11-24's gate PASSED; STOPPED 01:30:14 on 11-25 at `compact`, under the disk floor (39.0 GiB free), nothing written; not
+  restarted.** Tier 2 ended 01:01, gate 20 of 32 equal, clip 19,335,063, world 19,335,075 (+12), worst city 0.00177%. Store at
+  generation 23, node file and world at 11-24, `finished` there; what is left is `compact`, the day's record, the delete of
+  `world-days/2026-11-24` and the facts. Commit 48 GB free now. Copy: `.scratch/anomalies/STOPPED-2026-11-25.txt`.
+  **Clearing the floor is not enough this time: this compaction copies packs 18 and 21, 41 GiB, before it deletes anything**
+  (11-21's copied 0.09), and only the start is checked against the floor: 39 + the clips' 7.3 GiB would pass and run the disk
+  down to about 5. It wants 82 GiB or more free. `world-days/2026-11-24/before` (52.6 GB, the world at 11-23, hard links no longer shared) is the
+  day's way back, read only by a `finish` that did not end; after the gate nothing reads it, and the loop deletes it minutes
+  after `compact`. Deleting it by hand first gives 91 GiB. **Asked of the owner, nothing deleted.** Docker is still off.
+- **11-24 CLOSED 02:12:31 on 11-25** (owner, 02:00: "go ahead"): `before/` deleted (disk 31 -> 85 GiB: 8 GiB had gone in
+  the half hour before, not traced), loop restarted 02:03. `compact` removed 59.5 GiB of files in 169 s, low 44 GiB; 129 GiB
+  free after. Store generation 23; world 24 gated days, 11-01 to 11-24; its facts written by hand (02:20).
+- **`retire-cities` (37a66bd3) and `world-cities` (a2a626bf) merged into main, 02:13-02:20; 271 tests OK; worktrees and
+  branches removed.** `kk-SCOpenQuests-inputs` is registered (daily 11:15) and ran once, 02:13-02:19: the Europe clip of
+  11-25 with diff 5187, the notes dump of 11-25, the two backups, "inputs done". **`run.py history` on the merged
+  code changes 148 files, by `highwayKm` alone (the per-road-km figure the owner dropped); committed.** The 12:15 city run deploys
+  `docs`, so the dropped column reaches the site then. Docker is running again (`onagri-pg` up).
+  Still the city run's: the site deploy (`publish_cloud`) and the city counts. Still open: the owner's word on switching the
+  city pages to the world; a new home for the deploy; then the city task off.
+- **The city pages are switched to the world's counts on main (owner, 11-25, 03:20: "yes switch"); fb0d8422 code, 20e9fe45 data;
+  pushed 06:47, below.** The 12:15 city run deploys it from the working tree; **it probably will not push: `publish` returns before
+  `git push` when `docs/data` has nothing new to commit, and from now on each day's data is committed only when a new gated day
+  changes it. So a push is asked for, or built into the new deploy.** `run.py history` for `docs/data` first writes the world's missing
+  days (`data/archive-world`, 19 s each) and always joins them; `migrate_archive`, which each city `count` runs first, would have
+  moved the world's published snapshots into the city archive: it now skips them. 273 tests OK; a second build changes 0 files.
+  Against the files before: 52,728 series before 11-01 identical, no date and no quest lost, Europe's 11-24 +6 of 19,335,063.
+  Wording: the footer says "OpenStreetMap at 00:00 UTC that day", neighbourhoods "from the daily count of the whole world".
+  Toronto, Casa Loma, Berlin, Paris and the compare page opened locally, no page error.
+  - **The pages are older until the deploy moves:** at 12:15 the newest gated day is yesterday's 00:00 UTC. Europe is a day
+    behind what the city run gave, Canada and Germany's three about 21 hours, under the same date.
+  - The task's own `python` imports numpy; the phone widget reads none of the fields the world's snapshots lack.
+  - The city run still counts all its regions: nothing but `world_compare.py` reads them now.
+  - Way back: `git revert 20e9fe45 fb0d8422` (the archive is whole), then `run.py history` and a deploy; a revert alone
+    leaves the live site as it is.
+  **Pushed 11-25, 06:47 (owner: "pusj and thats it?").** The site itself changes at the 12:15 deploy.
+- **Publishing is the world run's last step (owner, 11-25: "do both please"; step 1).** `planet_store_day.py` ends with `run.py site`
+  (`publish()`, after RUNNING is gone; also when it took no day or stopped; log `logs/site.log`): first `world_publish.py daily`, then
+  history, commit, push and deploy if the site lacks the day or docs/ changed. `inputs` (11:15) runs it again for what failed.
+  Tasks `kk-SCOpenQuests-site` and `-worldpub` are removed (XML in `~/Code/.task-backups/*-removed-2026-11-25.xml`). The 20 h and 36 h rules
+  went: **a committed docs/ change goes live at the next run.** A catch-up of several days publishes once, at its end.
+  **Step 2, on main (1a7dd1f4, 11-25 12:06):** the page joins the history file's dates before 11-01 to the world's days on sc-data;
+  `world_publish.py` writes `city/`, `city-parts/`, `cities.json`, `city-trends.json`, `city-quests.json` (DESIGN.md, "The counted
+  cities"). Without them (or with sc-data down) the page falls back to today's files. Compared in a browser for all 147 cities,
+  4,214 parts, 193 compare files, trends and totals: 44,355,752 values, 0 different (`.scratch/city-test`). 285 tests OK.
+  **Done 11-25, 12:53-13:24:** `planet_store_day.py --max-days 0` ran the hook (exit 0, 31 min: 23 of them the events cache, rebuilt because
+  the city list joined its stamp); 297 city files up, verify and live check 0 mismatches; live Toronto, Berlin and compare read them.
+  Not yet seen: the hook after a run that took a day (tonight). **The cache rebuild costs about 1 min per gated day, so a changed
+  quest list (an SC release) or city list costs 25 min now and hours by next summer; nothing done about it.**
+  **`latest.json` gets `questsFrom` (d33b0565):** the first counted day of a quest a release adds, so it is null before (page and widgets), not
+  a rise from 0. Empty until SC's next release, so seen in tests only. The page's part goes live with the next `run.py site`.
+  **Both widgets read sc-data (owner, 11-25: "yes"; `../sc-open-quests-widget` c3cf6d6):** compared with the old files for 147 cities and
+  4,214 parts, 10.9 million values, 0 different; Android on the emulator, Scriptable in the preview. APK and script in ~/Dropbox/my-apps.
+  They still read the site's `data/cities.json`, `quests.json`, `parts/` and icons.
+  **`docs/apps` has the new script (285f9061; owner, 11-25: "yes"),** the widget repo's checks all ok; live with the next `run.py site`
+  (tonight's loop), so check `/apps/open-quests.js` after it. iPhones that have the old script keep it until it is downloaded again.
+  **Live 11-25 18:40 with the loop's publish of 11-25** (`/apps/open-quests.js` equal to `docs/apps`).
+  **The city files end on a set day: merged 11-25 18:50 (b4c1f7b6; owner: "yes, do it in a safe way").** `config/city-files.json`
+  `{"until": "2026-11-25"}`: `history/`, part series, `trends`, `compare`, snapshots and `cities.json`'s counts stop there, so a new day
+  needs no commit and no deploy (DESIGN.md, "docs/data's own city files end on a set day"; undo = revert, the next site run writes
+  the days since). Not 10-31 as first said: the last published day, so the switch moved no byte and the no-sc-data fallback is as new
+  as it can be. `run.py site` deploys only when the tree of `docs/` or `config/` is not the deployed one (`data/site-deployed.json`
+  keeps "day" too, for the old code). **Checked before merging:** 290 tests OK; the branch's `history` in main wrote 0 files
+  (`git status docs` clean); pages from a copy of `docs/` with the 11-24 data, through a local CORS proxy to sc-data and with
+  sc-data down: Toronto, picker, compare (175-185 kinds), Berlin, map, a part (Agincourt North), the parts card from the files'
+  own day; no error but the blocked fetches. **After:** `run.py site` once: history 0 files, nothing committed, 1 file deployed
+  (`app.js`, live equal), pushed; a second run "nothing to do", pushed.
+  **Not yet seen:** 11:15 `inputs` and the 12:15 city run on 11-26 (history should change 0 files, no data commit), and the loop's
+  publish of 11-26 (place files only, no commit, no deploy, main pushed). **Then:** the owner's yes to turn off `kk-SCOpenQuests`
+  (12:15); `data/archive` and the monthly backfill stay. **Left:** the owner's phones on the new builds (Android not confirmed).
+- **The site's deploy is its own run, and the world's city pages are live (owner, 11-25: "yes"; 194d497b, 44ec7856).** `run.py site`, task
+  `kk-SCOpenQuests-site`, hourly 07:20 to 23:20, log `logs/site.log`: when the newest gated day is not the one in
+  `data/site-deployed.json` (not committed) it does history, commit, push (now also with no new data) and deploy; a change of
+  `docs/` alone goes up 20 h after the last deploy. Not while the loop's RUNNING is there (unless the last deploy is 36 h old),
+  under 8 GB of commit, beside another holder of `pipeline.lock`, or off main: the next tick tries. 2.4 GB of commit at its peak. 281
+  tests OK. **First tick 07:20-07:22 on 11-25:** pushed, 4,465 files up; `cloud_publish.py --check` 9,338 files equal live;
+  a second run said "nothing to do". Not yet seen: a tick that takes up a new day by itself (tonight's 11-25 day, or 07:20 on 11-26).
+  `update` (12:15) does the same deploy, so both may run until the city task goes.
+- **`world_compare.py` rerun for 11-14 to 11-24 (07:05, beside no loop; `.scratch/world-compare-1124`): it agrees.** `open`: 1,210 city-days on the
+  nearest clock, 725 exact, median 0.000%, p90 0.003%, worst 0.212% (Oshawa 11-23, clocks 2.6 h apart); same clock (Europe) within
+  0.002%; sums +2,270 of 363 million. `agedOnly`: 1,126 of 1,210 exact, worst 1.085% (Oakville, 11-20), sums +100 of 11.4 million.
+  **Left: the city task off (asked of the owner 11-25; wait for one new day taken up by the site run).** The loop does not need it:
+  without a city run its `SCHED` check finds no "=== download" and does not wait.
 
 ## City neighbourhoods on the world's counts, and places with nothing open (2026-11-24, evening; nothing built)
 
@@ -3165,7 +3317,18 @@ wording and tab structure as a first draft open to change, not as decided design
     Willow Park: a place=suburb multipolygon of 2024-04-05 over a 2019 boundary; Bayview Woods-Steeles in 2024-03 and 2025-02;
     Centennial a 2011 relation and a 2016 way; Cantley Village a 2012 CanVec import and a 2024 boundary; Les
     Bassins du Nouveau Havre in 2017 and 2024. Overture seems to make one division per OSM object (an inference; not documented
-    where I looked). Guelph's are deliberate, so a fix in OSM is not ours to make there.
+    where I looked). Correction: Guelph's plain names are the owner's own edit
+    (changeset 187822521, user skfd, from ~/Code/guelph-boundaries), whose README already says the group relations should lose
+    `place=neighbourhood`.
+  - **Owner (2026-11-24): fix OSM where it should be fixed, in cowork; here, do the proposal.** The OSM side is handed
+    to a session in ~/Code/cowork (`osm-duplicate-neighbourhoods/BRIEF.md`; nothing edited in OSM). Here: branch
+    `dropped-places` (worktree `../sc-open-quests-dropped`, sparse: config, tools, tests), commit fbd81524, **not merged; its
+    own tests and test_parts and test_places pass (27, 2026-11-24 22:41, in the loop's gap); the whole suite and the real
+    name-layer build with the list have not been run**: `config/dropped-places.json` (16), the registry without them, `run.dropped_places`, readers in
+    `add_parts.py` and `places.py`, `tests/test_dropped_places.py`, DATA-FORMAT "Dropped places". Left: the owner's look at the list, the whole suite at merge, then merge, before `place-ids`, rebuild the name
+    layer, publish (16 deletions). Merging makes the next
+    daily run stop the series of the 16 and drop their files; the archive keeps the old counts. The squares can use the same file later (`why` is
+    `duplicate` now, and the file's checks must learn the new reason).
 - **Squares, safety check (owner leans to drop, wants a check so a place like Superilla del Poblenou is not lost; not decided).**
   Size alone fails: median 1,064 m2, 87 are 10 ha or more, among them Tiananmen and empty plazas. Two checks on every square:
   OSM says residential (19 of the 8,892 whose tags were read: 0.5 ha+, or 20+ building quests, or 100+ open) or building
@@ -4021,3 +4184,141 @@ at once to 0.28 GB (40.8 GiB).
   Cadence: every release diffed, adopted only at a reseed (about quarterly).
 - **Not measured:** how much the 25,910 outlines changed (needs the 4.6 GB of outlines), the cost of the reseed with them.
 - **Open for the owner:** which release at the next reseed; the crosswalk; whether a lost place's page stays as "ended".
+- **Owner's answers (wizard, 2026-11-24, 20:00):** a lost place's page **stays, marked ended**. OVERTURE.md and `overture_diff.py`:
+  **not yet**. Ids: "we should migrate to new ids, whole system including references" (so not the crosswalk as proposed in (c)), and the
+  principle is **keep up with Overture and back-migrate our data to it**. Both and the release are **being discussed**. Facts for it:
+  - *The ids are public, not only internal*: `?place=`, `?in=`, `?part=` links, the bucket's paths, `docs/places` (4,290 files), 4,214
+    `history/<city>/<id>.json`, snapshots, facts, the issue form, the iPhone widget's saved part. No redirect exists. The old -> new map
+    (same OSM object) is needed either way: for migration it renames our data, and a small published file sends old links on.
+  - *Renaming ids in the past is cheap*: a day's counts name their places in one list (`counts.json` `parts`, 29 MB a day); facts, the
+    archive's `parts` keys and the registry likewise. Not built or timed.
+  - *Outlines and new places cannot be applied to past days that way*: a day keeps counts per place, not positions (`world.bin` has
+    lat/lon and one place-set number, for the newest day only). It needs a recount from the planet at the date, and the history file was deleted
+    11-16. Release 2's monthly backfill recounts on whatever outlines are pinned then.
+  - *A reseed costs about 4.5 h* (11-01: 23:27-03:49, HANDOFF "Step 3, the seed at 11-01"), so a monthly move with a reseed is
+    affordable on paper. Disk and memory as of tonight are not (40.8 GiB, 9 GB of commit).
+- **Owner, 2026-11-24, 20:20 (discussion, nothing built):** no recount, **the jump in a series at a move is accepted**; 11-18.0 is skipped
+  ("we can skip it and do the reseed on next one", read as 12-16.0). Ids: Overture's will not do, "more permanent ids maybe name based
+  or our internal ones?". Starting point, not a command: at each release match places agentically, suggest replacements for
+  deleted ones, mindful of widgets, place links and social shares.
+  - **Measured for it (`match.py`, 10-21 -> 11-18):** of 1,477 lost ids 676 have the same OSM object, 159 the same name within about
+    2 km, 642 neither. Of the 642, 124 overlap some place (bbox IoU 0.2+, 39 of them 0.5+), 518 overlap none, and for 510 of those the
+    parent lives on. So judgement is needed for some hundreds a month, not a million. 1,009 OSM objects ended in the month.
+  - **Names are worse as ids:** 48,730 places share name and parent with another, 351,901 name and country; 374 renamed and 1,135 moved
+    parent in the month.
+  - **Proposed:** our own id, the 12-hex ones frozen (every link works today), Overture's GERS and OSM ids being attributes that move.
+    Only exceptions are stored (about 700 a month): id, current GERS, OSM object, state (live, ended), successors. `place_id()` in
+    `places.py`, `add_parts.py` and `world_cells.py` becomes one function that reads it. Cities already work like this (`toronto`).
+  - **Not in the idea yet:** a link carries a second id, `?in=<cc>/<regionId>`; the iPhone widget finds a part by name too (aliases
+    for former names); a widget already on a phone knows no new format, so an ended place's file must stay where it is; the Android
+    widget has no place code (cities only, by grep); the share-previews branch needs an ended card; splits and merges have several
+    successors; an id can come back (24 did); squares and duplicates can use the same list ("covered by").
+- **Owner, 2026-11-24, 20:35, decided:** (1) **our own GUIDs, generated, the Overture-derived ids replaced everywhere, published files and
+  links included** ("we are in prerelease and can break anything we want including links"); this replaces "the 12-hex ones frozen".
+  (2) At a release a match is a **suggestion an operator judges**; ingesting an Overture release is always a manual agent-operator
+  job (no unattended adoption, no rule that decides alone). (3) The next release taken is **2026-12-16.0**. Not started: code and rename.
+  - **Timing:** Release 1 is about 12-01, so the id change goes **before it** (a pure rename, no reseed: the same places, outlines and
+    counts under other ids); Overture 12-16.0 comes after it, at the reseed due about 2027-01-04.
+  - **Rename surface (read 11-24):** `place_id()` is written three times (`places.py:41`, `add_parts.py:64`, `world_cells.py:177`);
+    `config/parts` (4,214), `docs/places`, `docs/data/{parts,history}`; W's `places.json`, 128 files' `parts/`, `place-sets.json`
+    (314 MB), 23 days' `counts.json` (1,018,647 place ids each, beside 688,181 `city:` and 147 `osm-` ones that do not change);
+    `data/facts` (3.7 GB), the archive's `parts` keys; the bucket (about 1.13M files: `--full`, and over `MAX_DELETE`); fixtures,
+    the issue form, widget. Publisher keys are 48-bit ints (`hexkey`, `idstr`; `app.js:1843`; `run.py:782`): a full GUID as the public
+    id needs those rewritten, the first 12 hex of a random GUID, unique by check, does not.
+  - **Design:** one registry (GUID, public id, GERS, OSM object, name, subtype, state, successors, since), the only source of a new id,
+    backed up to R2 before anything uses it: random ids cannot be derived again. One `tools/place_ids.py` for all readers.
+  - **Proof:** after the rename every place's counts equal the old ones under the map, every day, exactly.
+  - **Clashes:** `dropped-places` (16 ids, unmerged), `world-cities`, `retire-cities` and `share-previews` all hold place ids; merge or
+    translate them first. All of it needs a gap in the loop (RUNNING and starved tonight: 9.6 GB of commit, disk 40.7 GiB).
+- **Owner (wizard, 2026-11-24, 20:45):** rename **before Release 1**; public id **the first 12 hex of the GUID**; write the code now;
+  the rename, bucket and live site wait for a separate go. **Built, not run and not tested (syntax only): branch `place-ids`**
+  (worktree `../sc-open-quests-place-ids`, sparse: md, py, config, tools, tests), a439b588: `tools/place_ids.py` (registry, `mint` once
+  only), `tools/rename_places.py` (`plan`, `apply`, `check`), `places.py`, `add_parts.py`, `world_cells.py` read the registry,
+  `world_publish.py` (`ids` in its cache stamp, deletes in batches after `latest.json`, `--max-delete`), `archive_backup.py`
+  (`place-ids`), DATA-FORMAT, tests.
+  - **An open day holds the old ids** (`.scratch/planet-day/world-days/<day>/before/place-sets.json` and the dumps; 11-24 is open):
+    resumed after a rename it would bring them back, gate passing. `apply` refuses while a day is open, RUNNING or STOPPED.
+  - **Order, in a gap (nothing done):** (1) 11-24 closed, HOLD; whole test suite. (2) Merge or translate `dropped-places`,
+    `world-cities`, `retire-cities`, `share-previews`; merge `place-ids`. (3) `place_ids.py mint --src data/overture/world`, `check`,
+    `archive_backup.py --only place-ids`, **read it back before going on**. (4) `rename_places.py plan`, then `apply`, then
+    `check`; grep W for old ids outside `geometry`. (5) `places.py build` (engine), `run.py history`, `facts.py cities --force`,
+    `world --force`, `verify`; every place's counts equal under the map. (6) `world_publish.py build`, `verify`, `upload --print`, then
+    the owner's go: `upload --full --max-delete <n>`; **`rclone delete --files-from` first with `--dry-run`, its count must equal
+    the plan's** (untried: if the filter were ignored it would empty the bucket). `kk` `daily` fails until then. (7)
+    `state_checkpoint.py link`, `upload`; HOLD off; after the first day, `rename_places.py check` again.
+  - **Not looked at:** `.scratch/world-places/world/places.json` (the hard-link twin of W's) keeps old ids; `add_parts` and fixtures'
+    hard-coded ids; the spend of about 1.13M uploads (`spend_breaker` asks); the widget's and issue form's links, which break as
+    decided; memory of `apply` (places.json 395 MB, three copies) and about 1 GB of disk, unaffordable at 40.7 GiB.
+  - The GERS-derived ids stay in `gers` and in outline paths. The ingest tool for 12-16.0 (agent proposes, operator judges, ended pages,
+    suggested successors, `?in=`, former names) is not begun.
+- **Owner, 2026-11-24:** Release 1 **waits** for the id rename; 12-01 is the earliest date it may be considered, not a fixed one. Who
+  merges the other branches: "not sure operator will figure it out" (read as: whoever runs the rename decides then).
+  Read off the branches for that person (12-hex strings added against main, files shared with `place-ids`):
+  `dropped-places` holds ids in `config/dropped-places.json` (both `id` and `keeps.id`; `rename_places.py` config covers it) and shares
+  DATA-FORMAT, `add_parts.py`, `places.py` (conflicts likely); `world-cities` in `tests/test_world_cities.py` only (made-up data,
+  not checked), shares DATA-FORMAT; `share-previews` in `cloudflare/README.md` and two tests (real place ids in links: **these do
+  need new ids**, the rename does not touch them), no shared file; `retire-cities` and `world-stable` none (`retire-cities`
+  shares DATA-FORMAT). So `dropped-places` first, then `place-ids`, the rest in any order. Corrects the "Clashes" line above:
+  `retire-cities` holds no place ids.
+
+## Legal pages: the list agreed, nothing built (2026-11-24, late evening; owner: "this website needs terms of use and some other legal stuff like cookie consent")
+
+- **Checked first:** no cookies (none set in `docs/`, no `Set-Cookie` and no Cloudflare beacon on the live home page);
+  one `localStorage` key, `sc-open-quests-cities` (recent cities, stays in the browser); GoatCounter
+  (`osm-ontario.goatcounter.com`, its no-cookie, no-IP terms recalled, not re-read). A visitor's IP reaches
+  Cloudflare, GoatCounter, tile.openstreetmap.org (Map tab) and GitHub (place requests).
+- **Owner's answers:** operator named as the handle `skfd`, no real name; based in Canada (no imprint); contact is
+  GitHub issues only, no email on a page; nothing planned (no ads, donations, accounts or forms).
+- **To build, in order:** (1) a privacy page naming the four parties and the one key; Google Play needs its URL for
+  the widget; (2) a line that the published JSON is offered under ODbL (footer and `DATA-FORMAT.md`; neither says so
+  now); (3) a short terms page: counts are estimates with no warranty, the data may be reused under its licence
+  without hammering the host, the borders stance, links to the vendored libraries' licences; (4) "independent, not
+  affiliated with or endorsed by StreetComplete or OpenStreetMap" on the site and in the store listing; (5) operator
+  and contact; (6) links to these from `docs/index.html`, `docs/apps/`, the Android about screen and the Scriptable
+  script header.
+- **Not needed:** a cookie banner (returns only with ads or cookie-based analytics); DMCA, children's, account or
+  refund terms; an imprint.
+- **Open:** whether to ask StreetComplete's maintainer about the name and icon in the Play listing (trademark status
+  not looked up).
+- **Built 2026-11-25 on branch `legal-pages` (c35215ed), not merged, not live (owner: "build the pages please"):**
+  worktree `~/Code/sc-open-quests-legal` (sparse: `docs/*.html`, `docs/apps`, `docs/img`, the md files; new paths
+  there need `git add --sparse`). `docs/privacy/`, `docs/terms/`, their `docs/legal.css`; a footer paragraph in
+  `docs/index.html` (independent, privacy, terms, ODbL); the ODbL line in `DATA-FORMAT.md` and README. GoatCounter's
+  terms were read (help/privacy, dated 2025-06-08) and the page words them as its own claims. The widget repo has a
+  `legal-pages` branch too (34b0c50: apps page generator footer, Scriptable header, two buttons in
+  `MainActivity.kt`); `docs/apps/` on our branch is regenerated from it.
+- **Not verified:** nothing was opened in a browser and the Kotlin was not compiled (the world loop was running);
+  only tag balance and LF were checked. Merging our branch publishes at the next daily run, since it syncs all of
+  `docs/`. Merge both branches together, or the `--check` of `docs/apps` goes stale.
+- **Merged 2026-11-25, afternoon (owner: "merge"):** both branches are on their mains (ours 21e105f8, the widget's
+  34b0c50, fast-forward) and deleted, the worktree removed; `apps-page.js --check docs/apps` passes. Both pages were
+  then opened headless from `docs/` (phone light, desktop dark: no overflow, no failed request; shots in
+  `.scratch/legal/`). **Live with the daily run of 11-26, 12:15**, which pushes main and syncs `docs/`; after it,
+  open `/privacy/` and `/terms/` on the live site and the footer links. Still not compiled: the two buttons in the
+  widget's `MainActivity.kt`. Neither repo was pushed by hand.
+- **Still for the owner:** whether GoatCounter's "individual pageviews" setting is off (the page
+  assumes the default); no governing-law clause was written; contact is a public GitHub issue.
+- **2026-11-25, 17:10: `place-ids` is brought up to main (f37f487a), still not tested.** New since the plan: `data/archive-world` (renamed too), the
+  publisher's `city/` and `city-parts/` files, and **the loop publishes by itself after RUNNING is gone** (`run.py site`), so
+  `apply` also refuses while `pipeline.lock`, `inputs.lock` or the publisher's `daily.lock` is there. 11-24 closed on 11-25 at
+  02:12; `world-cities` and `retire-cities` are merged; `freeze-city-files` (new, no ids) merges clean. `dropped-places` now
+  conflicts with main in `run.py`, not with `place-ids`.
+  A rename must also hold back `run.py site`'s own publish until the big upload is done by hand.
+  The gap: after 11-25's day closes and its publish ends (tonight) until 11:15 on 11-26. Tests there first.
+  **Order in that gap (11-25, 17:40): `freeze-city-files` goes first** (brought up to main, 6cf26e08; tests, byte compare, merge, one
+  `run.py site`); `place-ids`' tests after it is merged or says here that it is not. The two branches merge clean.
+  **`freeze-city-files` merged 11-25 18:50 (b4c1f7b6), its `run.py site` done 18:54; nothing of it is running: `place-ids`' turn.**
+- **Owner, 2026-11-25 (about 17:15): "yes rename if they pass"** (asked: rename tomorrow night, 11-26, if the tests pass tonight; it was said
+  that about 1.13M files are uploaded again and old links break). Read as: the rename and the upload, under HOLD, after the
+  tests pass. **The deletes of the old bucket files were not named in that question: ask before them**, after the `--dry-run`. `upload`
+  as written refuses when the deletes pass `--max-delete`, so it needs a way to upload and keep the old files first.
+- **Order in tonight's gap agreed with the session "City machinery deprecation readiness" (11-25, 17:40):** `freeze-city-files` first; `place-ids`' tests
+  wait for its "merged" or "not merged" (119a95b0), then main is merged into `place-ids` and the whole suite is run. Nothing of `place-ids` runs before.
+- **`place-ids`' tests PASSED (11-25, 19:05, in the gap after `freeze-city-files`):** main merged in (97def2b0), the whole suite 351 passed, 3
+  skipped (two need the Rust tilestore, not built in that worktree; main: 339 passed, 1 skipped). The first run found a real bug, fixed in
+  88250657: `places.build()` called `assign()` again without the registry. **Not merged into main yet:** it goes in
+  at the rename, 11-26 night, by the owner's go (merge, mint, back up, plan, apply, check, rebuild, upload `--keep-gone`). The worktree is no
+  longer sparse.
+- **World dailies PAUSED (owner, 11-25, 20:00: "do things asap, pause world dailies until we implement all the new things").**
+  `.scratch/planet-cut/HOLD` placed 20:03 (the loop logs "held" and takes no day; nothing else stops). The rename runs tonight, not 11-26
+  night. **Lifting it is the owner's call**: delete HOLD; the next run catches up the days it missed. The 11-26 18:45 wake-up is moot.

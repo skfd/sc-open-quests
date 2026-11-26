@@ -1,7 +1,8 @@
 # Data format
 
 This is the contract between the engine (writes snapshots), the pipeline (keeps the series) and the site
-(reads it). All JSON is UTF-8. Dates are ISO-8601. Times are UTC unless a field name says `Local`.
+(reads it). The published files under `docs/` are offered under the ODbL 1.0, as the OpenStreetMap and Overture
+data they are made from (the site's `terms/` page). All JSON is UTF-8. Dates are ISO-8601. Times are UTC unless a field name says `Local`.
 
 ## Inputs
 
@@ -53,11 +54,22 @@ This is the contract between the engine (writes snapshots), the pipeline (keeps 
 `data/archive/<region>/snapshots/<asOfDate>.json` (not committed), where `asOfDate` is the extract's
 replication date in the cities' time zone (`YYYY-MM-DD`). The engine runs once per region, with
 `--out data/archive/<region>`, so each region has its own snapshot of a date, holding only its cities. It
-also writes `data/archive/<region>/quests.json`, which `run.py history` merges into `docs/data/quests.json`.
+also writes `data/archive/<region>/quests.json`, the source `tools/site_quests.py take` reads
+at a repin.
 The archive keeps every snapshot and is what `run.py history` reads; `docs/data/<region>/snapshots/` holds
-the region's newest one only, a byte-for-byte copy. Until 2026-10-24 every snapshot was in `docs/data`;
+the region's newest one only, a byte-for-byte copy (since 2026-11-25 of the world's, below). Until 2026-10-24 every snapshot was in `docs/data`;
 `run.py migrate-archive` (also run by `count` and `history`) moves any left there into the archive, and
 the snapshots published until then stay in git history.
+
+`data/archive-world/<region>/snapshots/<D>.json` (not committed; `tools/world_cities.py snapshots`): the same shape
+out of the world's counts of day D, for each gated day from 2026-11-01. `asOf` is D 00:00Z, `source` is
+`{"world": "<D>"}`, and there are no `taggedNodes`, `taggedWays` or `openAllNotes`. A city is its `osm-<city>` part; a
+part is its place as the world counts it, not cut at the city line; every registered part is listed, `{}` when nothing
+is open. A quest asked in a city that the world has no row for is 0. It can be deleted and made again.
+`tools/world_cities.py build` (`run.history(world=...)`) takes a city's days before the world's first from
+`data/archive` and the rest from here, and a part's series from here alone. The site is built this way since
+2026-11-25 (`run.py history` writes the missing days first); the engine's snapshots of days from 2026-11-01 on
+are kept in `data/archive` and not published.
 
 ```jsonc
 {
@@ -134,8 +146,9 @@ without `area=yes`, whose position is in the city; great-circle length on a 6371
 
 ## Quest metadata for the site
 
-`docs/data/quests.json`, rewritten each run by `run.py history` from the regions' `quests.json` (the
-newest registry; `status` holds every region's cities):
+`docs/data/quests.json`, written by `tools/site_quests.py` (`run.py history` calls it) from
+`config/site-quests.json` (the newest registry, taken from an engine's `quests.json` at a repin) and the
+`countryCodes` in `config/cities.json`, which give `status`:
 
 ```jsonc
 { "scVersion": "63.4", "scCommit": "244c6873…", "quests": [ {   // registry order, one quest per line
@@ -174,7 +187,15 @@ by name, cells by x then y; a quest with nothing counted is absent.
 
 ## Series for the site
 
-`docs/data/history/<cityId>.json` is rebuilt from all regions' snapshots in the archive on every run:
+Since 2026-11-25 the site's pages read a city's, a part's and the compare view's days from 2026-11-01 on from
+sc-data (DESIGN.md, "The counted cities"), and from these files only the dates before it, the names and the static
+facts; they fall back to these files when sc-data does not answer. The phone widgets read `cities.json`, `quests.json`, `parts/` and the icons
+(until 2026-11-25 all of them).
+
+**These files end on `config/city-files.json`'s `until`** (DESIGN.md, "docs/data's own city files end on a set day"):
+"newest" below is that day, not today.
+
+`docs/data/history/<cityId>.json` is rebuilt from all regions' snapshots in the archive up to then:
 
 ```jsonc
 { "city": "toronto", "name": "Toronto",
@@ -183,7 +204,7 @@ by name, cells by x then y; a quest with nothing counted is absent.
                                                         //   parallel to dates, so breaks show; areaUnit only
                                                         //   where the snapshot has it, notes only where true
   "quests": { "AddBenchBackrest": { "open": [3063], "agedOnly": [0] } },
-  "denominators": { "landAreaKm2": 665.9, "highwayKm": [0.0] } }
+  "denominators": { "landAreaKm2": 665.9 } }
 ```
 
 A city's `dates` holds only the snapshots that contain it. A quest absent from one of them (not counted
@@ -209,7 +230,7 @@ the file the switch is hidden.
     "place": "9fc3a6b4bdda", "in": "ca/eb1eed766420",   // since 2026-11-17: the city's row in the name layer
                                                  //   ("Places and parts") and the file holding it, for its
                                                  //   page's chain and children; absent when no row is the city
-    "landAreaKm2": 665.9, "population": null, "highwayKm": 0.0,
+    "landAreaKm2": 665.9, "population": null,
     "open": 0,          // headline: counted quests, default-disabled excluded
     "agedOnly": 0,      // of `open`
     "openAll": 0,       // default-disabled included
@@ -257,11 +278,11 @@ Rerunning on the same extract rewrites the same snapshot file byte for byte, apa
 The name layer and the neighbourhood counts (DESIGN.md, "Places: naming the world, counting on
 request"). Agreed before the work was split, so the builders, the engine and the site meet here.
 
-- **Place id**: the first 12 hex digits of the Overture GERS id, dashes removed
-  (`087cbb33-e54d-...` → `087cbb33e54d`). The build fails if two places share one. The same id is the
-  name shards' key, the `?place=` of the site, the issue form's field and a part's key in a snapshot.
-  The full GERS id is kept where the place is defined (shard field `g` is not stored; the parts registry
-  stores it).
+- **Place id**: ours, the first 12 hex digits of a random GUID kept in the place registry
+  (`data/place-ids/registry.tsv.gz`, tools/place_ids.py), where the Overture GERS id and the OSM object are attributes
+  that a release may change. The same id is the name shards' key, the `?place=` of the site, the issue form's field
+  and a part's key in a snapshot. A GERS id the registry lacks stops a build: a release is ingested by an agent and
+  an operator first. `index.json` says whose ids it holds: `"ids": "guid"`.
 - **Overture release** is pinned like the SC version: `config/places.json`
   `{ "overture": "2026-10-21.0" }`; moving it is a deliberate commit, not an automatic one.
 - **Name layer**, `docs/places/` (committed, published). Only divisions that have a `division_area`.
@@ -293,6 +314,14 @@ request"). Agreed before the work was split, so the builders, the engine and the
   a dropped place may not be anybody's parent, and `keeps` stays a part. The rule was run once to make the list; a later
   Overture release adds nothing to it by itself. Counts and archived snapshots are not touched: taking a place off
   the list and rerunning the two tools brings it back, though its daily series stops while it is off.
+- **Small squares**, `config/small-squares.json` (committed, made by `tools/small_squares.py build`, not reviewed by hand):
+  `{ "schema": 1, "overture", "rule": { "maxM2": 10000, "cover": 0.95, "coveredBy": [subtypes] }, "squares", "small",
+  "places": [ "<GERS id>", ... ] }`, one id a line. A square (a microhood with `local_type` "square", OSM place=square) whose
+  outline is under 10,000 m² and that places of a city's size or smaller (`coveredBy`) cover, 95% of it or more, together.
+  Squares covered only by a county or larger, or by nothing, stay, as does a square another place calls its parent (owner,
+  2026-11-25). 2026-10-21.0: 81,372 squares, 67,106 small, 63,800 listed. `places.py` and `add_parts.py` leave them out
+  (`run.left_out_places`, both lists by GERS id), `small_squares.py prune` takes them out of `config/parts`. Counts keep them.
+  Rebuilt at each Overture release.
 - **Part counts in a snapshot**: inside the city, `cities.<id>.parts`: `{ "<placeId>": { "<Quest>":
   <open> } }`, open quests at resurvey ×1 only (the `open` of the city's quest), quests with 0 left out,
   parts with nothing open kept as `{}`. A quest counts in a part when its position (the same centre

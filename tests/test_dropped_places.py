@@ -45,17 +45,58 @@ class DroppedPlacesTest(unittest.TestCase):
                 run.dropped_places(twice)
 
     def test_the_name_layer_leaves_them_out_and_keeps_the_rest(self):
-        dropped = {"places": [{"gers": "g2", "id": "x"}]}
-        kept, n = places.leave_out([row("g1"), row("g2"), row("g3", "g1", ["g1"])], dropped)
+        kept, n = places.leave_out([row("g1"), row("g2"), row("g3", "g1", ["g1"])], {"g2": "duplicate"})
         self.assertEqual([r["gers"] for r in kept], ["g1", "g3"])
         self.assertEqual(n, 1)
 
     def test_a_dropped_place_with_places_under_it_stops_the_build(self):
-        dropped = {"places": [{"gers": "g1", "id": "x"}]}
         with self.assertRaises(SystemExit):
-            places.leave_out([row("g1"), row("g3", "g1", ["g1"])], dropped)
+            places.leave_out([row("g1"), row("g3", "g1", ["g1"])], {"g1": "small square"})
         with self.assertRaises(SystemExit):
-            places.leave_out([row("g1"), row("g4", "g3", ["g3", "g1"])], dropped)
+            places.leave_out([row("g1"), row("g4", "g3", ["g3", "g1"])], {"g1": "small square"})
+
+
+class SmallSquaresTest(unittest.TestCase):
+    def test_area_is_metres_on_the_ellipsoid(self):
+        import pyproj
+        import shapely
+        import small_squares
+        sq = shapely.box(-79.3832, 43.6532, -79.3820, 43.6541)   # about 97 x 100 m in Toronto
+        got = float(small_squares.area_m2([sq])[0])
+        want = abs(pyproj.Geod(ellps="WGS84").geometry_area_perimeter(sq)[0])
+        self.assertAlmostEqual(got / want, 1, delta=0.001)
+
+    def test_cover_counts_several_places_together(self):
+        import shapely
+        import small_squares
+        sq = shapely.box(0, 0, 2, 1)
+        self.assertEqual(small_squares.covered_share(sq, [shapely.box(-1, -1, 3, 2)]), 1.0)
+        self.assertAlmostEqual(small_squares.covered_share(sq, [shapely.box(-1, -1, 1, 2), shapely.box(1, -1, 3, 2)]), 1.0)
+        self.assertAlmostEqual(small_squares.covered_share(sq, [shapely.box(-1, -1, 1, 2)]), 0.5)
+        self.assertEqual(small_squares.covered_share(sq, []), 0.0)
+        line = shapely.LineString([(0.5, 0.5), (0.6, 0.5)])   # an outline with no area
+        self.assertEqual(small_squares.covered_share(line, [shapely.box(0, 0, 1, 1)]), 1.0)
+
+    def test_prune_keeps_one_part_a_line_and_valid_json(self):
+        import small_squares
+        with tempfile.TemporaryDirectory() as tmp:
+            d = Path(tmp)
+            g = ["00000000-0000-0000-0000-00000000000%d" % i for i in range(3)]
+            lines = [json.dumps({"id": "a%d" % i, "gers": g[i]}) for i in range(3)]
+            (d / "c.json").write_text('{"schema": 1, "city": "c", "parts": [\n  ' + ",\n  ".join(lines) + "\n]}\n")
+            self.assertEqual(small_squares.prune(d, {g[2]}), {"c": 1})
+            self.assertEqual([p["gers"] for p in json.loads((d / "c.json").read_text())["parts"]], g[:2])
+            self.assertEqual(small_squares.prune(d, {g[2]}), {})
+
+    def test_both_lists_leave_out_by_gers(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            sq = Path(tmp) / "sq.json"
+            first = next(iter(run.dropped_places().values()))["gers"]
+            sq.write_text(json.dumps({"places": ["g-square", first]}))
+            got = run.left_out_places(squares=sq)
+            self.assertEqual(got["g-square"], "small square")
+            self.assertEqual(got[first], "duplicate")   # the first list's reason wins
+            self.assertEqual(len(got), len(run.dropped_places()) + 1)
 
 
 if __name__ == "__main__":

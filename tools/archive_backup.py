@@ -41,7 +41,8 @@ ARCHIVE = ROOT / "data" / "archive"
 BUCKET = "sc-open-quests-archive"
 GRID = ROOT / "data" / "grid"
 FACTS = ROOT / "data" / "facts"   # tools/facts.py: every count as Parquet, cities and world
-SOURCES = [(ARCHIVE, "archive"), (GRID, "grid"), (FACTS, "facts")]   # folder, its prefix in the bucket
+PLACE_IDS = ROOT / "data" / "place-ids"   # tools/place_ids.py: our place ids, random, so the only copy there is
+SOURCES = [(ARCHIVE, "archive"), (GRID, "grid"), (FACTS, "facts"), (PLACE_IDS, "place-ids")]   # folder, its prefix in the bucket
 WORLD = ROOT / ".scratch" / "planet" / "world-1101"
 WORLD_TOP = ["plan.json", "world.json"]   # what a day's counts are read with: the cells, the world's clock
 MIN_FILES = 1000          # the archive held 1,497 files when it was split off; fewer is a broken checkout
@@ -72,13 +73,18 @@ def ensure_bucket(env: dict[str, str], bucket: str = BUCKET) -> bool:
     return True
 
 
+def least(archive: Path) -> int:
+    """how many files a source must hold: the registry is one file, the others are many"""
+    return 1 if archive == PLACE_IDS else MIN_FILES
+
+
 def check_source(archive: Path, bucket: str) -> int:
     """Raise unless this is the archive going to its own bucket. Returns the number of local files."""
     if bucket == cloud_publish.BUCKET:
         raise RuntimeError(f"{bucket} is the site's bucket, which the daily sync prunes to docs/")
     n = sum(1 for p in archive.rglob("*") if p.is_file()) if archive.is_dir() else 0
-    if n < MIN_FILES:
-        raise RuntimeError(f"{archive} holds {n} files, under {MIN_FILES}; not backing up what looks partial")
+    if n < least(archive):
+        raise RuntimeError(f"{archive} holds {n} files, under {least(archive)}; not backing up what looks partial")
     return n
 
 
@@ -213,10 +219,12 @@ def main() -> int:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--dry-run", action="store_true")
     p.add_argument("--check", action="store_true", help="compare with the bucket; change nothing")
-    p.add_argument("--only", choices=["archive", "grid", "facts", "world"], help="one source instead of all")
+    p.add_argument("--only", choices=["archive", "grid", "facts", "place-ids", "world"], help="one source instead of all")
     p.add_argument("--world", type=Path, default=WORLD, help="the world folder (default: this checkout's)")
     a = p.parse_args()
     sources = [(f, x) for f, x in SOURCES if a.only in (None, x)]
+    if a.only is None and not PLACE_IDS.is_dir():   # before the ids are minted there is nothing to copy
+        sources = [(f, x) for f, x in sources if f != PLACE_IDS]
     failed = 0
     try:
         if a.check:

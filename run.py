@@ -15,8 +15,12 @@ Subcommands:
   migrate-archive  move snapshots published before 2026-10-24 (docs/data/<region>/snapshots/) into
              data/archive/; count and history do it too, so it is idempotent and needs no flag
   update     download + backfill + history, then commit "data <asOfDate>" and push, then sync docs/ to the
-             R2 bucket behind street-complete-statistics.comentality.com (tools/cloud_publish.py); last,
-             check-release
+             R2 bucket behind street-complete-statistics.comentality.com (tools/cloud_publish.py)
+  site       publish the world's gated days and docs/ where the readers lack them: the place files on sc-data,
+             then history, commit, push, deploy; the world loop's last step, and inputs'
+  inputs     what the world's day needs, apart from the city run (task kk-SCOpenQuests-inputs): the Europe
+             clip and with it the planet's daily diff, the notes dump, the backup of the world's gated days
+             and the facts, check-release
   planet     the monthly planet job: refresh the planet
              history file (osm-extracts fetch planet-history; a failure leaves it as it is), re-cut every
              osm-extracts clip from it (osm-extracts recut), count the months the regions on a clip lack
@@ -50,6 +54,7 @@ import os
 import re
 import subprocess
 import sys
+import time
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
@@ -70,6 +75,9 @@ NOTES_DIR = ROOT / "data" / "notes"
 GRID_DIR = ROOT / "data" / "grid"  # counted quests per z14 tile, <region>/<asOfDate>.json.gz; not committed
 REGION_CITIES_DIR = ROOT / "data" / "cities"  # the engine's cities file per region; not committed
 DROPPED_CONFIG = ROOT / "config" / "dropped-places.json"  # Overture places we leave out, and why (DATA-FORMAT.md)
+SMALL_SQUARES_CONFIG = ROOT / "config" / "small-squares.json"  # squares we leave out (tools/small_squares.py)
+WORLD_ARCHIVE = ROOT / "data" / "archive-world"  # the cities' days out of the world's counts (tools/world_cities.py)
+CITY_FILES_CONFIG = ROOT / "config" / "city-files.json"  # the last day docs/data's city files hold (DESIGN.md)
 PARTS_CONFIG = ROOT / "config" / "parts"  # the parts registry, <cityId>.json (tools/add_parts.py)
 CLIP_NOTES = ROOT / "tools" / "clip_notes.py"
 
@@ -521,6 +529,16 @@ def dropped_places(path: Path = DROPPED_CONFIG) -> dict[str, dict]:
     return out
 
 
+def left_out_places(dropped: Path = DROPPED_CONFIG, squares: Path = SMALL_SQUARES_CONFIG) -> dict[str, str]:
+    """{GERS id: why} of every place the name layer and the parts registry leave out: the twins of
+    config/dropped-places.json ("duplicate") and the squares of config/small-squares.json ("small square",
+    tools/small_squares.py). By GERS id, so the lists outlive a change of our own place ids."""
+    out = {p["gers"]: p["why"] for p in dropped_places(dropped).values()}
+    if squares.exists():
+        out.update({g: "small square" for g in read_json(squares)["places"] if g not in out})
+    return out
+
+
 def parts_args(parts_dir: Path = PARTS_CONFIG) -> list[str]:
     """The engine's --parts, when there is a parts registry; without one the snapshot has no parts."""
     return ["--parts", str(parts_dir.relative_to(ROOT))] if parts_dir.is_dir() else []
@@ -595,15 +613,38 @@ def backfill(force: bool = False) -> None:
 
 # --- history --------------------------------------------------------------------------------------
 
-def load_snapshots(data_dir: Path) -> list[dict]:
-    """All snapshots of all regions (data_dir/<region>/snapshots/), ascending by asOfDate. Each gets
-    a "region" key from the folder it is in."""
+def load_snapshots(data_dir: Path, until: str | None = None) -> list[dict]:
+    """All snapshots of all regions (data_dir/<region>/snapshots/), ascending by asOfDate; with until, not the
+    days after it. Each gets a "region" key from the folder it is in."""
     snaps = []
     for p in data_dir.glob("*/snapshots/*.json"):
+        if until and p.stem > until:
+            continue
         snap = read_json(p)
         snap["region"] = p.parent.parent.name
         snaps.append(snap)
     return sorted(snaps, key=lambda s: (s["asOfDate"], s["region"]))
+
+
+def with_world(snapshots: list[dict], world: list[dict]) -> list[dict]:
+    """The city run's snapshots before the world's first day, then the world's; a region the world lacks on a day
+    has none that day."""
+    if not world:
+        raise RuntimeError("no world snapshots; run tools/world_cities.py snapshots")
+    first = world[0]["asOfDate"]
+    return [s for s in snapshots if s["asOfDate"] < first] + world
+
+
+def world_snapshots(until: str | None = None) -> Path:
+    """The folder of the world's city snapshots, brought up to its newest gated day, or to until."""
+    sys.path.insert(0, str(TOOLS_DIR))
+    import world_cities  # noqa: E402  (they import this module)
+    import world_publish  # noqa: E402
+    try:
+        world_cities.snapshots(world_publish.WORLD, WORLD_ARCHIVE, until=until)
+    except SystemExit as e:   # no world here
+        raise RuntimeError(str(e)) from None
+    return WORLD_ARCHIVE
 
 
 def merge_quests(data_dir: Path, archive: Path | None = None) -> int:
@@ -703,7 +744,6 @@ def build_history(snapshots: list[dict], city_config: list[dict], disabled: set[
             "denominators": {
                 "landAreaKm2": den.get("landAreaKm2"),
                 "population": den.get("population"),
-                "highwayKm": [c["denominators"].get("highwayKm") for _, c in rows],
                 "taggedNodes": [c["denominators"].get("taggedNodes") for _, c in rows],
                 "taggedWays": [c["denominators"].get("taggedWays") for _, c in rows],
             },
@@ -725,7 +765,6 @@ def build_history(snapshots: list[dict], city_config: list[dict], disabled: set[
             "scVersion": last_snap["scVersion"],
             "landAreaKm2": den.get("landAreaKm2"),
             "population": den.get("population"),
-            "highwayKm": den.get("highwayKm"),
             "open": sum(q.get("open") or 0 for q in headline.values()),
             "agedOnly": sum(q.get("agedOnly") or 0 for q in headline.values()),
             "openAll": sum(q.get("open") or 0 for q in last["quests"].values()),
@@ -812,13 +851,13 @@ def counted_place_files(places_dir: Path) -> dict[str, str]:
     return {k: f for k, (_, f) in counted_places(places_dir).items() if "/" in k}
 
 
-def write_part_history(data_dir: Path, snapshots: list[dict], parts_dir: Path) -> int:
+def write_part_history(data_dir: Path, snapshots: list[dict], parts_dir: Path, places: Path | None = None) -> int:
     """data_dir/history/<cityId>/<partId>.json for every part in the registry that has a count
     (build_part_history); a part or city no longer there loses its file. Returns the number of files
     changed."""
     registries = {p.stem: read_json(p) for p in sorted(parts_dir.glob("*.json"))}
     out = build_part_history(snapshots, registries)
-    files = counted_place_files(data_dir.parent / "places")
+    files = counted_place_files(places or data_dir.parent / "places")
     changed = 0
     root = data_dir / "history"
     for cid, parts in out.items():
@@ -846,6 +885,8 @@ def migrate_archive(data_dir: Path = DATA_DIR, archive: Path = ARCHIVE_DIR) -> i
         return 0
     done = 0
     for p in sorted(data_dir.glob("*/snapshots/*.json")):
+        if "world" in (read_json(p).get("source") or {}):
+            continue   # the world's (tools/world_cities.py), never the city run's archive
         region = p.parent.parent.name
         dst = archive / region / "snapshots" / p.name
         if not dst.exists():
@@ -872,12 +913,15 @@ def migrate_archive(data_dir: Path = DATA_DIR, archive: Path = ARCHIVE_DIR) -> i
     return done
 
 
-def publish_newest(data_dir: Path, archive: Path) -> int:
-    """Copy each region's newest snapshot in the archive to data_dir/<region>/snapshots/ and delete the
-    region's other published snapshots the archive holds. Returns the number of files changed."""
+def publish_newest(data_dir: Path, archive: Path, world: Path | None = None, until: str | None = None) -> int:
+    """Copy each region's newest snapshot in the archive (with until, no later than that day) to
+    data_dir/<region>/snapshots/ and delete the region's other published snapshots the archive holds. With world (its snapshots' folder, in the archive's
+    layout) the newest is the world's, and the others go whichever of the two holds them. Returns the number of
+    files changed."""
     changed = 0
     for region_dir in sorted(p for p in archive.iterdir() if p.is_dir()):
-        snaps = sorted((region_dir / "snapshots").glob("*.json"))
+        held = [region_dir / "snapshots"] + ([world / region_dir.name / "snapshots"] if world else [])
+        snaps = sorted(p for p in held[-1].glob("*.json") if not until or p.stem <= until)
         if not snaps:
             continue
         newest = snaps[-1]
@@ -888,7 +932,7 @@ def publish_newest(data_dir: Path, archive: Path) -> int:
             out.write_bytes(data)
             changed += 1
         for old in out.parent.glob("*.json"):
-            if old.name != newest.name and (region_dir / "snapshots" / old.name).exists():
+            if old.name != newest.name and any((h / old.name).exists() for h in held):
                 old.unlink()
                 changed += 1
     return changed
@@ -983,25 +1027,49 @@ def publish_coverage(data_dir: Path, cities: list[dict], root: Path = ROOT) -> i
 
 
 def history(data_dir: Path = DATA_DIR, cities_config: Path = CITIES_CONFIG, archive: Path | None = None,
-            parts_dir: Path | None = None) -> int:
+            parts_dir: Path | None = None, world: Path | None = None, places: Path | None = None,
+            until: str | None = None) -> int:
     """Rewrite history/*.json, cities.json, quests.json, compare/*.json and parts/*.json under data_dir
     from the snapshots in archive (default: ARCHIVE_DIR for docs/data, else data_dir itself, as the test
     fixtures have it) and the parts registry in parts_dir (default: PARTS_CONFIG for docs/data, else
     none); for docs/data, coverage.json too. With a separate archive, first migrate anything published the old way, then publish each
-    region's newest snapshot. Returns the number of files changed."""
+    region's newest snapshot. With world (tools/world_cities.py's snapshots), the cities' days from the world's first on are
+    the world's, and a part's series is the world's alone; docs/data is always made with it. until: the last day taken; docs/data's is
+    config/city-files.json's, so these files change with the config, the parts, the pin or that day, not with each
+    new day (the page reads those on sc-data). places: the name layer (default: data_dir's sibling).
+    Returns the number of files changed."""
+    places = places or data_dir.parent / "places"
     default = data_dir.resolve() == DATA_DIR.resolve()
     archive = archive or (ARCHIVE_DIR if default else data_dir)
     parts_dir = parts_dir or (PARTS_CONFIG if default else None)
     separate = archive.resolve() != data_dir.resolve()
-    changed = migrate_archive(data_dir, archive) if separate else 0
+    if default and until is None:
+        until = read_json(CITY_FILES_CONFIG)["until"]
+    if default and world is None:
+        world = world_snapshots(until)
+    # not with world: what is published is the world's then, and migrating would put it among the city run's
+    changed = migrate_archive(data_dir, archive) if separate and world is None else 0
     if parts_dir is not None:
         changed += publish_parts(data_dir, read_json(cities_config)["cities"], parts_dir)
     if default:
         changed += publish_coverage(data_dir, read_json(cities_config)["cities"])
-    snapshots = load_snapshots(archive)
+    snapshots = load_snapshots(archive, until)
     if not snapshots:
         log(f"no snapshots in {archive}/*/snapshots; nothing to do")
         return changed
+    part_snapshots = snapshots
+    if world is not None:
+        part_snapshots = load_snapshots(world, until)
+        snapshots = with_world(snapshots, part_snapshots)
+    if until and snapshots[-1]["asOfDate"] != until:
+        raise RuntimeError(f"the city files are to end on {until} ({CITY_FILES_CONFIG.name}), and that day is not here; "
+                           f"the newest is {snapshots[-1]['asOfDate']}")
+    if until:
+        counted = {cid for s in snapshots for cid in s["cities"]}
+        new = [c["id"] for c in read_json(cities_config)["cities"] if c["id"] not in counted]
+        if new:   # it would be missing from cities.json, and the site has no page without it
+            raise RuntimeError(f"no day up to {until} has {', '.join(new)}; set until in {CITY_FILES_CONFIG.name} to a "
+                               "day the world counted it")
     published = data_dir / "cities.json"
     if published.exists():
         lost = set(read_json(published).get("dates") or []) - {s["asOfDate"] for s in snapshots}
@@ -1009,12 +1077,17 @@ def history(data_dir: Path = DATA_DIR, cities_config: Path = CITIES_CONFIG, arch
             raise RuntimeError(f"{archive} lacks {len(lost)} snapshot date(s) the published history has "
                                f"(e.g. {min(lost)}); restore the archive (git history holds the snapshots "
                                f"published until 2026-10-24) or delete {published} to rebuild from what is there")
-    changed += merge_quests(data_dir, archive)
+    if default or world is not None:
+        sys.path.insert(0, str(TOOLS_DIR))
+        import site_quests  # noqa: E402  (tools/site_quests.py; it imports this module)
+        changed += site_quests.build(data_dir, cities_config)
+    else:
+        changed += merge_quests(data_dir, archive)
     out = build_history(snapshots, read_json(cities_config)["cities"], default_disabled(data_dir), regions())
-    places = counted_places(data_dir.parent / "places")
+    rows = counted_places(places)
     for c in out["cities"]["cities"]:   # the city's row in the name layer: its page's chain and children
-        if c["id"] in places:
-            c["place"], c["in"] = places[c["id"]]
+        if c["id"] in rows:
+            c["place"], c["in"] = rows[c["id"]]
     for cid, series in out["history"].items():
         changed += write_json(data_dir / "history" / f"{cid}.json", series, compact=True)
     for stale in (data_dir / "history").glob("*.json"):
@@ -1030,9 +1103,9 @@ def history(data_dir: Path = DATA_DIR, cities_config: Path = CITIES_CONFIG, arch
     changed += write_json(data_dir / "cities.json", out["cities"], compact=True)
     changed += write_json(data_dir / "trends.json", out["trends"], compact=True)
     if parts_dir is not None:
-        changed += write_part_history(data_dir, snapshots, parts_dir)
+        changed += write_part_history(data_dir, part_snapshots, parts_dir, places)
     if separate:
-        changed += publish_newest(data_dir, archive)
+        changed += publish_newest(data_dir, archive, world, until)
     log(f"history: {len(out['history'])} cities over {len(snapshots)} snapshot(s), {changed} file(s) changed")
     return changed
 
@@ -1050,6 +1123,8 @@ def publish(data_dir: Path = DATA_DIR, message: str | None = None, push: bool = 
     git("add", "--", rel)
     if git("diff", "--cached", "--quiet", "--", rel, check=False).returncode == 0:
         log("docs/data unchanged; nothing to commit")
+        if push:   # main may still be ahead: code, notes, a commit whose push failed
+            push_main()
         return False
     if message is None:
         message = f"data {read_json(data_dir / 'cities.json').get('asOfDate') or 'unknown'}"
@@ -1058,11 +1133,15 @@ def publish(data_dir: Path = DATA_DIR, message: str | None = None, push: bool = 
     if not push:
         log("not pushed (--no-push)")
         return True
+    push_main()
+    return True
+
+
+def push_main() -> None:
     push = git("push", check=False)
     if push.returncode != 0:
         raise RuntimeError(f"git push failed: {push.stderr.strip()}")
     log("pushed")
-    return True
 
 
 def publish_cloud() -> bool:
@@ -1081,6 +1160,104 @@ def publish_cloud() -> bool:
     return True
 
 
+def publish_site(push: bool = True) -> bool:
+    """Make docs/data, commit and push it, deploy docs/. Returns False if the deploy failed; SITE_STATE says
+    what the site has otherwise."""
+    trees = site_trees()   # before: a config commit during the build is the next run's
+    log("=== history ===")
+    history()
+    log("=== publish ===")
+    publish(message="Site data: the lists and the city files", push=push)
+    if not push:
+        return True
+    log("=== cloud ===")
+    if not publish_cloud():
+        return False
+    # "day" is for the code from before 2026-11-26, should this be reverted: it deploys when that is not the newest
+    write_json(SITE_STATE, {**trees, "docs": tree("docs"), "day": read_json(DATA_DIR / "cities.json")["asOfDate"],
+                            "at": datetime.now(timezone.utc).isoformat(timespec="seconds")})
+    return True
+
+
+# --- site: the world's day is published ----------------------------------------------------------------
+
+SITE_STATE = ROOT / "data" / "site-deployed.json"  # the last deploy: docs/'s and config/'s trees, when; not committed
+SITE_MIN_COMMIT_GB = 8            # the build peaks at 2.4 GB (2026-11-25); the world loop's engines come first
+
+
+def tree(folder: str) -> str:
+    return git("rev-parse", f"HEAD:{folder}").stdout.strip()
+
+
+def site_trees() -> dict:
+    """What a deploy is made from: docs/ itself, and config/, out of which history() makes docs/data's lists."""
+    return {"docs": tree("docs"), "config": tree("config")}
+
+
+def publish_world() -> bool:
+    """The place files on sc-data (tools/world_publish.py daily). A process of its own (a day's counts are GBs in
+    memory). Logged, not raised: the site's own data and code go up whatever became of it. Returns success."""
+    r = subprocess.run([sys.executable, str(TOOLS_DIR / "world_publish.py"), "daily"], cwd=ROOT,
+                       capture_output=True, text=True, encoding="utf-8", errors="replace")
+    for line in (r.stdout + r.stderr).splitlines():
+        if line.strip():
+            log(f"[world] {line}")
+    if r.returncode != 0:
+        log(f"world publish FAILED (exit {r.returncode}); sc-data keeps the day it had")
+    return r.returncode == 0
+
+
+def site_due(state: dict, trees: dict) -> str | None:
+    """Why the site is to be deployed now, or None. Not for a new day: its numbers are on sc-data."""
+    if not state:
+        return "no deploy on record"
+    changed = [f"{k}/" for k, v in trees.items() if state.get(k) != v]
+    return f"{' and '.join(changed)} changed since the last deploy" if changed else None
+
+
+def site(force: bool = False, push: bool = True) -> None:
+    """Publish what the world's gated days and docs/ have and the readers don't: the place files, then the site,
+    which a new day alone does not change.
+    The world loop's last step (tools/stream/planet_store_day.py), and inputs', which makes up for a failure. A run
+    that can't do it now leaves it to the next one."""
+    sys.path.insert(0, str(TOOLS_DIR))
+    import world_publish  # noqa: E402  (it imports this module)
+    try:
+        world_publish.gated_days(world_publish.WORLD)
+    except SystemExit as e:
+        raise RuntimeError(str(e)) from None
+    memory = memory_status()
+    if memory and memory[1] < SITE_MIN_COMMIT_GB and not force:
+        log(f"site: {memory[1]:.1f} GB of commit left; the next run")
+        return
+    world_ok = publish_world() if push else True
+    deploy_site(force, push)
+    if not world_ok:
+        raise RuntimeError("site: the place files were not published; the next run tries again")
+
+
+def deploy_site(force: bool, push: bool) -> None:
+    state = read_json(SITE_STATE) if SITE_STATE.exists() else {}
+    why = "--force" if force else site_due(state, site_trees())
+    branch = git("rev-parse", "--abbrev-ref", "HEAD").stdout.strip()
+    if why is None:
+        log("site: docs/ and config/ are as deployed; nothing to do")
+        if push and branch == "main":   # as each day's deploy did, when there was one
+            push_main()
+        return
+    if branch != "main":
+        raise RuntimeError(f"site: the checkout is on {branch}, not main")
+    if LOCK_PATH.exists() and LOCK_PATH.read_text(encoding="utf-8").strip().isdigit() \
+            and pid_alive(int(LOCK_PATH.read_text(encoding="utf-8"))):
+        log(f"site: {why}, but another run holds {LOCK_PATH.name}; the next run")
+        return
+    log(f"site: {why}")
+    with pipeline_lock():
+        if not publish_site(push):
+            raise RuntimeError("site: the deploy failed; the next run tries again")
+    log("site done")
+
+
 def update(force: bool = False, push: bool = True) -> None:
     with pipeline_lock():
         log("=== download ===")
@@ -1089,28 +1266,86 @@ def update(force: bool = False, push: bool = True) -> None:
         # every stored extract, not only the newest: one counted before its notes dump existed is
         # recounted once a dump reaches it; the rest are skipped
         backfill(force=force)
-        log("=== history ===")
-        history()
-        log("=== publish ===")
-        publish(push=push)
+        publish_site(push)
         if push:
-            log("=== cloud ===")
-            publish_cloud()
             backup_archive()
-    log("=== check-release ===")
-    try:
-        check_release()
-    except Exception as e:  # the day's data is published; a GitHub hiccup must not fail the run
-        log(f"check-release failed (ignored): {e}")
     log("update done")
 
 
-def backup_archive() -> bool:
-    """Copy data/archive/ (the one copy of every snapshot, not in git) to its own R2 bucket
-    (tools/archive_backup.py). Last and on its own: a failure is logged as "archive backup FAILED"
+# --- inputs: what the world's day needs, apart from the city run ---------------------------------------
+
+INPUTS_LOCK = LOCK_DIR / "inputs.lock"  # planet_store_day.py waits for it
+INPUTS_TRIES, INPUTS_WAIT_S = 3, 600     # docker not answering, a download that broke off
+
+
+def fetch_input(name: str, sleep=time.sleep) -> bool:
+    """osm-extracts fetch, tried again a few times. Returns success; never raises."""
+    cmd = [sys.executable, str(OSM_EXTRACTS_TOOL), "fetch", name]
+    for n in range(1, INPUTS_TRIES + 1):
+        log(f"fetching {name}")
+        code = subprocess.run(cmd, check=False).returncode
+        if code == 0:
+            return True
+        log(f"fetch {name} failed (exit {code}), try {n} of {INPUTS_TRIES}")
+        if n < INPUTS_TRIES:
+            sleep(INPUTS_WAIT_S)
+    return False
+
+
+@contextlib.contextmanager
+def inputs_lock():
+    """data/inputs.lock with this process's pid; yields False if another inputs run is alive."""
+    if INPUTS_LOCK.exists():
+        try:
+            pid = int(INPUTS_LOCK.read_text(encoding="utf-8").strip())
+        except ValueError:
+            pid = -1
+        if pid_alive(pid):
+            yield False
+            return
+    INPUTS_LOCK.parent.mkdir(parents=True, exist_ok=True)
+    INPUTS_LOCK.write_text(str(os.getpid()), encoding="utf-8")
+    try:
+        yield True
+    finally:
+        INPUTS_LOCK.unlink(missing_ok=True)
+
+
+def inputs(sleep=time.sleep) -> None:
+    """The world's daily inputs: the Europe clip (with it the planet's daily diff) and the notes dump; then the
+    private backup of the world's gated days and the facts, the StreetComplete release check, and whatever of the
+    last day the loop could not publish (site). Every step runs
+    whatever became of the others; a fetch or backup that failed makes the run exit 1 and names it."""
+    with inputs_lock() as mine:
+        if not mine:
+            log("another inputs run is going")
+            return
+        log("=== inputs ===")
+        failed = [f"fetch {n}" for n in ("europe", "notes") if not fetch_input(n, sleep)]
+    # outside the lock: the loop need not wait for the uploads
+    for source in ("facts", "world"):
+        if not backup_archive(source):
+            failed.append(f"backup {source}")
+    try:
+        check_release()
+    except Exception as e:  # a GitHub hiccup fails nothing
+        log(f"check-release failed (ignored): {e}")
+    try:
+        site()
+    except Exception as e:
+        log(f"{e}")
+        failed.append("site")
+    if failed:
+        raise RuntimeError("inputs: " + ", ".join(failed) + " failed")
+    log("inputs done")
+
+
+def backup_archive(only: str | None = None) -> bool:
+    """Copy data/archive/ (the one copy of every snapshot, not in git) and archive_backup's other sources, or
+    the one named, to the private R2 bucket (tools/archive_backup.py). Last and on its own: a failure is logged as "archive backup FAILED"
     and the run goes on. Returns success."""
-    r = subprocess.run([sys.executable, str(TOOLS_DIR / "archive_backup.py")], cwd=ROOT,
-                       capture_output=True, text=True)
+    r = subprocess.run([sys.executable, str(TOOLS_DIR / "archive_backup.py"), *(["--only", only] if only else [])],
+                       cwd=ROOT, capture_output=True, text=True)
     for line in (r.stdout + r.stderr).splitlines():
         if line.strip():
             log(line)
@@ -1271,7 +1506,7 @@ def open_repin_issue(release: dict, pinned: str) -> str:
             f"{release['date']} from the stored extracts, which the store keeps 14 days. "
             f"Until then every snapshot carries `scVersion` {pinned[1:]}, "
             f"and the chart marks the break when the first {version[1:]} snapshot lands.\n\n"
-            f"Opened by `python run.py check-release` (the scheduled update's last step).")
+            f"Opened by `python run.py check-release` (the last step of the daily `run.py inputs`).")
     return gh("issue", "create", "--title", repin_issue_title(version), "--body", body).strip()
 
 
@@ -1323,6 +1558,11 @@ def main(argv: list[str] | None = None) -> int:
                    help=f"where the snapshots are (default {ARCHIVE_DIR.relative_to(ROOT).as_posix()} with the "
                         "default --data-dir, else --data-dir itself)")
     sub.add_parser("migrate-archive", help="move snapshots published in docs/data into data/archive")
+    sub.add_parser("inputs", help="the world's daily inputs: Europe clip and planet diff, notes dump, the world's "
+                   "backup, the release check")
+    s = sub.add_parser("site", help="if the world has a gated day the site lacks: history + commit + push + deploy")
+    s.add_argument("--force", action="store_true", help="deploy whatever the site has")
+    s.add_argument("--no-push", dest="push", action="store_false", help="commit but neither push nor deploy")
     sub.add_parser("check-release", help="open the repin issue if StreetComplete has a newer stable release")
     args = parser.parse_args(argv)
     try:
@@ -1341,6 +1581,10 @@ def main(argv: list[str] | None = None) -> int:
                 migrate_archive()
         elif args.command == "update":
             update(force=args.force, push=args.push)
+        elif args.command == "inputs":
+            inputs()
+        elif args.command == "site":
+            site(force=args.force, push=args.push)
         elif args.command == "planet":
             planet(push=args.push)
         elif args.command == "check-release":
