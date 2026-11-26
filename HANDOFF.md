@@ -4515,6 +4515,39 @@ measured: 12,643 s, then the publish 1,155 s.
       saving shows only on tier 2's rectangles, which no kept input holds (f10: 0.7 s to 0.05 s).
     - **Install, when the owner says:** merge and `installDist` in main together, the install folder copied aside
       first (as on 11-23); until then keep the worktree (its install and scratch are the proof's).
+  - **The Python steps: built, branch `perf-steps` (7 commits, head cea271d6; worktree
+    `.claude/worktrees/agent-a2dd76c9aa4d4c5f4`), NOT merged.** Nothing of it has run on a real day.
+    - *Timers:* tier 1 (small pbf, engines, ingest, rewrite), `tier 2 delta` (changed groups, first pass, second
+      pass, rewrite), counts (note engines, sets save, count files, save), `touched and rects`; in
+      `planet_store_day.py` `timer:` lines (day.pkl save, read back, load, the engines' harvest, the deletes), kept
+      in `steps.json` under `timers`. `day.json` and `world.json` gain keys under `seconds`: the only output bytes
+      that differ.
+    - *Order-independent:* the day's record (`engines.json`, `day.json`) is now written BEFORE `compact`, and
+      `work/` and `before/` are deleted in a thread beside it, joined before the free-space check (`record_work`,
+      `delete_bulk`; a `recorded` marker for a resume). **So a STOP in `compact` now finds those two folders gone**
+      (nothing reads them after the gate, and it gives compaction its disk: the stop of 11-25, 01:30); `day.pkl`,
+      `finished`, `gate/` stay to the end, `gate.json` is still copied after `compact`. The refresh cuts the gate's
+      four notes clips in its one pass over the dump (`world_gate.gate_clips`; a clip whose header names another
+      dump is cut again by the gate). `W/place-bboxes.npz` stamped with `places.json`'s size and mtime.
+      `old_rows_of` uses the threaded `world_tier2.old_rows` (same dtype and bytes, tested).
+    - *Pools:* new `tools/stream/file_pool.py` (`WORLD_FILE_POOL`, default 4; 1 is the old loop, no pool; results
+      consumed in file order, at most that many files held): tier 1's rewrite, both loops of the delta,
+      `count_files`, the engine files' writer. Tests (`tests/test_file_pool.py`, 11): pool 1 against 4 on a
+      seven-file world, every file byte for byte and every returned value; tier 1 and counts also against the old
+      loop.
+    - *The agent's small benchmark (8 files of 1.5M rows, pool 1 to 4):* tier 1 rewrite 2.2 to 0.8 s, delta 4.7 to
+      2.4 s, counts 8.4 to 6.2 s, old rows 0.8 to 0.4 s, 20,000 small files 16.9 to 11.9 s (the writes themselves
+      do not scale with threads: `engine files` will save well under the 400 s guessed above). Peak commit not
+      measured; `WORLD_FILE_POOL=1` or `2` is the knob on a starved day.
+    - *Not built, as decided:* tier 1's engines beside cover and rectangles, the note engines beside the delta,
+      dropping `tilestore ways`, folding tier 1's rewrite into the delta's: after a day of the timers.
+  - **Both Python branches together: branch `perf-python` (15c6a2cd; worktree `~/Code/sc-open-quests-perf-python`),
+    main with `perf-room` and `perf-steps` merged** (two conflicts in `world_day.py`, both sides kept: the room's
+    phase line beside the new timers). **pytest there: 410 passed, 3 skipped.** Not merged into main.
+  - **State at 08:45 on 11-26: all four built, each proven as far as it can be without a world day; NOTHING
+    installed, nothing merged into main, the HOLD untouched, nothing running.** Installs wait for the owner's word and
+    order (proposed: day 1 the points fix and the memory rule, day 2 the Python steps, day 3 the engine). Worktrees
+    kept: the three agents' and `perf-python`; the engine one holds a gradle build.
 - **The delete was stopped at the 2-hour limit of a background job (11-26, about 07:00), not finished:** 250,000 of 1,129,125 old files gone,
   879,125 left in `bucket.json` "kept" (the sixth batch was cut mid-way; S3 deletes of a gone file are harmless, so a rerun is safe). A batch
   of 50,000 takes about 20 minutes, so the rest is about 6 hours: it needs a detached run, not a session's background job. Command:
