@@ -4693,3 +4693,7 @@ The 12:15 task `kk-SCOpenQuests` (`run.py update`) is deleted (11-26) and `docs/
   go to operator." **This replaces the 11-24 rule** "every match an operator judges, no rule decides alone": now an algorithm
   decides the clear cases, Fable (claude-fable-5-2) judges the rest, the operator sees only exceptions. Switch day: the 1st, at a
   reseed (first 2027-01-01 with 12-16.0). Found: no `anthropic` package, no API key, no `ant` CLI here; Claude Code 2.1.332 is.
+- **Owner (wizard, about 12:10):** Fable through **Claude Code headless** (`claude -p --model claude-fable-5-2`, the owner's
+  subscription); the algorithm decides **only clear cases** (new, back, same OSM object with same name and subtype, or same OSM
+  object with the name or subtype changed and the outlines overlapping well); **the operator gets only rows Fable is unsure of**
+  (low confidence, or two runs disagree); the **first switch on the 1st is watched** (2027-01-01), later ones unattended.
