@@ -4715,3 +4715,7 @@ The 12:15 task `kk-SCOpenQuests` (`run.py update`) is deleted (11-26) and `docs/
 - **Task `kk-SCOpenQuests-overture`, daily 09:30 (-05:00) from 11-27:** `overture_release.py watch >> logs/overture.log`
   (conhost headless, 6 h limit). On 11-27 and 11-28 the 154 rows fail again on the limit (resets 11-29 12:00); 11-29's run is
   before noon; **11-30 09:30 is the first that can finish them**, then it opens the operator's session.
+- **Owner, 11-26 about 13:30: the judge is the default model at high effort, now and later** (not Fable: its limit).
+  `JUDGE_MODEL = "claude-opus-5-5"`, `JUDGE_EFFORT = "high"` (`claude -p --model ... --effort high`), ea0e20ee. The 11-18.0
+  results moved from the trial into `data/place-ids/releases/` (registry hash checked equal), backed up; the 102 operator rows
+  sent back to the judge once with the improved `look`; 256 rows judged by Opus from about 13:30.
