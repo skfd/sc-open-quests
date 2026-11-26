@@ -4705,3 +4705,13 @@ The 12:15 task `kk-SCOpenQuests` (`run.py update`) is deleted (11-26) and `docs/
   about $3 at list prices on the subscription): 39 of 40 taken, 1 to the operator (the same OSM relation already ours under
   another id); it found Armenian communities merged into Goris and Stepanavan by their villages' new parent, dropped Moxico
   from Cuando Cubango's successors. The full 834 rows running since about 12:20 in `.scratch/overture-fable-trial/`.
+- **The full Fable trial on 11-18.0 (12:20-13:17, `.scratch/overture-fable-trial/`, 834 rows the algorithm left, batches of
+  40, two runs, three at once):** **the owner's Fable limit ran out** partway ("resets Nov 29, 12pm"): 154 rows' runs failed.
+  Of the 680 judged: **578 taken** (46 differ from the proposal), **102 to the operator** (76 unsure, 26 runs disagree; by class
+  overlap 46, ended-parent 35, same-osm-far 11, same-name-near 5, ended-none 3, contested 2). Real doubts mostly (which
+  successor; places whose OSM object only broke for a while, e.g. Warsaw's Bemowo, Estonia's Muusika: they end now and come back
+  as `back` -> `revive` when Overture has them again); some because `look` gave no parent ids: fixed. **Fixed:** a failed
+  run now leaves its rows for the next run (the 154 reset to unjudged), and `watch` calls the operator only when Fable is done.
+- **Task `kk-SCOpenQuests-overture`, daily 09:30 (-05:00) from 11-27:** `overture_release.py watch >> logs/overture.log`
+  (conhost headless, 6 h limit). On 11-27 and 11-28 the 154 rows fail again on the limit (resets 11-29 12:00); 11-29's run is
+  before noon; **11-30 09:30 is the first that can finish them**, then it opens the operator's session.
