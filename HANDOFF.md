@@ -4734,3 +4734,9 @@ The 12:15 task `kk-SCOpenQuests` (`run.py update`) is deleted (11-26) and `docs/
   started, logged "held", took no day. No RUNNING, no STOPPED; HOLD still holds the 11-25 note. Main is 2 commits ahead of origin
   (the next `run.py site` pushes). **One day (11-26) is waiting.** Nothing technical is left before the lift; the open
   question is the owner's: does the HOLD also wait for the 12-01 switch (`adopt`), which is not built?
+- **HOLD LIFTED 16:58 on 11-26 (owner, wizard: "Lift now, start loop").** The HOLD's note copied to
+  `.scratch/anomalies/HOLD-2026-11-25.txt`, HOLD deleted, the loop started through its own task (`schtasks /Run /TN
+  kk-SCOpenQuests-planetstore`, so the same command and 12 h limit). It took day 11-26 (`pins: added europe-2026-11-26`).
+  Expected about 20:30 plus the publish. **The first world day on the four speed-ups:** check it with the list above ("To check on
+  the first world day after the HOLD is lifted"), then `rename_places.py check`. A check is scheduled into this session for 20:45.
+  Next to build, in the gaps between days (no builds or DuckDB beside a running day): the 12-01 switch (`adopt`).
