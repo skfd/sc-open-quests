@@ -1,6 +1,7 @@
 {
   "name": "sc-open-quests-worker",
   "private": true,
+  "type": "module",
   "scripts": {
     "deploy": "wrangler deploy"
   },
