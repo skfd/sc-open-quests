@@ -33,6 +33,7 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 sys.path.insert(0, str(HERE))
 import notes_day as N  # noqa: E402
+import day_cache as DC  # noqa: E402
 import engine_room  # noqa: E402
 import file_pool as FP  # noqa: E402
 import place_counts as C  # noqa: E402
@@ -44,6 +45,7 @@ import world_tier2 as T2  # noqa: E402
 EXE = ROOT / "tilestore" / "target" / "release" / "tilestore.exe"
 RING_M = 300.0
 NOTE_QUEST = "OsmNoteQuestType"
+engine_room.ROOM.stop_check = DC.check_pause   # an engine waiting for room stops waiting when PAUSE is placed
 
 
 def _log(msg):
@@ -305,13 +307,29 @@ def rect_to_cell(rows: np.ndarray, sets: P.PlaceSets) -> np.ndarray:
 
 
 def engine_dump(day: Day, pbf: Path, out: Path, clock: str, cities: Path, parts: Path, area_pass: bool,
-                extra_opts: str = "") -> Path:
-    """one engine run, its state dump's path (thread-safe: the engine is passed, not set on `stream`)"""
-    quiet(20)
+                extra_opts: str = "", mark_extra: dict | None = None) -> Path:
+    """one engine run, its state dump's path (thread-safe: the engine is passed, not set on `stream`). Its output
+    is kept across a stop (day_cache): with a marker in `out` for this clock the engine is not run again; without
+    one `out` is emptied first. `mark_extra`: more for the marker (tier 2: the size of the map data it read)"""
     try:  # the engine's name in the day's work, as day_metrics.harvest writes it: t1/f12, t2/groups/f12/old
         key = out.resolve().relative_to(day.work.resolve()).as_posix()
     except ValueError:
         key = f"{out.parent.name}/{out.name}"
+    rec = DC.done(out, clock, needs=("dump", "side"))
+    if rec is not None:
+        return out / rec["dump"]
+    DC.check_pause(f"engine {key}")
+    DC.clear(out)
+    quiet(20)
+    t0 = time.time()
+    dump = _engine_dump(day, pbf, out, clock, cities, parts, area_pass, extra_opts, key)
+    DC.mark(out, {"clock": clock, "dump": dump.name, "side": dump.name + ".json", "opts": extra_opts,
+                  "engine": str(day.engine), "seconds": round(time.time() - t0, 1), **(mark_extra or {})})
+    return dump
+
+
+def _engine_dump(day: Day, pbf: Path, out: Path, clock: str, cities: Path, parts: Path, area_pass: bool,
+                 extra_opts: str, key: str) -> Path:
     # its heap from what it used on the last kept days (the day's with no history, or with SCOQ_ROOM_SIZED=0)
     heap = engine_room.heap_for(day.w, day.today, key, day.heap_gb)
 
@@ -382,8 +400,9 @@ def rect_groups(cities: Path, out: Path, cap_km2: float = T2_GROUP_KM2, ring_m: 
 T2_KEEP_PBF = os.environ.get("WORLD_T2_KEEP_PBF") == "1"
 
 
-def _engine_then_drop(day: Day, pbf: Path, out: Path, clock: str, cities: Path, parts: Path, opts: str) -> Path:
-    dump = engine_dump(day, pbf, out, clock, cities, parts, True, opts)
+def _engine_then_drop(day: Day, pbf: Path, out: Path, clock: str, cities: Path, parts: Path, opts: str,
+                      mb: float = 0.0) -> Path:
+    dump = engine_dump(day, pbf, out, clock, cities, parts, True, opts, mark_extra={"pbf MB": round(mb, 3)})
     if not T2_KEEP_PBF:
         pbf.unlink()
     return dump
@@ -393,28 +412,40 @@ def rect_rows(day: Day, cities: Path, parts: Path, gen: int, clock: str, stamp: 
               sets: P.PlaceSets, names: list[str], opts: str, workers: int = T2_WORKERS,
               cap_km2: float = T2_GROUP_KM2) -> tuple[np.ndarray, dict]:
     """the rectangles recounted on one generation of the store at one clock, group by group: each group's map data
-    read on its own (`tilestore read`), its engines `workers` at a time, the rows ingested in group order"""
-    from concurrent.futures import ThreadPoolExecutor
+    read on its own (`tilestore read`), its engines `workers` at a time, the rows ingested in group order. A group
+    whose engine output is kept from a run that stopped (day_cache) is neither read nor run again"""
+    from concurrent.futures import Future, ThreadPoolExecutor
     gs = rect_groups(cities, out, cap_km2)
-    st = {"groups": len(gs), "read s": 0.0, "pbf MB": 0.0}
+    st = {"groups": len(gs), "read s": 0.0, "pbf MB": 0.0, "kept": 0}
     with ThreadPoolExecutor(max(1, workers)) as ex:
         futs = []
         for gid, cf in gs:  # reads one at a time (the reader uses the threads), engines start as their read lands
+            kept = DC.done(cf.parent / which, clock, needs=("dump", "side"))
+            if kept is not None:
+                f = Future()
+                f.set_result((cf.parent / which / kept["dump"], 0.0))
+                st["pbf MB"] += kept.get("pbf MB", 0.0)
+                st["kept"] += 1
+                futs.append((gid, kept.get("pbf MB", 0.0), f))
+                continue
+            DC.check_pause(f"tier 2 {which}: the read of group {gid}")
             pbf = cf.parent / f"{which}.osm.pbf"
             t = time.time()
             tilestore("read", "--store", day.store, "--gen", gen, "--cities", cf, "--base", ROOT, "--ring",
                       f"{RING_M:.0f}", "--out", pbf, "--stamp", stamp, log=day.log)
             st["read s"] += time.time() - t
-            st["pbf MB"] += pbf.stat().st_size / 1e6
-            futs.append((gid, pbf.stat().st_size / 1e6,
-                         ex.submit(_engine_timed, day, pbf, cf.parent / which, clock, cf, parts, opts)))
+            mb = pbf.stat().st_size / 1e6
+            st["pbf MB"] += mb
+            futs.append((gid, mb, ex.submit(_engine_timed, day, pbf, cf.parent / which, clock, cf, parts, opts, mb)))
         dumps = []
         for i, (gid, mb, f) in enumerate(futs, 1):  # a line per group: tier 2 was hours without one
             d, s = f.result()
             dumps.append(d)
-            if day.log:
+            if day.log and s:
                 day.log(f"tier 2 {which}: group {gid} ({mb:,.0f} MB) engine {s:.0f} s; {i} of {len(futs)} done")
     if day.log:
+        if st["kept"]:
+            day.log(f"tier 2 {which}: {st['kept']} of {len(gs)} groups kept from a run that stopped")
         day.log(engine_room.ROOM.phase_line(f"tier 2 {which}"))
     rows = [dump_rows(d, sets, names, rects=True) for d in dumps]
     st = {k: round(v, 1) if isinstance(v, float) else v for k, v in st.items()}
@@ -684,16 +715,24 @@ def counts_at(w: Path, clock: str, sets: P.PlaceSets, names: list[str], work: Pa
 
     def one(f):
         d = w / "files" / f["id"]
-        quiet(5)
         key = f"{work.name}/{f['id']}"   # notes/f12 in a day's work, as day_metrics.harvest writes it
+        kept = DC.done(work / f["id"], clock)   # the engine's counts, kept from a run that stopped (day_cache)
+        if kept is not None and "result" in kept:
+            return kept["result"]
+        DC.check_pause(f"note engine {key}")
+        DC.clear(work / f["id"])
+        quiet(5)
 
         def run(gb, on_start, more):
             return N.note_quests(d / "cities.json", d / "notes.jsonl", clock, work / f["id"], parts=d / "parts",
                                  engine=engine, heap_gb=gb, parts_cache=P.parts_cache(w), on_start=on_start,
                                  extra_opts=more)
 
-        return engine_room.in_room(run, work / f["id"], key, engine_room.heap_for(w, clock, key, heap_gb), heap_gb,
-                                   cwd=ROOT)
+        t0 = time.time()
+        r = engine_room.in_room(run, work / f["id"], key, engine_room.heap_for(w, clock, key, heap_gb), heap_gb,
+                                cwd=ROOT)
+        DC.mark(work / f["id"], {"clock": clock, "result": r, "seconds": round(time.time() - t0, 1)})
+        return r
 
     from concurrent.futures import ThreadPoolExecutor
     with ThreadPoolExecutor(max(1, T2_WORKERS)) as ex:
@@ -731,47 +770,63 @@ def finish(day: Day) -> dict:
     sets = P.PlaceSets(w / "place-sets.json")
     g1 = gens(day.store)[-1]["gen"]
     assert g1 != day.gen_before, "the store has not moved to D: update it between prepare and finish"
-    # the changed relations' member ways at D (the cover takes the ones the area quests read)
-    t = time.time()
-    members = np.unique(np.array([ref for _, (_, _, ms) in day.last_rel.items() for typ, ref in ms if typ == "w"], np.int64))
-    new_members = way_lookup(day.store, members, day.work / "ways-new",
-                             rels=np.fromiter(day.last_rel, np.int64, len(day.last_rel)), log=log)
-    T["member ways"] = time.time() - t
-
-    def old_refs(wid):
-        return day.old_refs.get(wid)
-
-    def member_refs(wid):
-        v = day.last_way.get(wid)
-        if v is not None:
-            return v[4] if v[2] else None
-        return new_members.get(wid)
-
-    # the store's answers at D (after the update, before `compact`), and the cover's hooks from both days
-    hooks = {"old_refs": old_refs, "member_refs": member_refs}
-    if day.ctx is not None:
-        t = time.time()
-        day.ctx.after(EXE, day.store, g1, day.new_places, day.work / "context", log=log)
-        h = day.ctx.hooks(T2.container_kind)
-        h.pop("member_refs")  # the members looked up above (the diff's own refs first), as before
-        h["old_refs"] = old_refs
-        hooks.update(h)
-        T["store context after"] = time.time() - t
-
-    # the cover and its rectangles (the old rows are the state's before tier 1 replaced any)
-    t = time.time()
-    codes, cstats, secs = T2.cover(day.last_node, day.last_way, day.last_rel, day.old_places, day.new_places,
-                                   day.old_rows, log=log, **hooks)
-    T["cover"] = time.time() - t
+    kept = {}   # what a run that stopped left done (day_cache): its steps are not run again
+    # the cover and its rectangles: kept in t2/ with their numbers once after_cover has ended; without its marker
+    # t2/ is emptied (tier 2's groups hang on these rectangles)
     t2w = day.work / "t2"
-    t2w.mkdir(parents=True, exist_ok=True)
-    np.save(t2w / "codes.npy", codes)
-    TT = {}
-    # the places' bboxes are kept beside places.json, not in the day's work: 395 MB of JSON is not parsed every day
-    rinfo = T2.after_cover(codes, plan_path, w, t2w, ROOT, w / "places.json", TT, log=log,
-                           bbox_cache=w / "place-bboxes.npz")
-    T["rectangles"] = TT.get("rectangles", 0)
-    T["engine files"] = TT.get("engine files", 0)
+    plan_done = DC.done(t2w, day.today)
+    if plan_done is not None:
+        cstats, rinfo = plan_done["cstats"], plan_done["rinfo"]
+        T.update(plan_done["seconds"])
+        kept["cover and rectangles"] = True
+        log(f"cover and rectangles kept from a run that stopped ({rinfo['rectangles']:,} rectangles)")
+    else:
+        DC.check_pause("the cover")
+        DC.clear(t2w)
+        t_plan = dict(T)
+        # the changed relations' member ways at D (the cover takes the ones the area quests read)
+        t = time.time()
+        members = np.unique(np.array([ref for _, (_, _, ms) in day.last_rel.items() for typ, ref in ms if typ == "w"], np.int64))
+        new_members = way_lookup(day.store, members, day.work / "ways-new",
+                                 rels=np.fromiter(day.last_rel, np.int64, len(day.last_rel)), log=log)
+        T["member ways"] = time.time() - t
+
+        def old_refs(wid):
+            return day.old_refs.get(wid)
+
+        def member_refs(wid):
+            v = day.last_way.get(wid)
+            if v is not None:
+                return v[4] if v[2] else None
+            return new_members.get(wid)
+
+        # the store's answers at D (after the update, before `compact`), and the cover's hooks from both days
+        hooks = {"old_refs": old_refs, "member_refs": member_refs}
+        if day.ctx is not None:
+            t = time.time()
+            day.ctx.after(EXE, day.store, g1, day.new_places, day.work / "context", log=log)
+            h = day.ctx.hooks(T2.container_kind)
+            h.pop("member_refs")  # the members looked up above (the diff's own refs first), as before
+            h["old_refs"] = old_refs
+            hooks.update(h)
+            T["store context after"] = time.time() - t
+
+        # the cover and its rectangles (the old rows are the state's before tier 1 replaced any)
+        t = time.time()
+        codes, cstats, secs = T2.cover(day.last_node, day.last_way, day.last_rel, day.old_places, day.new_places,
+                                       day.old_rows, log=log, **hooks)
+        T["cover"] = time.time() - t
+        t2w = day.work / "t2"
+        t2w.mkdir(parents=True, exist_ok=True)
+        np.save(t2w / "codes.npy", codes)
+        TT = {}
+        # the places' bboxes are kept beside places.json, not in the day's work: 395 MB of JSON is not parsed every day
+        rinfo = T2.after_cover(codes, plan_path, w, t2w, ROOT, w / "places.json", TT, log=log,
+                               bbox_cache=w / "place-bboxes.npz")
+        T["rectangles"] = TT.get("rectangles", 0)
+        T["engine files"] = TT.get("engine files", 0)
+        DC.mark(t2w, {"clock": day.today, "cstats": {k: int(v) for k, v in cstats.items()}, "rinfo": rinfo,
+                      "seconds": {k: v for k, v in T.items() if t_plan.get(k) != v}})
     added: dict[str, set] = defaultdict(set)
 
     # tier 1: the touched elements' last versions through the engine, every cell a city with its parts
@@ -779,10 +834,19 @@ def finish(day: Day) -> dict:
     locs = S.DenseLocations(day.nodes, readonly=True) if day.nodes.is_file() else S.Locations(day.nodes)
     for nid, (_, _, alive, _, loc) in day.last_node.items():
         locs.overlay[nid] = loc if alive else None
-    unplaced: list[int] = []
     t1w = day.work / "t1"
-    t1w.mkdir(parents=True, exist_ok=True)
-    pst = S.write_small_pbf(t1w / "touched.osm.pbf", day.today, day.last_node, day.last_way, locs, unplaced)
+    pbf_done = DC.done(t1w, day.today, needs=("pbf",))
+    if pbf_done is not None:   # kept from a run that stopped; the engines' outputs below are in t1/ too
+        n_unplaced, pst = pbf_done["unplaced"], pbf_done["pst"]
+        kept["tier 1: small pbf"] = True
+    else:
+        DC.check_pause("tier 1")
+        DC.clear(t1w)   # its engines read this PBF: without its marker their outputs go too
+        t1w.mkdir(parents=True, exist_ok=True)
+        unplaced: list[int] = []
+        pst = dict(S.write_small_pbf(t1w / "touched.osm.pbf", day.today, day.last_node, day.last_way, locs, unplaced))
+        n_unplaced = len(unplaced)
+        DC.mark(t1w, {"clock": day.today, "pbf": "touched.osm.pbf", "unplaced": n_unplaced, "pst": pst})
     T["tier 1: small pbf"] = time.time() - t
     t1 = time.time()
     # one engine run per plan file over the same small PBF (its cells and parts; elements outside them are skipped),
@@ -790,6 +854,10 @@ def finish(day: Day) -> dict:
     # engine ends first
     from concurrent.futures import ThreadPoolExecutor
     engine_room.ROOM.phase()  # the room's count per phase starts here
+    n_kept = sum(DC.done(t1w / f["id"], day.today, needs=("dump", "side")) is not None for f in files)
+    if n_kept:
+        kept["tier 1: engines"] = n_kept
+        log(f"tier 1: {n_kept} of {len(files)} engines kept from a run that stopped")
     with ThreadPoolExecutor(max(1, T2_WORKERS)) as ex:
         futs = [ex.submit(engine_dump, day, t1w / "touched.osm.pbf", t1w / f["id"], day.today,
                           w / "files" / f["id"] / "cities.json", w / "files" / f["id"] / "parts", False) for f in files]
@@ -812,6 +880,7 @@ def finish(day: Day) -> dict:
     log(f"tier 1: {d1:,} rows of touched elements dropped, {a1:,} added; {unrouted1:,} in no file; {dict(pst)}")
 
     # tier 2: the rectangles on D-1 at D-1's clock and on D at D's, the delta into the files
+    DC.check_pause("tier 2")
     t = time.time()
     cities, rparts = t2w / "cities.json", t2w / "parts"
     opts = f"-Dopenquests.areaPaddingM={RING_M:.0f}"
@@ -823,6 +892,9 @@ def finish(day: Day) -> dict:
         new, gst_new = rect_rows(day, cities, rparts, g1, day.today, day.today, "new", t2w / "groups", sets, names, opts)
         T["tier 2 reads"] = gst_old["read s"] + gst_new["read s"]
         T["tier 2 engine"] = time.time() - t - T["tier 2 reads"]
+        if gst_old["kept"] or gst_new["kept"]:
+            kept["tier 2: groups"] = {"old": gst_old["kept"], "new": gst_new["kept"], "of": gst_old["groups"]}
+        DC.check_pause("tier 2's delta")
         log(f"tier 2 groups: {gst_old['groups']}, map data {gst_old['pbf MB']:,.0f} MB at D-1 and "
             f"{gst_new['pbf MB']:,.0f} MB at D")
         t = time.time()
@@ -835,6 +907,7 @@ def finish(day: Day) -> dict:
     T["sets save"] = time.time() - t
 
     # notes at D: hidden flags (only rows at notes that opened or closed, and the day's new rows), note quests
+    DC.check_pause("the notes")
     t = time.time()
     clip = world_notes(w)
     # notes_day.hidden_files: the clip as a cached table, only files a changed note position or new rows reach,
@@ -846,6 +919,9 @@ def finish(day: Day) -> dict:
                                  P.WREC, N.notes_table(clip), day.today, day.prev, fresh,
                                  prev_table=N.notes_table(prev_clip) if prev_clip.exists() else None))
     T["notes"] = time.time() - t
+    n_kept = sum(DC.done(day.work / "notes" / f["id"], day.today) is not None for f in files)
+    if n_kept:
+        kept["note engines"] = n_kept
     t = time.time()
     counts_at(w, day.today, sets, names, day.work / "notes", day.engine, day.heap_gb, T)
     log(engine_room.ROOM.phase_line("notes"))
@@ -856,9 +932,11 @@ def finish(day: Day) -> dict:
     meta["quests"] = names
     meta["applied"].append(day.diff.name)
     rec = {"diff": day.diff.name, "today": day.today, **day.stats, "tier1": {"dropped": d1, "added": a1, "unrouted": unrouted1,
-           "waysNotPlaced": len(unplaced)}, "cover": {k: int(v) for k, v in cstats.items()},
+           "waysNotPlaced": n_unplaced}, "cover": {k: int(v) for k, v in cstats.items()},
            "rectangles": {k: rinfo[k] for k in ("markedCells", "rectangles", "rectKm2", "rectKm2Quantiles")},
            "tier2": t2s, "notes": dict(nst), "seconds": {k: round(v, 1) for k, v in T.items()}}
+    if kept:   # a resumed finish: these steps' seconds are the stopped run's (the cover's) or not in the day's
+        rec["kept"] = kept
     meta["days"].append(rec)
     (w / WS.WORLD_META).write_text(json.dumps(meta, indent=1), encoding="utf-8")
     (day.work / "day.json").write_text(json.dumps(rec, indent=1), encoding="utf-8")

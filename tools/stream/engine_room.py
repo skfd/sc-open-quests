@@ -189,6 +189,7 @@ class Room:
         self.most = 0                # the most alive at once (a metric)
         self.waited_s = 0.0          # seconds engines stood waiting for room, summed (a metric)
         self._phase = [0, 0.0, 0]    # most, waited, entered since the last phase()
+        self.stop_check = None       # (what) -> None, raising to end a wait (world_day sets day_cache.check_pause)
 
     @property
     def alive(self) -> list:
@@ -252,6 +253,8 @@ class Room:
                 if said is None or (not self.slots and waited - said >= LOG_MINUTES * 60):
                     say(f"engine room: {what} waits: {now}")
                     said = waited
+                if self.stop_check is not None:   # day_cache.check_pause: a PAUSE ends the wait (it raises)
+                    self.stop_check(what)
                 self.cond.wait(self.poll)
 
     def leave(self, slot) -> None:

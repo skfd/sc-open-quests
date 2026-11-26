@@ -71,6 +71,7 @@ PIN_REASON = ("sc-open-quests release 1: oracle for the world's daily backfill f
               "unpin once that day is streamed and checked")
 
 sys.path.insert(0, str(ROOT / "tools/stream"))
+import day_cache as DC  # noqa: E402
 import day_metrics as DM  # noqa: E402
 import world_day as WD  # noqa: E402
 import world_gate as WG  # noqa: E402
@@ -267,7 +268,7 @@ def guarded(what, fn, *args, **kw):
     so nothing is half done; it goes up to `days`, which ends the run"""
     try:
         return fn(*args, **kw)
-    except WG.run.MemoryBusy:
+    except (WG.run.MemoryBusy, DC.Paused):
         raise
     except BaseException as e:  # noqa: BLE001
         if STOPPED.exists():  # a stop() inside the step: its reason stands
@@ -403,6 +404,9 @@ def store_tail(dd: Path, nxt: str, seq: int, osc: Path, oracle: Path, g: int) ->
 
 
 def one_day():
+    if DC.PAUSE.exists():
+        log(f"paused: {DC.PAUSE} says {DC.PAUSE.read_text(encoding='utf-8').strip()}; no day taken or resumed")
+        return False
     if HOLD.exists():
         log(f"held: {HOLD} says {HOLD.read_text(encoding='utf-8').strip()}; no day taken")
         return False
@@ -506,6 +510,7 @@ def one_day():
     del d_  # finish reads the day back, as a resume does; the update (about 20 GiB) gets the memory
     import gc
     gc.collect()
+    DC.check_pause(f"the store's update to {nxt}")  # before it the day can begin again from scratch
     WD.quiet(20)  # the update not beside the daily run
     run([EXE, "update", "--store", STORE, "--diff", osc, "--before-loc", LOC, "--day", nxt, "--world", "--group-mib", "512",
          "--prune-pairs"], f"update {seq}")
@@ -585,7 +590,52 @@ def days(max_days: int, day=None) -> int:
         # not the text "STOPPED:" in this line: store_lock.run_going reads that in the log as a run's end by a stop
         log(f"not now: {e}. No STOPPED written, since nothing failed and nothing is half written; the next run "
             f"resumes the day at its gate")
+    except DC.Paused as e:
+        log(f"paused: {e}. No STOPPED written; delete the PAUSE file and start the task, and the day resumes "
+            f"with what it has done kept (day_cache)")
     return n
+
+
+def end_orphans(pid: int) -> None:
+    """a run that is gone (killed, not stopped) can leave its engines, readers and pool workers running, still
+    writing into the day's work: they are ended before anything of the day is reused. Its descendants (the pid's
+    children by parent id, through any shell between) and any engine or tilestore whose command line names the
+    days' work folder; only python, java, tilestore and osmium are ended, never this run or its parents"""
+    ps = ("Get-CimInstance Win32_Process | Select-Object ProcessId,ParentProcessId,Name,CommandLine | "
+          "ConvertTo-Json -Compress")
+    try:
+        procs = json.loads(subprocess.run(["powershell", "-NoProfile", "-Command", ps], capture_output=True,
+                                          text=True, timeout=120).stdout or "[]")
+    except (OSError, ValueError, subprocess.TimeoutExpired) as e:
+        log(f"orphans: not looked for ({type(e).__name__}: {e})")
+        return
+    if isinstance(procs, dict):
+        procs = [procs]
+    by_parent: dict[int, list[dict]] = {}
+    for p_ in procs:
+        by_parent.setdefault(p_["ParentProcessId"], []).append(p_)
+    mine, me = set(), os.getpid()
+    by_id = {p_["ProcessId"]: p_ for p_ in procs}
+    while me in by_id and me not in mine:   # this run and its parents
+        mine.add(me)
+        me = by_id[me]["ParentProcessId"]
+    found, todo = {}, [pid]
+    while todo:
+        for c in by_parent.get(todo.pop(), []):
+            if c["ProcessId"] not in found and c["ProcessId"] not in mine:
+                found[c["ProcessId"]] = c
+                todo.append(c["ProcessId"])
+    for p_ in procs:
+        if str(WDAYS) in (p_.get("CommandLine") or "") and p_["ProcessId"] not in mine:
+            found[p_["ProcessId"]] = p_
+    ends = [p_ for p_ in found.values() if (p_.get("Name") or "").lower() in
+            ("python.exe", "java.exe", "javaw.exe", "tilestore.exe", "osmium.exe")]
+    for p_ in ends:
+        r = subprocess.run(["taskkill", "/F", "/PID", str(p_["ProcessId"])], capture_output=True, text=True)
+        log(f"orphans: {p_['Name']} {p_['ProcessId']} of the run that is gone ended (exit {r.returncode}): "
+            f"{(p_.get('CommandLine') or '')[:160]}")
+    if not ends:
+        log(f"orphans: none of the run that is gone (pid {pid}) left")
 
 
 def main():
@@ -633,6 +683,7 @@ def main():
             log(f"another run holds {RUNNING} ({RUNNING.read_text(encoding='utf-8').strip()}): not starting")
             return
         log(f"{RUNNING} left by a run that is gone (pid {pid}): taking over")
+        end_orphans(pid)
     shutil.copy2(EXE_SRC, EXE)  # a rebuild of tilestore/ while this runs does not touch the binary in use
     log(f"planet store run started; binary {EXE_SRC} copied")
     n = 0
