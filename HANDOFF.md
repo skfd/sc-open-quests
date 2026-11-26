@@ -4740,3 +4740,10 @@ The 12:15 task `kk-SCOpenQuests` (`run.py update`) is deleted (11-26) and `docs/
   Expected about 20:30 plus the publish. **The first world day on the four speed-ups:** check it with the list above ("To check on
   the first world day after the HOLD is lifted"), then `rename_places.py check`. A check is scheduled into this session for 20:45.
   Next to build, in the gaps between days (no builds or DuckDB beside a running day): the 12-01 switch (`adopt`).
+- **PAUSED 18:02 on 11-26 (owner, wizard: "i am going offline soon", the laptop goes off: "stop now").** HOLD placed (its note
+  names the stop); the task ended (`schtasks /End`) and the loop's two python processes (48792, 7908) killed at a still point:
+  no engine alive, tier 2 past `rectangles` (17:53), in a Python step. `RUNNING` is left (pid 7908, gone): the next start logs
+  "left by a run that is gone: taking over". The 20:45 check is cancelled. **When the laptop is back (the owner's word):** delete
+  HOLD, `schtasks /Run /TN kk-SCOpenQuests-planetstore`; 11-26 resumes from `day.pkl` (store at D: `finish` again, about 2.5 h)
+  or redoes the day, then takes 11-27 if its inputs are there. Then the first-day checks above and `rename_places.py check`.
+  The 09:30 Overture watcher and the 11:15 inputs run are due again tomorrow if the laptop is on.
