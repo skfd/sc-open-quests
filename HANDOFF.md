@@ -4640,3 +4640,14 @@ The 12:15 task `kk-SCOpenQuests` (`run.py update`) is deleted (11-26) and `docs/
   regional fetches stop. `backup_archive` backs up `data/archive`; does `data/archive-world` have a backup of its own?
 - **Disk:** the regional extracts in `~/Code/.osm-data` (Ontario, Quebec, BC, Alberta, the German states, about 55 GB) are
   no longer downloaded and age out on the store's 14-day retention; Ontario is shared with `kk-ontario-update`. Delete nothing by hand.
+
+## The Overture release tool (2026-11-26, from 11:20; owner: "lets make that overture release tool")
+
+- **Owner (wizard, about 11:20):** (1) **the HOLD waits for this tool**: world dailies stay paused until it is built and tried
+  on 11-18.0; (2) **registry side only** this round (pull, diff against the registry, proposals, the operator's verdicts, a staged
+  registry); ended pages, successor links and `?in=` later; (3) **a decisions file, bulk accept by named class, the uncertain rows
+  walked through in a session**; nothing accepted without the operator.
+- Plan: `tools/overture_release.py` (`narrow`, `propose`, `status`, `accept`, `judge`, `apply`), files in
+  `data/place-ids/releases/<release>/` (backed up with the registry, out of `config/` so no site deploy). `apply` writes a
+  **staged** registry there; the live one is swapped only at the reseed. Former names in a side file. Population = `mint`'s (every
+  division with an area). Proof on 11-18.0 against a copy of the registry; no DuckDB, tests or S3 until the 12:15 city run ends.
