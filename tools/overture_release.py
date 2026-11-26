@@ -812,15 +812,18 @@ def agent(release: str, old: str, root: Path = RELEASES, registry: Path = place_
                 a = runner(prompt)
                 tally["cost"] += a.pop("_cost", 0) or 0
                 answers.append({v["key"]: v for v in a.get("verdicts", [])})
-            except Exception as e:  # a failed run sends its rows to the operator, it does not stop the others
+            except Exception as e:  # a failed run (a usage limit, the network) leaves its rows for the next run
                 errors.append(str(e)[:300])
         with lock:
+            if errors:
+                tally["retry"] = tally.get("retry", 0) + len(b)
+                tally["errors"] = errors[0]
+                log(f"  batch of {len(b)} left for a later run: {errors[0][:200]}")
+                return
             for r in b:
                 got = [a.get(r["key"]) for a in answers]
                 why = ""
-                if errors:
-                    why = f"a run failed ({errors[0]})"
-                elif any(g is None for g in got):
+                if any(g is None for g in got):
                     why = "no verdict from every run"
                 else:
                     vs = {_norm(g["verdict"]) for g in got}
@@ -955,6 +958,10 @@ def watch(root: Path = RELEASES, registry: Path = place_ids.REGISTRY, runs: int 
     auto(rel, root)
     agent(rel, pin, root, registry, runs=runs, model=model)
     left = [r for r in read_rows(here / "proposals.tsv") if not r["verdict"]]
+    pending = [r for r in left if not r["judged"].startswith("operator")]
+    if pending:   # a Fable run failed (a usage limit): tomorrow's watch tries them again; the operator waits for that
+        log(f"watch: {len(pending)} rows of {rel} still wait for the Fable judge; {len(left) - len(pending)} for the operator")
+        return 3
     if left:
         log(f"OPERATOR: {len(left)} rows of {rel} wait for a human: {exceptions(rel, root)}")
         if root == RELEASES:

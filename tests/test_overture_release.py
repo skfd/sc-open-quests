@@ -211,7 +211,7 @@ class Judges(Base):
         # a second run judges nothing again: the operator's rows wait for the operator
         self.assertEqual({"judged": 0, "operator": 0}, orl.agent(NEW, OLD, self.root, self.registry, runner=runner))
 
-    def test_a_failed_run_sends_its_rows_to_the_operator(self):
+    def test_a_failed_run_leaves_its_rows_for_the_next_run(self):
         self.propose()
         orl.auto(NEW, self.root)
 
@@ -221,7 +221,9 @@ class Judges(Base):
         t = orl.agent(NEW, OLD, self.root, self.registry, runs=1, runner=runner)
         self.assertEqual(0, t["judged"])
         rows = orl.read_rows(self.root / NEW / "proposals.tsv")
-        self.assertTrue(all("a run failed" in r["judged"] for r in rows if not r["verdict"]))
+        left = [r for r in rows if not r["verdict"]]
+        self.assertTrue(left and all(r["judged"] == "" for r in left), "left for the next run, not for the operator")
+        self.assertEqual(len(left), t["retry"])
 
     def test_look_shows_a_rows_context(self):
         self.propose()
