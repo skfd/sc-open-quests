@@ -117,6 +117,8 @@ class PassStats {
     val ignoredRelations = java.util.concurrent.atomic.AtomicLong()
     /** matches (element, quest) not counted because an open note sits on their position */
     val hiddenByNotes = java.util.concurrent.atomic.AtomicLong()
+    /** the cities whose area lists `-Dopenquests.areaIndex=verify` found the same from the index and from the scan */
+    val cityListsVerified = java.util.concurrent.atomic.AtomicLong()
     val timings: MutableMap<String, Double> = java.util.Collections.synchronizedMap(LinkedHashMap<String, Double>())
 }
 
