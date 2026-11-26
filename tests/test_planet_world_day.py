@@ -144,6 +144,44 @@ class SnapshotTest(unittest.TestCase):
         self.assertEqual(os.stat(p).st_ino, ino)  # no copy when nothing else holds the file
 
 
+class DayWorkDeletedTest(unittest.TestCase):
+    """the day's record written before its work goes, once; the work deleted in a thread, what a resume reads kept"""
+
+    def setUp(self):
+        self.t = tempfile.TemporaryDirectory()
+        self.addCleanup(self.t.cleanup)
+        t = Path(self.t.name)
+        self.dd = t / "world-days" / "2026-11-02"
+        for rel, text in (("work/day.json", '{"today": "2026-11-02T00:00:00Z"}'), ("work/t1/f0/engine.log", "x\n"),
+                          ("work/t2/groups/f0/old/state.bin", "rows"), ("before/files/f0/world.bin", "rows"),
+                          ("before/done", "c\n"), ("gate/gate.json", '{"ok": true}'), ("day.pkl", "p"), ("finished", "")):
+            (self.dd / rel).parent.mkdir(parents=True, exist_ok=True)
+            (self.dd / rel).write_text(text, encoding="utf-8")
+        self.lines = []
+        self.old = (PSD.WORLD, PSD.log)
+        PSD.WORLD, PSD.log = t / "world", self.lines.append
+        self.addCleanup(lambda: setattr(PSD, "WORLD", self.old[0]) or setattr(PSD, "log", self.old[1]))
+        self.keep = t / "world" / "days" / "2026-11-02"
+
+    def test_recorded_once_then_only_the_bulk_goes(self):
+        PSD.record_work(self.dd, "2026-11-02")
+        self.assertEqual(sorted(p.name for p in self.keep.iterdir()), ["day.json", "engines.json"])   # no gate.json yet
+        engines = (self.keep / "engines.json").read_bytes()
+        self.assertEqual(json.loads(engines)["unfinished"], ["t1/f0"])
+        th = PSD.delete_bulk(self.dd)
+        th.join()
+        self.assertGreaterEqual(th.seconds, 0.0)
+        # what a resumed run goes by is still there: the gate's result, `finished`, the day, the marker
+        self.assertEqual(sorted(p.name for p in self.dd.iterdir()), ["day.pkl", "finished", "gate", PSD.RECORDED])
+        self.assertTrue((self.dd / "gate" / "gate.json").exists())
+        # a run that resumes here (compact stopped it) does not read the deleted work into the record again
+        (self.keep / "day.json").write_text("kept", encoding="utf-8")
+        PSD.record_work(self.dd, "2026-11-02")
+        self.assertEqual((self.keep / "engines.json").read_bytes(), engines)
+        self.assertEqual((self.keep / "day.json").read_text(encoding="utf-8"), "kept")
+        self.assertEqual(sum("engines harvest" in l for l in self.lines), 1)
+
+
 if __name__ == "__main__":
     unittest.main()
 

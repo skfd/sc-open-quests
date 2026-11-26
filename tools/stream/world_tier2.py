@@ -52,6 +52,7 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from tier2 import M_LAT, CELL, PAD, RING, merge_rects  # noqa: E402
+import file_pool as FP  # noqa: E402
 
 DLAT = CELL / M_LAT
 MAX_COS_LAT = 85.0  # a cell's width is taken at 85 degrees at most, as the rings are (world_cells.padded)
@@ -847,18 +848,28 @@ def rect_km2(rects: dict[int, np.ndarray]) -> float:
 
 # --- the engine's files --------------------------------------------------------------------------
 
+BBOX_VERSION = 1
+
+
 def place_bboxes(places_json: Path, npz: Path) -> tuple[np.ndarray, np.ndarray]:
-    """the name layer's places as (sorted ids, bbox w, s, e, n), cached as an npz"""
-    if npz.exists() and npz.stat().st_mtime >= places_json.stat().st_mtime:
-        z = np.load(npz)
-        return z["ids"], z["bbox"]
+    """the name layer's places as (sorted ids, bbox w, s, e, n), cached as an npz with a stamp of places.json (its
+    size and modification time, as notes_day.notes_table stamps a clip): parsed again only when the file changes.
+    A cache without a stamp (written before 2026-11-26) is made again."""
+    st = places_json.stat()
+    stamp = np.array([BBOX_VERSION, st.st_size, st.st_mtime_ns], np.int64)
+    if npz.exists():
+        with np.load(npz) as z:  # closed before the cache is replaced below: Windows refuses to replace an open file
+            if "stamp" in z.files and (z["stamp"] == stamp).all():
+                return z["ids"], z["bbox"]
     d = json.loads(places_json.read_text(encoding="utf-8"))["places"]
     ids = np.array([p["id"] for p in d])
     bbox = np.array([p.get("bbox") or (np.nan,) * 4 for p in d], float)
     order = np.argsort(ids)
     ids, bbox = ids[order], bbox[order]
     npz.parent.mkdir(parents=True, exist_ok=True)
-    np.savez(npz, ids=ids, bbox=bbox)
+    tmp = npz.with_name(npz.name + ".writing.npz")
+    np.savez(tmp, stamp=stamp, ids=ids, bbox=bbox)
+    os.replace(tmp, npz)
     return ids, bbox
 
 
@@ -883,9 +894,12 @@ class PartBoxes:
 
 
 def write_engine_files(rects: dict[int, np.ndarray], cells: list[dict], world: Path, work: Path, base: Path,
-                       boxes: PartBoxes) -> tuple[Path, Path, dict]:
+                       boxes: PartBoxes, pool: int | None = None) -> tuple[Path, Path, dict]:
     """work/cities.json (every rectangle a city), work/cells/<id>.json (its boundary), work/parts/<id>.json (the
-    cell's parts whose bbox meets it; a part with no known bbox is kept). Returns (cities file, parts dir, stats)."""
+    cell's parts whose bbox meets it; a part with no known bbox is kept). Returns (cities file, parts dir, stats).
+    Every file's text is made here, in the rectangles' order; the boundary and parts files are written `pool` at a
+    time (file_pool.SmallFiles; FP.FILE_POOL when None; 1: one after another, as they were), all of them before
+    cities.json and before this returns."""
     cdir, pdir = work / "cells", work / "parts"
     for d in (cdir, pdir):
         d.mkdir(parents=True, exist_ok=True)
@@ -894,31 +908,32 @@ def write_engine_files(rects: dict[int, np.ndarray], cells: list[dict], world: P
     rid = 970_000_000
     eng = []
     st = Counter()
-    for k, rs in rects.items():
-        cell = cells[k]
-        pf = world / "files" / cell["file"] / "parts" / f"{cell['id']}.json"
-        entries = json.loads(pf.read_text(encoding="utf-8"))["parts"] if pf.exists() else []
-        pb = boxes.of([e["id"] for e in entries]) if entries else np.zeros((0, 4))
-        unknown = ~np.isfinite(pb).all(axis=1)
-        st["part entries without a bbox (kept)"] += int(unknown.sum())
-        for j, (s, w, n, e) in enumerate(rs.tolist()):
-            cid = f"{cell['id']}-{j}"
-            ring = [{"lat": s, "lon": w}, {"lat": s, "lon": e}, {"lat": n, "lon": e}, {"lat": n, "lon": w}, {"lat": s, "lon": w}]
-            bpath = cdir / f"{cid}.json"
-            bpath.write_text(json.dumps({"type": "relation", "id": rid, "bounds": {"minlat": s, "minlon": w, "maxlat": n, "maxlon": e},
-                                         "members": [{"type": "way", "ref": rid, "role": "outer", "geometry": ring}],
-                                         "tags": {"name": cid}}), encoding="utf-8")
-            eng.append({"id": cid, "name": cid, "relation": rid, "adminLevel": 2, "countryCodes": None,
-                        "timeZone": cell["timeZone"], "population": 1, "landAreaKm2": 1.0,
-                        "boundary": Path(os.path.relpath(bpath, base)).as_posix(), "region": "tier2", "box": [s, w, n, e]})
-            if entries:
-                meet = unknown | ((pb[:, 0] <= e) & (pb[:, 2] >= w) & (pb[:, 1] <= n) & (pb[:, 3] >= s))
-                ps = [entries[x] for x in np.flatnonzero(meet)]
-                if ps:
-                    (pdir / f"{cid}.json").write_text(json.dumps({"schema": 1, "city": cid, "parts": ps}), encoding="utf-8")
-                    st["rectangles with parts"] += 1
-                    st["part entries"] += len(ps)
-            rid += 1
+    with FP.SmallFiles(pool) as out:
+        for k, rs in rects.items():
+            cell = cells[k]
+            pf = world / "files" / cell["file"] / "parts" / f"{cell['id']}.json"
+            entries = json.loads(pf.read_text(encoding="utf-8"))["parts"] if pf.exists() else []
+            pb = boxes.of([e["id"] for e in entries]) if entries else np.zeros((0, 4))
+            unknown = ~np.isfinite(pb).all(axis=1)
+            st["part entries without a bbox (kept)"] += int(unknown.sum())
+            for j, (s, w, n, e) in enumerate(rs.tolist()):
+                cid = f"{cell['id']}-{j}"
+                ring = [{"lat": s, "lon": w}, {"lat": s, "lon": e}, {"lat": n, "lon": e}, {"lat": n, "lon": w}, {"lat": s, "lon": w}]
+                bpath = cdir / f"{cid}.json"
+                out.put(bpath, json.dumps({"type": "relation", "id": rid, "bounds": {"minlat": s, "minlon": w, "maxlat": n, "maxlon": e},
+                                           "members": [{"type": "way", "ref": rid, "role": "outer", "geometry": ring}],
+                                           "tags": {"name": cid}}))
+                eng.append({"id": cid, "name": cid, "relation": rid, "adminLevel": 2, "countryCodes": None,
+                            "timeZone": cell["timeZone"], "population": 1, "landAreaKm2": 1.0,
+                            "boundary": Path(os.path.relpath(bpath, base)).as_posix(), "region": "tier2", "box": [s, w, n, e]})
+                if entries:
+                    meet = unknown | ((pb[:, 0] <= e) & (pb[:, 2] >= w) & (pb[:, 1] <= n) & (pb[:, 3] >= s))
+                    ps = [entries[x] for x in np.flatnonzero(meet)]
+                    if ps:
+                        out.put(pdir / f"{cid}.json", json.dumps({"schema": 1, "city": cid, "parts": ps}))
+                        st["rectangles with parts"] += 1
+                        st["part entries"] += len(ps)
+                rid += 1
     cf = work / "cities.json"
     cf.write_text(json.dumps({"cities": eng}), encoding="utf-8")
     st["rectangles"] = len(eng)
@@ -931,9 +946,11 @@ def write_engine_files(rects: dict[int, np.ndarray], cells: list[dict], world: P
 ROWPOS = np.dtype([("key", "<i8"), ("lat", "<i4"), ("lon", "<i4")])
 
 
-def old_rows(world: Path, keys: np.ndarray, dtype=None, name: str = "state.bin", workers: int = 4) -> np.ndarray:
+def old_rows(world: Path, keys: np.ndarray, dtype=None, name: str = "state.bin", workers: int = 4,
+             keys_name: str = "state-keys.npy") -> np.ndarray:
     """every row of these keys in the world state's files (each sorted by key, with its state-keys.npy): key, lat,
-    lon only. A file holding none of the keys is not read."""
+    lon only. A file holding none of the keys is not read. The world day's files: dtype WREC, name world.bin,
+    keys_name world-keys.npy. The files are read `workers` at a time and their rows joined in the plan's order."""
     from concurrent.futures import ThreadPoolExecutor
     from world_state import REC, in_keys
     dtype = dtype or REC
@@ -942,7 +959,7 @@ def old_rows(world: Path, keys: np.ndarray, dtype=None, name: str = "state.bin",
 
     def one(f):
         d = world / "files" / f["id"]
-        kf = d / "state-keys.npy"
+        kf = d / keys_name
         hit = keys
         if kf.exists():
             fk = np.load(kf)
@@ -1001,14 +1018,17 @@ def day(diff: Path, plan_path: Path, world: Path, nodes: Path, work: Path, base:
     return out
 
 
-def after_cover(codes, plan_path: Path, world: Path, work: Path, base: Path, places_json: Path, T: dict, log=print) -> dict:
+def after_cover(codes, plan_path: Path, world: Path, work: Path, base: Path, places_json: Path, T: dict, log=print,
+                bbox_cache: Path | None = None) -> dict:
+    """bbox_cache: where the places' bboxes are kept (place_bboxes); beside the work when not given, which a world
+    day deletes, so the day gives a path that stays"""
     t = time.time()
     plan = json.loads(plan_path.read_text(encoding="utf-8"))
     cells = plan_cells(plan)
     rects = rectangles(codes, cells, log=log)
     T["rectangles"] = time.time() - t
     t = time.time()
-    ids, bbox = place_bboxes(places_json, work.parent / "place-bboxes.npz")
+    ids, bbox = place_bboxes(places_json, bbox_cache or work.parent / "place-bboxes.npz")
     boxes = PartBoxes(ids, bbox, plan.get("cityParts") or [])
     cf, pdir, wst = write_engine_files(rects, cells, world, work, base, boxes)
     T["engine files"] = time.time() - t

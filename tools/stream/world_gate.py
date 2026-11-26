@@ -50,19 +50,42 @@ def notes_until(w: Path) -> str:
         return json.loads(fh.readline())["until"]
 
 
+def gate_regions() -> list[dict]:
+    return [r for r in run.read_json(run.REGIONS_CONFIG)["regions"] if r["id"] in REGIONS]
+
+
+def gate_clips(w: Path, regions: list[dict] | None = None) -> list[dict]:
+    """what clip_notes is asked for each region's gate clip (its config's entries): the region's poly, its cities'
+    boxes, out W/gate-notes/<region>.jsonl. One place, so the clips the world's notes refresh cuts in its own pass
+    over the dump (world_day.refresh_notes) are the ones `gate_notes` would cut"""
+    regions = gate_regions() if regions is None else regions
+    return [{"poly": str(ROOT / r["poly"]), "out": str(w / "gate-notes" / f"{r['id']}.jsonl"),
+             "boxes": run.note_boxes(r)} for r in regions]
+
+
+def clip_source(clip: Path) -> str | None:
+    """the dump a notes clip was cut from (its header); None when there is no such clip"""
+    try:
+        with open(clip, encoding="utf-8") as fh:
+            return json.loads(fh.readline()).get("source")
+    except (OSError, ValueError):
+        return None
+
+
 def gate_notes(w: Path, regions: list[dict], log=_log) -> dict[str, Path]:
-    """each region's clip of the world's notes dump, made once (the daily run deletes its own older clips)"""
+    """each region's clip of the world's notes dump, made once (the daily run deletes its own older clips). The
+    world's notes refresh makes them in its own pass over the dump; a clip that is missing, or is of another dump
+    than the world's (a refresh that stopped half way), is cut here"""
     d = w / "gate-notes"
     d.mkdir(exist_ok=True)
     out = {r["id"]: d / f"{r['id']}.jsonl" for r in regions}
-    todo = [r for r in regions if not out[r["id"]].exists()]
+    dump = world_dump(w)
+    todo = [r for r in regions if clip_source(out[r["id"]]) != dump.name]
     if todo:
-        dump = world_dump(w)
         if not dump.exists():
             raise SystemExit(f"the world's notes dump {dump} is gone: the gate's notes clips cannot be made")
         cfg = d / "clips.json"
-        cfg.write_text(json.dumps({"clips": [{"poly": str(ROOT / r["poly"]), "out": str(out[r["id"]]),
-                                              "boxes": run.note_boxes(r)} for r in todo]}), encoding="utf-8")
+        cfg.write_text(json.dumps({"clips": gate_clips(w, todo)}), encoding="utf-8")
         log(f"gate notes: clipping {dump.name} to {', '.join(r['id'] for r in todo)}")
         subprocess.run([sys.executable, str(run.CLIP_NOTES), str(dump), "--config", str(cfg)], check=True, cwd=ROOT)
         cfg.unlink()
@@ -71,7 +94,7 @@ def gate_notes(w: Path, regions: list[dict], log=_log) -> dict[str, Path]:
 
 def clip_side(w: Path, clip_pbf: Path, day: str, out: Path, log=_log) -> dict:
     """the engine over the Europe clip of day D for each region's cities: out/<region>/out/snapshots/<D>.json"""
-    regions = [r for r in run.read_json(run.REGIONS_CONFIG)["regions"] if r["id"] in REGIONS]
+    regions = gate_regions()
     notes = gate_notes(w, regions, log)
     quests = run.newest_quests_file()
     secs = {}

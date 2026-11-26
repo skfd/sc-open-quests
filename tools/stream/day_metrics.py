@@ -108,6 +108,16 @@ def phase_of(rel: str) -> str:
     return p[0]
 
 
+def given(folder: Path) -> dict:
+    """the heap the engine was given (engine_room.note_given leaves given.json beside its log): "given MB", and
+    "first given MB" when a first run on less failed for memory; {} for a day run before 2026-11-26"""
+    try:
+        g = json.loads((folder / "given.json").read_text(encoding="utf-8"))
+        return {k: int(g[k]) for k in ("given MB", "first given MB") if k in g}
+    except (OSError, ValueError, TypeError, AttributeError):
+        return {}
+
+
 def harvest(work: Path) -> dict:
     engines, unfinished = {}, []
     for log in sorted(work.rglob("engine.log")):
@@ -116,6 +126,7 @@ def harvest(work: Path) -> dict:
         if e is None:
             unfinished.append(rel)
         else:
+            e.update(given(log.parent))
             engines[rel] = e
     phases: dict[str, dict] = {}
     watch: list[str] = []
@@ -218,6 +229,9 @@ WORLD_STEP = re.compile(r"^world (snapshot|prepare|finish)(?: \S+)?: ([\d.]+) s(
 GATE = re.compile(r"^gate: (\S+) counted on \S+ in ([\d.]+) s$")
 READ = re.compile(r"^tilestore read: ([\d.]+) s$")
 UPDATE = re.compile(r"^update to \S+: (\{.*\})\s*$")
+# a part of a step the loop times on its own (`timer: <what> <seconds> s`): inside a step or beside one, so it is
+# kept under "timers" and taken off nothing
+TIMER = re.compile(r"^timer: (.+?) ([\d.]+) s$")
 PACK = re.compile(r"^(pack|rel) (\d+): ([\d.]+) GiB written, ([\d.]+) GiB live \(([\d.]+)% dead\)")
 # a step this many times its median over the earlier kept days, and this many seconds over it, is worth a look
 STEP_TIMES, STEP_SECONDS = 2.0, 300
@@ -278,6 +292,11 @@ def day_steps(log_text: str, day: str) -> dict | None:
         x = GATE.match(body)
         if x:
             rec["gate"][x[1]] = float(x[2])
+            continue
+        x = TIMER.match(body)
+        if x:
+            tm = rec.setdefault("timers", {})
+            tm[x[1]] = round(tm.get(x[1], 0.0) + float(x[2]), 1)
             continue
         x = READ.match(body)
         if x:

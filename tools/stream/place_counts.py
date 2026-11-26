@@ -32,6 +32,8 @@ from pathlib import Path
 
 import numpy as np
 
+import file_pool as FP
+
 MEASURES = ["open", "nodes", "ways", "relations", "agedOnly", "open05", "aged05", "open2", "aged2"]
 M_NOW, M_AGED, M_05, M_AGED_05, M_2, M_AGED_2 = 1, 2, 4, 8, 16, 32
 HIDDEN, MATCH, DUE = 64, 0, 1
@@ -97,13 +99,18 @@ def expand(codes: np.ndarray, sums: np.ndarray, sets: list[tuple[int, ...]], n_q
 
 
 def count_files(paths: list[Path], dtype, clock_min: int, sets: list[tuple[int, ...]], n_quests: int,
-                extra: list[tuple[int, int, np.ndarray]] | None = None):
+                extra: list[tuple[int, int, np.ndarray]] | None = None, pool: int | None = None):
     """the world's counts per (part, quest) from its files at the clock; `extra`: (part index, quest index, sums)
-    added after the expansion (the notes layer's note quests, counted per place by itself)"""
-    per = []
-    for p in paths:
+    added after the expansion (the notes layer's note quests, counted per place by itself). The files are read and
+    summed `pool` at a time (FP.FILE_POOL when None; 1: one after another), their sums kept in the files' order:
+    the rows of at most `pool` files are in memory at once, every file's (set, quest) sums as before."""
+    def one(p):
         rows = np.fromfile(p, dtype)
-        per.append(by_set(rows, clock_min, n_quests))
+        return by_set(rows, clock_min, n_quests)
+
+    per = []
+    for r in FP.ordered(one, paths, pool):
+        per.append(r)
     codes, sums = expand(*add_up(per), sets, n_quests)
     if extra:
         ec = np.array([pi * n_quests + qi for pi, qi, _ in extra], np.int64)
