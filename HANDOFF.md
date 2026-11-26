@@ -861,7 +861,11 @@ its own static page or a Worker that rewrites the head; the state is in the quer
   cities (about 4,350); Latin, Cyrillic and Greek names; the general card for the rest; no rendering on demand at
   release. Also the owner's: what happens at the Workers limit, and the wording "Canada and Europe".
 
-### General card: the world's numbers (2026-11-25, 13:31; settled by the owner, on `share-previews`, not merged)
+**MERGED INTO MAIN 2026-11-26 05:30 (owner, wizard: "merge into main today", not on release day; 4c052008).** The card is
+the one drawn on 11-25; it goes live with the next daily run. Still open of the list below: 2 (the release-day redraw, now on
+main), 4 (the monthly redraw) and 5 (the Worker's deploy). Branch and worktree `../sc-open-quests-previews` removed.
+
+### General card: the world's numbers (2026-11-25, 13:31; settled by the owner; merged 11-26, see above)
 
 - `design/project-card.svg` and `.png` (2400x1260), written by `design/project_card.py` from the published files on
   sc-data: 576,650,884 open on 2026-11-24 (28,599,114 resurvey), 159 types, 248 countries and dependencies, the six
@@ -2798,7 +2802,7 @@ changes in the daily run until the world replaces it.
      - Publisher output is `.scratch/world-publish/site2`; manifests `work/local.json` (built) and
        `work/bucket.json` (uploaded). Losing `bucket.json` means a full re-upload (about $5).
      - **Left:** `.scratch/world-publish/site` (schema 1, 1.7 GB) can be deleted; worktree
-       `../sc-open-quests-stable` and branch `world-stable` can be removed; after 11-29 `back` starts to
+       `../sc-open-quests-stable` and branch `world-stable` can be removed (removed 11-26); after 11-29 `back` starts to
        slide, so watch the first days' upload counts in `logs/world-daily.log`.
      **The city run failed 11-21 13:52** (`java.lang.OutOfMemoryError: Java heap space`, `AreaPass`, Europe's
      11-21 file at `-Xmx14g`, "what the machine can spare", beside the catch-up and other runs). It left
@@ -4073,6 +4077,9 @@ wording and tab structure as a first draft open to change, not as decided design
     lines, `"clip heap"` in `gate.json`, and `rectangles` back near 120-140 s for the whole run.
   - **To undo:** `git revert -m 1 9d149279` (heap, disk, engine room) and `git revert -m 1 5ccdac8a` (the
     leak); neither touches data or the engine's install.
+  - **11-26: the source is merged into main (2596a3ae, owner's wizard: "merge source only"); still NOT INSTALLED.** Main's
+    `context.rs` is now ahead of the installed `tilestore.exe`: the next `cargo build --release` in main installs it, so
+    don't run one before the owed items below. Branch and worktree removed; the proven exe is in `.scratch/anomalies/`.
   - **THE POINTS FIX IS BUILT AND PROVEN, NOT MERGED, NOT INSTALLED (10:03-10:19).** In its worktree (5dc1fbe6):
     `cargo build --release` clean at the first try, `cargo test` 7 passed (the old loop as oracle among them).
     Then `.scratch/anomalies/points_fix_proof.py 22`, as a reader of the store (its HOLD placed and removed), the
@@ -4366,3 +4373,14 @@ at once to 0.28 GB (40.8 GiB).
 - **Owner (wizard, 11-26, about 00:00): delete the old sc-data files now.** Dry run of one batch first: 50,000 of 50,000 named, all from the list,
   none of the kept also built. Running: `world_publish.py upload --delete-kept --max-delete 1200000` (1,129,125 files, log
   `.scratch/overture-next/delete.log`; the manifest is saved after each batch, so a rerun resumes).
+- **Branches fixed and merged (owner, 11-26 05:20: "lets fix and merge branches"; two answers by wizard).** Done in the
+  delete's run, under the HOLD, nothing built or installed:
+  - `share-previews`: main merged into it with no conflict, the whole suite green there (317, 3 skipped), then merged into
+    main (4c052008) **today, not on release day: the owner's answer.** It goes live with the 12:15 run. Its live checks
+    (`cloudflare/test/browser_parity.py`, the README's curl) now name places by their new ids (d269fe58); the node tests keep
+    their fixtures' ids.
+  - The points fix: source only into main (2596a3ae); `tilestore.exe` not touched (see "11-26" under the 11-24 entry).
+  - Removed (worktree and branch): `syspath-leak`, `world-stable` (its one commit is in main as cf3cf87e), the heap and
+    disk agent's, `a9b8a34` (merged), the points fix's, `share-previews`. No links in any; main's `.scratch` checked.
+  - **Kept:** `agent-a9b152...` (P3's 28.6 GB rehearsal data, kept for the three traces), `place-ids` (the Overture
+    session's), `pages-redirect` (an orphan on origin: what Pages serves, never merged). Nothing pushed by this session.
