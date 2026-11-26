@@ -47,11 +47,9 @@ The population is place_ids.mint's: every division that has an area. Needs duckd
 from __future__ import annotations
 
 import argparse
-import csv
 import dataclasses
 import datetime as dt
 import gzip
-import io
 import json
 import os
 import re
@@ -341,22 +339,26 @@ def make_report(con, release: str, old: str, out_rows: list[dict]) -> str:
 
 
 def read_rows(path: Path) -> list[dict]:
-    with open(path, encoding="utf-8", newline="") as f:
-        r = csv.DictReader(f, delimiter="\t", quoting=csv.QUOTE_NONE)
-        if tuple(r.fieldnames or ()) != COLUMNS:
-            raise SystemExit(f"{path}: columns {r.fieldnames}")
-        return list(r)
+    """the decisions file: tab-separated, no quoting (values hold no tab or newline); an operator may edit it"""
+    lines = path.read_text(encoding="utf-8").replace("\r", "").split("\n")
+    if tuple(lines[0].split("\t")) != COLUMNS:
+        raise SystemExit(f"{path}: columns {lines[0].split(chr(9))}")
+    rows = []
+    for n, line in enumerate(lines[1:], 2):
+        if not line:
+            continue
+        v = line.split("\t")
+        if len(v) != len(COLUMNS):
+            raise SystemExit(f"{path}, line {n}: {len(v)} fields, not {len(COLUMNS)}")
+        rows.append(dict(zip(COLUMNS, v)))
+    return rows
 
 
 def write_rows(path: Path, rows: list[dict]) -> None:
-    buf = io.StringIO()
-    w = csv.DictWriter(buf, fieldnames=COLUMNS, delimiter="\t", quoting=csv.QUOTE_NONE, escapechar=None,
-                       lineterminator="\n")
-    w.writeheader()
-    for row in rows:
-        w.writerow({k: re.sub(r"[\t\r\n]+", " ", str(row.get(k) or "")) for k in COLUMNS})
+    text = "\t".join(COLUMNS) + "\n" + "".join(
+        "\t".join(re.sub(r"[\t\r\n]+", " ", str(row.get(k) or "")) for k in COLUMNS) + "\n" for row in rows)
     tmp = path.with_suffix(".part")
-    tmp.write_text(buf.getvalue(), encoding="utf-8", newline="\n")
+    tmp.write_text(text, encoding="utf-8", newline="\n")
     os.replace(tmp, path)
 
 

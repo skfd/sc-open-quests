@@ -38,7 +38,7 @@ NEW_ROWS = [
     (g(103), "r3", "Charlie", "neighborhood", "DE", g(1), (11.0, 51.0, 11.01, 51.01)),
     (g(104), "w99", "Delta", "neighborhood", "DE", g(1), (12.005, 52.005, 12.015, 52.015)),
     (g(105), "r50", "Echo-Foxtrot", "neighborhood", "DE", g(1), (13.0, 53.0, 13.01, 53.01)),
-    (g(110), "r110", "Kilo", "locality", "DE", None, (16.0, 56.0, 16.01, 56.01)),   # new
+    (g(110), "r110", "Kilo \"K\"", "locality", "DE", None, (16.0, 56.0, 16.01, 56.01)),   # new
     (g(10), "r10", "Lima", "locality", "DE", None, (15.0, 55.0, 15.01, 55.01)),
 ]
 
@@ -128,7 +128,7 @@ class Release(unittest.TestCase):
         self.assertEqual(("live", ()), (out.places[i[g(10)]].state, out.places[i[g(10)]].successors))
         self.assertEqual("Alpha Stadt", out.places[i[g(1)]].name)
         kilo = out.places[out.id_of(g(110))]
-        self.assertEqual((NEW, "r110", "Kilo"), (kilo.since, kilo.osm, kilo.name))
+        self.assertEqual((NEW, "r110", "Kilo \"K\""), (kilo.since, kilo.osm, kilo.name))
         former = (self.root / NEW / "former-names.tsv").read_text(encoding="utf-8").splitlines()
         self.assertIn(f"{i[g(1)]}\tAlpha\t{NEW}", former)
         self.assertEqual((1, 2, 6, 1), (s["minted"], s["same"] - 2, s["ended"] + 2, s["revived"]))
