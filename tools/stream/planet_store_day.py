@@ -463,7 +463,7 @@ def one_day():
             log(f"day {nxt}: the world's notes end at {WD.notes_until(WORLD)} and no newer notes dump is in the store "
                 f"yet; done for now")
             return False
-        guarded(f"notes refresh from {dump.name}", WD.refresh_notes, WORLD, dump, log)
+        guarded(f"notes refresh from {dump.name}", WD.refresh_notes, WORLD, dump, log, gate_clips_or_none())
         if f"{nxt}T00:00:00Z" > WD.notes_until(WORLD):
             log(f"day {nxt}: the newest notes dump ends at {WD.notes_until(WORLD)}; done for now")
             return False
@@ -516,6 +516,16 @@ def one_day():
         log(f"steps: not recorded ({type(e).__name__}: {e})")
     write_facts()
     return True
+
+
+def gate_clips_or_none() -> list[dict] | None:
+    """the gate's notes clips for the refresh to cut in its pass over the dump; None (the gate cuts them itself, as
+    it always did) when they cannot be named now: never a stop"""
+    try:
+        return WG.gate_clips(WORLD)
+    except Exception as e:  # noqa: BLE001
+        log(f"gate notes: not cut with the refresh ({type(e).__name__}: {e}); the gate cuts them")
+        return None
 
 
 def write_facts() -> None:

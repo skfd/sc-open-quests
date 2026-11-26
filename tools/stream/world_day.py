@@ -581,15 +581,19 @@ def notes_until(w: Path) -> str:
         return json.loads(fh.readline())["until"]
 
 
-def refresh_notes(w: Path, dump: Path, log=_log) -> None:
+def refresh_notes(w: Path, dump: Path, log=_log, gate_clips: list[dict] | None = None) -> None:
     """every plan file's notes clip cut again from a newer dump (each file's bbox.poly, one pass), the union clip
     rebuilt. The old union clip is kept as NOTES_PREV until the day is done: a note the newer dump no longer holds
     (hidden by a moderator) must still count as open at D-1, or its rows keep their hidden flag. The gate's clips go
-    too (world_gate makes them again from the newer dump)."""
+    too; with `gate_clips` (world_gate.gate_clips: the entries world_gate would ask clip_notes for) they are cut
+    in this same pass and put in place of the old ones, so the gate does not decompress the dump a second time
+    (99 s on 11-25); without, world_gate makes them again from the newer dump, as it does any that is missing."""
     files = files_of(w)
+    gate_clips = gate_clips or []
     cfg = w / "notes-refresh.json"
     cfg.write_text(json.dumps({"clips": [{"poly": str(w / "files" / f["id"] / "bbox.poly"),
-                                          "out": str(w / "files" / f["id"] / "notes.jsonl.new")} for f in files]}),
+                                          "out": str(w / "files" / f["id"] / "notes.jsonl.new")} for f in files]
+                               + [dict(c, out=c["out"] + ".new") for c in gate_clips]}),
                    encoding="utf-8")
     t = time.time()
     subprocess.run([sys.executable, str(ROOT / "tools/clip_notes.py"), str(dump), "--config", str(cfg)], check=True,
@@ -599,6 +603,10 @@ def refresh_notes(w: Path, dump: Path, log=_log) -> None:
         with open(d / "notes.jsonl.new", encoding="utf-8") as fh:
             if json.loads(fh.readline())["source"] != dump.name:
                 raise SystemExit(f"{d / 'notes.jsonl.new'} is not from {dump.name}")
+    for c in gate_clips:
+        with open(c["out"] + ".new", encoding="utf-8") as fh:
+            if json.loads(fh.readline())["source"] != dump.name:
+                raise SystemExit(f"{c['out']}.new is not from {dump.name}")
     allc = w / "notes-all.jsonl"
     if allc.exists() and not (w / NOTES_PREV).exists():
         os.replace(allc, w / NOTES_PREV)
@@ -607,6 +615,8 @@ def refresh_notes(w: Path, dump: Path, log=_log) -> None:
         os.replace(d / "notes.jsonl.new", d / "notes.jsonl")
     for p in [allc, allc.with_name(allc.name + ".table.npz"), *(w / "gate-notes").glob("*.jsonl")]:
         p.unlink(missing_ok=True)
+    for c in gate_clips:  # the old ones are gone, whatever their names: now this dump's
+        os.replace(c["out"] + ".new", c["out"])
     cfg.unlink()
     world_notes(w)
     log(f"notes: the world's clips cut again from {dump.name} (until {notes_until(w)}) in {time.time() - t:.0f} s")
