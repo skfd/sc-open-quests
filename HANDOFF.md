@@ -4319,3 +4319,6 @@ at once to 0.28 GB (40.8 GiB).
   88250657: `places.build()` called `assign()` again without the registry. **Not merged into main yet:** it goes in
   at the rename, 11-26 night, by the owner's go (merge, mint, back up, plan, apply, check, rebuild, upload `--keep-gone`). The worktree is no
   longer sparse.
+- **World dailies PAUSED (owner, 11-25, 20:00: "do things asap, pause world dailies until we implement all the new things").**
+  `.scratch/planet-cut/HOLD` placed 20:03 (the loop logs "held" and takes no day; nothing else stops). The rename runs tonight, not 11-26
+  night. **Lifting it is the owner's call**: delete HOLD; the next run catches up the days it missed. The 11-26 18:45 wake-up is moot.
