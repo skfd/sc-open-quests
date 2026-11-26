@@ -4373,7 +4373,7 @@ at once to 0.28 GB (40.8 GiB).
 - **Owner (wizard, 11-26, about 00:00): delete the old sc-data files now.** Dry run of one batch first: 50,000 of 50,000 named, all from the list,
   none of the kept also built. Running: `world_publish.py upload --delete-kept --max-delete 1200000` (1,129,125 files, log
   `.scratch/overture-next/delete.log`; the manifest is saved after each batch, so a rerun resumes).
-- **Branches fixed and merged (owner, 11-26 05:20: "lets fix and merge branches"; two answers by wizard).** Done in the
+- **Branches fixed and merged (owner, 11-26 05:20: "lets fix and merge branches"; two answers by wizard).** Done while
   the sc-data delete runs, under the HOLD; nothing built or installed:
   - `share-previews`: main merged into it with no conflict, the whole suite green there (317, 3 skipped), then merged into
     main (4c052008) **today, not on release day: the owner's answer.** It goes live with the 12:15 run. Its live checks
