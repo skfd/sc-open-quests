@@ -4322,3 +4322,10 @@ at once to 0.28 GB (40.8 GiB).
 - **World dailies PAUSED (owner, 11-25, 20:00: "do things asap, pause world dailies until we implement all the new things").**
   `.scratch/planet-cut/HOLD` placed 20:03 (the loop logs "held" and takes no day; nothing else stops). The rename runs tonight, not 11-26
   night. **Lifting it is the owner's call**: delete HOLD; the next run catches up the days it missed. The 11-26 18:45 wake-up is moot.
+- **The rename, 11-25 night (under HOLD), as far as it has gone:** `place-ids` merged (02c86d1d; suite 353 passed). **Minted** 1,082,287 ids from
+  10-21.0 (`data/place-ids/registry.tsv.gz`, gitignored, sha256 b3d75207...), **backed up** to `sc-open-quests-archive/place-ids/`, downloaded
+  again: same hash. **Renamed**: config/parts 4,214 ids (d39e8e4d), the archives 406,136 in 577 snapshots, world-1101 28,694,016 in 2,216
+  files, plus the seed's 128 engine snapshots and `report.json` (`rename_places.py check`: 0 files with an old id). The outline cache
+  stayed current. **Name layer** rebuilt (f9ae6961): the same as before under the map, 707 files only reordered (ties sorted by id).
+  **History** (run.py history) byte for byte the old files under the map. Running: facts `--force` and verify, the publisher's build.
+  Left: publisher verify, upload `--full --keep-gone` (deletes wait for the owner), `run.py site`, checkpoint, message the two sessions.
