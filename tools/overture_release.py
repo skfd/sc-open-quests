@@ -564,6 +564,7 @@ def main(argv: list[str] | None = None) -> int:
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--registry", type=Path, default=place_ids.REGISTRY)
+    ap.add_argument("--root", type=Path, default=RELEASES, help="the releases folder (a rehearsal: somewhere in .scratch)")
     sub = ap.add_subparsers(dest="cmd", required=True)
     n = sub.add_parser("narrow")
     n.add_argument("release")
@@ -585,18 +586,18 @@ def main(argv: list[str] | None = None) -> int:
     y.add_argument("release")
     a = ap.parse_args(argv)
     if a.cmd == "narrow":
-        narrow(a.release, a.src)
+        narrow(a.release, a.src, a.root)
     elif a.cmd == "propose":
         old = a.old or json.loads((ROOT / "config" / "places.json").read_text(encoding="utf-8"))["overture"]
-        propose(a.release, old, a.registry)
+        propose(a.release, old, a.registry, a.root)
     elif a.cmd == "status":
-        log(status_text(read_rows(folder(a.release) / "proposals.tsv")))
+        log(status_text(read_rows(folder(a.release, a.root) / "proposals.tsv")))
     elif a.cmd == "accept":
-        accept(a.release, a.classes)
+        accept(a.release, a.classes, a.root)
     elif a.cmd == "judge":
-        judge(a.release, a.key, a.verdict, a.note)
+        judge(a.release, a.key, a.verdict, a.note, a.root)
     else:
-        apply(a.release, a.registry)
+        apply(a.release, a.registry, a.root / ".." / "former-names.tsv" if a.root != RELEASES else FORMER, a.root)
     return 0
 
 
