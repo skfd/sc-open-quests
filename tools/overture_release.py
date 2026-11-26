@@ -191,7 +191,8 @@ def propose(release: str, old: str, registry: Path = place_ids.REGISTRY, root: P
     con.execute("CREATE TEMP TABLE fresh AS SELECT * FROM n WHERE gers NOT IN (SELECT gers FROM r)")
     back = rows("SELECT r.*, n.name AS nname FROM r JOIN n USING (gers) WHERE r.state = 'ended' "
                 "AND r.gers NOT IN (SELECT gers FROM r WHERE state = 'live')")
-    live_id = dict(con.execute("SELECT gers, id FROM r WHERE state = 'live'").fetchall())
+    # the places that stay: a successor or a parent that is lost too would point at an ended page
+    live_id = dict(con.execute("SELECT gers, id FROM r JOIN n USING (gers) WHERE r.state = 'live'").fetchall())
 
     by_osm = defaultdict(list)
     for c in rows("SELECT l.id AS lid, f.* FROM lost l JOIN fresh f ON f.osm = l.osm AND l.osm <> ''"):
@@ -553,7 +554,12 @@ def apply(release: str, registry: Path = place_ids.REGISTRY, former: Path = FORM
     summary = {"release": release, "registry": str(registry), "places": len(out.places),
                "live": len(live_gers), "same": same, "ended": ended, "revived": revived,
                "minted": len(minted_new), "minted after a same proposal was turned down": len(minted_refused),
-               "renamed": len(renamed), "applied": dt.datetime.now().isoformat(timespec="seconds")}
+               "renamed": len(renamed),
+               "ended with an ended successor": sum(1 for p in out.places.values() if p.state == "ended"
+                                                    and any(out.places[s].state == "ended" for s in p.successors)),
+               "applied": dt.datetime.now().isoformat(timespec="seconds")}
+    if summary["ended with an ended successor"]:
+        log(f"note: {summary['ended with an ended successor']:,} ended places name an ended place as successor (as judged)")
     (here / "apply.json").write_text(json.dumps(summary, indent=1) + "\n", encoding="utf-8", newline="\n")
     log(f"staged registry {staged}: {len(out.places):,} places, {len(live_gers):,} live; same {same:,}, ended {ended:,}, "
         f"revived {revived:,}, minted {len(minted_new):,} (+{len(minted_refused):,} whose same proposal was turned down), "

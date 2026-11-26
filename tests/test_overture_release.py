@@ -31,6 +31,7 @@ OLD_ROWS = [
     (g(8), "r8", "India", "microhood", "DE", g(1), (14.0, 54.0, 14.001, 54.001)),  # lost; only its parent lives on
     (g(9), "r9", "Juliet", "locality", "XX", None, FAR),                          # lost; nothing
     (g(10), "r10", "Lima", "locality", "DE", None, (15.0, 55.0, 15.01, 55.01)),     # ended in the registry, back now
+    (g(11), "r11", "Mike", "neighborhood", "XX", g(9), (120.0, -30.0, 120.01, -29.99)),  # lost; its parent Juliet too
 ]
 NEW_ROWS = [
     (g(1), "r1", "Alpha Stadt", "locality", "DE", None, (9.9, 49.9, 10.2, 50.2)),
@@ -91,10 +92,11 @@ class Release(unittest.TestCase):
         self.assertIn(i[g(1)], cls[i[g(7)]][1])
         self.assertEqual(("ended-parent", f"ended {i[g(1)]}"), cls[i[g(8)]])
         self.assertEqual(("ended-none", "ended"), cls[i[g(9)]])
+        self.assertEqual(("ended-none", "ended"), cls[i[g(11)]], "a lost parent is no successor")
         self.assertEqual(("back", "revive"), cls[i[g(10)]])
         self.assertEqual(("new", "new"), cls[g(110)])
         self.assertNotIn(i[g(1)], rows)   # kept: no row
-        self.assertEqual(10, len(rows))   # eight lost, one back, one new
+        self.assertEqual(11, len(rows))   # nine lost, one back, one new
         self.assertTrue((self.root / NEW / "report.md").exists())
 
     def test_contested_rows_are_never_accepted_in_bulk_and_bad_verdicts_stop(self):
@@ -131,7 +133,7 @@ class Release(unittest.TestCase):
         self.assertEqual((NEW, "r110", "Kilo \"K\""), (kilo.since, kilo.osm, kilo.name))
         former = (self.root / NEW / "former-names.tsv").read_text(encoding="utf-8").splitlines()
         self.assertIn(f"{i[g(1)]}\tAlpha\t{NEW}", former)
-        self.assertEqual((1, 2, 6, 1), (s["minted"], s["same"] - 2, s["ended"] + 2, s["revived"]))
+        self.assertEqual((1, 4, 5, 1), (s["minted"], s["same"], s["ended"], s["revived"]))
 
         # again, after the operator turns Bravo's same down: Kilo keeps the id it was given, Bravo's new GERS id gets one
         orl.judge(NEW, i[g(2)], "ended", root=self.root)

@@ -4670,3 +4670,14 @@ The 12:15 task `kk-SCOpenQuests` (`run.py update`) is deleted (11-26) and `docs/
   `small_squares.py build`, `places.py build` into a new folder), ended pages, successor links, `?in=`, publishing former names.
   12-16.0 is the first real use: `narrow 2026-12-16.0`, `propose 2026-12-16.0` (old = the pin), judge, `apply`, back up.
 - **The HOLD's condition (tool built and tried on 11-18.0) is met; lifting it stays the owner's**, after the 13:20 check.
+- **Corrections to the trial above (11:46, rerun in clean proposals):** a lost place's parent counted as living when it was lost
+  too (3 ended places got an ended successor); fixed, only kept places are parents or successors now, tested. Rerun: ended-parent
+  **573**, ended-none **8** (the earlier diff's 8 lost places with neither overlap nor a living parent), the rest as above; `apply`
+  same 731, ended 747 (739 with successors, 8 without), 0 ended successors (`apply.json` now counts them). The 8 contested rows are
+  pairs on one OSM object or one name, so 199 + 469 + 8 is near, not exactly, the 676 of the earlier diff. **Known gap:** same-name
+  matching looks only at new GERS ids (59 rows; the earlier 159 included kept places nearby), so a kept place of the same name is
+  never offered as a successor. **Backup:** `archive_backup.py --only place-ids` copies the folder recursively, so the releases'
+  files go with the registry.
+- **12-16.0, the first real use, in order:** `narrow 2026-10-21.0 --src data/overture/world` (the pin's copy, once), `narrow
+  2026-12-16.0`, `propose 2026-12-16.0`, read `report.md`, `accept --class ...`, `judge` the rest in a session with the owner,
+  `apply`, `archive_backup.py --only place-ids`. The swap-in waits for the reseed.
