@@ -329,11 +329,14 @@ def record_work(dd: Path, nxt: str) -> None:
 
 
 def delete_bulk(dd: Path):
-    """the day's large folders (BULK) deleted in a thread of its own, started here; join it, then `.seconds` is how
-    long it took. The rest of the day's folder stays: `finished` and gate/gate.json are what a resumed run goes by
+    """the day's large folders (BULK) deleted: `before` at once (D-1's rows: few files, about 52 GB, and compaction
+    asks for the disk's free space as it starts: 2026-11-25, 01:30), `work` (half a million small files, minutes) in
+    a thread of its own, started here; join it, then `.seconds` is how long that took. The rest of the day's folder stays: `finished` and gate/gate.json are what a resumed run goes by
     (without them it would skip the store's checks, or run the gate's engines again), so they go last, by the
     caller, when the day is done."""
     import threading
+
+    shutil.rmtree(dd / "before", ignore_errors=True)
 
     def go():
         t = time.time()
