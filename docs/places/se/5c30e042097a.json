@@ -1,0 +1,16 @@
+{"schema":1,"region":"5c30e042097a","places":[
+["5c30e042097a","Hallands län",2,-1,11.869,56.3241,13.6936,57.5975,"Halland County",null],
+["7bd6dae426f1","Falkenbergs kommun",3,0,12.347,56.7783,13.1003,57.3011,null,null],
+["27ed6b69db4b","Kirkebytorget",9,1,12.495,56.8988,12.4955,56.8991,null,null],
+["328854270f2e","Rörbecksplatsen",9,1,12.4906,56.9047,12.4914,56.9051,null,null],
+["1de9b0a25874","Halmstads kommun",3,0,12.6148,56.5424,13.3251,56.9444,null,null],
+["024e0c6b5383","Öjasjö",8,4,13.0422,56.8161,13.0496,56.8213,null,null],
+["70389f965760","Lilla torg",9,4,12.8577,56.6764,12.8585,56.6772,null,null],
+["37948d051eab","Norre torg",9,4,12.8586,56.677,12.8594,56.6774,null,null],
+["ea0806d39d28","Hylte kommun",3,0,12.821,56.8237,13.6936,57.1139,null,null],
+["44003a17edfe","Kungsbacka kommun",3,0,11.869,57.3005,12.4195,57.5975,null,null],
+["cd2d1492d68e","Stortorget",9,9,12.0758,57.4866,12.0773,57.4877,null,null],
+["577855e17467","Laholms kommun",3,0,12.8961,56.3241,13.4674,56.688,null,null],
+["da2cf38c6ce5","Varbergs kommun",3,0,12.0796,56.9905,12.7636,57.3515,null,null],
+["0c73d96cd798","Stora torget",9,12,12.2499,57.1048,12.2515,57.1058,null,null]
+]}

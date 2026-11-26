@@ -1,0 +1,22 @@
+{"schema":1,"region":"2f61372e4c61","places":[
+["2f61372e4c61","Edo",2,-1,5.0085,5.7464,6.7158,7.5914,"Edo State",null],
+["3ca43a3918c2","Akoko-Edo",3,0,5.9094,7.1128,6.4322,7.5914,null,null],
+["6820604ba5b1","Egor",3,0,5.525,6.2772,5.6446,6.4141,null,null],
+["75bb756f8096","Esan Central",3,0,6.1354,6.574,6.3805,6.8363,null,null],
+["1a364aa39bf3","Esan North-East",3,0,6.2383,6.6484,6.5309,6.9253,null,null],
+["e3f71ea7b05c","Esan South-East",3,0,6.2616,6.3603,6.6689,6.7936,null,null],
+["0e00041e8a90","Ifeku Island",5,5,6.583,6.7014,6.6348,6.8654,null,null],
+["95b741a3c217","Esan West",3,0,6.0133,6.4765,6.2507,6.8417,null,null],
+["14fd20ced1d8","Etsako Central",3,0,6.3663,6.7905,6.6794,7.1667,null,null],
+["a67ca70be255","Etsako East",3,0,6.2567,6.972,6.7158,7.4023,null,null],
+["83cfbc4b25f3","Etsako West",3,0,6.1674,6.7921,6.4889,7.2077,null,null],
+["13fc2c20e2f1","Iguegben",3,0,6.104,6.3578,6.3502,6.6678,null,null],
+["221a52723695","Ikpoba-Okha",3,0,5.4425,5.9854,5.8275,6.4185,null,null],
+["481379e65c63","Oredo",3,0,5.4622,6.0911,5.6491,6.3705,null,null],
+["f0dc7763c59b","Orhionmwon",3,0,5.7271,5.7464,6.2903,6.4212,null,null],
+["04b6c71b7e58","Ovia North-East",3,0,5.2478,5.9092,5.8699,6.886,null,null],
+["d52ac8e5ff5b","Ovia South-West",3,0,5.0085,6.0526,5.4962,6.8889,null,null],
+["765bfef988e4","Owan East",3,0,5.8445,6.7763,6.2193,7.2778,null,null],
+["5226a3545d39","Owan West",3,0,5.7516,6.7713,6.0477,7.0841,null,null],
+["719c7dc79ee6","Uhunmwonde",3,0,5.6389,6.2502,6.1317,6.7985,null,null]
+]}

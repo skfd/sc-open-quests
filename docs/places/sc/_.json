@@ -1,6 +1,6 @@
 {"schema":1,"region":"_","places":[
-["bdd591d9cce9","Sesel",0,-1,46.2033,-10.2276,56.294,-3.7103,"Seychelles",null],
-["8d4e4fcbd8da","Farquhar Group",5,0,50.7204,-10.2276,51.1886,-9.2094,null,null],
-["253a3cf4062a","Farquhar Atoll",8,1,51.0391,-10.2276,51.1886,-10.1064,null,null],
-["fbfc9eb64755","Providence Atoll",8,1,50.9825,-9.5512,51.0343,-9.2094,null,null]
+["5016e2641c91","Sesel",0,-1,46.2033,-10.2276,56.294,-3.7103,"Seychelles",null],
+["34b9ae2aac5f","Farquhar Group",5,0,50.7204,-10.2276,51.1886,-9.2094,null,null],
+["4422dde15116","Farquhar Atoll",8,1,51.0391,-10.2276,51.1886,-10.1064,null,null],
+["98e2c063c41d","Providence Atoll",8,1,50.9825,-9.5512,51.0343,-9.2094,null,null]
 ]}

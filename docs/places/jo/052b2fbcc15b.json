@@ -1,0 +1,18 @@
+{"schema":1,"region":"052b2fbcc15b","places":[
+["052b2fbcc15b","البلقاء",2,-1,35.5189,31.7099,35.8961,32.2467,"Balqa",null],
+["ca71524454a2","لواء الشونة الجنوبية",3,0,35.5243,31.7099,35.7351,31.9692,"Shoonah Janoobiyah District",null],
+["3b3c1fb79839","Shoonah Janoobiyah Sub-District",4,1,35.5243,31.7099,35.7351,31.9692,null,null],
+["c5e8ece1b8be","لواء دير علا",3,0,35.5189,31.9684,35.663,32.2467,"Dair Alla District",null],
+["c676bc05190b","Dair Alla Sub-District",4,3,35.5189,31.9684,35.663,32.2467,null,null],
+["87e450e5ba33","لواء عين الباشا",3,0,35.7849,32.0317,35.8961,32.1897,"Ain Albasha District",null],
+["0c786b713ed7","قضاء عين الباشا",4,5,35.7849,32.0317,35.8961,32.1897,"Ain Albasha Sub-District",null],
+["4c1d4a9f12fc","Armemin",5,6,35.81,32.0973,35.8164,32.1016,null,null],
+["756efccb1bbb","لواء قصبة السلط",3,0,35.5833,31.9052,35.8141,32.1929,"Salt Qasabah District",null],
+["c52e7c9c7b27","Al-Salt Sub-District",4,8,35.5909,31.9702,35.8141,32.1163,null,null],
+["b9b063ccc8f1","السلط",5,9,35.683,31.9979,35.7641,32.0726,"Al Salt",null],
+["82cecd300852","Allan and Zayy Sub-District",4,8,35.6994,32.0733,35.8117,32.1865,null,null],
+["e8ed09fdfeb9","قضاء العارضة",4,8,35.6276,32.0864,35.7723,32.1929,"Al-Ardha Sub-District",null],
+["ef35afece597","قضاء عيرا ويرقا",4,8,35.5833,31.9052,35.7714,31.9961,"Ira and Yargha Sub-District",null],
+["6c88ce517a7a","لواء ماحص والفحيص",3,0,35.7432,31.9671,35.8155,32.025,"Mahes and Fuhais District",null],
+["0da6de730c77","Mahes and Fuhais Sub-District",4,14,35.7432,31.9671,35.8155,32.025,null,null]
+]}

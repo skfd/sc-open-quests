@@ -1,0 +1,16 @@
+{"schema":1,"region":"b4feff800c4e","places":[
+["b4feff800c4e","Central",2,-1,159.0272,-9.2117,160.4135,-8.8465,"Central Province",null],
+["a4400889d703","East Gela",3,0,160.1684,-9.1319,160.2289,-8.99,null,null],
+["2dce1cd8f034","Lovukol",3,0,159.0264,-9.1648,159.3701,-8.9584,null,null],
+["9c9a80cf4066","Mbanika",3,0,159.1533,-9.1375,159.231,-9.0233,null,null],
+["d25af3daefd1","North East Gela",3,0,160.2849,-9.1478,160.4135,-9.0559,null,null],
+["00fb389e9ace","North Savo",3,0,159.7841,-9.1445,159.8285,-9.1,null,null],
+["fe53951350ff","North West Gela",3,0,160.2237,-9.1172,160.3077,-9.0061,null,null],
+["46c27f18c888","Pavuvu",3,0,159.0285,-9.1249,159.2054,-8.9953,null,null],
+["a93d9ca58223","Sandfly-Buenavista",3,0,159.9601,-9.0322,160.1148,-8.8465,null,null],
+["bbfc19dae939","South East Gela",3,0,160.2651,-9.1932,160.404,-9.1196,null,null],
+["082bc892fa51","South Savo",3,0,159.7899,-9.1647,159.8397,-9.1111,null,null],
+["aaf02ffbb1ed","South West Gela",3,0,160.1995,-9.1989,160.2865,-9.104,null,null],
+["f58e2d7b8b99","Tulagi",3,0,160.1338,-9.1263,160.1898,-9.0903,null,null],
+["ef9a81617837","West Gela",3,0,160.0612,-9.1029,160.174,-8.9901,null,null]
+]}

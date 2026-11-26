@@ -1,0 +1,23 @@
+{"schema":1,"region":"47617f2c3d20","places":[
+["47617f2c3d20","Totonicapán",2,-1,-91.5558,14.8235,-91.1753,15.2535,null,null],
+["23bb75211c45","Momostenango",3,0,-91.5485,14.9695,-91.2875,15.2535,null,null],
+["e7e4db1a7155","San Andrés Xecul",3,0,-91.5227,14.8776,-91.4686,14.9393,null,null],
+["1bfa16291880","Aldea Palomora San Andres Xecul Totonicapan",5,2,-91.5004,14.9233,-91.4981,14.9252,null,null],
+["411768d7f11f","San Bartolo",3,0,-91.5116,15.0689,-91.3871,15.1455,null,null],
+["9d10ecca543b","San Cristóbal Totonicapán",3,0,-91.5558,14.8892,-91.4081,14.9642,null,null],
+["8af95022c288","Aldea Nimasac San Cristobal Totonicapan",5,5,-91.4858,14.928,-91.4833,14.9303,null,null],
+["e705be08de5a","Caserio Coxliquel San Cristobal Totonicapan",5,5,-91.441,14.924,-91.4353,14.9271,null,null],
+["981640edc272","Chuitap San Critobal Totonicapan",5,5,-91.4779,14.9433,-91.4759,14.9455,null,null],
+["a70095d99587","Pasiguan San Cristobal Totonicapan",5,5,-91.4915,14.9416,-91.4882,14.9438,null,null],
+["1e2411e9adf1","Pazuc San Cristobal Totonicapan",5,5,-91.5005,14.9432,-91.4967,14.945,null,null],
+["398814b43bc2","San Francisco El Alto",3,0,-91.5437,14.9213,-91.4038,15.0306,null,null],
+["db0413755335","Aldea Pabatoc San Francisco El Alto Totonicapan",5,11,-91.4605,14.9539,-91.4525,14.9624,null,null],
+["d66b2dca4dfc","Santa Lucía La Reforma",3,0,-91.3333,15.1001,-91.205,15.2039,null,null],
+["15f68293726a","Santa María Chiquimula",3,0,-91.4225,14.9363,-91.2325,15.1365,null,null],
+["45680e617b96","Aldea Chuachituj San Maria Chiquimula Totonicapan",5,14,-91.2905,14.9637,-91.2888,14.965,null,null],
+["db53f21abb58","Aldea Chuicaca Santa Maria Chiquimula Totonicapan",5,14,-91.2492,14.9613,-91.247,14.9635,null,null],
+["09893b82409a","Totonicapán",3,0,-91.4378,14.8235,-91.1753,14.9611,"Totonicapán Municipality",null],
+["2752580f7988","Aldea Chotacaj",5,17,-91.3671,14.9219,-91.3576,14.9272,null,null],
+["d234477668cb","Aldea Maczul",5,17,-91.2156,14.9315,-91.2154,14.9318,null,null],
+["8a7f87a8e1e7","Caserío Chomazán Totonicapán",5,17,-91.3209,14.9346,-91.3191,14.9364,null,null]
+]}

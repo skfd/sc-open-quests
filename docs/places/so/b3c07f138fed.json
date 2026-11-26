@@ -1,0 +1,20 @@
+{"schema":1,"region":"b3c07f138fed","places":[
+["b3c07f138fed","Bariباري",2,-1,48.9176,8.3272,51.4151,11.9881,"Bari",null],
+["baa6fd7e081c","Bandarbayla",3,0,49.89,8.3272,50.8772,9.92,"Bayla District",null],
+["a7f1d8b8d1cf","Dhariinbaar",5,1,50.4735,8.9331,50.4775,8.9386,null,null],
+["eeba7693ff18","Falfalax",5,1,50.3953,8.7737,50.3976,8.7763,null,null],
+["16a091e50676","Qundhed",5,1,50.4413,8.893,50.4441,8.895,null,null],
+["13f7b9a87dc1","Suuj",5,1,50.3616,8.6836,50.3648,8.6874,null,null],
+["9724ebaad3bf","Bossaso بوصاصو",3,0,48.9176,10.35,49.91,11.4544,"Bosaso District",null],
+["9a408389df91","Caluula علولة",3,0,50.3,11.4,51.2879,11.9881,"Alula District",null],
+["e04130d90051","Iskushuban",3,0,49.56,9.81,51.4151,11.5012,null,null],
+["6f8bb75fc449","Gumbax",5,8,51.112,10.8824,51.1149,10.8849,null,null],
+["126e5048cba9","Hurdiyo هرديو",5,8,51.1309,10.5616,51.1375,10.5652,"Hurdiyo",null],
+["440bace31a67","mareeg",5,8,50.4481,9.9621,50.4514,9.9635,null,null],
+["838a4457e12f","Qandala كاندالة",3,0,49.5781,10.51,50.55,11.6408,"Qandala District",null],
+["91d3c21f665f","Baliyar",5,12,50.4575,10.8231,50.46,10.8244,null,null],
+["18c2577fd992","Tuulo-Ciise",5,12,50.4589,10.8184,50.464,10.8218,null,null],
+["e793149de9c6","Tuur Masale",5,12,50.2277,10.9292,50.2302,10.9318,null,null],
+["31f2672efa0e","Xijijle",5,12,50.2451,10.9305,50.2467,10.9329,null,null],
+["a1e314b284ba","Qardho قرضو",3,0,49.04,8.33,50.09,10.56,"Qardho District",null]
+]}

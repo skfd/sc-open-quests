@@ -1,0 +1,15 @@
+{"schema":1,"region":"3df5e9b1a784","places":[
+["3df5e9b1a784","Región de Tarapacá",2,-1,-70.2862,-21.6277,-68.4048,-18.9366,"Tarapacа Region",null],
+["3dd8c0e2ae1c","Provincia de Iquique",3,0,-70.2109,-21.439,-69.8189,-20.0486,"Iquique Province",null],
+["85f379bafd71","Alto Hospicio",5,1,-70.1243,-20.3512,-69.8932,-20.0486,null,null],
+["c0fa5143cca6","Iquique",5,1,-70.2109,-21.439,-69.8189,-20.0605,null,null],
+["b27a7637314a","Mirador Remodelación El Morro",9,3,-70.1556,-20.2142,-70.1555,-20.2141,null,null],
+["cc7585df088a","Plaza Condell",9,3,-70.1492,-20.214,-70.1485,-20.2135,null,null],
+["86b6fc37d20f","Provincia del Tamarugal",3,0,-70.2862,-21.6277,-68.4048,-18.9366,"Tamarugal Province",null],
+["ae840ec9b85a","Camiña",5,6,-69.7583,-19.699,-69.1429,-19.0622,null,null],
+["926127a9a1f6","Colchane",5,6,-69.3172,-19.7529,-68.4048,-18.9366,null,null],
+["29d3a16fb57b","Plaza Colchane",9,8,-68.64,-19.276,-68.6392,-19.275,null,null],
+["9aecb2feccd0","Huara",5,6,-70.2862,-20.102,-68.9083,-19.0208,null,null],
+["999b40ce658b","Pica",5,6,-69.4748,-21.2855,-68.4388,-19.6002,null,null],
+["6ffa34466ae8","Pozo Almonte",5,6,-70.1093,-21.6277,-68.8606,-19.9128,null,null]
+]}

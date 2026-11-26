@@ -1,0 +1,14 @@
+{"schema":1,"region":"be046bdcaa15","places":[
+["be046bdcaa15","Opština Kotor",2,-1,18.5436,42.2671,18.8222,42.6349,"Kotor Municipality",null],
+["97653ce9fa42","Bigova",5,0,18.7002,42.352,18.7115,42.3622,null,null],
+["95526478aedb","Bratešići",5,0,18.7724,42.3361,18.8018,42.3543,null,null],
+["fa62a29d5f6b","Bunovići",5,0,18.5811,42.4807,18.5971,42.4956,null,null],
+["f407e921b51a","Dobrota",5,0,18.7617,42.4268,18.7848,42.4877,null,null],
+["372ebdf0d9db","Kotor",5,0,18.7663,42.4212,18.7748,42.4275,null,null],
+["c9a48dc29a71","Pjaca od drva",9,5,18.7718,42.4257,18.7722,42.4262,"Firewood square",null],
+["4bd4c16a4c22","Pjaca Sv. Luke",9,5,18.7709,42.4254,18.7713,42.4257,"St. Luke square",null],
+["8f5ec4c32158","Pjaca Škaljarska",9,5,18.7714,42.4236,18.7716,42.4239,null,null],
+["92488346dd3a","Čavori",5,0,18.7992,42.3561,18.8139,42.3746,null,null],
+["50d9813f4f8f","Škaljari",5,0,18.7511,42.3928,18.7864,42.423,null,null],
+["7bf7bd1edbef","Špiljari",5,0,18.7699,42.3988,18.7883,42.4322,null,null]
+]}

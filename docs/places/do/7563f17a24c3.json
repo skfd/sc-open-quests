@@ -1,0 +1,20 @@
+{"schema":1,"region":"7563f17a24c3","places":[
+["7563f17a24c3","Santiago",2,-1,-71.2581,19.0204,-70.5456,19.6523,"Santiago Province",null],
+["46ab9f4c3903","Baitoa",3,0,-70.7232,19.2841,-70.6364,19.3787,"Baitoa Municipality",null],
+["50ae38a76088","Bisonó",3,0,-70.9373,19.5131,-70.8202,19.6523,"Bisonó Municipality",null],
+["88e27f587419","Jánico",3,0,-70.9221,19.0899,-70.6699,19.408,"Jánico Municipality",null],
+["16d0b6921e14","Licey al Medio",3,0,-70.6472,19.3919,-70.5852,19.4646,"Licey al Medio Municipality",null],
+["82681e366f52","Puñal",3,0,-70.7203,19.3463,-70.5788,19.449,"Puñal Municipality",null],
+["3a9ea46b284b","Sabana Iglesia",3,0,-70.7807,19.2845,-70.7069,19.4002,"Sabana Iglesia Municipality",null],
+["08370cc9e742","San José de las Matas",3,0,-71.2581,19.0204,-70.7935,19.4727,"San José de las Matas Municipality",null],
+["e16a581fa1fa","Santiago",3,0,-70.9085,19.3825,-70.616,19.6509,"Santiago Municipality",null],
+["cef2d4c25347","El Invi",8,8,-70.7189,19.4843,-70.711,19.4871,null,null],
+["8e98cfa3f30b","Hoyo de Julia",8,8,-70.6998,19.4613,-70.6989,19.462,null,null],
+["5b824a6fe798","Los Bueno",8,8,-70.6987,19.4628,-70.6971,19.4645,null,null],
+["76695be5ab99","Mejoramiento Social",8,8,-70.7005,19.4625,-70.6975,19.4667,null,null],
+["5b0f05a2159e","Residencial Claribel",8,8,-70.6912,19.4667,-70.6898,19.4679,null,null],
+["9bbd8622705e","Residencial Don Manuel",8,8,-70.6557,19.4803,-70.6551,19.4808,null,null],
+["d105d25b0b93","Urbanizacion Venecia",8,8,-70.7991,19.4714,-70.794,19.4752,null,null],
+["3d69fada0855","Tamboril",3,0,-70.6511,19.4302,-70.5456,19.5462,"Tamboril Municipality",null],
+["7b8011c535db","Villa González",3,0,-70.8303,19.4925,-70.7307,19.6364,"Villa González Municipality",null]
+]}

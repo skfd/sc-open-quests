@@ -1,0 +1,17 @@
+{"schema":1,"region":"e7038312f8dc","places":[
+["e7038312f8dc","Piran / Pirano",2,-1,13.563,45.4456,13.7124,45.54,null,null],
+["76e74d6e51c4","Dragonja / Dragogna (naselje)",5,0,13.6423,45.447,13.6788,45.477,null,null],
+["7d0101d086a6","Lucija / Lucia (naselje)",5,0,13.5935,45.4984,13.631,45.5177,null,null],
+["0e7230f7d778","Nova vas nad Dragonjo",5,0,13.6714,45.4677,13.7124,45.4903,null,null],
+["6f336fce1bf1","Padna (naselje)",5,0,13.6713,45.4813,13.7122,45.4958,null,null],
+["465685814a19","Parecag / Parezzago (naselje)",5,0,13.5844,45.4646,13.6541,45.4997,null,null],
+["c730145898f4","Piran / Pirano (naselje)",5,0,13.5629,45.5175,13.5754,45.5306,null,null],
+["678e2156e2e7","Prvomajski trg",9,6,13.5659,45.5291,13.5664,45.5296,null,null],
+["7a6091dc89eb","Tartinijev Trg - Piazza Giuseppe Tartini",9,6,13.5679,45.528,13.569,45.5291,"Tartini Square",null],
+["b209081066b9","Židovski trg",9,6,13.5666,45.5293,13.5668,45.5294,null,null],
+["594629ebc769","Portorož / Portorose (naselje)",5,0,13.5685,45.507,13.6035,45.528,null,null],
+["8abbd00d584d","Seča / Sezza (naselje)",5,0,13.5866,45.4877,13.6405,45.5033,null,null],
+["a25cd52c98b4","Sečovlje / Siccole (naselje)",5,0,13.6119,45.4572,13.6502,45.481,null,null],
+["63b00a264f78","Strunjan / Strugnano (naselje)",5,0,13.5903,45.5164,13.6239,45.54,null,null],
+["4f5716f6dad7","Sv. Peter (naselje)",5,0,13.6629,45.4456,13.6885,45.4737,null,null]
+]}
