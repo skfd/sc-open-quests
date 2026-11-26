@@ -453,7 +453,8 @@ def apply(release: str, registry: Path = place_ids.REGISTRY, former: Path = FORM
             verdicts[r["key"]] = (r, *parse_verdict(r["verdict"], r["class"]))
         except ValueError as e:
             errors.append(f"{r['key']}: {e}")
-    fresh = {g for g in rel if g not in {p.gers for p in reg.places.values()}}
+    known = {p.gers for p in reg.places.values()}
+    fresh = {g for g in rel if g not in known}
     takers = defaultdict(list)
     for key, (r, word, args) in verdicts.items():
         if word == "same":

@@ -4651,3 +4651,22 @@ The 12:15 task `kk-SCOpenQuests` (`run.py update`) is deleted (11-26) and `docs/
   `data/place-ids/releases/<release>/` (backed up with the registry, out of `config/` so no site deploy). `apply` writes a
   **staged** registry there; the live one is swapped only at the reseed. Former names in a side file. Population = `mint`'s (every
   division with an area). Proof on 11-18.0 against a copy of the registry; no DuckDB, tests or S3 until the 12:15 city run ends.
+- **Built (11:20-11:45): `tools/overture_release.py`** (929a800a, c6f99cdc, the decisions file as plain tab lines, the apply fix
+  below); tests `tests/test_overture_release.py` (4: each class, bulk-accept refusals, apply's checks and a rerun keeping minted
+  ids, verdicts kept). Its docstring is the procedure.
+- **Tried on 11-18.0 against a copy of the registry (11:30-11:43, `--root .scratch/overture-release-proof/releases`, after the
+  inputs run, before the city run; DuckDB capped at 1.5 GB):** `narrow 2026-10-21.0 --src data/overture/world` 1,082,287 places (the
+  registry's count, 3 s); `narrow 2026-11-18.0` from S3 1,085,945 (84 s); `propose` 12 s: kept 1,080,809, lost 1,478, new GERS
+  5,136 (the earlier diff: 1,477 and 5,135 of the countable); rows same-osm 199, same-osm-changed 469, same-name-near 59, contested
+  8 (four pairs: duplicates on one OSM object or name), overlap 162 (e.g. Cuando Cubango split into Cuando and Cubango), ended-parent
+  581, new 4,405. Gates: no new subtype, 143 of 147 cities by relation as before, NI/UZ/IL lose over 1%, 26 city parts (Toronto's
+  24 ridings `same-osm-changed`, Bedford South, Lochdale `ended-parent`), 100 of 63,800 small squares gone. Rehearsed operator:
+  every class but contested accepted, the four pairs judged by script (`scratchpad/rehearse.py`, not kept), `apply` 35 s:
+  1,086,692 places, 1,085,945 live (= the release), same 731, ended 747 (all with successors), minted 4,405, former names 556;
+  `place_ids.py check` 0 problems; every old id with its GUID; Beaches-East York keeps its id, GERS and subtype moved. **The live
+  registry's hash unchanged (b3d75207...).** First run of `apply` was quadratic (the registry's GERS set built once a place),
+  stopped, fixed.
+- **Not built (later, by the owner's scope):** swapping the staged registry in at the reseed (`adopt`: backup, copy, pin bump,
+  `small_squares.py build`, `places.py build` into a new folder), ended pages, successor links, `?in=`, publishing former names.
+  12-16.0 is the first real use: `narrow 2026-12-16.0`, `propose 2026-12-16.0` (old = the pin), judge, `apply`, back up.
+- **The HOLD's condition (tool built and tried on 11-18.0) is met; lifting it stays the owner's**, after the 13:20 check.
