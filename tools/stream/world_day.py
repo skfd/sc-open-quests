@@ -692,7 +692,9 @@ def finish(day: Day) -> dict:
     t2w.mkdir(parents=True, exist_ok=True)
     np.save(t2w / "codes.npy", codes)
     TT = {}
-    rinfo = T2.after_cover(codes, plan_path, w, t2w, ROOT, w / "places.json", TT, log=log)
+    # the places' bboxes are kept beside places.json, not in the day's work: 395 MB of JSON is not parsed every day
+    rinfo = T2.after_cover(codes, plan_path, w, t2w, ROOT, w / "places.json", TT, log=log,
+                           bbox_cache=w / "place-bboxes.npz")
     T["rectangles"] = TT.get("rectangles", 0)
     T["engine files"] = TT.get("engine files", 0)
     added: dict[str, set] = defaultdict(set)

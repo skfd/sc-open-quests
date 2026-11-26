@@ -847,18 +847,28 @@ def rect_km2(rects: dict[int, np.ndarray]) -> float:
 
 # --- the engine's files --------------------------------------------------------------------------
 
+BBOX_VERSION = 1
+
+
 def place_bboxes(places_json: Path, npz: Path) -> tuple[np.ndarray, np.ndarray]:
-    """the name layer's places as (sorted ids, bbox w, s, e, n), cached as an npz"""
-    if npz.exists() and npz.stat().st_mtime >= places_json.stat().st_mtime:
-        z = np.load(npz)
-        return z["ids"], z["bbox"]
+    """the name layer's places as (sorted ids, bbox w, s, e, n), cached as an npz with a stamp of places.json (its
+    size and modification time, as notes_day.notes_table stamps a clip): parsed again only when the file changes.
+    A cache without a stamp (written before 2026-11-26) is made again."""
+    st = places_json.stat()
+    stamp = np.array([BBOX_VERSION, st.st_size, st.st_mtime_ns], np.int64)
+    if npz.exists():
+        with np.load(npz) as z:  # closed before the cache is replaced below: Windows refuses to replace an open file
+            if "stamp" in z.files and (z["stamp"] == stamp).all():
+                return z["ids"], z["bbox"]
     d = json.loads(places_json.read_text(encoding="utf-8"))["places"]
     ids = np.array([p["id"] for p in d])
     bbox = np.array([p.get("bbox") or (np.nan,) * 4 for p in d], float)
     order = np.argsort(ids)
     ids, bbox = ids[order], bbox[order]
     npz.parent.mkdir(parents=True, exist_ok=True)
-    np.savez(npz, ids=ids, bbox=bbox)
+    tmp = npz.with_name(npz.name + ".writing.npz")
+    np.savez(tmp, stamp=stamp, ids=ids, bbox=bbox)
+    os.replace(tmp, npz)
     return ids, bbox
 
 
@@ -1001,14 +1011,17 @@ def day(diff: Path, plan_path: Path, world: Path, nodes: Path, work: Path, base:
     return out
 
 
-def after_cover(codes, plan_path: Path, world: Path, work: Path, base: Path, places_json: Path, T: dict, log=print) -> dict:
+def after_cover(codes, plan_path: Path, world: Path, work: Path, base: Path, places_json: Path, T: dict, log=print,
+                bbox_cache: Path | None = None) -> dict:
+    """bbox_cache: where the places' bboxes are kept (place_bboxes); beside the work when not given, which a world
+    day deletes, so the day gives a path that stays"""
     t = time.time()
     plan = json.loads(plan_path.read_text(encoding="utf-8"))
     cells = plan_cells(plan)
     rects = rectangles(codes, cells, log=log)
     T["rectangles"] = time.time() - t
     t = time.time()
-    ids, bbox = place_bboxes(places_json, work.parent / "place-bboxes.npz")
+    ids, bbox = place_bboxes(places_json, bbox_cache or work.parent / "place-bboxes.npz")
     boxes = PartBoxes(ids, bbox, plan.get("cityParts") or [])
     cf, pdir, wst = write_engine_files(rects, cells, world, work, base, boxes)
     T["engine files"] = time.time() - t
