@@ -36,9 +36,57 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY = ROOT / "data" / "place-ids" / "registry.tsv.gz"
+RELEASES = ROOT / "data" / "place-ids" / "releases"   # tools/overture_release.py: a release's proposals and staged registry
 COLUMNS = ("guid", "id", "gers", "osm", "name", "subtype", "country", "state", "successors", "since")
 STATES = ("live", "ended")
 ID = re.compile(r"[0-9a-f]{12}")
+
+
+@dataclass
+class Inputs:
+    """What a place builder reads for one Overture release (`release_inputs`)."""
+    release: str
+    src: Path        # the pull: division.parquet, division_area.parquet, division_area_outlines.parquet
+    registry: Path   # our place ids
+    squares: Path    # the small squares left out (tools/small_squares.py)
+    live: bool       # the pinned release: the live inputs, which a world build ahead of a switch must not write
+
+
+def pinned() -> str:
+    import json
+    return json.loads((ROOT / "config" / "places.json").read_text(encoding="utf-8"))["overture"]
+
+
+def release_inputs(release: str | None = None) -> Inputs:
+    """The pinned release (config/places.json) reads the live inputs: data/overture/world, the live registry,
+    config/small-squares.json. Another release, built ahead of a switch (tools/overture_switch.py), reads its own:
+    its pull in data/overture/<release>, its staged registry and its squares list in data/place-ids/releases/<release>/."""
+    pin = pinned()
+    if release is None or release == pin:
+        return Inputs(pin, ROOT / "data" / "overture" / "world", REGISTRY, ROOT / "config" / "small-squares.json", True)
+    d = RELEASES / release
+    if not (d / "registry.tsv.gz").exists():
+        raise SystemExit(f"{release} has no staged registry ({d / 'registry.tsv.gz'}): tools/overture_release.py first")
+    return Inputs(release, ROOT / "data" / "overture" / release, d / "registry.tsv.gz", d / "small-squares.json", False)
+
+
+def live_paths() -> list[Path]:
+    """What the running site and world read: a build for a release that is not pinned writes none of them."""
+    import json
+    world = json.loads((ROOT / "data" / "world.json").read_text(encoding="utf-8"))["world"]
+    return [ROOT / p for p in ("docs/places", "data/overture/world", "config/parts", "config/small-squares.json",
+                               "data/place-ids/registry.tsv.gz", ".scratch/world-places/world", world)]
+
+
+def refuse_live(out: Path, inputs: Inputs) -> None:
+    """Stop when a build for a release that is not pinned would write into what the live site or world reads."""
+    if inputs.live:
+        return
+    o = Path(out).resolve()
+    for p in live_paths():
+        p = p.resolve()
+        if o == p or p in o.parents or o in p.parents:
+            raise SystemExit(f"{out} is live ({p}); a build for {inputs.release} goes to a new folder")
 
 
 def old_id(gers: str) -> str:

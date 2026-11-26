@@ -25,7 +25,7 @@ from pathlib import Path
 import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
-W = ROOT / ".scratch/planet/world-1101"
+W = ROOT / json.loads((ROOT / "data/world.json").read_text(encoding="utf-8"))["world"]  # the world folder: data/world.json says which (a reseed flips it there)
 
 
 def npz_member(path: Path, name: str, mmap: bool) -> np.ndarray:

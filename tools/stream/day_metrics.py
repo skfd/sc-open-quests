@@ -27,7 +27,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-WORLD = ROOT / ".scratch" / "planet" / "world-1101"
+WORLD = ROOT / json.loads((ROOT / "data/world.json").read_text(encoding="utf-8"))["world"]  # the world folder: data/world.json says which (a reseed flips it there)
 NAME = "engines.json"
 SCHEMA = 1
 AREA = re.compile(r"^area: (\S+)\s+([\d.]+) s\s+\(map data ([\d.]+) s: (\d+) nodes, (\d+) ways, (\d+) relations\)")

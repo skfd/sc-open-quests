@@ -184,3 +184,25 @@ class Rename(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class Releases(unittest.TestCase):
+    """a world built ahead of a switch reads the release's own inputs and never writes what the live site reads"""
+
+    def test_the_pinned_release_reads_the_live_inputs(self):
+        i = place_ids.release_inputs()
+        self.assertTrue(i.live)
+        self.assertEqual((place_ids.REGISTRY, ROOT / "data/overture/world"), (i.registry, i.src))
+        self.assertEqual(i, place_ids.release_inputs(place_ids.pinned()))
+
+    def test_another_release_needs_its_staged_registry(self):
+        with self.assertRaises(SystemExit):
+            place_ids.release_inputs("1999-01-01.0")
+
+    def test_a_release_build_refuses_live_folders(self):
+        i = place_ids.Inputs("2099-01-01.0", ROOT / "x", ROOT / "y", ROOT / "z", False)
+        for live in ("docs/places", "docs/places/de", "config/small-squares.json", "data/overture/world", "docs"):
+            with self.assertRaises(SystemExit, msg=live):
+                place_ids.refuse_live(ROOT / live, i)
+        place_ids.refuse_live(ROOT / ".scratch/world-places/world-1118", i)   # a new folder is fine
+        place_ids.refuse_live(ROOT / "docs/places", place_ids.release_inputs())   # the pinned build writes the live one

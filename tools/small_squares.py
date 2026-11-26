@@ -148,12 +148,18 @@ def prune(parts_dir: Path, gone: set[str]) -> dict[str, int]:
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("cmd", choices=["build", "prune"])
-    ap.add_argument("--src", type=Path, default=ROOT / "data" / "overture" / "world")
-    ap.add_argument("--out", type=Path, default=OUT)
+    ap.add_argument("--release", help="an Overture release other than the pinned one: its pull in, its squares list "
+                    "(data/place-ids/releases/<release>/small-squares.json) out")
+    ap.add_argument("--src", type=Path, help="default: the release's pull (data/overture/world for the pinned one)")
+    ap.add_argument("--out", type=Path, help=f"default: the release's list ({OUT.relative_to(ROOT)} for the pinned one)")
     a = ap.parse_args(argv)
+    sys.path.insert(0, str(ROOT / "tools"))
+    import place_ids
+    inputs = place_ids.release_inputs(a.release)
+    a.src, a.out = a.src or inputs.src, a.out or inputs.squares
     if a.cmd == "build":
-        overture = json.loads((ROOT / "config" / "places.json").read_text(encoding="utf-8"))["overture"]
-        doc = build(a.src, a.out, overture)
+        place_ids.refuse_live(a.out, inputs)
+        doc = build(a.src, a.out, inputs.release)
         print(f"squares {doc['squares']:,}; under {MAX_M2:,} m2 and nobody's parent {doc['small']:,}; "
               f"covered, so left out {len(doc['places']):,} -> {a.out}")
     else:
