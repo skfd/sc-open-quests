@@ -4575,6 +4575,7 @@ measured: 12,643 s, then the publish 1,155 s.
       delete beside `compact`, the gate clips cut with the refresh and the bbox cache have no switch: revert
       81df89fd with `-m 1`). The engine's index: `-Dopenquests.areaIndex=false` in the engines' options, or copy
       the old install back and `git revert -m 1 9330eee8` (else the next city run rebuilds from source).
+    - **Scheduled into this session for 13:20 today:** a read-only check of those two runs.
     - **To check after today's runs:** `inputs done` in `logs/inputs.log` (11:15) and `update done` in
       `logs/scheduler.log` (12:15, the first city run on the new engine: its counts against yesterday's).
     - **To check on the first world day after the HOLD is lifted (the owner's to lift; four suspects if the gate
