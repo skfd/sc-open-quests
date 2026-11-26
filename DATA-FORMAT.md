@@ -307,6 +307,21 @@ request"). Agreed before the work was split, so the builders, the engine and the
   macrohood, neighborhood or microhood, **whose source is an OSM relation or way** (the owner chose OSM
   only: Esri Community Maps parts are left out). The geometry comes from OSM itself, cut from the
   region's own extract (osmium, Docker image `name-ru-repair-osmium`), not Overture's copy.
+- **Dropped places**, `config/dropped-places.json` (committed, reviewed by the owner): `{ "schema": 1, "overture",
+  "places": [ { "id", "gers", "osm", "name", "subtype", "city", "why": "duplicate", "keeps": { "id", "osm",
+  "name" }, "overlap", "rule" } ] }`: places we leave out because another place is the same one (two live OSM objects that
+  Overture makes two places of). `tools/places.py` (the name layer) and `tools/add_parts.py` (the registry) skip them;
+  a dropped place may not be anybody's parent, and `keeps` stays a part. The rule was run once to make the list; a later
+  Overture release adds nothing to it by itself. Counts and archived snapshots are not touched: taking a place off
+  the list and rerunning the two tools brings it back, though its daily series stops while it is off.
+- **Small squares**, `config/small-squares.json` (committed, made by `tools/small_squares.py build`, not reviewed by hand):
+  `{ "schema": 1, "overture", "rule": { "maxM2": 10000, "cover": 0.95, "coveredBy": [subtypes] }, "squares", "small",
+  "places": [ "<GERS id>", ... ] }`, one id a line. A square (a microhood with `local_type` "square", OSM place=square) whose
+  outline is under 10,000 m² and that places of a city's size or smaller (`coveredBy`) cover, 95% of it or more, together.
+  Squares covered only by a county or larger, or by nothing, stay, as does a square another place calls its parent (owner,
+  2026-11-25). 2026-10-21.0: 81,372 squares, 67,106 small, 63,800 listed. `places.py` and `add_parts.py` leave them out
+  (`run.left_out_places`, both lists by GERS id), `small_squares.py prune` takes them out of `config/parts`. Counts keep them.
+  Rebuilt at each Overture release.
 - **Part counts in a snapshot**: inside the city, `cities.<id>.parts`: `{ "<placeId>": { "<Quest>":
   <open> } }`, open quests at resurvey ×1 only (the `open` of the city's quest), quests with 0 left out,
   parts with nothing open kept as `{}`. A quest counts in a part when its position (the same centre

@@ -3298,6 +3298,17 @@ wording and tab structure as a first draft open to change, not as decided design
     city or smaller (neighbourhood-level, locality or localadmin) must cover it**, so 63,800 are dropped and 3,306 stay
     (3,297 only in a county or larger, 9 in nothing); ours: 400 of 407 dropped, 7 stay. Not built; the traps above
     (`MAX_DELETE`, `DAY_CAP`, the registry) come first, and the owner's go. **Owner, 2026-11-24: not yet, handoff only.**
+  - **Owner, 2026-11-25: drop the small squares, no review, by a rule in code; the duplicates merge; OSM is left as is**
+    (cowork closed: `~/Code/cowork/osm-duplicate-neighbourhoods/FOLLOW-UP.md`). Built on branch `dropped-places`
+    (worktree `../sc-open-quests-dropped`, main merged in at 14426bf8): `tools/small_squares.py` (`build`: 63,800 of 81,372
+    squares in 1 min 51 s; `prune`: every left-out place out of `config/parts` by GERS id), `config/small-squares.json`,
+    `run.left_out_places` (both lists by GERS id) read by `places.py` and `add_parts.py`, DATA-FORMAT "Small squares".
+    The registry loses 400 squares in 41 cities (Berlin 219 of 461, Hamburg 62, Montreal 24, Vancouver 11, Toronto 10) and the 16
+    twins. 45 tests pass (dropped, parts, places, place_ids; the rename tests now use a temp dropped list).
+    **Merge, coordinated with the place-ids session (it asked to wait until its rename is committed and checked):** take main's
+    renamed `config/parts`, run `small_squares.py prune`, translate `dropped-places.json`'s `id` and `keeps.id` through
+    `data/place-ids/registry.tsv.gz` (old id = first 12 hex of `gers`), whole suite, then the name layer once
+    (`places.py build`: about 63,800 places fewer) and the publisher (`--max-delete`).
   - **Duplicate parts, a proposal (owner asked; nothing built).** 19 pairs overlap over 80%. 16 are the same place (overlap 94%
     or more, open counts within 10%); 3 are real neighbours and stay: Bremen-Mitte and Häfen (91%, 16,017 and 4,154 open),
     Bremerhaven Mitte and Mitte-Süd (83%), Shearwater and CFB Shearwater (82%). `dups2.py` lists all 19 with tags.

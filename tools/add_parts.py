@@ -24,6 +24,8 @@ For each city of config/cities.json (DATA-FORMAT.md, "Places and parts"):
 4. **Inside the city**: the share of a part's area inside the city boundary, estimated on a 40 x 40
    grid of points over the part's bbox with the engine's even-odd test. Parts under 50% are dropped and
    reported (Overture's hierarchy puts them under the city, OSM draws them mostly elsewhere).
+   A place of `config/dropped-places.json` (a twin of a place we keep) or `config/small-squares.json` (a small
+   square inside other places, tools/small_squares.py) is left out first.
 5. **Not the city again**: a part that covers 90% or more of the city's area (the same grid, over the
    city's bbox) is dropped and reported. It is the city under another relation (Bremen's locality
    r2088648, Saint John's parish and neighbourhood) and would only repeat the city's numbers. A former
@@ -123,9 +125,13 @@ def find_parts(c, city: dict, gers: str) -> list[dict]:
           AND regexp_matches(osm, '^[rw][0-9]+@')
         ORDER BY id""", [gers, gers]).fetchall()
     parts = []
+    left_out = run.left_out_places()
     for gid, name, en, subtype, osm in rows:
         osm = osm.split("@")[0]
         if osm == f"r{city['relation']}":
+            continue
+        if gid in left_out:
+            run.log(f"{city['id']}: left out, {left_out[gid]}: {osm} {name}")
             continue
         parts.append({"id": place_id(gid), "gers": gid, "name": name,
                       "en": en if en and en != name else None, "subtype": subtype, "osm": osm})

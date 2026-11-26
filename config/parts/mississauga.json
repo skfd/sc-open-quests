@@ -1,6 +1,5 @@
 {"schema": 1, "city": "mississauga", "overture": "2026-10-21.0", "parts": [
   {"id": "2cfe8e947d37", "gers": "14995dd0-5005-460d-9c43-8b8e18001cd9", "name": "Applewood", "en": null, "subtype": "neighborhood", "osm": "r19727762", "geometry": "data/boundaries/parts/mississauga/r19727762.geojson"},
-  {"id": "0c162ecb964a", "gers": "a411171a-1005-4264-98b4-ee2dbbbc4bc0", "name": "CCT courtyard", "en": null, "subtype": "microhood", "osm": "w1500121745", "geometry": "data/boundaries/parts/mississauga/w1500121745.geojson"},
   {"id": "406ad1032711", "gers": "5be2e187-e6cc-406d-8586-3cf51470a506", "name": "Central Erin Mills", "en": null, "subtype": "neighborhood", "osm": "r19727758", "geometry": "data/boundaries/parts/mississauga/r19727758.geojson"},
   {"id": "2b0838fc095e", "gers": "bbf6d968-5d08-4162-a50b-143286b149b3", "name": "Churchill Meadows", "en": null, "subtype": "neighborhood", "osm": "r19727757", "geometry": "data/boundaries/parts/mississauga/r19727757.geojson"},
   {"id": "067dcd92d9da", "gers": "317e70c7-a1a5-4b04-b4f1-480a9d70dc08", "name": "City Centre", "en": null, "subtype": "microhood", "osm": "r19770385", "geometry": "data/boundaries/parts/mississauga/r19770385.geojson"},

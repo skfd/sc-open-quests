@@ -76,6 +76,7 @@ class Rename(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory()
         root = Path(self.tmp.name)
         self.world, self.archive, self.parts = root / "world", root / "archive", root / "parts"
+        self._dropped, rp.DROPPED = rp.DROPPED, root / "dropped-places.json"   # not the repository's own list
         self.reg = place_ids.mint(ROWS, "r")
         self.pairs = {place_ids.old_id(p.gers): p.id for p in self.reg.places.values()}
         self.o = [place_ids.old_id(g) for g in GERS]
@@ -92,6 +93,7 @@ class Rename(unittest.TestCase):
         self.put(self.world / "parts.cache.json", json.dumps({"stamp": rp.stamp_of(self.world / "places.json"), "built": "x"}))
 
     def tearDown(self):
+        rp.DROPPED = self._dropped
         self.tmp.cleanup()
 
     def put(self, path, text):

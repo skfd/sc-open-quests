@@ -6,7 +6,5 @@
   {"id": "75979f79b22c", "gers": "0bceb397-e2a9-4012-b394-774414a25a93", "name": "Le Mont-Bellevue", "en": null, "subtype": "macrohood", "osm": "r8813666", "geometry": "data/boundaries/parts/sherbrooke/r8813666.geojson"},
   {"id": "61a1559bce4a", "gers": "8fdedaa4-fdb7-4e26-934a-a28d83076893", "name": "Lennoxville", "en": null, "subtype": "macrohood", "osm": "r8813574", "geometry": "data/boundaries/parts/sherbrooke/r8813574.geojson"},
   {"id": "023bc9d2023b", "gers": "8b95b766-4f91-42af-82bf-971389faf787", "name": "Les Nations", "en": null, "subtype": "macrohood", "osm": "r12358779", "geometry": "data/boundaries/parts/sherbrooke/r12358779.geojson"},
-  {"id": "fe9bd64bc9d3", "gers": "4531c15c-9cd4-4a3e-84e1-d1bf5b6a996e", "name": "Place Kassiwi", "en": null, "subtype": "microhood", "osm": "w1125477538", "geometry": "data/boundaries/parts/sherbrooke/w1125477538.geojson"},
-  {"id": "c02b9ffd4cb2", "gers": "0aaa92ba-63f5-485a-9160-4813d9535235", "name": "Place de la Cité", "en": null, "subtype": "microhood", "osm": "r11094169", "geometry": "data/boundaries/parts/sherbrooke/r11094169.geojson"},
   {"id": "6425f8a73f22", "gers": "be3541ab-1469-42e5-bcc4-f0e1c06a7133", "name": "Rock Forest–Saint-Élie–Deauville", "en": null, "subtype": "macrohood", "osm": "r8813668", "geometry": "data/boundaries/parts/sherbrooke/r8813668.geojson"}
 ]}

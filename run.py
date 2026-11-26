@@ -74,6 +74,8 @@ ARCHIVE_DIR = ROOT / "data" / "archive"  # every snapshot, <region>/snapshots/<a
 NOTES_DIR = ROOT / "data" / "notes"
 GRID_DIR = ROOT / "data" / "grid"  # counted quests per z14 tile, <region>/<asOfDate>.json.gz; not committed
 REGION_CITIES_DIR = ROOT / "data" / "cities"  # the engine's cities file per region; not committed
+DROPPED_CONFIG = ROOT / "config" / "dropped-places.json"  # Overture places we leave out, and why (DATA-FORMAT.md)
+SMALL_SQUARES_CONFIG = ROOT / "config" / "small-squares.json"  # squares we leave out (tools/small_squares.py)
 WORLD_ARCHIVE = ROOT / "data" / "archive-world"  # the cities' days out of the world's counts (tools/world_cities.py)
 CITY_FILES_CONFIG = ROOT / "config" / "city-files.json"  # the last day docs/data's city files hold (DESIGN.md)
 PARTS_CONFIG = ROOT / "config" / "parts"  # the parts registry, <cityId>.json (tools/add_parts.py)
@@ -512,6 +514,29 @@ def build_engine() -> None:
     gradlew = ENGINE_DIR / ("gradlew.bat" if os.name == "nt" else "gradlew")
     subprocess.run([str(gradlew), "installDist", "--console=plain"], cwd=ENGINE_DIR,
                    env=engine_env(), check=True)
+
+
+def dropped_places(path: Path = DROPPED_CONFIG) -> dict[str, dict]:
+    """The places of config/dropped-places.json by place id: near-identical twins of a place we keep
+    (DATA-FORMAT.md, "Dropped places"). The name layer and the parts registry leave them out; counts are
+    not touched, so taking a place off the list brings it back. No file, nothing dropped."""
+    if not path.exists():
+        return {}
+    places = read_json(path)["places"]
+    out = {p["id"]: p for p in places}
+    if len(out) != len(places):
+        raise ValueError(f"{path}: a place id twice")
+    return out
+
+
+def left_out_places(dropped: Path = DROPPED_CONFIG, squares: Path = SMALL_SQUARES_CONFIG) -> dict[str, str]:
+    """{GERS id: why} of every place the name layer and the parts registry leave out: the twins of
+    config/dropped-places.json ("duplicate") and the squares of config/small-squares.json ("small square",
+    tools/small_squares.py). By GERS id, so the lists outlive a change of our own place ids."""
+    out = {p["gers"]: p["why"] for p in dropped_places(dropped).values()}
+    if squares.exists():
+        out.update({g: "small square" for g in read_json(squares)["places"] if g not in out})
+    return out
 
 
 def parts_args(parts_dir: Path = PARTS_CONFIG) -> list[str]:

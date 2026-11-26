@@ -12,7 +12,6 @@
   {"id": "b85f65f75cc0", "gers": "9395e7bd-c235-451a-9ce0-53a105e0ba01", "name": "Northglen", "en": null, "subtype": "neighborhood", "osm": "r18255147", "geometry": "data/boundaries/parts/oshawa/r18255147.geojson"},
   {"id": "5b780921b6ad", "gers": "ec7d712f-eb4a-45ec-8278-a6f006e72d33", "name": "Northwood", "en": null, "subtype": "neighborhood", "osm": "r18556359", "geometry": "data/boundaries/parts/oshawa/r18556359.geojson"},
   {"id": "3bb94d0822a7", "gers": "229448ee-68d2-469f-8a8d-4c3ddadb0495", "name": "O'Neill", "en": null, "subtype": "neighborhood", "osm": "r17733444", "geometry": "data/boundaries/parts/oshawa/r17733444.geojson"},
-  {"id": "2dda5b90c04d", "gers": "8d93958a-38dd-40fa-a045-40e57a21dd7a", "name": "Oshawa Civic Square", "en": null, "subtype": "microhood", "osm": "w361304121", "geometry": "data/boundaries/parts/oshawa/w361304121.geojson"},
   {"id": "5f6a494f4b00", "gers": "d014d1dc-48db-42c1-9884-a83d40c94344", "name": "Pinecrest", "en": null, "subtype": "neighborhood", "osm": "r18255149", "geometry": "data/boundaries/parts/oshawa/r18255149.geojson"},
   {"id": "b36b35fff25e", "gers": "5bfd260b-3205-44e9-afc6-adc1e3ec63f7", "name": "Rural Area", "en": null, "subtype": "neighborhood", "osm": "r18556404", "geometry": "data/boundaries/parts/oshawa/r18556404.geojson"},
   {"id": "8d2aec54cd40", "gers": "6cb310b2-19e8-46e9-92fc-16bd9db96272", "name": "Samac", "en": null, "subtype": "neighborhood", "osm": "r18556367", "geometry": "data/boundaries/parts/oshawa/r18556367.geojson"},

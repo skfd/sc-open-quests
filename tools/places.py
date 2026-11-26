@@ -79,6 +79,21 @@ def read_divisions(src):
     return [dict(zip(cols, r)) for r in con.execute(q).fetchall()]
 
 
+def leave_out(rows, ids):
+    """(rows without the places whose GERS id is in ids, how many of them were here): run.left_out_places,
+    the twins of config/dropped-places.json and the squares of config/small-squares.json. A left-out place
+    that another place calls its parent or an ancestor stops the build: the lists are for places that are
+    nobody's parent, and silently losing a level of a chain would move every place below it."""
+    kept = [r for r in rows if r["gers"] not in ids]
+    if len(kept) != len(rows):
+        for r in kept:
+            hit = next((x for x in [r["parent"], *(r["anc"] or [])] if x in ids and x != r["gers"]), None)
+            if hit:
+                raise SystemExit(f"{hit} is left out (config/dropped-places.json or small-squares.json) but is an "
+                                 f"ancestor of {r['gers']} {r['name']!r}")
+    return kept, len(rows) - len(kept)
+
+
 # --- countries: StreetComplete's ----------------------------------------------------------------
 
 def placeholder(cc):
@@ -408,6 +423,10 @@ def main(argv=None):
     cities = json.loads((ROOT / "config" / "cities.json").read_text(encoding="utf-8"))["cities"]
     rows = read_divisions(a.src)
     print(f"{len(rows)} divisions with an area", flush=True)
+    sys.path.insert(0, str(ROOT))
+    import run
+    rows, left_out = leave_out(rows, run.left_out_places())
+    print(f"left out by config/dropped-places.json and config/small-squares.json: {left_out}", flush=True)
     attach_sc(rows)
     id_of = place_ids.load().id_of
     assign(rows, id_of)
