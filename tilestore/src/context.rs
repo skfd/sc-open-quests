@@ -143,6 +143,131 @@ fn evenodd(segs: &[[f64; 4]], lat: f64, lon: f64) -> bool {
     inside
 }
 
+fn is_multipolygon(tags: &[u8]) -> bool {
+    tag_pairs(tags).any(|(k_, v)| k_ == b"type" && v == b"multipolygon")
+}
+
+/// what the points query asks of a tile, made once for a chunk of home tiles (not once for every point around it)
+struct TileIdx {
+    /// the closed ways the tile places whole: the way's index in the tile and its box [s, w, n, e], in the tile's order
+    rings: Vec<(u32, [i32; 4])>,
+    /// the tile's multipolygon relations (index in the tile), in the tile's order
+    mps: Vec<u32>,
+    /// closed ways looked at and their refs (counters)
+    closed: u64,
+    refs: u64,
+}
+
+/// the box [s, w, n, e] of way j of a tile if the tile places every ref of it
+fn ring_box(p: &Part, j: usize) -> Option<[i32; 4]> {
+    let (mut s, mut w, mut n, mut e) = (i32::MAX, i32::MAX, i32::MIN, i32::MIN);
+    for r in &p.wrefs[p.w_roff[j]..p.w_roff[j + 1]] {
+        let k = p.nid.binary_search(r).ok()?;
+        s = s.min(p.lat[k]);
+        n = n.max(p.lat[k]);
+        w = w.min(p.lon[k]);
+        e = e.max(p.lon[k]);
+    }
+    Some([s, w, n, e])
+}
+
+fn tile_idx(p: &Part) -> TileIdx {
+    let mut ix = TileIdx { rings: Vec::new(), mps: Vec::new(), closed: 0, refs: 0 };
+    for j in 0..p.wid.len() {
+        let r = &p.wrefs[p.w_roff[j]..p.w_roff[j + 1]];
+        if r.len() < 4 || r[0] != r[r.len() - 1] {
+            continue;
+        }
+        ix.closed += 1;
+        ix.refs += r.len() as u64;
+        // a ring the tile does not place whole is left out: another tile of the block places it
+        if let Some(bx) = ring_box(p, j) {
+            ix.rings.push((j as u32, bx));
+        }
+    }
+    for k in 0..p.rid.len() {
+        if is_multipolygon(&p.rtb[p.r_toff[k]..p.r_toff[k + 1]]) {
+            ix.mps.push(k as u32);
+        }
+    }
+    ix
+}
+
+/// the segments of way j of a tile (a way of `TileIdx::rings`: every ref placed)
+fn ring_segs(p: &Part, j: usize) -> Vec<[f64; 4]> {
+    let pos: Vec<(i32, i32)> =
+        p.wrefs[p.w_roff[j]..p.w_roff[j + 1]].iter().filter_map(|n| p.nid.binary_search(n).ok().map(|k| (p.lat[k], p.lon[k]))).collect();
+    pos.windows(2).map(|q| [q[0].0 as f64, q[0].1 as f64, q[1].0 as f64, q[1].1 as f64]).collect()
+}
+
+/// every member way's segments of a relation store blob (outer and inner alike: even-odd over all of them)
+fn blob_segs(b: &Part) -> Vec<[f64; 4]> {
+    let at: HashMap<i64, (i32, i32)> = b.nid.iter().enumerate().map(|(q, &nn)| (nn, (b.lat[q], b.lon[q]))).collect();
+    let mut segs = Vec::new();
+    for q in 0..b.wid.len() {
+        let r = &b.wrefs[b.w_roff[q]..b.w_roff[q + 1]];
+        for s2 in r.windows(2) {
+            if let (Some(&u), Some(&v)) = (at.get(&s2[0]), at.get(&s2[1])) {
+                segs.push([u.0 as f64, u.1 as f64, v.0 as f64, v.1 as f64]);
+            }
+        }
+    }
+    segs
+}
+
+/// what a point found in a tile of its block: a closed way holding it (kind 1, tested), or a multipolygon whose box
+/// holds it (kind 2, its ring test still to do: `q` numbers it among the chunk's). `key` and `at` say which tile and
+/// which way or relation of it, for the tags; `bx` is the element's box.
+struct Cand {
+    kind: u8,
+    key: i64,
+    at: usize,
+    id: i64,
+    bx: [i32; 4],
+    q: usize,
+}
+
+/// one point against the tiles of its block, in the block's order, each tile's ways before its relations.
+/// counts: rings tested, their segments, refs searched for them, multipolygons seen, multipolygons whose box holds it
+fn point_cands(block: &[(i64, &Part, &TileIdx)], relbox: &HashMap<i64, [i32; 4]>, la: f64, lo: f64, counts: &mut [u64; 5]) -> Vec<Cand> {
+    let mut out = Vec::new();
+    let mut seen: HashSet<(u8, i64)> = HashSet::new();
+    for &(key, p, ix) in block {
+        for &(j, bx) in &ix.rings {
+            if la < bx[0] as f64 || la > bx[2] as f64 || lo < bx[1] as f64 || lo > bx[3] as f64 {
+                continue;
+            }
+            let j = j as usize;
+            let id = p.wid[j];
+            if !seen.insert((1, id)) {
+                continue; // tested in an earlier tile of the block
+            }
+            let segs = ring_segs(p, j);
+            counts[0] += 1;
+            counts[1] += segs.len() as u64;
+            counts[2] += segs.len() as u64 + 1;
+            if evenodd(&segs, la, lo) {
+                out.push(Cand { kind: 1, key, at: j, id, bx, q: 0 });
+            }
+        }
+        for &k in &ix.mps {
+            let k = k as usize;
+            let id = p.rid[k];
+            if !seen.insert((2, id)) {
+                continue;
+            }
+            counts[3] += 1;
+            let Some(&bx) = relbox.get(&id) else { continue }; // no blob
+            if bx[0] == NO || la < bx[0] as f64 || la > bx[2] as f64 || lo < bx[1] as f64 || lo > bx[3] as f64 {
+                continue;
+            }
+            counts[4] += 1;
+            out.push(Cand { kind: 2, key, at: k, id, bx, q: 0 });
+        }
+    }
+    out
+}
+
 #[derive(Default)]
 struct Out {
     ids: Vec<i64>,
@@ -619,7 +744,11 @@ pub fn context(a: &Args) {
         let n_el0 = elements.len();
         let m = (1i64 << st.z) - 1;
         let mut n_tiles = 0usize;
-        // where the time goes (counts in the loops; the clock read per chunk and per point and tile, not per way)
+        // where the time goes, by the clock on the wall, per chunk: reading tiles; fetching blobs; ways = placing each
+        // tile's closed ways once and the pass over the points (boxes, the ways' ring tests); multipolygons = their
+        // boxes, their ring tests and the writing down. The counts: closed ways seen and placed are per tile and
+        // chunk, nodes mapped and segments per multipolygon and chunk (no longer per point); rings tested, their
+        // segments, multipolygons seen and in a box count what they did, per point.
         let (mut s_tiles, mut s_blobs, mut s_ways, mut s_rels) = (0f64, 0f64, 0f64, 0f64);
         let (mut c_closed, mut c_refs, mut c_placed, mut c_rings, mut c_ring_segs) = (0u64, 0u64, 0u64, 0u64, 0u64);
         let (mut c_mp, mut c_mp_in_box, mut c_mp_nodes, mut c_mp_segs, mut c_blobs) = (0u64, 0u64, 0u64, 0u64, 0u64);
@@ -639,101 +768,117 @@ pub fn context(a: &Args) {
             keys.dedup();
             n_tiles += keys.len();
             let t_ = Instant::now();
-            let tiles: HashMap<i64, Part> = st.tiles(&keys).into_iter().collect();
+            let read = st.tiles(&keys);
             s_tiles += t_.elapsed().as_secs_f64();
+            // each tile's closed ways placed once for the chunk, with their boxes, and its multipolygons listed
+            // (16 + 4 bytes a closed way, gone with the chunk's tiles)
+            let t_ = Instant::now();
+            let tiles: HashMap<i64, (Part, TileIdx)> = read
+                .into_par_iter()
+                .map(|(k, p)| {
+                    let ix = tile_idx(&p);
+                    (k, (p, ix))
+                })
+                .collect();
+            for (_, ix) in tiles.values() {
+                c_closed += ix.closed;
+                c_refs += ix.refs;
+                c_placed += ix.rings.len() as u64;
+            }
+            s_ways += t_.elapsed().as_secs_f64();
             let t_ = Instant::now();
             // multipolygons in these tiles: their blobs, for the ring test and the box
             let mp: Vec<i64> = tiles
                 .values()
-                .flat_map(|p| (0..p.rid.len()).filter(|&k| tag_pairs(&p.rtb[p.r_toff[k]..p.r_toff[k + 1]]).any(|(k_, v)| k_ == b"type" && v == b"multipolygon")).map(|k| p.rid[k]).collect::<Vec<_>>())
+                .flat_map(|(p, ix)| ix.mps.iter().map(move |&k| p.rid[k as usize]))
                 .collect::<HashSet<_>>()
                 .into_iter()
                 .collect();
             fetch_blobs(&mp, &mut relidx, &mut blobs);
             c_blobs += mp.len() as u64;
             s_blobs += t_.elapsed().as_secs_f64();
-            for &home in chunk {
-                let block: Vec<&Part> = (-a.around..=a.around)
-                    .flat_map(|dx| (-a.around..=a.around).map(move |dy| (home.0 + dx, home.1 + dy)))
-                    .filter(|(xx, yy)| (0..=m).contains(xx) && (0..=m).contains(yy))
-                    .filter_map(|(xx, yy)| tiles.get(&(key_of(xx, yy, st.z) as i64)))
-                    .collect();
-                for &i in &by_home[&home] {
-                    let (la, lo) = (pts[i].0 as f64, pts[i].1 as f64);
-                    let mut seen: HashSet<(u8, i64)> = HashSet::new();
-                    for p in &block {
-                        let t_ = Instant::now();
-                        for j in 0..p.wid.len() {
-                            let r = &p.wrefs[p.w_roff[j]..p.w_roff[j + 1]];
-                            if r.len() < 4 || r[0] != r[r.len() - 1] || seen.contains(&(1, p.wid[j])) {
-                                continue;
-                            }
-                            c_closed += 1;
-                            c_refs += r.len() as u64;
-                            let id = p.wid[j];
-                            let pos: Vec<(i32, i32)> = r
-                                .iter()
-                                .filter_map(|n| p.nid.binary_search(n).ok().map(|k| (p.lat[k], p.lon[k])))
-                                .collect();
-                            if pos.len() != r.len() {
-                                continue; // a ring the tile does not place whole: another tile of the block does
-                            }
-                            c_placed += 1;
-                            let (s, n_) = (pos.iter().map(|q| q.0).min().unwrap(), pos.iter().map(|q| q.0).max().unwrap());
-                            let (w, e) = (pos.iter().map(|q| q.1).min().unwrap(), pos.iter().map(|q| q.1).max().unwrap());
-                            if la < s as f64 || la > n_ as f64 || lo < w as f64 || lo > e as f64 {
-                                continue;
-                            }
-                            seen.insert((1, id));
-                            let segs: Vec<[f64; 4]> = pos.windows(2).map(|q| [q[0].0 as f64, q[0].1 as f64, q[1].0 as f64, q[1].1 as f64]).collect();
-                            c_rings += 1;
-                            c_ring_segs += segs.len() as u64;
-                            if evenodd(&segs, la, lo) {
-                                hits[i].push((1, id));
-                                elements.entry((1, id)).or_insert_with(|| ([s, w, n_, e], p.wtb[p.w_toff[j]..p.w_toff[j + 1]].to_vec()));
-                            }
+            // each multipolygon's box once for the chunk (24 bytes each)
+            let t_ = Instant::now();
+            let relbox: HashMap<i64, [i32; 4]> = mp.par_iter().filter_map(|id| blobs.get(id).map(|b| (*id, blob_box(b)))).collect();
+            s_rels += t_.elapsed().as_secs_f64();
+            // the homes side by side, reading only: what each point found, in the order one thread would find it
+            let t_ = Instant::now();
+            let mut found: Vec<(Vec<(usize, Vec<Cand>)>, [u64; 5])> = chunk
+                .par_iter()
+                .map(|&home| {
+                    let block: Vec<(i64, &Part, &TileIdx)> = (-a.around..=a.around)
+                        .flat_map(|dx| (-a.around..=a.around).map(move |dy| (home.0 + dx, home.1 + dy)))
+                        .filter(|(xx, yy)| (0..=m).contains(xx) && (0..=m).contains(yy))
+                        .filter_map(|(xx, yy)| {
+                            let key = key_of(xx, yy, st.z) as i64;
+                            tiles.get(&key).map(|(p, ix)| (key, p, ix))
+                        })
+                        .collect();
+                    let mut counts = [0u64; 5];
+                    let of: Vec<(usize, Vec<Cand>)> = by_home[&home]
+                        .iter()
+                        .map(|&i| (i, point_cands(&block, &relbox, pts[i].0 as f64, pts[i].1 as f64, &mut counts)))
+                        .collect();
+                    (of, counts)
+                })
+                .collect();
+            s_ways += t_.elapsed().as_secs_f64();
+            // the multipolygons whose box holds a point: each one's node map and segments made once, for all its
+            // points, and dropped (so as many relations' segments at a time as there are threads)
+            let t_ = Instant::now();
+            let mut by_rel: HashMap<i64, Vec<(usize, f64, f64)>> = HashMap::new();
+            let mut n_mp = 0usize;
+            for (of, counts) in found.iter_mut() {
+                c_rings += counts[0];
+                c_ring_segs += counts[1];
+                c_refs += counts[2];
+                c_mp += counts[3];
+                c_mp_in_box += counts[4];
+                for (i, cs) in of.iter_mut() {
+                    for c in cs.iter_mut() {
+                        if c.kind == 2 {
+                            c.q = n_mp;
+                            by_rel.entry(c.id).or_default().push((n_mp, pts[*i].0 as f64, pts[*i].1 as f64));
+                            n_mp += 1;
                         }
-                        s_ways += t_.elapsed().as_secs_f64();
-                        let t_ = Instant::now();
-                        for k in 0..p.rid.len() {
-                            let id = p.rid[k];
-                            if seen.contains(&(2, id)) {
-                                continue;
-                            }
-                            let rtags = &p.rtb[p.r_toff[k]..p.r_toff[k + 1]];
-                            if !tag_pairs(rtags).any(|(k_, v)| k_ == b"type" && v == b"multipolygon") {
-                                continue;
-                            }
-                            seen.insert((2, id));
-                            c_mp += 1;
-                            let Some(b) = blobs.get(&id) else { continue };
-                            let bx = blob_box(b);
-                            if bx[0] == NO || la < bx[0] as f64 || la > bx[2] as f64 || lo < bx[1] as f64 || lo > bx[3] as f64 {
-                                continue;
-                            }
-                            // every member way's segments (outer and inner alike: even-odd over all of them)
-                            c_mp_in_box += 1;
-                            c_mp_nodes += b.nid.len() as u64;
-                            let at: HashMap<i64, (i32, i32)> = b.nid.iter().enumerate().map(|(q, &nn)| (nn, (b.lat[q], b.lon[q]))).collect();
-                            let mut segs = Vec::new();
-                            for q in 0..b.wid.len() {
-                                let r = &b.wrefs[b.w_roff[q]..b.w_roff[q + 1]];
-                                for s2 in r.windows(2) {
-                                    if let (Some(&u), Some(&v)) = (at.get(&s2[0]), at.get(&s2[1])) {
-                                        segs.push([u.0 as f64, u.1 as f64, v.0 as f64, v.1 as f64]);
-                                    }
-                                }
-                            }
-                            c_mp_segs += segs.len() as u64;
-                            if evenodd(&segs, la, lo) {
-                                hits[i].push((2, id));
-                                elements.entry((2, id)).or_insert_with(|| (bx, rtags.to_vec()));
-                            }
-                        }
-                        s_rels += t_.elapsed().as_secs_f64();
                     }
                 }
             }
+            let by_rel: Vec<(i64, Vec<(usize, f64, f64)>)> = by_rel.into_iter().collect();
+            let tested: Vec<(Vec<(usize, bool)>, u64, u64)> = by_rel
+                .par_iter()
+                .map(|(id, ps)| {
+                    let b = &blobs[id];
+                    let segs = blob_segs(b);
+                    let got: Vec<(usize, bool)> = ps.iter().map(|&(q, la, lo)| (q, evenodd(&segs, la, lo))).collect();
+                    (got, b.nid.len() as u64, segs.len() as u64)
+                })
+                .collect();
+            let mut inside = vec![false; n_mp];
+            for (got, nodes, segs) in &tested {
+                c_mp_nodes += *nodes;
+                c_mp_segs += *segs;
+                for &(q, x) in got {
+                    inside[q] = x;
+                }
+            }
+            // on one thread, in the old order (homes, their points, the block's tiles, ways before relations): the
+            // first to find an element gives its box and tags
+            for (of, _) in &found {
+                for (i, cs) in of {
+                    for c in cs {
+                        let (p, _) = &tiles[&c.key];
+                        if c.kind == 1 {
+                            hits[*i].push((1, c.id));
+                            elements.entry((1, c.id)).or_insert_with(|| (c.bx, p.wtb[p.w_toff[c.at]..p.w_toff[c.at + 1]].to_vec()));
+                        } else if inside[c.q] {
+                            hits[*i].push((2, c.id));
+                            elements.entry((2, c.id)).or_insert_with(|| (c.bx, p.rtb[p.r_toff[c.at]..p.r_toff[c.at + 1]].to_vec()));
+                        }
+                    }
+                }
+            }
+            s_rels += t_.elapsed().as_secs_f64();
         }
         let (mut poffs, mut pkind, mut pid) = (vec![0i64], Vec::new(), Vec::new());
         for h in &hits {
@@ -749,8 +894,8 @@ pub fn context(a: &Args) {
         save_i8(d, "p_id.npy", &pid);
         stats.insert("points".into(), serde_json::json!({"asked": n, "withContainer": hits.iter().filter(|h| !h.is_empty()).count(),
             "newContainers": elements.len() - n_el0, "tilesRead": n_tiles, "around": a.around, "seconds": t.elapsed().as_secs_f64(),
-            // the split: seconds reading tiles, fetching multipolygon blobs, in the closed ways' loop and in the
-            // multipolygons' loop; what those loops did (a closed way is placed again for every point of its block)
+            // the split: seconds reading tiles, fetching multipolygon blobs, on the closed ways and on the
+            // multipolygons; what was done (a closed way is placed once for a tile and chunk, and again when tested)
             "secondsTiles": s_tiles, "secondsBlobs": s_blobs, "secondsWays": s_ways, "secondsMultipolygons": s_rels,
             "homeTiles": homes.len(), "blobsAsked": c_blobs,
             "closedWaysSeen": c_closed, "wayRefsSearched": c_refs, "closedWaysPlaced": c_placed, "ringsTested": c_rings,
@@ -849,4 +994,177 @@ pub fn context(a: &Args) {
     let s = serde_json::Value::Object(stats).to_string();
     fs::write(a.out.join("context.json"), &s).unwrap();
     crate::log(&format!("context: {s}"));
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// what a point finds, in order: kind, id, the box and the tags it would give `elements`
+    type Hit = (u8, i64, [i32; 4], Vec<u8>);
+
+    /// a tile or a blob: nodes (id, lat, lon) sorted by id, ways (id, refs), relations (id, tags); a way's tags name
+    /// the payload (`tag`), so that a test sees which tile gave them
+    fn part(tag: &str, nodes: &[(i64, i32, i32)], ways: &[(i64, Vec<i64>)], rels: &[(i64, &str)]) -> Part {
+        let mut p = Part::empty();
+        for &(id, la, lo) in nodes {
+            p.nid.push(id);
+            p.lat.push(la);
+            p.lon.push(lo);
+        }
+        for (id, refs) in ways {
+            p.wid.push(*id);
+            p.wrefs.extend_from_slice(refs);
+            p.w_roff.push(p.wrefs.len());
+            p.wtb.extend_from_slice(format!("from\0{tag}\0").as_bytes());
+            p.w_toff.push(p.wtb.len());
+        }
+        for &(id, tags) in rels {
+            p.rid.push(id);
+            p.rtb.extend_from_slice(tags.as_bytes());
+            p.rtb.extend_from_slice(format!("from\0{tag}\0").as_bytes());
+            p.r_toff.push(p.rtb.len());
+        }
+        p
+    }
+
+    /// the loop as it was before the tiles' rings were placed once (one point, its block): the oracle
+    fn old_point(block: &[&Part], blobs: &HashMap<i64, Part>, la: f64, lo: f64) -> Vec<Hit> {
+        let mut out: Vec<Hit> = Vec::new();
+        let mut seen: HashSet<(u8, i64)> = HashSet::new();
+        for p in block {
+            for j in 0..p.wid.len() {
+                let r = &p.wrefs[p.w_roff[j]..p.w_roff[j + 1]];
+                if r.len() < 4 || r[0] != r[r.len() - 1] || seen.contains(&(1, p.wid[j])) {
+                    continue;
+                }
+                let id = p.wid[j];
+                let pos: Vec<(i32, i32)> = r.iter().filter_map(|n| p.nid.binary_search(n).ok().map(|k| (p.lat[k], p.lon[k]))).collect();
+                if pos.len() != r.len() {
+                    continue;
+                }
+                let (s, n_) = (pos.iter().map(|q| q.0).min().unwrap(), pos.iter().map(|q| q.0).max().unwrap());
+                let (w, e) = (pos.iter().map(|q| q.1).min().unwrap(), pos.iter().map(|q| q.1).max().unwrap());
+                if la < s as f64 || la > n_ as f64 || lo < w as f64 || lo > e as f64 {
+                    continue;
+                }
+                seen.insert((1, id));
+                let segs: Vec<[f64; 4]> = pos.windows(2).map(|q| [q[0].0 as f64, q[0].1 as f64, q[1].0 as f64, q[1].1 as f64]).collect();
+                if evenodd(&segs, la, lo) {
+                    out.push((1, id, [s, w, n_, e], p.wtb[p.w_toff[j]..p.w_toff[j + 1]].to_vec()));
+                }
+            }
+            for k in 0..p.rid.len() {
+                let id = p.rid[k];
+                if seen.contains(&(2, id)) {
+                    continue;
+                }
+                let rtags = &p.rtb[p.r_toff[k]..p.r_toff[k + 1]];
+                if !tag_pairs(rtags).any(|(k_, v)| k_ == b"type" && v == b"multipolygon") {
+                    continue;
+                }
+                seen.insert((2, id));
+                let Some(b) = blobs.get(&id) else { continue };
+                let bx = blob_box(b);
+                if bx[0] == NO || la < bx[0] as f64 || la > bx[2] as f64 || lo < bx[1] as f64 || lo > bx[3] as f64 {
+                    continue;
+                }
+                let at: HashMap<i64, (i32, i32)> = b.nid.iter().enumerate().map(|(q, &nn)| (nn, (b.lat[q], b.lon[q]))).collect();
+                let mut segs = Vec::new();
+                for q in 0..b.wid.len() {
+                    let r = &b.wrefs[b.w_roff[q]..b.w_roff[q + 1]];
+                    for s2 in r.windows(2) {
+                        if let (Some(&u), Some(&v)) = (at.get(&s2[0]), at.get(&s2[1])) {
+                            segs.push([u.0 as f64, u.1 as f64, v.0 as f64, v.1 as f64]);
+                        }
+                    }
+                }
+                if evenodd(&segs, la, lo) {
+                    out.push((2, id, bx, rtags.to_vec()));
+                }
+            }
+        }
+        out
+    }
+
+    /// the same through the tiles' rings, the relations' boxes and the candidates
+    fn new_point(block: &[&Part], blobs: &HashMap<i64, Part>, la: f64, lo: f64) -> Vec<Hit> {
+        let idx: Vec<TileIdx> = block.iter().map(|p| tile_idx(p)).collect();
+        let bl: Vec<(i64, &Part, &TileIdx)> = (0..block.len()).map(|t| (t as i64, block[t], &idx[t])).collect();
+        let relbox: HashMap<i64, [i32; 4]> = blobs.iter().map(|(id, b)| (*id, blob_box(b))).collect();
+        let mut counts = [0u64; 5];
+        let mut out: Vec<Hit> = Vec::new();
+        for c in point_cands(&bl, &relbox, la, lo, &mut counts) {
+            let p = block[c.key as usize];
+            if c.kind == 1 {
+                out.push((1, c.id, c.bx, p.wtb[p.w_toff[c.at]..p.w_toff[c.at + 1]].to_vec()));
+            } else if evenodd(&blob_segs(&blobs[&c.id]), la, lo) {
+                out.push((2, c.id, c.bx, p.rtb[p.r_toff[c.at]..p.r_toff[c.at + 1]].to_vec()));
+            }
+        }
+        out
+    }
+
+    #[test]
+    fn points_find_what_the_old_loop_found() {
+        // a square 0..10 (nodes 1-4), a far node 9, a hole 4..6 (nodes 5-8)
+        let sq = [(1, 0, 0), (2, 0, 10), (3, 10, 10), (4, 10, 0)];
+        let hole = [(5, 4, 4), (6, 4, 6), (7, 6, 6), (8, 6, 4)];
+        let mp = "type\0multipolygon\0";
+        // tile A: way 100 whole; 101 with a node the tile lacks; 102 open; 103 closed but short; relations: 500 a
+        // multipolygon, 501 not one, 502 without a blob, 503 with an empty blob
+        let a = part(
+            "a",
+            &sq,
+            &[(100, vec![1, 2, 3, 4, 1]), (101, vec![1, 2, 3, 9, 1]), (102, vec![1, 2, 3, 4]), (103, vec![1, 2, 1])],
+            &[(500, mp), (501, "type\0route\0"), (502, mp), (503, mp), (504, mp)],
+        );
+        // tile B: way 100 again, 101 whole here, 104 the hole; relation 500 again
+        let mut nb = sq.to_vec();
+        nb.extend_from_slice(&hole);
+        nb.push((9, 20, 0));
+        let b = part("b", &nb, &[(100, vec![1, 2, 3, 4, 1]), (101, vec![1, 2, 3, 9, 1]), (104, vec![5, 6, 7, 8, 5])], &[(500, mp)]);
+        // tile C: nothing
+        let c = part("c", &[], &[], &[]);
+        let mut nodes = sq.to_vec();
+        nodes.extend_from_slice(&hole);
+        let mut blobs: HashMap<i64, Part> = HashMap::new();
+        blobs.insert(500, part("blob", &nodes, &[(100, vec![1, 2, 3, 4, 1]), (104, vec![5, 6, 7, 8, 5])], &[]));
+        blobs.insert(503, part("blob", &[], &[], &[]));
+        // a blob whose way has a node the blob lacks (its segments left out)
+        blobs.insert(504, part("blob", &sq, &[(100, vec![1, 2, 3, 9, 1])], &[]));
+
+        // inside, in the hole, on corners, on edges, on the box's edge, outside, in 101's far corner
+        let pts = [(2, 2), (5, 5), (0, 0), (10, 10), (0, 10), (10, 0), (0, 5), (5, 0), (10, 5), (5, 10), (4, 4), (6, 6), (4, 5), (11, 5), (-1, 5), (15, 2), (20, 0), (3, 12)];
+        let blocks: [Vec<&Part>; 6] = [vec![&a, &b], vec![&b, &a], vec![&a], vec![&b], vec![&c, &a, &c, &b], vec![]];
+        for block in &blocks {
+            for &(la, lo) in &pts {
+                assert_eq!(new_point(block, &blobs, la as f64, lo as f64), old_point(block, &blobs, la as f64, lo as f64), "point {la}, {lo}");
+            }
+        }
+
+        // and what that is, for a point inside the square and outside the hole: the way, then the multipolygon,
+        // the tags from the first tile of the block that holds them
+        let ids = |h: &[Hit]| h.iter().map(|x| (x.0, x.1)).collect::<Vec<_>>();
+        let got = new_point(&[&a], &blobs, 2.0, 2.0);
+        // (504's blob lacks a node: the two segments it has left still put the point inside, as the old loop did)
+        assert_eq!(ids(&got), vec![(1, 100), (2, 500), (2, 504)]);
+        assert_eq!(got[0].2, [0, 0, 10, 10]);
+        assert_eq!(got[0].3, b"from\0a\0".to_vec());
+        let got = new_point(&[&b, &a], &blobs, 2.0, 2.0);
+        assert_eq!(got[0].3, b"from\0b\0".to_vec());
+        assert!(ids(&got).contains(&(1, 101)) && ids(&got).contains(&(2, 500)));
+        // in the hole: the square, 101 (which holds it too) and the hole's own way, not the multipolygon
+        assert_eq!(ids(&new_point(&[&b], &blobs, 5.0, 5.0)), vec![(1, 100), (1, 101), (1, 104)]);
+    }
+
+    #[test]
+    fn a_tile_places_its_closed_ways_once() {
+        let p = part("a", &[(1, 0, 0), (2, 0, 10), (3, 10, 10), (4, 10, 0)], &[(100, vec![1, 2, 3, 4, 1]), (101, vec![1, 2, 3, 9, 1]), (102, vec![1, 2, 3, 4])], &[(7, "type\0multipolygon\0"), (8, "type\0route\0")]);
+        let ix = tile_idx(&p);
+        assert_eq!(ix.rings, vec![(0u32, [0, 0, 10, 10])]);
+        assert_eq!(ix.mps, vec![0u32]);
+        assert_eq!((ix.closed, ix.refs), (2, 10));
+        assert_eq!(ring_segs(&p, 0).len(), 4);
+    }
 }
