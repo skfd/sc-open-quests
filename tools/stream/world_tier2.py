@@ -941,9 +941,11 @@ def write_engine_files(rects: dict[int, np.ndarray], cells: list[dict], world: P
 ROWPOS = np.dtype([("key", "<i8"), ("lat", "<i4"), ("lon", "<i4")])
 
 
-def old_rows(world: Path, keys: np.ndarray, dtype=None, name: str = "state.bin", workers: int = 4) -> np.ndarray:
+def old_rows(world: Path, keys: np.ndarray, dtype=None, name: str = "state.bin", workers: int = 4,
+             keys_name: str = "state-keys.npy") -> np.ndarray:
     """every row of these keys in the world state's files (each sorted by key, with its state-keys.npy): key, lat,
-    lon only. A file holding none of the keys is not read."""
+    lon only. A file holding none of the keys is not read. The world day's files: dtype WREC, name world.bin,
+    keys_name world-keys.npy. The files are read `workers` at a time and their rows joined in the plan's order."""
     from concurrent.futures import ThreadPoolExecutor
     from world_state import REC, in_keys
     dtype = dtype or REC
@@ -952,7 +954,7 @@ def old_rows(world: Path, keys: np.ndarray, dtype=None, name: str = "state.bin",
 
     def one(f):
         d = world / "files" / f["id"]
-        kf = d / "state-keys.npy"
+        kf = d / keys_name
         hit = keys
         if kf.exists():
             fk = np.load(kf)

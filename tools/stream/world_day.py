@@ -34,6 +34,7 @@ ROOT = HERE.parents[1]
 sys.path.insert(0, str(HERE))
 import notes_day as N  # noqa: E402
 import engine_room  # noqa: E402
+import file_pool as FP  # noqa: E402
 import place_counts as C  # noqa: E402
 import placesets as P  # noqa: E402
 import stream as S  # noqa: E402
@@ -115,6 +116,15 @@ def rows_of_keys(w: Path, keys: np.ndarray) -> np.ndarray:
     return np.concatenate(out) if out else np.zeros(0, T2.ROWPOS)
 
 
+def old_rows_of(w: Path, keys: np.ndarray, pool: int | None = None) -> np.ndarray:
+    """rows_of_keys, the files read FP.FILE_POOL at a time (world_tier2.old_rows, the same rows in the same order:
+    tests/test_file_pool.py); a pool of 1 is rows_of_keys itself"""
+    pool = FP.FILE_POOL if pool is None else pool
+    if pool <= 1:
+        return rows_of_keys(w, keys)
+    return T2.old_rows(w, keys, dtype=P.WREC, name=WS.WORLD_BIN, keys_name=WS.WORLD_KEYS, workers=pool)
+
+
 @dataclass
 class Day:
     w: Path
@@ -189,7 +199,7 @@ def prepare(w: Path, store: Path, diff: Path, today: str, nodes: Path, work: Pat
             keys = np.union1d(keys, held * 4 + 2)
         T["store context before"] = time.time() - t
     t = time.time()
-    rows = rows_of_keys(w, keys)
+    rows = old_rows_of(w, keys)
     T["places and old rows"] += time.time() - t
     log(f"old ways: {len(old_refs):,} of {len(last_way):,} found at generation {g0}; old rows {len(rows):,} of "
         f"{len(keys):,} changed keys")
