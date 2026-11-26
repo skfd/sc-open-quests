@@ -1,4 +1,4 @@
-"""Take an Overture release into our place registry: an algorithm decides the clear cases, Fable judges the rest, the
+"""Take an Overture release into our place registry: an algorithm decides the clear cases, a Claude judge the rest, the
 operator sees only the exceptions.
 
 Monthly (owner, 2026-11-26): when Overture publishes a release it is prepared (`watch`, daily), and on the 1st the staged
@@ -10,7 +10,7 @@ registry goes live at a reseed. The files live in data/place-ids/releases/<relea
     python tools/overture_release.py narrow RELEASE [--src DIR]    the release's places, narrow (S3, or a local world pull)
     python tools/overture_release.py propose RELEASE [--old R]     the registry against the release: proposals.tsv, report.md
     python tools/overture_release.py auto RELEASE                  the algorithm: the clear classes (AUTO) take their proposal
-    python tools/overture_release.py agent RELEASE                 the Fable judge (Claude Code headless) for the rest
+    python tools/overture_release.py agent RELEASE                 the judge (Claude Code headless) for the rest   
     python tools/overture_release.py look RELEASE KEY              one row's context (the judge's tool)
     python tools/overture_release.py exceptions RELEASE            exceptions.md: the rows waiting for the operator
     python tools/overture_release.py status RELEASE                what is judged and what is not, by class
@@ -19,9 +19,11 @@ registry goes live at a reseed. The files live in data/place-ids/releases/<relea
     python tools/overture_release.py apply RELEASE                 every row judged: the staged registry (the live one untouched)
 
 **Who decides.** `auto` takes the proposal of the clear classes (same-osm, same-osm-changed, back, new). `agent` gives every
-other row to Fable (claude-fable-5-2 through `claude -p`, tools: `look` and OSM's site), in batches, each batch judged twice
+other row to the judge (JUDGE_MODEL at JUDGE_EFFORT through `claude -p`; tools: `look`, OSM's site), in batches, judged twice
 independently: a verdict stands only when both runs give it with high confidence and it is valid; any doubt, disagreement,
-failed run, or a new GERS id two rows take leaves the row to the operator, with Fable's answers in its note.
+or a new GERS id two rows take leaves the row to the operator, with the judge's answers in its note; a failed run (a usage
+limit) leaves its rows for the next run. The judge was Fable (claude-fable-5-2) until the owner's Fable limit ran out on
+11-18.0; since 2026-11-26 it is the default model at high effort (owner).
 
 **What a release does to a place.** A place is ours (place_ids.py): its GERS id is an attribute. A registry place whose GERS id
 is still in the release is *kept* and takes the release's name, subtype, OSM object and country (a changed name goes to the
@@ -81,10 +83,11 @@ GERS = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}
 CLASSES = ("same-osm", "same-osm-changed", "same-osm-far", "same-name-near", "contested", "overlap", "ended-parent",
            "ended-none", "back", "new")
 NO_BULK = {"contested"}
-# the clear cases the algorithm decides alone (owner, 2026-11-26); every other row goes to the Fable judge
+# the clear cases the algorithm decides alone (owner, 2026-11-26); every other row goes to the judge
 AUTO = ("same-osm", "same-osm-changed", "back", "new")
 CHANGED_IOU = 0.5   # same OSM object, name or subtype changed: the same place only if the outlines' boxes overlap this much
-FABLE = "claude-fable-5-2"
+JUDGE_MODEL = "claude-opus-5-5"   # the owner, 2026-11-26: the default model at high effort, not Fable (its limit)
+JUDGE_EFFORT = "high"
 OSM_TOOL = "WebFetch(domain:www.openstreetmap.org)"
 COLUMNS = ("key", "class", "proposal", "verdict", "judged", "id", "gers_old", "name", "subtype", "country", "osm",
            "candidates", "note")
@@ -599,7 +602,7 @@ def apply(release: str, registry: Path = place_ids.REGISTRY, former: Path = FORM
 
 
 def auto(release: str, root: Path = RELEASES) -> int:
-    """every unjudged row of an AUTO class takes its proposal; the rest is the Fable judge's"""
+    """every unjudged row of an AUTO class takes its proposal; the rest is the judge's"""
     path = folder(release, root) / "proposals.tsv"
     rows = read_rows(path)
     n = 0
@@ -703,7 +706,7 @@ def look(release: str, key: str, old: str, root: Path = RELEASES, registry: Path
     return "\n".join(L)
 
 
-# --- the Fable judge
+# --- the judge
 
 
 SCHEMA = {"type": "object", "additionalProperties": False, "required": ["verdicts"], "properties": {"verdicts": {
@@ -748,14 +751,14 @@ def _row_line(r: dict) -> str:
     return " | ".join([r["key"], r["class"], r["proposal"], me, r["candidates"] or "-", r["note"] or "-"])
 
 
-def run_claude(prompt: str, model: str = FABLE, timeout: int = 3600) -> dict:
+def run_claude(prompt: str, model: str = JUDGE_MODEL, effort: str = JUDGE_EFFORT, timeout: int = 3600) -> dict:
     """one headless Claude Code call with the verdict schema; only `look` and OSM's site as tools"""
     import shutil
     import subprocess
     exe = shutil.which("claude")
     if not exe:
         raise RuntimeError("claude (Claude Code) is not on PATH")
-    cmd = [exe, "-p", "--model", model, "--output-format", "json", "--no-session-persistence",
+    cmd = [exe, "-p", "--model", model, "--effort", effort, "--output-format", "json", "--no-session-persistence",
            "--json-schema", json.dumps(SCHEMA), "--tools", "Bash,WebFetch",
            "--allowedTools", "Bash(python tools/overture_release.py look:*)", OSM_TOOL]
     r = subprocess.run(cmd, input=prompt.encode("utf-8"), capture_output=True, cwd=ROOT, timeout=timeout)
@@ -776,19 +779,20 @@ def _norm(v: str) -> str:
 
 
 def agent(release: str, old: str, root: Path = RELEASES, registry: Path = place_ids.REGISTRY, runs: int = 2,
-          batch: int = 40, workers: int = 3, model: str = FABLE, runner=None, limit: int | None = None) -> dict:
-    """The Fable judge: every row neither decided nor waiting for the operator, in batches, each batch judged `runs` times
+          batch: int = 40, workers: int = 3, model: str = JUDGE_MODEL, runner=None, limit: int | None = None,
+          effort: str = JUDGE_EFFORT) -> dict:
+    """The judge: every row neither decided nor waiting for the operator, in batches, each batch judged `runs` times
     independently. A verdict is taken when every run gives it with high confidence; any doubt, disagreement, missing or
     invalid verdict, or a new GERS id two rows take, leaves the row to the operator (`judged` says why)."""
     import threading
     from concurrent.futures import ThreadPoolExecutor
-    runner = runner or (lambda p: run_claude(p, model))
+    runner = runner or (lambda p: run_claude(p, model, effort))
     here = folder(release, root)
     path = here / "proposals.tsv"
     rows = read_rows(path)
     todo = [r for r in rows if not r["verdict"] and not r["judged"].startswith("operator")]
     if not todo:
-        log("the Fable judge: nothing to judge")
+        log("the judge: nothing to judge")
         return {"judged": 0, "operator": 0}
     ids_cache(here, registry)
     con = connect()
@@ -801,7 +805,7 @@ def agent(release: str, old: str, root: Path = RELEASES, registry: Path = place_
     lock = threading.Lock()
     tally = {"judged": 0, "operator": 0, "cost": 0.0}
     by_key = {r["key"]: r for r in rows}
-    log(f"the Fable judge ({model}): {len(todo):,} rows in {len(batches)} batches, {runs} runs each, {workers} at once")
+    log(f"the judge ({model}, {effort}): {len(todo):,} rows in {len(batches)} batches, {runs} runs each, {workers} at once")
 
     def one(b: list[dict]) -> None:
         prompt = PROMPT.format(release=release, old=old, root=Path(os.path.relpath(root, ROOT)).as_posix(),
@@ -830,7 +834,7 @@ def agent(release: str, old: str, root: Path = RELEASES, registry: Path = place_
                     if len(vs) > 1:
                         why = "the runs disagree"
                     elif any(g["confidence"] != "high" for g in got):
-                        why = "Fable is unsure"
+                        why = "the judge is unsure"
                     else:
                         try:
                             word, args = parse_verdict(got[0]["verdict"], r["class"])
@@ -839,13 +843,13 @@ def agent(release: str, old: str, root: Path = RELEASES, registry: Path = place_
                                 why = f"{bad[0]} is not a new GERS id of {release}"
                         except ValueError as e:
                             why = f"invalid verdict ({e})"
-                said = "; ".join(f"Fable: `{g['verdict']}` ({g['confidence']}) {g['reason']}" for g in got if g)
+                said = "; ".join(f"judge {model}: `{g['verdict']}` ({g['confidence']}) {g['reason']}" for g in got if g)
                 row = by_key[r["key"]]
                 if why:
                     row["judged"] = stamp(f"operator: {why};")
                     tally["operator"] += 1
                 else:
-                    row["verdict"], row["judged"] = got[0]["verdict"].strip(), stamp(f"fable {model}")
+                    row["verdict"], row["judged"] = got[0]["verdict"].strip(), stamp(f"judge {model}")
                     tally["judged"] += 1
                 if said:
                     row["note"] = (row["note"] + "; " if row["note"] else "") + said
@@ -854,31 +858,31 @@ def agent(release: str, old: str, root: Path = RELEASES, registry: Path = place_
 
     with ThreadPoolExecutor(max_workers=workers) as ex:
         list(ex.map(one, batches))
-    # a new GERS id taken by two Fable verdicts: neither stands
+    # a new GERS id taken by two judge verdicts: neither stands
     takers = defaultdict(list)
     others = Counter()   # new GERS ids already taken by the algorithm's or the operator's verdicts
     for r in rows:
         if r["verdict"].startswith("same "):
-            if r["judged"].startswith("fable"):
+            if r["judged"].startswith(("judge", "fable")):
                 takers[r["verdict"].split()[1]].append(r)
             else:
                 others[r["verdict"].split()[1]] += 1
     for g, rs in takers.items():
         if len(rs) > 1 or others[g]:
             for r in rs:
-                r["note"] += f"; Fable gave `{r['verdict']}`, which another row takes too"
+                r["note"] += f"; the judge gave `{r['verdict']}`, which another row takes too"
                 r["verdict"], r["judged"] = "", stamp("operator: a new GERS id two rows take;")
                 tally["judged"] -= 1
                 tally["operator"] += 1
     write_rows(path, rows)
     exceptions(release, root)
-    log(f"the Fable judge: {tally['judged']:,} judged, {tally['operator']:,} to the operator; about "
+    log(f"the judge: {tally['judged']:,} judged, {tally['operator']:,} to the operator; about "
         f"${tally['cost']:.2f} at list prices")
     return tally
 
 
 def exceptions(release: str, root: Path = RELEASES) -> Path:
-    """exceptions.md: the rows waiting for the operator, with what Fable said and how to judge them"""
+    """exceptions.md: the rows waiting for the operator, with what the judge said and how to judge them"""
     here = folder(release, root)
     rows = [r for r in read_rows(here / "proposals.tsv") if not r["verdict"]]
     L = [f"# Overture {release}: {len(rows)} rows for the operator", "",
@@ -899,7 +903,7 @@ def exceptions(release: str, root: Path = RELEASES) -> Path:
 
 SESSION_CLI = Path(r"C:/Users/kk/AppData/Local/Programs/SkySessionClaude/SessionCli.exe")
 OPERATOR_PROMPT = """Overture {release}: {n} rows of the place-id release wait for the operator (the owner); the algorithm
-and the Fable judge decided the rest. Read data/place-ids/releases/{release}/exceptions.md and walk the owner through the
+and the Claude judge decided the rest. Read data/place-ids/releases/{release}/exceptions.md and walk the owner through the
 rows, a few at a time, with your recommendation for each (`python tools/overture_release.py look {release} KEY` shows a row's
 context). Record each verdict the owner gives with `python tools/overture_release.py judge {release} KEY "VERDICT"`. When none
 is left: `python tools/overture_release.py apply {release}`, then `python tools/archive_backup.py --only place-ids`, and add
@@ -933,8 +937,8 @@ def releases_on_s3() -> list[str]:
     return sorted(x.strip("/") for x in r.stdout.split() if re.fullmatch(r"\d{4}-\d{2}-\d{2}\.\d+/?", x))
 
 
-def watch(root: Path = RELEASES, registry: Path = place_ids.REGISTRY, runs: int = 2, model: str = FABLE) -> int:
-    """Daily: when Overture has a release newer than the pin, prepare it: narrow, propose, the algorithm, the Fable judge,
+def watch(root: Path = RELEASES, registry: Path = place_ids.REGISTRY, runs: int = 2, model: str = JUDGE_MODEL) -> int:
+    """Daily: when Overture has a release newer than the pin, prepare it: narrow, propose, the algorithm, the judge,
     and `apply` when nothing is left for the operator. Each step is skipped when done, so a rerun resumes. The switch to the
     staged registry is not done here: that is the reseed on the 1st."""
     pin = json.loads((ROOT / "config" / "places.json").read_text(encoding="utf-8"))["overture"]
@@ -959,8 +963,8 @@ def watch(root: Path = RELEASES, registry: Path = place_ids.REGISTRY, runs: int 
     agent(rel, pin, root, registry, runs=runs, model=model)
     left = [r for r in read_rows(here / "proposals.tsv") if not r["verdict"]]
     pending = [r for r in left if not r["judged"].startswith("operator")]
-    if pending:   # a Fable run failed (a usage limit): tomorrow's watch tries them again; the operator waits for that
-        log(f"watch: {len(pending)} rows of {rel} still wait for the Fable judge; {len(left) - len(pending)} for the operator")
+    if pending:   # a judge run failed (a usage limit): tomorrow's watch tries them again; the operator waits for that
+        log(f"watch: {len(pending)} rows of {rel} still wait for the judge; {len(left) - len(pending)} for the operator")
         return 3
     if left:
         log(f"OPERATOR: {len(left)} rows of {rel} wait for a human: {exceptions(rel, root)}")
@@ -1007,18 +1011,19 @@ def main(argv: list[str] | None = None) -> int:
     k.add_argument("key")
     k.add_argument("--old", help="default: config/places.json's pin")
     k.add_argument("--root", dest="look_root", type=Path, help="same as the global --root")
-    g = sub.add_parser("agent", help="the Fable judge for every row the algorithm left")
+    g = sub.add_parser("agent", help="the Claude judge for every row the algorithm left")
     g.add_argument("release")
     g.add_argument("--old")
     g.add_argument("--runs", type=int, default=2)
     g.add_argument("--batch", type=int, default=40)
     g.add_argument("--workers", type=int, default=3)
-    g.add_argument("--model", default=FABLE)
+    g.add_argument("--model", default=JUDGE_MODEL)
+    g.add_argument("--effort", default=JUDGE_EFFORT)
     g.add_argument("--limit", type=int, help="only the first N rows (a rehearsal)")
     sub.add_parser("exceptions").add_argument("release")
     w = sub.add_parser("watch", help="daily: prepare a release newer than the pin, up to the operator's exceptions")
     w.add_argument("--runs", type=int, default=2)
-    w.add_argument("--model", default=FABLE)
+    w.add_argument("--model", default=JUDGE_MODEL)
     a = ap.parse_args(argv)
     pin = lambda: json.loads((ROOT / "config" / "places.json").read_text(encoding="utf-8"))["overture"]  # noqa: E731
     former = a.root.parent / "former-names.tsv" if a.root != RELEASES else FORMER
@@ -1037,7 +1042,8 @@ def main(argv: list[str] | None = None) -> int:
     elif a.cmd == "look":
         print(look(a.release, a.key, a.old or pin(), a.look_root or a.root, a.registry))
     elif a.cmd == "agent":
-        agent(a.release, a.old or pin(), a.root, a.registry, a.runs, a.batch, a.workers, a.model, limit=a.limit)
+        agent(a.release, a.old or pin(), a.root, a.registry, a.runs, a.batch, a.workers, a.model, limit=a.limit,
+              effort=a.effort)
     elif a.cmd == "exceptions":
         log(str(exceptions(a.release, a.root)))
     elif a.cmd == "watch":

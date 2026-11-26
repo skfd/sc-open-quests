@@ -197,7 +197,7 @@ class Judges(Base):
 
         t = orl.agent(NEW, OLD, self.root, self.registry, runs=2, batch=3, workers=2, runner=runner)
         rows = {r["key"]: r for r in orl.read_rows(self.root / NEW / "proposals.tsv")}
-        taken = {k for k, r in rows.items() if r["judged"].startswith("fable")}
+        taken = {k for k, r in rows.items() if r["judged"].startswith(("judge", "fable"))}
         self.assertEqual({i[g(4)], i[g(12)], i[g(9)]}, taken)
         operator = {k for k, r in rows.items() if not r["verdict"]}
         self.assertEqual({i[g(7)], i[g(8)], i[g(11)], i[g(5)], i[g(6)]}, operator)
