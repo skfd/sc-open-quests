@@ -119,6 +119,8 @@ class PassStats {
     val hiddenByNotes = java.util.concurrent.atomic.AtomicLong()
     /** the cities whose area lists `-Dopenquests.areaIndex=verify` found the same from the index and from the scan */
     val cityListsVerified = java.util.concurrent.atomic.AtomicLong()
+    /** the cities with dates to find whose records by tile `verify` found the same from the city's lists and from the scan */
+    val cityDatesVerified = java.util.concurrent.atomic.AtomicLong()
     val timings: MutableMap<String, Double> = java.util.Collections.synchronizedMap(LinkedHashMap<String, Double>())
 }
 

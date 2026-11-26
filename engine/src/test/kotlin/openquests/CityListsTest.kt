@@ -100,6 +100,8 @@ class CityListsTest {
         assertEquals(0, index.engine.stats.cityListsVerified.get())
         // verify made both lists for every city and found them the same (it fails the run where they differ)
         assertEquals((rows * cols).toLong(), verify.engine.stats.cityListsVerified.get())
+        // and, for every city (each has a date to find), the records in its tiles from its own lists and from the scan
+        assertEquals((rows * cols).toLong(), verify.engine.stats.cityDatesVerified.get())
         val e = scan.engine
         var area = 0L
         for (other in listOf(index, verify)) {
