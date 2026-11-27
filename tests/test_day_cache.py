@@ -191,6 +191,14 @@ class Loop(unittest.TestCase):
         self.assertIn("owner, 18:00", self.lines[-1])
 
 
+class NoCityWindow(unittest.TestCase):
+    def test_the_world_day_does_not_wait_for_the_deleted_city_runs_window(self):
+        sys.path.insert(0, str(ROOT / "tools"))
+        import world_cells
+        with mock.patch.object(world_cells, "quiet", side_effect=AssertionError("waited")):
+            self.assertIsNone(WD.quiet(20))
+
+
 class Orphans(unittest.TestCase):
     """end_orphans picks what to end from the process list: the dead run's descendants (through a shell) and engines
     naming the days' work, only python/java/tilestore/osmium, never this run or its parents"""
