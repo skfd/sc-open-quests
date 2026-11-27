@@ -19,6 +19,9 @@ Decided by the owner (wizard, 2026-11-21): all four as recommended.
   - **Working state**: the 128 row files, the node store, the tile store. A cache with a checkpoint, not a backup.
 - **Format: Parquet, read with DuckDB.** One immutable file per source per day
   (`facts/source=world/date=2026-11-13.parquet`). New dependencies: pyarrow, duckdb.
+- **Every day is kept, never thinned (owner, 2026-11-27: "let's keep daily data i dont mind").** No retention rule:
+  the world's `counts/<D>/` (about 325 MB a day on disk), the facts, the archive bucket and the published place series
+  keep every day; a reseed hard-links the old world's days into the new one.
 - **Backup:** facts and runs go to the private bucket `sc-open-quests-archive` under the rules it has (copy-only,
   replaced versions kept).
 - **Public:** a copy of the facts at `sc-data.comentality.com/facts/`, an open dataset under ODbL with a README.

@@ -10,6 +10,13 @@ does not fit. The design (advisor-checked):
   candidates. Dates beyond the horizon are not looked for: the sidecar's `areaDueDays` says how far the state's
   area dates reach, and the stream must reseed before then (it reseeds with each StreetComplete release anyway,
   and the second world reference is the 12-07 planet).
+- **Why 64, written afterwards (2026-11-27, owner: "agree").** It was picked on 11-13 without a recorded reason; it
+  turns out to be the smallest power of two that outlasts one skipped monthly switch (the two longest months in a
+  row are 62 days: a seed on the 1st, the next switch missed, the one after on the 1st), in 6 halvings. 31 is the
+  bare minimum for a switch on every 1st; 92 (three longest months) and 128 cost the same 7 halvings. Kept at 64
+  through the 12-01 switch; whether to go to 128 is decided after two or three monthly switches (BACKLOG.md). Past
+  the horizon nothing stops the loop: the untouched ground's area quests opening by age are simply missed (a guard
+  is in BACKLOG.md). [journal/2026-11-27-the-64-day-horizon.md](../../journal/2026-11-27-the-64-day-horizon.md)
 - **The day on a small map data:** the candidates of one z16 tile share a map data of that tile with a 300 m ring
   (the ring the tier-2 recounts found to reproduce a whole city), built from the city's records as the tile mode
   builds its tiles. On it the SC port (not its fast twin, whose shared searches belong to the whole city) is asked
