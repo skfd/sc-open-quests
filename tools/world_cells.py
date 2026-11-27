@@ -146,7 +146,9 @@ def places(country: str | None, out: Path, release: str | None = None) -> None:
     ids = place_ids.load(inputs.registry)
     con = duckdb.connect()
     con.sql("LOAD spatial")
-    con.sql("SET memory_limit = '8GB'; SET preserve_insertion_order = false")
+    # 8GB was enough for 10-21.0 (11-13); 11-18.0's outline join ran out at 8GB under duckdb 2.0 (11-27). Not run beside a
+    # world day's engines (DuckDB beside engines: the 11-23 commit-limit failure)
+    con.sql("SET memory_limit = '24GB'; SET preserve_insertion_order = false")
     src = (OVERTURE if country else inputs.src).as_posix()
     area_file = f"{src}/division_area.parquet" if country else f"{src}/division_area_outlines.parquet"
     if not country and not Path(area_file).exists():
