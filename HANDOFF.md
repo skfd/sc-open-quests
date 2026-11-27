@@ -4842,3 +4842,5 @@ store's day D).**
   request until the harness (27752) exits; a closed lid or battery policy can still sleep the machine. New estimate: RESULT about
   07:00 on 11-27. **The loop itself has no keep-awake** (no `SetThreadExecutionState` anywhere): a world day on an unplugged or
   idle laptop stands still the same way. Proposal for the owner, not built: the loop holds that request while RUNNING exists.
+- **22:55:** the laptop slept 18:24-22:52 and the proof stood still; it runs again under a keep-awake helper, and 5e now expects
+  `RESULT.txt` about 07:00 on 11-27. `prepare` still waits.
