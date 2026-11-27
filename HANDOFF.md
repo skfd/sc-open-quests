@@ -13,9 +13,13 @@ every quest, never an easier subset (DESIGN.md, "Don't").
   `.scratch/planet-cut/hold-history/HOLD-lifted-20261127-0921`, `kk-SCOpenQuests-planetstore` run by hand (daily 14:45,
   12 h limit). 09:20 log: "day 2026-11-26: resuming": the finish is skipped (R2's), then gate, store_tail, facts, publish,
   and 11-27 if its inputs allow. **11-26 done 09:33 (117 GiB free after store_tail), published 09:48 (exit 0)**; "no diff
-  to 2026-11-27 on disk yet". **11-27 (as of 11-27 11:38):** 11:15's inputs failed twice on the Europe fetch (Docker Desktop
-  not running); Docker started 11:31, try 3 at 11:35 fetched diff 5189. A loop run started by hand 11:30 waits for the inputs
-  and takes 11-27 (about 15:00 plus the publish); the 14:45 task finds RUNNING and does not start. C: 170 GB free at 11:31. Stop: put back a HOLD (no day) or PAUSE (stops the running day at its next step).
+  to 2026-11-27 on disk yet". **11-27 (as of 11-27 15:55): STOPPED 14:51, restarted 15:49 (owner, wizard: "Restart now").** Tier 1's
+  engine t1/f0 found no `.scratch/planet/world-places/files/f0/cells/f0c0.json`: world-1101's `files/*/cities.json` point
+  all 2,244 cell boundaries there, and that folder went in this morning's 58 GB delete. The 2,244 files restored (3.2 MB,
+  copies of world-1101's own `files/*/cells`, byte-equal to the other worlds' and to plan.json's rects); **don't delete
+  `.scratch/planet/world-places/files/` (nor `geo/`, plan.json's cityParts) while world-1101 is live.** The resume reused
+  the kept cover (284,371 rectangles, 12 s): the first real resume. Expected about 18:00 plus the publish. STOPPED's copy:
+  `.scratch/anomalies/STOPPED-2026-11-27.txt`. Stop: put back a HOLD (no day) or PAUSE (stops the running day at its next step).
   [journal/2026-11-26-the-world-day-resumable.md](journal/2026-11-26-the-world-day-resumable.md)
 - **The world day is resumable (as of 11-27; built c3b998fd1, proven on 11-26).** A stopped finish resumes from what it
   left done behind markers (about 18 min late in the day, not 2.8 h); PAUSE stops a running day at its next step.
@@ -60,12 +64,17 @@ every quest, never an easier subset (DESIGN.md, "Don't").
    under DAY_CAP 200k (estimate from one file of 128, which has no cities; the events cache rebuilds once, the release
    stamp changes). Full suite 443 passed, 1 skipped (11-27 10:42).
    [journal/2026-11-26-the-12-01-switch-to-overture-11-18-0-mapped-not-built.md](journal/2026-11-26-the-12-01-switch-to-overture-11-18-0-mapped-not-built.md)
-2. **The first world day after the HOLD is lifted (take 11-27, not 11-26: 11-26's finish ran in the proof, its lines are in
+2. **Merge `no-city-window` after 11-27's run ends (as of 11-27 15:55; owner, wizard: "Remove it"):** branch in
+   `../sc-open-quests-no-window`, 6ace25759: `world_day.quiet` no longer waits out the deleted city run's window
+   (11:55-14:15 local; it held 11-27's store update 11:54-14:19). Merge between two days (pool workers re-import
+   world_day), full suite, remove the worktree.
+3. **The first world day after the HOLD is lifted (take 11-28, not 11-27: 11-27 resumed after a stop, its timers part
+   kept, and the old window held it 2.4 h; nor 11-26: 11-26's finish ran in the proof, its lines are in
    `.scratch/resume-proof/R2.log`, not `logs/planet-store.log`, and a resumed day writes no steps.json):** check it with the list "To check on the first world day after the HOLD
    is lifted" (the four speed-ups installed 11-26: engine room waits, `points` seconds, timers, the day's wall against
    11-25's 12,643 s), then `rename_places.py check` (as of 11-26).
    [journal/2026-11-26-performance-review-of-the-traces-and-logs.md](journal/2026-11-26-performance-review-of-the-traces-and-logs.md)
-3. **The 12-01 cutover to Overture 11-18.0: on 12-01, after the loop's 12-01 publish line (about 18:35), at D = 12-01,
+4. **The 12-01 cutover to Overture 11-18.0: on 12-01, after the loop's 12-01 publish line (about 18:35), at D = 12-01,
    watched by the owner (owner, 11-27 10:45).** From the main checkout, detached (background jobs die at 2 h; start it
    with `python tools/detach.py logs/switch.log . .scratch/overture/.venv/Scripts/python.exe -u tools/overture_switch.py
    cutover 2026-11-18.0`, as 11-27's `prepare` was) (writes the HOLD, refuses while the loop runs or
@@ -80,20 +89,20 @@ every quest, never an easier subset (DESIGN.md, "Don't").
    leave the HOLD, `adopt` not run, so the old world stays live; a rerun resumes at the markers (`status`). If the store
    moved meanwhile, the seed-day check stops it: clear the switch markers from `seed-day` on and `cut/storecut.json`, then rerun.
    [journal/2026-11-26-the-12-01-switch-to-overture-11-18-0-mapped-not-built.md](journal/2026-11-26-the-12-01-switch-to-overture-11-18-0-mapped-not-built.md)
-4. **Release day (12-01 at the earliest):** redraw the share card (`python design/project_card.py && python
+5. **Release day (12-01 at the earliest):** redraw the share card (`python design/project_card.py && python
    design/render_share_card.py`, in a loop gap), look at `docs/img/share-card.png`, commit; then write what redraws it
    monthly (nothing does). `share-previews` itself was merged 11-26 (as of 11-26).
    [journal/2026-11-10-idea-share-previews-for-links.md](journal/2026-11-10-idea-share-previews-for-links.md)
-5. **The city run's clean-up**, not before the HOLD is lifted and a few world days publish cleanly ("docs/ and config/ are
+6. **The city run's clean-up**, not before the HOLD is lifted and a few world days publish cleanly ("docs/ and config/ are
    as deployed; nothing to do", no data commit): `run.py`'s `update`/`download`/`count`/`backfill`, their tests,
    `schedule-add.ps1`, README's Scheduling part; decide `kk-SCOpenQuests-planet` on the way (as of 11-26; owner: "handoff
    the further cleanup").
    [journal/2026-11-26-the-city-runs-clean-up-after-the-world-dailies-run-well.md](journal/2026-11-26-the-city-runs-clean-up-after-the-world-dailies-run-well.md)
-6. **Overture 12-16.0, the first unattended monthly release:** the watcher prepares it (`narrow`, `propose`, `auto`, the
+7. **Overture 12-16.0, the first unattended monthly release:** the watcher prepares it (`narrow`, `propose`, `auto`, the
    judge: `claude-opus-5-5` at high effort), the operator gets only exceptions; switch on 2027-01-01 (as of 11-26; owner,
    about 12:05: "on first of the month we switch it").
    [journal/2026-11-26-the-overture-release-tool.md](journal/2026-11-26-the-overture-release-tool.md)
-7. **The Map tab as a navigation tool, after the 12-01 switch** (as of 11-27; owner chose it 10:45): Overture outlines
+8. **The Map tab as a navigation tool, after the 12-01 switch** (as of 11-27; owner chose it 10:45): Overture outlines
    down to cities as one PMTiles file on sc-data, MapLibre, a tap gives the chain of places. Its sentence ("the rest of
    the world is not counted yet") stays until then (owner). Design:
    [design/topics/the-map-tab-a-navigation-tool.md](design/topics/the-map-tab-a-navigation-tool.md)

@@ -78,3 +78,13 @@
   still until it wakes, then goes on. The owner had lifted the HOLD at 09:20 ("start the day"); 11-26 resumed at its gate:
   PASS (worst city 0.00177%), store checks explained, done 09:33, published 09:48. 11:15's inputs failed twice on the Europe
   fetch (Docker Desktop not running); started 11:31, try 3 fetched diff 5189; a loop run started by hand at 11:30 takes 11-27.
+- **11-27 15:45 check: 11-27 STOPPED at 14:51.** Tier 1's engine t1/f0: `FileNotFoundException:
+  .\.scratch\planet\world-placesiles0\cells0c0.json`. world-1101's `files/*/cities.json` name all 2,244 cell
+  boundaries under `.scratch/planet/world-places/files/<f>/cells/`, the folder the owner let go this morning (58 GB, with the
+  other session). world-1101 holds its own `files/*/cells`, all 2,244 matching plan.json's rects and names, byte-equal to
+  `.scratch/planet/world` and `world-2026-11-18.0`'s; copied back to the named paths (3.2 MB), nothing missing after. Owner
+  (wizard, about 15:48): "Restart now". 15:49 the loop resumed 11-27: the world put back (0 files: tier 1 had not written),
+  **cover and rectangles kept from a run that stopped (284,371 rectangles) in 12 s**, tier 1's engines from scratch (none had
+  ended). Also found: prepare ended 11:54:35 and the store's update started about 14:19: `world_day.quiet` still waits out
+  `backfill_history.QUIET` (16:55-19:15 UTC), the deleted 12:15 city run's window. Owner (wizard): "Remove it": branch
+  `no-city-window` (6ace25759), to merge after the day. Publish at 14:54 exit 0 (no new gated day).
