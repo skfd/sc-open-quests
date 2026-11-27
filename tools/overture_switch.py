@@ -147,10 +147,11 @@ def prepare(release: str) -> None:
     p.marks.mkdir(parents=True, exist_ok=True)
     step(p, "pull-world", run, ["tools/overture_pull.py", release, "--world", "--out", p.pull], PY)
     step(p, "pull-outlines", run, ["tools/overture_pull.py", release, "--outlines", "--out", p.pull], PY)
-    step(p, "squares", run, ["tools/small_squares.py", "build", "--release", release], PY)
+    # squares needs shapely, which the venv lacks (11-27's first run); names and places need only duckdb, which both have
+    step(p, "squares", run, ["tools/small_squares.py", "build", "--release", release], SYS_PY)
     step(p, "names", run, ["tools/places.py", "build", "--release", release, "--out", p.names,
-                           "--report", p.rel / "cities-report.txt"], PY)
-    step(p, "places", run, ["tools/world_cells.py", "places", "--release", release, "--out", p.places], PY)
+                           "--report", p.rel / "cities-report.txt"], SYS_PY)
+    step(p, "places", run, ["tools/world_cells.py", "places", "--release", release, "--out", p.places], SYS_PY)
     step(p, "world", setup_world, p, old)
     step(p, "partcache", run, ["tools/world_cells.py", "partcache", "--out", p.world], PY)
     log(f"prepare {release} done: {p.world.relative_to(ROOT)} is ready for the cutover")
