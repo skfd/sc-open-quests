@@ -351,6 +351,8 @@ def adopt(release: str) -> None:
             shutil.copytree(docs, kept)
         shutil.rmtree(docs)
         shutil.copytree(p.names, docs)
+        ended = keep_ended(kept, docs)
+        log(f"adopt-names: {len(ended)} region files the release ended kept as they were: {ended[:20]}")
 
     def pin():
         write_json(ROOT / "config" / "places.json", {"overture": release})
@@ -365,6 +367,19 @@ def adopt(release: str) -> None:
         f"data/world.json; back up (archive_backup.py --only place-ids). The HOLD stays: the owner lifts it, and the "
         f"first day on {p.world.relative_to(ROOT)} has no way back. Rollback before that day: data/world.json and "
         f"config/places.json back, the registry, squares and name layer from {backup.relative_to(ROOT)}, the pulls renamed.")
+
+
+def keep_ended(old: Path, new: Path) -> list[str]:
+    """Copy back every file of the old name layer the new one lacks (a region the release ended): the owner, 11-26, an ended
+    place's files stay as they are, nothing deleted; the new index.json does not list them. Returns their paths."""
+    ended = []
+    for f in sorted(old.rglob("*")):
+        rel_ = f.relative_to(old)
+        if f.is_file() and not (new / rel_).exists():
+            (new / rel_).parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(f, new / rel_)
+            ended.append(rel_.as_posix())
+    return ended
 
 
 def status(release: str) -> str:

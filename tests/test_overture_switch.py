@@ -33,6 +33,17 @@ class Switch(unittest.TestCase):
     def tearDown(self):
         self.tmp.cleanup()
 
+    def test_an_ended_region_file_is_kept_as_it_was_and_a_redrawn_one_is_not_touched(self):
+        for d, files in ((self.old, {"index.json": "old", "ao/a2.json": "ended", "ao/b.json": "old b"}),
+                         (self.new, {"index.json": "new", "ao/b.json": "new b", "ao/c.json": "begun"})):
+            for f, text in files.items():
+                (d / f).parent.mkdir(parents=True, exist_ok=True)
+                (d / f).write_text(text, encoding="utf-8")
+        self.assertEqual(osw.keep_ended(self.old, self.new), ["ao/a2.json"])
+        self.assertEqual((self.new / "ao/a2.json").read_text(encoding="utf-8"), "ended")
+        self.assertEqual((self.new / "ao/b.json").read_text(encoding="utf-8"), "new b")
+        self.assertEqual((self.new / "index.json").read_text(encoding="utf-8"), "new")
+
     def test_the_old_days_before_the_seed_are_linked_in_and_nothing_from_the_seed_day_on(self):
         for day in ("2026-11-01", "2026-11-02", "2026-11-03"):
             counts(self.old / "counts" / day, {"a": 1})
