@@ -30,6 +30,9 @@ every quest, never an easier subset (DESIGN.md, "Don't").
   commits ahead of origin at 01:20 on 11-27). Log `logs/inputs.log`, `logs/site.log`.
 - **Gone or off (as of 11-26):** the city run's task `kk-SCOpenQuests` deleted 11:15 on 11-26 (the world's day counts the
   cities; `docs/data`'s city files end 11-25, `config/city-files.json`); `kk-SCOpenQuests-planet` (monthly) disabled.
+  **`data/cities.paused` placed 11-27 14:50 (owner: "fix the wait"; gitignored, keep it):** the loop's `WD.quiet(20)` before
+  the store's update still waited out the deleted city run's window (`backfill_history.QUIET`, 11:55-14:15 local); 11-27
+  stood still 11:54-14:15 in it. The marker skips that wait; the wait's code goes with the city run's clean-up.
   [journal/2026-11-26-the-city-runs-clean-up-after-the-world-dailies-run-well.md](journal/2026-11-26-the-city-runs-clean-up-after-the-world-dailies-run-well.md)
 - **Worktrees (as of 11-27):** `.claude/worktrees/agent-a9b152efd4c2e1246` (P3's 28.6 GB rehearsal data, kept for three
   traces) and `../sc-open-quests-place-ids` (branch `place-ids`, merged). Leave both.
