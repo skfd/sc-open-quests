@@ -81,8 +81,10 @@ every quest, never an easier subset (DESIGN.md, "Don't").
    publishes, or the store's day is not the world's gated day; about 4.5 h: storecut, notes, canary, count, seed, counts, gate, join,
    compare), then `adopt 2026-11-18.0`, commit what it names, and the owner lifts the HOLD (before midnight). After the new
    world's gate at D passes, the old world's `world.bin` files go (owner, 11-26). Disk: 178 GiB free on 11-27 10:50 after
-   `.scratch/planet/world-places/files/` went (58 GB, owner 10:48); the cut peaks +80 GB, the new world keeps about 65 GB.
-   Ended places' files stay frozen (`daily` keep-gone; adopt-names `keep_ended`). `config/parts` not rebuilt (follow-up).
+   `.scratch/planet/world-places/files/` went (58 GB, owner 10:48; its `cells/` restored after 11-27 stopped on them, see
+   Now); the cut peaks +80 GB, the new world keeps about 65 GB. **Paths (checked 11-27 16:10):** world-2026-11-18.0 points
+   only into itself and `.scratch/world-places/2026-11-18.0/geo/`, all present; world-1101 into
+   `.scratch/planet/world-places/files/*/cells` and `geo/`: those go with the old world.bin, not before. Ended places' files stay frozen (`daily` keep-gone; adopt-names `keep_ended`). `config/parts` not rebuilt (follow-up).
    **First time on real data:** every cutover step (storecut..compare) and all of `adopt`; prepare failed three times on
    first contact (11-27). The count is one engine at a time (11-17: 127 of 128 starts, 2.4 h at 57 GiB commit free;
    11-27's canary saw 43 GiB, a 30 GB heap fits). **Abort rule:** a step fails, or compare is not reached by about 23:00:

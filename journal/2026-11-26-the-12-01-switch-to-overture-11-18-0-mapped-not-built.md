@@ -110,3 +110,19 @@ store's day D).**
   count's world.bin) deleted; its report.json (crosscheck), plan.json (test_world_tier2) and places.json stay. 178 GiB free.
 - **11:00, the owner, on a full dress rehearsal of the cutover:** "we will do it live, no rehersal please". The cutover's first
   run on real data is 12-01's.
+
+## 2026-11-27 (afternoon): the deleted files/ held the live world's cells
+
+- **14:51, 11-27 stopped** (found by sc-open-quests-5e): tier 1's t1/f0 found no
+  `.scratch/planet/world-places/files/f0/cells/f0c0.json`. The 10:48 delete above was described as "the 11-13 count's
+  world.bin": it also held `files/*/cells/`, and world-1101's `files/*/cities.json` point all 2,244 cell boundaries there
+  (world-1101 was set up from world-places and kept its paths). Nothing checked the live world's paths before the delete.
+  5e restored the 2,244 cells (3.2 MB, from world-1101's own `files/*/cells`); the owner chose "Restart now", resumed 15:49.
+- **What points where (checked 16:10, every string in the small files and the head of places.json):**
+  world-1101: `files/*/cities.json` into `.scratch/planet/world-places/files/F/cells` (2,244, now present again);
+  `plan.json` cityParts into `.scratch/planet/world-places/geo/` (147, present); `places.json` geometry into
+  `.scratch/world-places/world/geo/` (present). world-2026-11-18.0: cities.json into its own `files/F/cells` (2,244),
+  plan.json into its own `geo/` (147), places.json into `.scratch/world-places/2026-11-18.0/geo/`; all present. So the
+  cutover and the new world have no path into anything deleted; the restored cells matter only while world-1101 is live.
+- **Repointing world-1101's cities.json to its own cells: not done.** It is a write into the live world for a world that
+  retires at 12-01's adopt; the 3.2 MB stay until then and go with the old world's world.bin once the new gate at D passes.
