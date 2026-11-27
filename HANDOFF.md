@@ -4835,3 +4835,10 @@ store's day D).**
 - **5e's resume proof runs all night (from 18:22, harness pid 27752 in RUNNING, `.scratch/resume-proof/proof.log`; ends about
   03:00-04:00 with `RESULT.txt`).** `prepare` waits for `RESULT.txt` or 5e's message (DuckDB beside the engines risks the 11-23
   commit-limit failure).
+- **The proof stood still 18:24-22:52: the laptop was in Modern Standby** (System log, Kernel-Power: "power source change"
+  18:16, "entering Modern Standby" 18:24, sleep 22:36, plugged in 22:52). Desktop processes are frozen there: A1's first
+  `tilestore ways` read 15,982 s against 197 s at 17:38, with no work done. Nothing was wrong with the code; the run went on by
+  itself on waking. **A keep-awake helper** (`.scratch/resume-proof/keep-awake.ps1`, pid 14192) holds a "system required" power
+  request until the harness (27752) exits; a closed lid or battery policy can still sleep the machine. New estimate: RESULT about
+  07:00 on 11-27. **The loop itself has no keep-awake** (no `SetThreadExecutionState` anywhere): a world day on an unplugged or
+  idle laptop stands still the same way. Proposal for the owner, not built: the loop holds that request while RUNNING exists.
