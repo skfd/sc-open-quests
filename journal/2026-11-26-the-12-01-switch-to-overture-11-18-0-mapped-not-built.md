@@ -102,3 +102,9 @@ store's day D).**
   places are not in the new layer (kept). The series of the ~1.6% of places whose outline moved change too: about 16k files at
   the world's scale, on top of a day's ~60k; DAY_CAP 200k holds (estimate). The release stamp is in `events.key`, so the first
   build after adopt rebuilds the events cache from every gated day.
+- **10:45, the owner (wizard), when to cut over:** "After 12-01's day (Recommended)": the loop takes 12-01 on the old world
+  at 14:45, the cutover starts when it ends (D = 12-01), adopt follows, the owner lifts the HOLD before midnight.
+- **Disk across the cutover:** about 118 GiB after a day; the cut peaks +80 GB; the new world keeps about 65 GB (the old one's
+  `files/*`: world.bin 52.6 GiB, world-keys 7.9, notes 2.2); even with the old world.bin gone, about 110 GiB, under the 115 a day
+  needs. **10:48, the owner:** "Delete files/ now (Recommended)": `.scratch/planet/world-places/files/` (128 folders, the 11-13
+  count's world.bin) deleted; its report.json (crosscheck), plan.json (test_world_tier2) and places.json stay. 178 GiB free.

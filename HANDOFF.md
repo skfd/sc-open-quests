@@ -64,12 +64,15 @@ every quest, never an easier subset (DESIGN.md, "Don't").
    is lifted" (the four speed-ups installed 11-26: engine room waits, `points` seconds, timers, the day's wall against
    11-25's 12,643 s), then `rename_places.py check` (as of 11-26).
    [journal/2026-11-26-performance-review-of-the-traces-and-logs.md](journal/2026-11-26-performance-review-of-the-traces-and-logs.md)
-3. **The 12-01 switch to Overture 11-18.0 (owner, 11-26: "we are going to do it on 12 01 right?"):** `overture_switch.py
-   cutover` at the store's day D under a hand-written HOLD (about 4.5 h; peaks about 80 GB, C: had 105 GB free at 18:20 on
-   11-26), then flip `data/world.json` and lift the HOLD. The history join (`gated_days` walks one folder) is not built.
-   Owner, 18:35: the old world's `world.bin` files go once the new world passes its gate at D; regional extracts may go
-   early (never Ontario); ended places' files are kept frozen, nothing deleted (built: `daily` publishes keep-gone).
-   `config/parts` not rebuilt (a follow-up). The staged 11-18.0 registry goes live only here (as of 11-26 19:45).
+3. **The 12-01 cutover to Overture 11-18.0: on 12-01, after the loop's 12-01 day ends (about 18:15), at D = 12-01,
+   watched by the owner (owner, 11-27 10:45).** From the main checkout, detached (background jobs die at 2 h; start it
+   with DETACHED_PROCESS + CREATE_NEW_PROCESS_GROUP, as 11-27's `prepare` was): `.scratch/overture/.venv/Scripts/python.exe
+   -u tools/overture_switch.py cutover 2026-11-18.0 >> logs/switch.log` (writes the HOLD, refuses while the loop runs or
+   the store's day is not the world's gated day; about 4.5 h: storecut, notes, canary, count, seed, counts, gate, join,
+   compare), then `adopt 2026-11-18.0`, commit what it names, and the owner lifts the HOLD (before midnight). After the new
+   world's gate at D passes, the old world's `world.bin` files go (owner, 11-26). Disk: 178 GiB free on 11-27 10:50 after
+   `.scratch/planet/world-places/files/` went (58 GB, owner 10:48); the cut peaks +80 GB, the new world keeps about 65 GB.
+   Ended places' files stay frozen (`daily` keep-gone; adopt-names `keep_ended`). `config/parts` not rebuilt (follow-up).
    [journal/2026-11-26-the-12-01-switch-to-overture-11-18-0-mapped-not-built.md](journal/2026-11-26-the-12-01-switch-to-overture-11-18-0-mapped-not-built.md)
 4. **Release day (12-01 at the earliest):** redraw the share card (`python design/project_card.py && python
    design/render_share_card.py`, in a loop gap), look at `docs/img/share-card.png`, commit; then write what redraws it
