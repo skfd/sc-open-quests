@@ -37,8 +37,8 @@ every quest, never an easier subset (DESIGN.md, "Don't").
 
 ## Waiting on the owner
 
-- **Lift the HOLD and start the loop** (as of 11-27 05:05: the proof is done). 11-26 is finished; the next start resumes it at
-  its gate, then 11-27 if its inputs are there.
+- **Be at the machine on 12-01 from about 18:30 (as of 11-27 10:45)** to watch the cutover (Next 3) and lift the HOLD
+  after `adopt`.
 - **Keep-awake for the loop (as of 11-26 22:55; proposal, not built):** the loop holds a "system required" power request
   while RUNNING exists; today a day on an idle or unplugged laptop stands still in Modern Standby.
   [journal/2026-11-26-the-world-day-resumable.md](journal/2026-11-26-the-world-day-resumable.md)
@@ -51,28 +51,35 @@ every quest, never an easier subset (DESIGN.md, "Don't").
 
 ## Next, in order
 
-1. **The 12-01 switch is prepared and rehearsed (as of 11-27 10:40); waits for the owner's sign-off and a start time.**
+1. **The 12-01 switch: `prepare` done, a one-file canary run; the cutover chain and `adopt` never run on real data
+   (as of 11-27 10:55).** The owner chose the start time (Next 3).
    `prepare 2026-11-18.0` done 10:26 (every step; `status` shows them): 1,073,190 places, plan check equal (128 files,
    2,244 cells), partcache 5.8 GB. Canary rehearsed on f47 at 11-26, old against new place list on the same cut
    (`.scratch/switch/2026-11-18.0/canary.py`, `REPORT.txt`): 212 of 13,405 parts differ (1.6%), open quests +0.015%.
    Publish: the name layer changes 729 place files and at most 563 children files; 630 published places end (kept
    frozen); with ~1.6% of places moving, the first day after the switch is about 16k files above a normal day's ~60k,
-   under DAY_CAP 200k (estimate; the events cache rebuilds once, the release stamp changes).
+   under DAY_CAP 200k (estimate from one file of 128, which has no cities; the events cache rebuilds once, the release
+   stamp changes). Full suite 443 passed, 1 skipped (11-27 10:42).
    [journal/2026-11-26-the-12-01-switch-to-overture-11-18-0-mapped-not-built.md](journal/2026-11-26-the-12-01-switch-to-overture-11-18-0-mapped-not-built.md)
 2. **The first world day after the HOLD is lifted (take 11-27, not 11-26: 11-26's finish ran in the proof, its lines are in
    `.scratch/resume-proof/R2.log`, not `logs/planet-store.log`, and a resumed day writes no steps.json):** check it with the list "To check on the first world day after the HOLD
    is lifted" (the four speed-ups installed 11-26: engine room waits, `points` seconds, timers, the day's wall against
    11-25's 12,643 s), then `rename_places.py check` (as of 11-26).
    [journal/2026-11-26-performance-review-of-the-traces-and-logs.md](journal/2026-11-26-performance-review-of-the-traces-and-logs.md)
-3. **The 12-01 cutover to Overture 11-18.0: on 12-01, after the loop's 12-01 day ends (about 18:15), at D = 12-01,
+3. **The 12-01 cutover to Overture 11-18.0: on 12-01, after the loop's 12-01 publish line (about 18:35), at D = 12-01,
    watched by the owner (owner, 11-27 10:45).** From the main checkout, detached (background jobs die at 2 h; start it
    with `python tools/detach.py logs/switch.log . .scratch/overture/.venv/Scripts/python.exe -u tools/overture_switch.py
    cutover 2026-11-18.0`, as 11-27's `prepare` was) (writes the HOLD, refuses while the loop runs or
-   the store's day is not the world's gated day; about 4.5 h: storecut, notes, canary, count, seed, counts, gate, join,
+   publishes, or the store's day is not the world's gated day; about 4.5 h: storecut, notes, canary, count, seed, counts, gate, join,
    compare), then `adopt 2026-11-18.0`, commit what it names, and the owner lifts the HOLD (before midnight). After the new
    world's gate at D passes, the old world's `world.bin` files go (owner, 11-26). Disk: 178 GiB free on 11-27 10:50 after
    `.scratch/planet/world-places/files/` went (58 GB, owner 10:48); the cut peaks +80 GB, the new world keeps about 65 GB.
    Ended places' files stay frozen (`daily` keep-gone; adopt-names `keep_ended`). `config/parts` not rebuilt (follow-up).
+   **First time on real data:** every cutover step (storecut..compare) and all of `adopt`; prepare failed three times on
+   first contact (11-27). The count is one engine at a time (11-17: 127 of 128 starts, 2.4 h at 57 GiB commit free;
+   11-27's canary saw 43 GiB, a 30 GB heap fits). **Abort rule:** a step fails, or compare is not reached by about 23:00:
+   leave the HOLD, `adopt` not run, so the old world stays live; a rerun resumes at the markers (`status`). If the store
+   moved meanwhile, the seed-day check stops it: clear the switch markers from `pin` on and `cut/storecut.json`, then rerun.
    [journal/2026-11-26-the-12-01-switch-to-overture-11-18-0-mapped-not-built.md](journal/2026-11-26-the-12-01-switch-to-overture-11-18-0-mapped-not-built.md)
 4. **Release day (12-01 at the earliest):** redraw the share card (`python design/project_card.py && python
    design/render_share_card.py`, in a loop gap), look at `docs/img/share-card.png`, commit; then write what redraws it
