@@ -948,8 +948,8 @@ OPERATOR_PROMPT = """Overture {release}: {n} rows of the place-id release wait f
 and the Claude judge decided the rest. Read data/place-ids/releases/{release}/exceptions.md and walk the owner through the
 rows, a few at a time, with your recommendation for each (`python tools/overture_release.py look {release} KEY` shows a row's
 context). Record each verdict the owner gives with `python tools/overture_release.py judge {release} KEY "VERDICT"`. When none
-is left: `python tools/overture_release.py apply {release}`, then `python tools/archive_backup.py --only place-ids`, and add
-a line to HANDOFF.md. The staged registry goes live at the reseed on the 1st, not before."""
+is left: `python tools/overture_release.py apply {release}`, then `python tools/archive_backup.py --only place-ids`, and update
+HANDOFF.md's Now/Next in place (the story goes to journal/<today>.md). The staged registry goes live at the reseed on the 1st, not before."""
 
 
 def call_operator(release: str, n: int, here: Path) -> None:

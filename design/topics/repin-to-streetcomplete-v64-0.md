@@ -2,7 +2,7 @@
 
 - **The operation has a name: repin.** Everything the engine counts with is pinned to one SC tag (the
   vendored source, the ports, the registry dump, icons, release pins); moving them all is a repin, the
-  routine is [REPIN.md](REPIN.md). The scheduled update now ends with `run.py check-release`: it
+  routine is [REPIN.md](../../REPIN.md). The scheduled update now ends with `run.py check-release`: it
   refreshes `docs/data/sc-releases.json` and opens the GitHub issue "Repin to StreetComplete vX.Y"
   once when a stable release is newer than `engine/SC-VERSION.txt`. It is the one network dependency
   the daily run has besides the extracts, and it cannot fail the run: the data is published first, and
