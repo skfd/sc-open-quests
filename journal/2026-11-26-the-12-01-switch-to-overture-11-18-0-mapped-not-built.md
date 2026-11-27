@@ -75,3 +75,10 @@ store's day D).**
 - **09:20, the owner:** "start the day". HOLD moved to `.scratch/planet-cut/hold-history/HOLD-lifted-20261127-0921`, the loop
   task run by hand; it logged "day 2026-11-26: resuming (the store at generation 25, the world at 2026-11-26)". Prepare runs
   in the gap after 11-26's store_tail.
+- **09:33:** 11-26 done (gate, then "punch skipped: 117 GiB free"); "no diff to 2026-11-27 on disk yet; done for now".
+  09:48 publish exit 0 in 916 s. 117 GiB minus prepare's 14 GB would be under the 115 GiB a new day needs, so 14:45 would skip
+  11-27. Asked the owner (wizard): **"Prune, then prepare (Recommended)"**: `osm_extracts.py prune <region> --keep 1
+  --keep-days 0` for alberta, berlin, berlin-history, bremen, british-columbia, canada-germany, germany, hamburg, manitoba,
+  new-brunswick, newfoundland-and-labrador, nova-scotia, quebec, saskatchewan, ukraine (Ontario, Europe, planet, notes
+  untouched): 35 GB, 150.9 GiB free.
+- **09:52:** `prepare 2026-11-18.0` started detached (venv python, `logs/switch.log`), 162 GB free by its own count.

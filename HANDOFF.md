@@ -12,9 +12,8 @@ every quest, never an easier subset (DESIGN.md, "Don't").
 - **World dailies running again (as of 11-27 09:21).** The owner, 09:20: "start the day"; HOLD moved to
   `.scratch/planet-cut/hold-history/HOLD-lifted-20261127-0921`, `kk-SCOpenQuests-planetstore` run by hand (daily 14:45,
   12 h limit). 09:20 log: "day 2026-11-26: resuming": the finish is skipped (R2's), then gate, store_tail, facts, publish,
-  and 11-27 if its inputs and the disk allow. **C: had 34 GiB free before the gate**; store_tail deletes 11-26's `before/`
-  and work (about 70 GB). A new day needs 115 GiB free (`day_disk_short`), so 11-27 may log "not taken" for disk:
-  unconfirmed. Stop: put back a HOLD (no day) or PAUSE (stops the running day at its next step).
+  and 11-27 if its inputs allow. **11-26 done 09:33 (117 GiB free after store_tail), published 09:48 (exit 0)**; "no diff
+  to 2026-11-27 on disk yet", so 11-27 waits for 11:15's inputs and the 14:45 run (a day needs 115 GiB free). Stop: put back a HOLD (no day) or PAUSE (stops the running day at its next step).
   [journal/2026-11-26-the-world-day-resumable.md](journal/2026-11-26-the-world-day-resumable.md)
 - **The world day is resumable and proven (as of 11-27 05:05; built c3b998fd1).** A finish stopped anywhere and resumed ends
   byte for byte where an uninterrupted run on the same engine outputs ends (R1, supplement C: 263 of 263); a late stop costs
@@ -52,11 +51,12 @@ every quest, never an easier subset (DESIGN.md, "Don't").
 
 ## Next, in order
 
-1. **`python tools/overture_switch.py prepare 2026-11-18.0` waits for disk (as of 11-27 05:40):** C: has 34 GiB free;
-   prepare writes about 14 GB (6.7 GB pull, 5.5 GB parts.cache, places). It runs once 11-26's store_tail frees about 70 GB
-   (after the owner lifts the HOLD), in the gap before the next world day; owner, 11-27 05:45: wait for 11-26, delete
-   nothing (`.scratch/planet/world-places`, 64 GB, stays). Built and merged in 06ac3b7d4, never run; new folders only; only between world days or
-   under the HOLD; DuckDB never beside engines. Then the f47 canary on the new list and a publish dry run counting deletes.
+1. **`overture_switch.py prepare 2026-11-18.0` running (as of 11-27 09:52)**, detached (cmd pid 45528, venv python), log
+   `logs/switch.log`, a marker per step in `.scratch/planet/world-2026-11-18.0/switch/`. **Check:** `python
+   tools/overture_switch.py status 2026-11-18.0`; if it died, rerun the same command (done steps are skipped). It must end
+   before the loop's 14:45 run (DuckDB never beside engines); if not, a HOLD. Disk: 151 GiB free before it (11-26's
+   store_tail, then the regional extracts pruned to their newest file, 35 GB, owner 09:50). Then the f47 canary on the new
+   list and a publish dry run counting deletes.
    [journal/2026-11-26-the-12-01-switch-to-overture-11-18-0-mapped-not-built.md](journal/2026-11-26-the-12-01-switch-to-overture-11-18-0-mapped-not-built.md)
 2. **The first world day after the HOLD is lifted (take 11-27, not 11-26: 11-26's finish ran in the proof, its lines are in
    `.scratch/resume-proof/R2.log`, not `logs/planet-store.log`, and a resumed day writes no steps.json):** check it with the list "To check on the first world day after the HOLD
