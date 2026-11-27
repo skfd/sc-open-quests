@@ -56,9 +56,11 @@ every quest, never an easier subset (DESIGN.md, "Don't").
 
 ## Next, in order
 
-1. **Now free (5e's proof ended 05:05 on 11-27):** `python tools/overture_switch.py prepare 2026-11-18.0` (the tool is built and merged
-   in 06ac3b7d4, never run; new folders only; only between world days or under the HOLD; DuckDB never beside engines: the 11-23 commit-limit failure). Then the f47 canary on the new list
-   and a publish dry run counting deletes (as of 11-26 19:45).
+1. **`python tools/overture_switch.py prepare 2026-11-18.0` waits for disk (as of 11-27 05:40):** C: has 34 GiB free;
+   prepare writes about 14 GB (6.7 GB pull, 5.5 GB parts.cache, places). It runs once 11-26's store_tail frees about 70 GB
+   (after the owner lifts the HOLD), or sooner if the owner lets `.scratch/planet/world-places` go (the 11-13 count with
+   places, 64 GB; asked 11-27). Built and merged in 06ac3b7d4, never run; new folders only; only between world days or
+   under the HOLD; DuckDB never beside engines. Then the f47 canary on the new list and a publish dry run counting deletes.
    [journal/2026-11-26-the-12-01-switch-to-overture-11-18-0-mapped-not-built.md](journal/2026-11-26-the-12-01-switch-to-overture-11-18-0-mapped-not-built.md)
 2. **The first world day after the HOLD is lifted (take 11-27, not 11-26: 11-26's finish ran in the proof, its lines are in
    `.scratch/resume-proof/R2.log`, not `logs/planet-store.log`, and a resumed day writes no steps.json):** check it with the list "To check on the first world day after the HOLD

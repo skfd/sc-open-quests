@@ -57,3 +57,16 @@ store's day D).**
 - **Merged 19:45 (06ac3b7d4, over sc-open-quests-5e's c3b998fd1; suite 440 passed).** The worktree is removed. 5e is running a
   resume proof on day 11-26 under the HOLD (`world_finish` reads WORLD via `data/world.json`). **Until 5e says done: no
   HOLD lift, no loop, no `prepare`.** Then `overture_switch.py prepare 2026-11-18.0`.
+
+## 2026-11-27: prepare held for disk
+
+- **05:10:** 5e's proof done ("You're clear to run `overture_switch.py prepare 2026-11-18.0`"). `status` showed every step
+  undone. C: had 34.5 GiB free (131 GiB after 11-25's day): 11-26's mid-day footprint (`before/` with 11-25's rows, 22.5 GB of
+  the day's work), which store_tail deletes once 11-26 passes its gate. 5e, a minute later: prepare "would take it to about
+  30 GB. Running it after the owner lifts the HOLD and 11-26 completes is safer."
+- Prepare's writes, from the live copies: `data/overture/world` 6.7 GB, `parts.cache` 5.5 GB, `places.json` 0.4 GB, names
+  0.1 GB: about 14 GB, leaving about 20 GiB, under tilestore's 40 GiB floor. Held.
+- The one large thing not in the loop's way: `.scratch/planet/world-places`, 64 GB (58 GB `files/`), the 11-13 planet count
+  with places; `tools/world_publish.py` names its `report.json` in a docstring. Asked the owner whether it may go.
+- 5e's note that two clean runs number a day's new place sets differently does not touch the switch's `compare`: it sums
+  counts by part name (`open_by_part`), never by set id.
