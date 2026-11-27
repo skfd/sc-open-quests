@@ -18,13 +18,12 @@ every quest, never an easier subset (DESIGN.md, "Don't").
   `schtasks /Run /TN kk-SCOpenQuests-planetstore`.
   [journal/2026-11-26-the-overture-release-tool.md](journal/2026-11-26-the-overture-release-tool.md) (HOLD lifted 16:58,
   PAUSED 18:02), [journal/2026-11-26-the-world-day-resumable.md](journal/2026-11-26-the-world-day-resumable.md) (PAUSE).
-- **Session sc-open-quests-5e's resume proof on day 11-26 (as of 11-27 02:55: R2 running, ends about 04:20).** A (killed and
-  resumed 5 times) against B (uninterrupted): **DIFFER in 6 of 263** (three world.bin, place-sets, counts). **R1, the
-  replay from B's kept outputs: EQUAL to B, 263 of 263**, so the resume path is exact; A's difference came from engine outputs
-  made in other runs. R2 (a second uninterrupted run, `proof_r.py`, keep-awake running) tells whether two clean runs differ the
-  same way; `canon.py` then compares up to place-set numbering. The world after R2 is an uninterrupted 11-26 with `finished`
-  written. No gate, store_tail or publish; HOLD stays; nothing else may run DuckDB, builds or engines beside it. If it died:
-  `.scratch/resume-proof/proof.log`, `R2.out`; rerunning a finish is safe (it restores from `before/`).
+- **The world day is resumable and proven (as of 11-27 05:05; built c3b998fd1).** A finish stopped anywhere and resumed ends
+  byte for byte where an uninterrupted run on the same engine outputs ends (R1, supplement C: 263 of 263); a late stop costs
+  about 18 min, not the 2.8 h finish. Two clean runs of a day can number its new place sets differently (B against R2: equal up
+  to numbering), cache or not. **Day 11-26 is finished under the HOLD**: the world is R2's uninterrupted run, `finished`
+  written; the loop's next start resumes it at the gate, then store_tail and publish. PAUSE: `.scratch/planet-cut/PAUSE`
+  (none placed). Outputs in `.scratch/resume-proof/` (RESULT*.txt, proof.log, canon.py).
   [journal/2026-11-26-the-world-day-resumable.md](journal/2026-11-26-the-world-day-resumable.md)
 - **Task `kk-SCOpenQuests-overture`, daily 09:30 from 11-27 (as of 11-26 13:30):** `overture_release.py watch >>
   logs/overture.log`. 11-18.0 is already judged and staged, so it should find nothing new before 12-16.0 (unconfirmed
@@ -41,8 +40,8 @@ every quest, never an easier subset (DESIGN.md, "Don't").
 
 ## Waiting on the owner
 
-- **Lift the HOLD and start the loop** once 5e's proof is read (as of 11-27). How 11-26 is taken after the proof (resumed
-  from `day.pkl` or redone): ask 5e or read its RESULT, unconfirmed.
+- **Lift the HOLD and start the loop** (as of 11-27 05:05: the proof is done). 11-26 is finished; the next start resumes it at
+  its gate, then 11-27 if its inputs are there.
 - **Keep-awake for the loop (as of 11-26 22:55; proposal, not built):** the loop holds a "system required" power request
   while RUNNING exists; today a day on an idle or unplugged laptop stands still in Modern Standby.
   [journal/2026-11-26-the-world-day-resumable.md](journal/2026-11-26-the-world-day-resumable.md)
@@ -55,7 +54,7 @@ every quest, never an easier subset (DESIGN.md, "Don't").
 
 ## Next, in order
 
-1. **After 5e's proof:** `python tools/overture_switch.py prepare 2026-11-18.0` (the tool is built and merged
+1. **Now free (5e's proof ended 05:05 on 11-27):** `python tools/overture_switch.py prepare 2026-11-18.0` (the tool is built and merged
    in 06ac3b7d4, never run; new folders only; only between world days or under the HOLD; DuckDB never beside engines: the 11-23 commit-limit failure). Then the f47 canary on the new list
    and a publish dry run counting deletes (as of 11-26 19:45).
    [journal/2026-11-26-the-12-01-switch-to-overture-11-18-0-mapped-not-built.md](journal/2026-11-26-the-12-01-switch-to-overture-11-18-0-mapped-not-built.md)
