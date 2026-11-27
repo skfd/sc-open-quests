@@ -147,11 +147,12 @@ def prepare(release: str) -> None:
     p.marks.mkdir(parents=True, exist_ok=True)
     step(p, "pull-world", run, ["tools/overture_pull.py", release, "--world", "--out", p.pull], PY)
     step(p, "pull-outlines", run, ["tools/overture_pull.py", release, "--outlines", "--out", p.pull], PY)
-    # squares needs shapely, which the venv lacks (11-27's first run); names and places need only duckdb, which both have
+    # squares needs shapely, which the venv lacks (11-27's first run); names needs only duckdb. places stays on the venv:
+    # under system python's duckdb 1.5.6 its outline stream died twice with "INTERRUPT Error: Interrupted!" (11-27)
     step(p, "squares", run, ["tools/small_squares.py", "build", "--release", release], SYS_PY)
     step(p, "names", run, ["tools/places.py", "build", "--release", release, "--out", p.names,
                            "--report", p.rel / "cities-report.txt"], SYS_PY)
-    step(p, "places", run, ["tools/world_cells.py", "places", "--release", release, "--out", p.places], SYS_PY)
+    step(p, "places", run, ["tools/world_cells.py", "places", "--release", release, "--out", p.places], PY)
     step(p, "world", setup_world, p, old)
     step(p, "partcache", run, ["tools/world_cells.py", "partcache", "--out", p.world], PY)
     log(f"prepare {release} done: {p.world.relative_to(ROOT)} is ready for the cutover")
