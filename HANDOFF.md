@@ -13,14 +13,13 @@ every quest, never an easier subset (DESIGN.md, "Don't").
   `.scratch/planet-cut/hold-history/HOLD-lifted-20261127-0921`, `kk-SCOpenQuests-planetstore` run by hand (daily 14:45,
   12 h limit). 09:20 log: "day 2026-11-26: resuming": the finish is skipped (R2's), then gate, store_tail, facts, publish,
   and 11-27 if its inputs allow. **11-26 done 09:33 (117 GiB free after store_tail), published 09:48 (exit 0)**; "no diff
-  to 2026-11-27 on disk yet", so 11-27 waits for 11:15's inputs and the 14:45 run (a day needs 115 GiB free). Stop: put back a HOLD (no day) or PAUSE (stops the running day at its next step).
+  to 2026-11-27 on disk yet". **11-27 (as of 11-27 11:38):** 11:15's inputs failed twice on the Europe fetch (Docker Desktop
+  not running); Docker started 11:31, try 3 at 11:35 fetched diff 5189. A loop run started by hand 11:30 waits for the inputs
+  and takes 11-27 (about 15:00 plus the publish); the 14:45 task finds RUNNING and does not start. C: 170 GB free at 11:31. Stop: put back a HOLD (no day) or PAUSE (stops the running day at its next step).
   [journal/2026-11-26-the-world-day-resumable.md](journal/2026-11-26-the-world-day-resumable.md)
-- **The world day is resumable and proven (as of 11-27 05:05; built c3b998fd1).** A finish stopped anywhere and resumed ends
-  byte for byte where an uninterrupted run on the same engine outputs ends (R1, supplement C: 263 of 263); a late stop costs
-  about 18 min, not the 2.8 h finish. Two clean runs of a day can number its new place sets differently (B against R2: equal up
-  to numbering), cache or not. **Day 11-26 is finished under the HOLD**: the world is R2's uninterrupted run, `finished`
-  written; the loop's next start resumes it at the gate, then store_tail and publish. PAUSE: `.scratch/planet-cut/PAUSE`
-  (none placed). Outputs in `.scratch/resume-proof/` (RESULT*.txt, proof.log, canon.py).
+- **The world day is resumable (as of 11-27; built c3b998fd1, proven on 11-26).** A stopped finish resumes from what it
+  left done behind markers (about 18 min late in the day, not 2.8 h); PAUSE stops a running day at its next step.
+  `design/topics/the-world-day-resumable.md` (what is proven, what only mocked).
   [journal/2026-11-26-the-world-day-resumable.md](journal/2026-11-26-the-world-day-resumable.md)
 - **Task `kk-SCOpenQuests-overture`, daily 09:30 from 11-27 (as of 11-26 13:30):** `overture_release.py watch >>
   logs/overture.log`. 11-18.0 is already judged and staged, so it should find nothing new before 12-16.0 (unconfirmed
@@ -39,9 +38,6 @@ every quest, never an easier subset (DESIGN.md, "Don't").
 
 - **Be at the machine on 12-01 from about 18:30 (as of 11-27 10:45)** to watch the cutover (Next 3) and lift the HOLD
   after `adopt`.
-- **Keep-awake for the loop (as of 11-26 22:55; proposal, not built):** the loop holds a "system required" power request
-  while RUNNING exists; today a day on an idle or unplugged laptop stands still in Modern Standby.
-  [journal/2026-11-26-the-world-day-resumable.md](journal/2026-11-26-the-world-day-resumable.md)
 - **The share-preview Worker's deploy** (`cloudflare/wrangler.previews.jsonc`, deployed by nothing scheduled) needs the
   owner's go and the $5 Workers limit question (past it the home page fails with error 1103) (as of 11-26).
   [journal/2026-11-10-idea-share-previews-for-links.md](journal/2026-11-10-idea-share-previews-for-links.md)

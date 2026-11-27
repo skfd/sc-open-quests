@@ -74,3 +74,7 @@
   process list (`tests/test_day_cache.py`, 13 tests). The settled design: `design/topics/the-world-day-resumable.md`, with what is
   tested only with mocks or not at all. `B-keep/` and `R2-keep/` deleted after the comparisons. Read order for the result:
   `.scratch/resume-proof/README.txt`.
+- **11-27, about 11:30 (owner, wizard): keep-awake for the loop: "No".** Not built; a day on a laptop in standby stands
+  still until it wakes, then goes on. The owner had lifted the HOLD at 09:20 ("start the day"); 11-26 resumed at its gate:
+  PASS (worst city 0.00177%), store checks explained, done 09:33, published 09:48. 11:15's inputs failed twice on the Europe
+  fetch (Docker Desktop not running); started 11:31, try 3 fetched diff 5189; a loop run started by hand at 11:30 takes 11-27.
