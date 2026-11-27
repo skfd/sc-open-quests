@@ -57,3 +57,4 @@ section, named by the date in its heading. Code comments citing `HANDOFF, "<head
 - [2026-11-26-the-overture-release-tool.md](2026-11-26-the-overture-release-tool.md): The Overture release tool (2026-11-26, from 11:20; owner: "lets make that overture release tool")
 - [2026-11-26-the-12-01-switch-to-overture-11-18-0-mapped-not-built.md](2026-11-26-the-12-01-switch-to-overture-11-18-0-mapped-not-built.md): The 12-01 switch to Overture 11-18.0: mapped, not built (2026-11-26, 18:00-18:30; owner: "we are going to do it on 12 01 right?")
 - [2026-11-26-the-world-day-resumable.md](2026-11-26-the-world-day-resumable.md): The world day resumable (owner, 11-26, 18:05: "build a resumability please"; the laptop stays on, only the owner is offline)
+- [2026-11-27-the-map-tab-redesign.md](2026-11-27-the-map-tab-redesign.md): The Map tab redesign (2026-11-27, morning; owner: "i think map page is not up to date anymore. how do we redesign it")

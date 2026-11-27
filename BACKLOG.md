@@ -29,6 +29,10 @@ it moves to HANDOFF.md's Next and leaves here.
 - **`config/parts` after the switch:** not rebuilt for 11-18.0 (ids are stable; ended parts show as `noFile`); rebuilding
   needs another extract source once the regional fetches stop.
   [journal/2026-11-26-the-12-01-switch-to-overture-11-18-0-mapped-not-built.md](journal/2026-11-26-the-12-01-switch-to-overture-11-18-0-mapped-not-built.md)
+- **Statistics on a map** (owner, 11-27: "idea of visualizing stats should be explored later write it down"; "shaded
+  design will take a step back"): places shaded by open quests (per km² needs land area published), following the quest
+  ticks; the children map of "Place statistics for the whole world". The Map tab is a navigation tool first.
+  [journal/2026-11-27-the-map-tab-redesign.md](journal/2026-11-27-the-map-tab-redesign.md)
 - **The performance review's leftovers:** not looked at: the Rust `update` (708 s), tier 2 reads (1,074 s), the gate's
   four engines (279 s); the publish's tail; the children uploads may double from 11-30 (a forecast).
   [journal/2026-11-26-performance-review-of-the-traces-and-logs.md](journal/2026-11-26-performance-review-of-the-traces-and-logs.md)
