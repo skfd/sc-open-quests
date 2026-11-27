@@ -179,6 +179,14 @@ def loop_alive() -> bool:
     return str(pid) in r.stdout
 
 
+PUBLISH_LOCK = ROOT / ".scratch" / "world-publish" / "work" / "daily.lock"   # world_publish.daily's, stale after 12 h
+
+
+def publishing() -> bool:
+    """the loop publishes after RUNNING is gone (planet_store_day.publish): its daily lock, if fresh, says so"""
+    return PUBLISH_LOCK.exists() and time.time() - PUBLISH_LOCK.stat().st_mtime < 12 * 3600
+
+
 def gate_ok(w: Path, day: str) -> bool:
     for g in (w / "days" / day / "gate.json", w / "counts" / day / "gate1101.json"):
         if g.exists() and read_json(g).get("ok"):
@@ -241,6 +249,9 @@ def cutover(release: str) -> None:
         log("HOLD written")
     if loop_alive():
         raise SystemExit("the world loop is running (RUNNING): wait until it ends its day")
+    if publishing():
+        raise SystemExit(f"the loop's publish is running ({PUBLISH_LOCK}; RUNNING goes before it): wait for its "
+                         f"'publish:' line in logs/planet-store.log")
     d = store_day()
     if not done(p, "seed-day"):
         wd = world_day(old)

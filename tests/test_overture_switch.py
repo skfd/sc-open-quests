@@ -87,3 +87,16 @@ class Switch(unittest.TestCase):
         with self.assertRaises(SystemExit) as e:
             osw.adopt("2099-01-01.0")
         self.assertIn("cutover", str(e.exception))
+
+    def test_a_fresh_publish_lock_says_the_loop_still_publishes(self):
+        lock = Path(self.tmp.name) / "daily.lock"
+        old, osw.PUBLISH_LOCK = osw.PUBLISH_LOCK, lock
+        try:
+            self.assertFalse(osw.publishing())
+            lock.write_text("1", encoding="utf-8")
+            self.assertTrue(osw.publishing())
+            import os
+            os.utime(lock, (0, 0))   # older than 12 h: a dead run's
+            self.assertFalse(osw.publishing())
+        finally:
+            osw.PUBLISH_LOCK = old
