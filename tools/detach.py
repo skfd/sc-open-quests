@@ -1,6 +1,6 @@
 """Start a command fully detached: no console, its own process group (no Ctrl+C reaches it), out of the caller's job.
-usage: python tools/detach.py LOG CWD CMD...  (stdout and stderr appended to LOG; prints the pid). 11-27: a job
-started with Start-Process + cmd /c, or from a tool call, can die when its console or job goes; this one cannot."""
+usage: python tools/detach.py LOG CWD CMD...  (stdout and stderr appended to LOG; prints the pid). A long job (the
+switch's prepare and cutover) so outlives the tool call or shell that started it, which a background job does not (2 h)."""
 import subprocess
 import sys
 
