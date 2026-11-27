@@ -53,12 +53,11 @@ def _log(msg):
 
 
 def quiet(ahead_minutes: int = 0):
-    """no engine starts in (or runs into) the daily update's window: world_cells.quiet"""
-    tools = str(ROOT / "tools")
-    if tools not in sys.path:      # once: this is called for every engine, and a pool's workers get sys.path whole
-        sys.path.insert(0, tools)
-    import world_cells
-    world_cells.quiet(ahead_minutes)
+    """no wait: the world day kept out of the city run's window (world_cells.quiet, backfill_history.QUIET, 11:55-14:15
+    local) while that run counted the cities at 12:15; its task was deleted on 2026-11-26 and the world's day counts the
+    cities, so the window protects nothing and cost 11-27 2.4 h before the store's update (owner, 11-27: "Remove it").
+    Kept as the one place a future window would go; the callers' ahead_minutes say how long each step runs"""
+    return None
 
 
 def files_of(w: Path) -> list[dict]:
