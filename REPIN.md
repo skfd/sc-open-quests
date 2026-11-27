@@ -96,8 +96,9 @@ either: old snapshots keep them, the site shows them while the newest registry h
 
 ## 6. Write it down, merge, count
 
-- `engine/README.md` (what changed in the vendoring, stubs, the port list), `DESIGN.md` (a dated
-  "Repin to vX.Y" entry: what the release changed for the counts), `HANDOFF.md` status,
+- `engine/README.md` (what changed in the vendoring, stubs, the port list), `design/topics/repin-to-streetcomplete-vX-Y.md`
+  (a dated "Repin to vX.Y" entry: what the release changed for the counts) with its line in `DESIGN.md`'s index,
+  `HANDOFF.md`'s Now/Next edited in place,
   `tools/sc-harness/README.md` (the run's timings and any new gotcha).
 - Merge to main, without a data commit on the branch (the daily "data" commits would conflict with
   it in the generated history files). From main, `engine/gradlew installDist` and `test` first (a new

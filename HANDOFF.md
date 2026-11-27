@@ -4,7 +4,8 @@ Read first. This file holds only what is live, **rewritten in place** (never app
 when it was last true. The story behind each item is in [journal/](journal/README.md). What the project is for:
 [README.md](README.md), "Goals" (the original brief, verbatim). Release 1 = daily world updates with 30 published days,
 12-01 the earliest date (owner, 11-24); release 2 = the world's monthly backfill
-([journal/2026-11-16-release-goals.md](journal/2026-11-16-release-goals.md)).
+([journal/2026-11-16-release-goals.md](journal/2026-11-16-release-goals.md)). Standing rule: anything published counts
+every quest, never an easier subset (DESIGN.md, "Don't").
 
 ## Now
 
@@ -55,8 +56,8 @@ when it was last true. The story behind each item is in [journal/](journal/READM
 
 ## Next, in order
 
-1. **After 5e's proof:** `python tools/overture_switch.py prepare 2026-11-18.0` (new folders only; only between world days
-   or under the HOLD; DuckDB never beside engines: the 11-23 commit-limit failure). Then the f47 canary on the new list
+1. **After 5e's proof:** `python tools/overture_switch.py prepare 2026-11-18.0` (the tool is built and merged
+   in 06ac3b7d4, never run; new folders only; only between world days or under the HOLD; DuckDB never beside engines: the 11-23 commit-limit failure). Then the f47 canary on the new list
    and a publish dry run counting deletes (as of 11-26 19:45).
    [journal/2026-11-26-the-12-01-switch-to-overture-11-18-0-mapped-not-built.md](journal/2026-11-26-the-12-01-switch-to-overture-11-18-0-mapped-not-built.md)
 2. **The first world day after the HOLD is lifted:** check it with the list "To check on the first world day after the HOLD
