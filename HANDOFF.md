@@ -4844,3 +4844,10 @@ store's day D).**
   idle laptop stands still the same way. Proposal for the owner, not built: the loop holds that request while RUNNING exists.
 - **22:55:** the laptop slept 18:24-22:52 and the proof stood still; it runs again under a keep-awake helper, and 5e now expects
   `RESULT.txt` about 07:00 on 11-27. `prepare` still waits.
+- **Proof progress (00:35 on 11-27):** A1 (kill in tier 1, 3 engines kept), A2 (kill in tier 2 old: the cover reused in 9 s, 128
+  tier 1 engines kept), A3 (**PAUSE: the child ended 58 s after it, at the next group's read; the engines running finished and
+  were kept, 10 -> 14; no engine left**), A4 (meant mid-delta, but the delta took about 7 min, not 13, so the kill fell in the
+  note engines, 121 of 128 kept), A5 (its trigger already true: killed at its start, no engine alive, nothing to end), A6 to the
+  end. **Supplement C** (`proof_c.py`, chained by `chain-c.ps1` pid 19716 to start when the harness exits, keep-awake of its
+  own): C1 killed inside the delta, C2 a python-only kill with note engines alive then `end_orphans`, C3 to the end; held against
+  B's fingerprint (`RESULT-C.txt`); B's world.json and day.json put back only if C equals B.
