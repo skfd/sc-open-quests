@@ -70,3 +70,5 @@ store's day D).**
   with places; `tools/world_publish.py` names its `report.json` in a docstring. Asked the owner whether it may go.
 - 5e's note that two clean runs number a day's new place sets differently does not touch the switch's `compare`: it sums
   counts by part name (`open_by_part`), never by set id.
+- **05:45, the owner (wizard):** "Wait for 11-26 (Recommended)": nothing deleted; prepare runs after the HOLD is lifted and
+  11-26's store_tail frees its space, in a gap between world days.

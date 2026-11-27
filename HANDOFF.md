@@ -58,8 +58,8 @@ every quest, never an easier subset (DESIGN.md, "Don't").
 
 1. **`python tools/overture_switch.py prepare 2026-11-18.0` waits for disk (as of 11-27 05:40):** C: has 34 GiB free;
    prepare writes about 14 GB (6.7 GB pull, 5.5 GB parts.cache, places). It runs once 11-26's store_tail frees about 70 GB
-   (after the owner lifts the HOLD), or sooner if the owner lets `.scratch/planet/world-places` go (the 11-13 count with
-   places, 64 GB; asked 11-27). Built and merged in 06ac3b7d4, never run; new folders only; only between world days or
+   (after the owner lifts the HOLD), in the gap before the next world day; owner, 11-27 05:45: wait for 11-26, delete
+   nothing (`.scratch/planet/world-places`, 64 GB, stays). Built and merged in 06ac3b7d4, never run; new folders only; only between world days or
    under the HOLD; DuckDB never beside engines. Then the f47 canary on the new list and a publish dry run counting deletes.
    [journal/2026-11-26-the-12-01-switch-to-overture-11-18-0-mapped-not-built.md](journal/2026-11-26-the-12-01-switch-to-overture-11-18-0-mapped-not-built.md)
 2. **The first world day after the HOLD is lifted (take 11-27, not 11-26: 11-26's finish ran in the proof, its lines are in
