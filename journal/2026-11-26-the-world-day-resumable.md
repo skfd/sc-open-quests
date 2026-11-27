@@ -57,10 +57,10 @@
   world.bin, place-sets, counts.json, counts.npz). `canon.py` on B's and R2's copies: both tables hold the same 1,795,925 parts
   and 7,213,113 sets as sets of names, numbered in another order from part 1,784,532 and set 6,993,147 (the day's new ones);
   f67 and f110 equal in every field but `place`, which differs in 185 and 165 rows, **equal up to numbering**. So the numbering
-  of a day's new place sets is not reproducible run to run (the order the engine lists a dump's sets in), cache or not; A's
+  of a day's new place sets is not reproducible run to run (cause unconfirmed: probably the order an engine lists a dump's sets in), cache or not; A's
   difference from B is that kind. A's own files were gone by then (B rewrote them), so A against B up to numbering is inferred
-  from R1 and R2, not measured. The counts files differ with the numbering; that they are equal up to it is inferred from the
-  rows, not checked.
+  from R1 and R2, not measured. The counts files differ with the numbering only: checked 05:05, B's and R2's 27,772,395 count rows
+  equal by part name, quest and measures.
 - **Supplement C (04:20-05:02, against R2): EQUAL, 263 of 263.** C1 killed inside tier 2's delta (checked: the delta's own line
   not yet written), C2 a python-only kill while note engines ran (8 note markers removed so they ran again): **the note engine
   died with its python** (0 alive right after), so `end_orphans` found nothing; its ending of a live orphan is untested on
@@ -69,3 +69,8 @@
 - **What the proof shows:** a finish stopped anywhere (tier 1, tier 2 old, tier 2 new by PAUSE, the delta, the note engines)
   and resumed ends byte for byte where an uninterrupted run on the same engine outputs ends (R1, C); engines rerun after a
   stop can renumber a day's new place sets, as any two runs do (B, R2). A late stop costs about 18 min (A6, C3).
+- **Closing (05:10 on 11-27):** the resume state checked read-only (store at 11-26 gen 25, node file 11-25, world 11-26,
+  `finished`, the 11-26 Europe clip pinned): the next start resumes at the gate. `end_orphans`' selection tested on a faked
+  process list (`tests/test_day_cache.py`, 13 tests). The settled design: `design/topics/the-world-day-resumable.md`, with what is
+  tested only with mocks or not at all. `B-keep/` and `R2-keep/` deleted after the comparisons. Read order for the result:
+  `.scratch/resume-proof/README.txt`.

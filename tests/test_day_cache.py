@@ -191,5 +191,39 @@ class Loop(unittest.TestCase):
         self.assertIn("owner, 18:00", self.lines[-1])
 
 
+class Orphans(unittest.TestCase):
+    """end_orphans picks what to end from the process list: the dead run's descendants (through a shell) and engines
+    naming the days' work, only python/java/tilestore/osmium, never this run or its parents"""
+
+    def test_what_is_ended(self):
+        me = os.getpid()
+        work = str(PSD.WDAYS / "2026-11-26" / "work" / "t2" / "groups" / "f3" / "new")
+        procs = [
+            {"ProcessId": 1, "ParentProcessId": 0, "Name": "explorer.exe", "CommandLine": ""},
+            {"ProcessId": 2, "ParentProcessId": 1, "Name": "python.exe", "CommandLine": "python tests"},
+            {"ProcessId": me, "ParentProcessId": 2, "Name": "python.exe", "CommandLine": f"python {work}"},
+            {"ProcessId": 101, "ParentProcessId": 100, "Name": "python.exe", "CommandLine": "multiprocessing spawn"},
+            {"ProcessId": 102, "ParentProcessId": 101, "Name": "cmd.exe", "CommandLine": "cmd /c engine.bat"},
+            {"ProcessId": 103, "ParentProcessId": 102, "Name": "java.exe", "CommandLine": "java -Xmx8g"},
+            {"ProcessId": 104, "ParentProcessId": 100, "Name": "notepad.exe", "CommandLine": "notepad"},
+            {"ProcessId": 200, "ParentProcessId": 1, "Name": "tilestore.exe", "CommandLine": f"tilestore read --out {work}"},
+            {"ProcessId": 300, "ParentProcessId": 1, "Name": "java.exe", "CommandLine": "java -jar other.jar"},
+        ]
+        calls = []
+
+        def fake_run(args, **kw):
+            calls.append(args)
+            if args[0] == "powershell":
+                return SimpleNamespace(stdout=json.dumps(procs), returncode=0)
+            return SimpleNamespace(stdout="", returncode=0)
+
+        lines = []
+        with mock.patch.object(PSD.subprocess, "run", side_effect=fake_run), mock.patch.object(PSD, "log", lines.append):
+            PSD.end_orphans(100)
+        ended = sorted(int(a[3]) for a in calls if a[0] == "taskkill")
+        self.assertEqual(ended, [101, 103, 200])   # not the shell, not notepad, not this run, not an unrelated java
+        self.assertEqual(len(lines), 3)
+
+
 if __name__ == "__main__":
     unittest.main()

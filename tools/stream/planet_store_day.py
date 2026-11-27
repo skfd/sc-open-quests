@@ -18,7 +18,11 @@ For each day D (the store, its node file and the world all at D-1):
      extract drops), then `compact --min-dead 0.25` and `punch`; the clip of D unpinned, the day's work deleted
      (its day.json and gate.json kept in W/days/<D>/).
 A run that stops after the update resumes: with the store at D and the world at D-1 it puts the world back from
-`before/` and runs `finish` again from `day.pkl`; with both at D and the node file at D-1 it goes on from the gate.
+`before/` and runs `finish` again from `day.pkl`, reusing what the stopped run left done behind its markers (the cover,
+every engine's output: tools/stream/day_cache.py), so only the world writes are replayed (about 18 min on 11-26);
+with both at D and the node file at D-1 it goes on from the gate. PAUSE beside the store stops a running day at its
+next engine start or step, with no STOPPED (day_cache); a run that takes over a dead RUNNING first ends the dead
+run's leftover engines and readers (end_orphans).
 Any failure writes STOPPED beside the store and every later run refuses until a person removes it. Two things end a
 run with no STOPPED, because nothing is wrong and the next run goes on: a gate region whose engine the machine cannot
 spare the heap for after the wait (run.MemoryBusy; the day resumes at its gate), and a new day the disk has no room

@@ -9,15 +9,17 @@ every quest, never an easier subset (DESIGN.md, "Don't").
 
 ## Now
 
-- **World dailies stopped under the HOLD (as of 11-27 00:35).** `.scratch/planet-cut/HOLD` placed 11-26 18:02 (owner:
-  "i am going offline soon ... stop now"); its note names the stop. The loop task `kk-SCOpenQuests-planetstore` (daily
-  14:45, 12 h limit) logs "held" and takes no day while HOLD exists. Store and world gated through 11-25; day 11-26 was
-  stopped mid tier 2 and is now the resume proof's (next item). **Lifting the HOLD is the owner's word alone**, and not
-  before the proof is done. `.scratch/planet-cut/PAUSE` is the softer stop built 11-26 (the day stops at the next engine
-  start or step); whether one is placed now: unconfirmed. Restart: delete HOLD (and PAUSE), then
-  `schtasks /Run /TN kk-SCOpenQuests-planetstore`.
-  [journal/2026-11-26-the-overture-release-tool.md](journal/2026-11-26-the-overture-release-tool.md) (HOLD lifted 16:58,
-  PAUSED 18:02), [journal/2026-11-26-the-world-day-resumable.md](journal/2026-11-26-the-world-day-resumable.md) (PAUSE).
+- **World dailies held (as of 11-27 05:10).** `.scratch/planet-cut/HOLD` placed 11-26 18:02 (owner: "i am going offline
+  soon ... stop now"); the loop task `kk-SCOpenQuests-planetstore` (daily 14:45, 12 h limit) logs "held" and takes no day while
+  it exists. Store at 11-26 (generation 25), node file at 11-25, world at 11-26 with `finished` written (the resume proof's
+  R2, an uninterrupted run): checked 05:05, the next start takes the resume path, skips the finish, runs the gate, then
+  store_tail, facts, publish, and 11-27 if its inputs are there. **Lifting the HOLD is the owner's word alone.** No PAUSE
+  placed. Restart: delete HOLD, then `schtasks /Run /TN kk-SCOpenQuests-planetstore`.
+  **C: has 38 GB free (as of 11-27 05:10)**, under tilestore's 40 GiB floor: 11-26's `before/` (all of 11-25's rows, the world
+  files all rewritten) and its 22.5 GB of work, which store_tail deletes once 11-26 passes its gate. Until then two tests that
+  check the floor fail (`test_tilestore_update`, a `state_checkpoint` link test), and `overture_switch.py prepare` (7 GB pull)
+  and the cutover (about 80 GB peak) have less room than planned.
+  [journal/2026-11-26-the-world-day-resumable.md](journal/2026-11-26-the-world-day-resumable.md)
 - **The world day is resumable and proven (as of 11-27 05:05; built c3b998fd1).** A finish stopped anywhere and resumed ends
   byte for byte where an uninterrupted run on the same engine outputs ends (R1, supplement C: 263 of 263); a late stop costs
   about 18 min, not the 2.8 h finish. Two clean runs of a day can number its new place sets differently (B against R2: equal up
@@ -58,7 +60,8 @@ every quest, never an easier subset (DESIGN.md, "Don't").
    in 06ac3b7d4, never run; new folders only; only between world days or under the HOLD; DuckDB never beside engines: the 11-23 commit-limit failure). Then the f47 canary on the new list
    and a publish dry run counting deletes (as of 11-26 19:45).
    [journal/2026-11-26-the-12-01-switch-to-overture-11-18-0-mapped-not-built.md](journal/2026-11-26-the-12-01-switch-to-overture-11-18-0-mapped-not-built.md)
-2. **The first world day after the HOLD is lifted:** check it with the list "To check on the first world day after the HOLD
+2. **The first world day after the HOLD is lifted (take 11-27, not 11-26: 11-26's finish ran in the proof, its lines are in
+   `.scratch/resume-proof/R2.log`, not `logs/planet-store.log`, and a resumed day writes no steps.json):** check it with the list "To check on the first world day after the HOLD
    is lifted" (the four speed-ups installed 11-26: engine room waits, `points` seconds, timers, the day's wall against
    11-25's 12,643 s), then `rename_places.py check` (as of 11-26).
    [journal/2026-11-26-performance-review-of-the-traces-and-logs.md](journal/2026-11-26-performance-review-of-the-traces-and-logs.md)
