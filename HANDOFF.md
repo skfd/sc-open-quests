@@ -18,14 +18,13 @@ every quest, never an easier subset (DESIGN.md, "Don't").
   `schtasks /Run /TN kk-SCOpenQuests-planetstore`.
   [journal/2026-11-26-the-overture-release-tool.md](journal/2026-11-26-the-overture-release-tool.md) (HOLD lifted 16:58,
   PAUSED 18:02), [journal/2026-11-26-the-world-day-resumable.md](journal/2026-11-26-the-world-day-resumable.md) (PAUSE).
-- **Session sc-open-quests-5e's resume proof on day 11-26 (as of 11-27 00:35: running; expected end about 07:00 on 11-27,
-  unconfirmed).** Harness pid 27752 (`.scratch/resume-proof/proof.py`, log `proof.log`, its pid in RUNNING), keep-awake
-  helper pid 14192 (the laptop's Modern Standby froze it 18:24-22:52). Run A kills and resumes 11-26's finish at five
-  points; B is the uninterrupted day with `SCOQ_DAY_CACHE=0`; result in `RESULT.txt`. Supplement C (`proof_c.py`,
-  chained by `chain-c.ps1` pid 19716, starts when the harness exits) kills inside the delta and tests `end_orphans`;
-  result `RESULT-C.txt`, and B's world.json/day.json are put back only if C equals B. No gate, store_tail or publish;
-  HOLD stays. **Check:** both RESULT files in `.scratch/resume-proof/`. If it died: read `proof.log`, `A*.out`,
-  `B.out`; rerunning is safe (each run restores from `before/`). Nothing else may run DuckDB, builds or engines beside it.
+- **Session sc-open-quests-5e's resume proof on day 11-26 (as of 11-27 02:55: R2 running, ends about 04:20).** A (killed and
+  resumed 5 times) against B (uninterrupted): **DIFFER in 6 of 263** (three world.bin, place-sets, counts). **R1, the
+  replay from B's kept outputs: EQUAL to B, 263 of 263**, so the resume path is exact; A's difference came from engine outputs
+  made in other runs. R2 (a second uninterrupted run, `proof_r.py`, keep-awake running) tells whether two clean runs differ the
+  same way; `canon.py` then compares up to place-set numbering. The world after R2 is an uninterrupted 11-26 with `finished`
+  written. No gate, store_tail or publish; HOLD stays; nothing else may run DuckDB, builds or engines beside it. If it died:
+  `.scratch/resume-proof/proof.log`, `R2.out`; rerunning a finish is safe (it restores from `before/`).
   [journal/2026-11-26-the-world-day-resumable.md](journal/2026-11-26-the-world-day-resumable.md)
 - **Task `kk-SCOpenQuests-overture`, daily 09:30 from 11-27 (as of 11-26 13:30):** `overture_release.py watch >>
   logs/overture.log`. 11-18.0 is already judged and staged, so it should find nothing new before 12-16.0 (unconfirmed

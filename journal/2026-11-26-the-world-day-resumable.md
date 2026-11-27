@@ -41,3 +41,15 @@
   end. **Supplement C** (`proof_c.py`, chained by `chain-c.ps1` pid 19716 to start when the harness exits, keep-awake of its
   own): C1 killed inside the delta, C2 a python-only kill with note engines alive then `end_orphans`, C3 to the end; held against
   B's fingerprint (`RESULT-C.txt`); B's world.json and day.json put back only if C equals B.
+- **A ended (00:53 on 11-27); B and the result (02:26).** A6, with every step kept, replayed the whole finish in 1,064 s.
+  B (uninterrupted, cache off) took 5,511 s. **RESULT.txt: DIFFER, 6 of 263**: `files/f0`, `f67`, `f110` `world.bin`,
+  `place-sets.json`, `counts/2026-11-26/counts.json` and `counts.npz`. Every other world.bin, every keys file, touched, rects and
+  both records (minus seconds) equal.
+- **Supplement C stopped (02:27)**, so it would not overwrite B's world, which the diagnosis needs. C1's restore had begun:
+  f0-f7 went back to 11-25 (B's f0 lost) while world.json stayed at D, a half-restored world that the next finish puts back whole.
+  B's f67, f110, place-sets and counts kept in `.scratch/resume-proof/B-keep/` (hard links).
+- **R1 (02:29-02:49, `proof_r.py`): the finish replayed from B's kept outputs, cache on: EQUAL to B, 263 of 263.** Given the
+  same engine outputs, the resumed path reproduces the uninterrupted day byte for byte, place sets and counts included. So A
+  differed because some of its engine outputs were made in other runs than B's. **R2** (from 02:49): a second uninterrupted run,
+  cache off, to see whether two clean runs of the same day differ the same way; then `canon.py` compares B and R2 up to place-set
+  numbering (`R2-keep/`).
