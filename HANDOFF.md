@@ -84,12 +84,16 @@ every quest, never an easier subset (DESIGN.md, "Don't").
    judge: `claude-opus-5-5` at high effort), the operator gets only exceptions; switch on 2027-01-01 (as of 11-26; owner,
    about 12:05: "on first of the month we switch it").
    [journal/2026-11-26-the-overture-release-tool.md](journal/2026-11-26-the-overture-release-tool.md)
+7. **The Map tab as a navigation tool, after the 12-01 switch** (as of 11-27; owner chose it 10:45): Overture outlines
+   down to cities as one PMTiles file on sc-data, MapLibre, a tap gives the chain of places. Its sentence ("the rest of
+   the world is not counted yet") stays until then (owner). Design:
+   [design/topics/the-map-tab-a-navigation-tool.md](design/topics/the-map-tab-a-navigation-tool.md)
 
 ## Parked
 
 One line each in [BACKLOG.md](BACKLOG.md): the world's monthly backfill (release 2) and doing it on several machines,
 retiring the Python tile store, a native Windows osmium, other validators' backlogs, the blog, ended-place pages and
-successor links, the Overture tool's same-name gap, and the performance review's leftovers.
+successor links, the Overture tool's same-name gap, the performance review's leftovers, and statistics on a map.
 
 ## Where things are
 

@@ -22,3 +22,10 @@ level as PMTiles after the 12-01 Overture switch.
 - Shading: "not doing stats /shaded design will take a step back".
 
 So the stats map is parked (BACKLOG.md) and the tab becomes a navigation tool; how, to be proposed next.
+
+**Proposed, 10:40:** bounding boxes now (the name layer's, overlapping near borders) or real outlines as one PMTiles
+file after the 12-01 switch; depth; a "Near me" button. Reverse geocoding ruled out (an outside service handed readers'
+positions; OSM boundaries are not Overture places).
+
+**The owner, 10:45:** "Real outlines, after 12-01 (Recommended)", "Down to cities (Recommended)", "Near me": "Not now".
+Settled in design/topics/the-map-tab-a-navigation-tool.md; HANDOFF Next item 7.

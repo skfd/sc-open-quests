@@ -128,3 +128,4 @@ code comment citing `DESIGN.md, "<heading>"` still finds its topic here. A cited
 - World places published: stable paths (schema 2) (2026-11-21; owner: "lets do the stable urls and proper fix") → [design/topics/world-places-published-stable-paths.md](design/topics/world-places-published-stable-paths.md)
 - Share previews: a Worker's text for every place (2026-11-23; owner: "build it", text only, $5 a month agreed) → [design/topics/share-previews-a-workers-text-for-every-place.md](design/topics/share-previews-a-workers-text-for-every-place.md)
 - The world day resumable (2026-11-27) → [design/topics/the-world-day-resumable.md](design/topics/the-world-day-resumable.md)
+- The Map tab: a navigation tool (2026-11-27; owner: "map should be a tool to find a region down to some level of accuracy") → [design/topics/the-map-tab-a-navigation-tool.md](design/topics/the-map-tab-a-navigation-tool.md)
