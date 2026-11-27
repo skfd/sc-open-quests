@@ -108,3 +108,5 @@ store's day D).**
   `files/*`: world.bin 52.6 GiB, world-keys 7.9, notes 2.2); even with the old world.bin gone, about 110 GiB, under the 115 a day
   needs. **10:48, the owner:** "Delete files/ now (Recommended)": `.scratch/planet/world-places/files/` (128 folders, the 11-13
   count's world.bin) deleted; its report.json (crosscheck), plan.json (test_world_tier2) and places.json stay. 178 GiB free.
+- **11:00, the owner, on a full dress rehearsal of the cutover:** "we will do it live, no rehersal please". The cutover's first
+  run on real data is 12-01's.

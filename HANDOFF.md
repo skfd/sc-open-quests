@@ -52,7 +52,7 @@ every quest, never an easier subset (DESIGN.md, "Don't").
 ## Next, in order
 
 1. **The 12-01 switch: `prepare` done, a one-file canary run; the cutover chain and `adopt` never run on real data
-   (as of 11-27 10:55).** The owner chose the start time (Next 3).
+   (as of 11-27 11:00).** The owner chose the start time (Next 3) and no dress rehearsal: "we will do it live".
    `prepare 2026-11-18.0` done 10:26 (every step; `status` shows them): 1,073,190 places, plan check equal (128 files,
    2,244 cells), partcache 5.8 GB. Canary rehearsed on f47 at 11-26, old against new place list on the same cut
    (`.scratch/switch/2026-11-18.0/canary.py`, `REPORT.txt`): 212 of 13,405 parts differ (1.6%), open quests +0.015%.
