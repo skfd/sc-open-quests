@@ -88,3 +88,10 @@
   ended). Also found: prepare ended 11:54:35 and the store's update started about 14:19: `world_day.quiet` still waits out
   `backfill_history.QUIET` (16:55-19:15 UTC), the deleted 12:15 city run's window. Owner (wizard): "Remove it": branch
   `no-city-window` (6ace25759), to merge after the day. Publish at 14:54 exit 0 (no new gated day).
+- **11-27 done (18:15 check).** Resumed 15:49; finish 5,063 s (its seconds part the stopped run's: the cover kept);
+  gate PASS 17:19 (+12 open against the clip, worst city 0.00177%), subcmp/why 37 of 37 explained, done 17:27, published
+  17:42 exit 0; 181 GiB free. **Partial first-day reading (the clean one is 11-28):** engine room tier 1 most 4 at once,
+  waited 32 s summed; tier 2 old most 4, 1,928 s; tier 2 new most 4, 2,078 s; notes most 4, 20 s (11-25: tier 2 waited
+  6,190 s a phase at 1-2 alive). Given MB medians: tier 1 4,096 (max 7,168), tier 2 6,144 (max 8,192), notes 3,072 (max
+  5,120). No "failed for memory" line. `no-city-window` merged 7c2ee1f7f after the run ended; suite 444 passed, 1
+  skipped; its worktree and branch removed.
