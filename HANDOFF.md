@@ -79,7 +79,7 @@ every quest, never an easier subset (DESIGN.md, "Don't").
    first contact (11-27). The count is one engine at a time (11-17: 127 of 128 starts, 2.4 h at 57 GiB commit free;
    11-27's canary saw 43 GiB, a 30 GB heap fits). **Abort rule:** a step fails, or compare is not reached by about 23:00:
    leave the HOLD, `adopt` not run, so the old world stays live; a rerun resumes at the markers (`status`). If the store
-   moved meanwhile, the seed-day check stops it: clear the switch markers from `pin` on and `cut/storecut.json`, then rerun.
+   moved meanwhile, the seed-day check stops it: clear the switch markers from `seed-day` on and `cut/storecut.json`, then rerun.
    [journal/2026-11-26-the-12-01-switch-to-overture-11-18-0-mapped-not-built.md](journal/2026-11-26-the-12-01-switch-to-overture-11-18-0-mapped-not-built.md)
 4. **Release day (12-01 at the earliest):** redraw the share card (`python design/project_card.py && python
    design/render_share_card.py`, in a loop gap), look at `docs/img/share-card.png`, commit; then write what redraws it
