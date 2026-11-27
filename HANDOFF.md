@@ -66,8 +66,8 @@ every quest, never an easier subset (DESIGN.md, "Don't").
    [journal/2026-11-26-performance-review-of-the-traces-and-logs.md](journal/2026-11-26-performance-review-of-the-traces-and-logs.md)
 3. **The 12-01 cutover to Overture 11-18.0: on 12-01, after the loop's 12-01 day ends (about 18:15), at D = 12-01,
    watched by the owner (owner, 11-27 10:45).** From the main checkout, detached (background jobs die at 2 h; start it
-   with DETACHED_PROCESS + CREATE_NEW_PROCESS_GROUP, as 11-27's `prepare` was): `.scratch/overture/.venv/Scripts/python.exe
-   -u tools/overture_switch.py cutover 2026-11-18.0 >> logs/switch.log` (writes the HOLD, refuses while the loop runs or
+   with `python tools/detach.py logs/switch.log . .scratch/overture/.venv/Scripts/python.exe -u tools/overture_switch.py
+   cutover 2026-11-18.0`, as 11-27's `prepare` was) (writes the HOLD, refuses while the loop runs or
    the store's day is not the world's gated day; about 4.5 h: storecut, notes, canary, count, seed, counts, gate, join,
    compare), then `adopt 2026-11-18.0`, commit what it names, and the owner lifts the HOLD (before midnight). After the new
    world's gate at D passes, the old world's `world.bin` files go (owner, 11-26). Disk: 178 GiB free on 11-27 10:50 after
