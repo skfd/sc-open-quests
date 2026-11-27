@@ -51,12 +51,13 @@ every quest, never an easier subset (DESIGN.md, "Don't").
 
 ## Next, in order
 
-1. **`overture_switch.py prepare 2026-11-18.0` running (as of 11-27 09:52)**, detached (cmd pid 45528, venv python), log
-   `logs/switch.log`, a marker per step in `.scratch/planet/world-2026-11-18.0/switch/`. **Check:** `python
-   tools/overture_switch.py status 2026-11-18.0`; if it died, rerun the same command (done steps are skipped). It must end
-   before the loop's 14:45 run (DuckDB never beside engines); if not, a HOLD. Disk: 151 GiB free before it (11-26's
-   store_tail, then the regional extracts pruned to their newest file, 35 GB, owner 09:50). Then the f47 canary on the new
-   list and a publish dry run counting deletes.
+1. **The 12-01 switch is prepared and rehearsed (as of 11-27 10:40); waits for the owner's sign-off and a start time.**
+   `prepare 2026-11-18.0` done 10:26 (every step; `status` shows them): 1,073,190 places, plan check equal (128 files,
+   2,244 cells), partcache 5.8 GB. Canary rehearsed on f47 at 11-26, old against new place list on the same cut
+   (`.scratch/switch/2026-11-18.0/canary.py`, `REPORT.txt`): 212 of 13,405 parts differ (1.6%), open quests +0.015%.
+   Publish: the name layer changes 729 place files and at most 563 children files; 630 published places end (kept
+   frozen); with ~1.6% of places moving, the first day after the switch is about 16k files above a normal day's ~60k,
+   under DAY_CAP 200k (estimate; the events cache rebuilds once, the release stamp changes).
    [journal/2026-11-26-the-12-01-switch-to-overture-11-18-0-mapped-not-built.md](journal/2026-11-26-the-12-01-switch-to-overture-11-18-0-mapped-not-built.md)
 2. **The first world day after the HOLD is lifted (take 11-27, not 11-26: 11-26's finish ran in the proof, its lines are in
    `.scratch/resume-proof/R2.log`, not `logs/planet-store.log`, and a resumed day writes no steps.json):** check it with the list "To check on the first world day after the HOLD

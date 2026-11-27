@@ -82,3 +82,23 @@ store's day D).**
   new-brunswick, newfoundland-and-labrador, nova-scotia, quebec, saskatchewan, ukraine (Ontario, Europe, planet, notes
   untouched): 35 GB, 150.9 GiB free.
 - **09:52:** `prepare 2026-11-18.0` started detached (venv python, `logs/switch.log`), 162 GB free by its own count.
+- **Prepare's three fixes (09:55-10:06):** squares needs shapely (system python only; the venv lacks it), so squares and
+  names run under system python; places under system python's duckdb 1.5.6 died twice at ~150 s with "INTERRUPT Error:
+  Interrupted!" in `fetchmany` (also fully detached, so not a console Ctrl+C); under the venv's duckdb 2.0 it ran out at the 8GB
+  limit in 9 s; with `memory_limit = '24GB'` (60 GB RAM free) it ran in 784 s. Detached jobs now start through a launcher
+  with DETACHED_PROCESS, CREATE_NEW_PROCESS_GROUP and breakaway from the job.
+- **Prepare done 10:26:** pulls 61 s and 134 s; squares 81,883, left out 64,199 (live 63,800); names 59 s (146 cities, city
+  ids as live: Toronto `cdeece264a53` in `ca/ec52fcb974ff.json` both); region files 4,292 against 4,290 (Angola's regions
+  redrawn: `ao/a2de740d5e25` ends, three begin; `hk/fe481f58e0b9` ends; `ws/ce87e16f04e4` begins); places 1,073,190, 403 MB
+  (395 MB for 10-21.0); plan 128 files, 2,244 cells, checked equal to the old plan; partcache 5,806 MB in 344 s. 125 GiB free.
+- **adopt-names keeps ended region files** (`keep_ended`): replacing docs/places would have dropped the two ended ones from
+  the site; the owner's "nothing deleted" keeps them as they were.
+- **Canary on f47 (10:26-10:34):** storecut f47 at 11-26 (0.53 GiB, 23 s), notes, then f47 counted with the old and the new
+  place list on the same cut and notes: old 13,422 parts (55 s), new 13,463 (49 s); in both 13,405, equal in every quest
+  13,193, differing 212; only old 17, only new 58; open summed over parts 60,490,634 against 60,499,562; f47 has no cities;
+  largest moves -444 and +758.
+- **Publish estimate:** against `bucket.json` (969,503 place files, 93,515 children files): the new name layer changes 729
+  place files (name 421, subtype 287, both 20, country 1), parents of 748 places (at most 563 children files); 630 published
+  places are not in the new layer (kept). The series of the ~1.6% of places whose outline moved change too: about 16k files at
+  the world's scale, on top of a day's ~60k; DAY_CAP 200k holds (estimate). The release stamp is in `events.key`, so the first
+  build after adopt rebuilds the events cache from every gated day.
