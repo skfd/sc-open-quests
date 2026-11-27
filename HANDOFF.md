@@ -9,16 +9,12 @@ every quest, never an easier subset (DESIGN.md, "Don't").
 
 ## Now
 
-- **World dailies held (as of 11-27 05:10).** `.scratch/planet-cut/HOLD` placed 11-26 18:02 (owner: "i am going offline
-  soon ... stop now"); the loop task `kk-SCOpenQuests-planetstore` (daily 14:45, 12 h limit) logs "held" and takes no day while
-  it exists. Store at 11-26 (generation 25), node file at 11-25, world at 11-26 with `finished` written (the resume proof's
-  R2, an uninterrupted run): checked 05:05, the next start takes the resume path, skips the finish, runs the gate, then
-  store_tail, facts, publish, and 11-27 if its inputs are there. **Lifting the HOLD is the owner's word alone.** No PAUSE
-  placed. Restart: delete HOLD, then `schtasks /Run /TN kk-SCOpenQuests-planetstore`.
-  **C: has 38 GB free (as of 11-27 05:10)**, under tilestore's 40 GiB floor: 11-26's `before/` (all of 11-25's rows, the world
-  files all rewritten) and its 22.5 GB of work, which store_tail deletes once 11-26 passes its gate. Until then two tests that
-  check the floor fail (`test_tilestore_update`, a `state_checkpoint` link test), and `overture_switch.py prepare` (7 GB pull)
-  and the cutover (about 80 GB peak) have less room than planned.
+- **World dailies running again (as of 11-27 09:21).** The owner, 09:20: "start the day"; HOLD moved to
+  `.scratch/planet-cut/hold-history/HOLD-lifted-20261127-0921`, `kk-SCOpenQuests-planetstore` run by hand (daily 14:45,
+  12 h limit). 09:20 log: "day 2026-11-26: resuming": the finish is skipped (R2's), then gate, store_tail, facts, publish,
+  and 11-27 if its inputs and the disk allow. **C: had 34 GiB free before the gate**; store_tail deletes 11-26's `before/`
+  and work (about 70 GB). A new day needs 115 GiB free (`day_disk_short`), so 11-27 may log "not taken" for disk:
+  unconfirmed. Stop: put back a HOLD (no day) or PAUSE (stops the running day at its next step).
   [journal/2026-11-26-the-world-day-resumable.md](journal/2026-11-26-the-world-day-resumable.md)
 - **The world day is resumable and proven (as of 11-27 05:05; built c3b998fd1).** A finish stopped anywhere and resumed ends
   byte for byte where an uninterrupted run on the same engine outputs ends (R1, supplement C: 263 of 263); a late stop costs

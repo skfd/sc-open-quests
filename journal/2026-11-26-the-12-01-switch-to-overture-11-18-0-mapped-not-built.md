@@ -72,3 +72,6 @@ store's day D).**
   counts by part name (`open_by_part`), never by set id.
 - **05:45, the owner (wizard):** "Wait for 11-26 (Recommended)": nothing deleted; prepare runs after the HOLD is lifted and
   11-26's store_tail frees its space, in a gap between world days.
+- **09:20, the owner:** "start the day". HOLD moved to `.scratch/planet-cut/hold-history/HOLD-lifted-20261127-0921`, the loop
+  task run by hand; it logged "day 2026-11-26: resuming (the store at generation 25, the world at 2026-11-26)". Prepare runs
+  in the gap after 11-26's store_tail.
