@@ -18,6 +18,16 @@ every quest, never an easier subset (DESIGN.md, "Don't").
   cover kept, gate PASS 17:19 (+12, worst city 0.00177%), done 17:27, published 17:42 (exit 0). 181 GiB free after.
   Next day: 11-28 at 14:45, the first without the old city window. Stop: put back a HOLD (no day) or PAUSE (stops the running day at its next step).
   [journal/2026-11-26-the-world-day-resumable.md](journal/2026-11-26-the-world-day-resumable.md)
+- **Power-throttling trial on the world day (as of 11-28 00:30; owner via osmium-windows-fast, brief
+  `~/Code/osmium-windows-fast/journal/2026-11-28-sc-open-quests-throttling-brief.md`).** `tools/stream/qos.py`
+  (bc7d5e680): a watcher in the world day sets every process of it off power throttling when the switch says
+  `high`, and in every mode records each process (`logs/qos/<run>-procs.csv`), the fast/slow cores every 15 s
+  (`W/days/<D>/cores.csv`, `qos.json`) and each engine's CPU seconds (`engines.json` "cpu s"). Days in
+  `data/qos.txt` (gitignored): **11-28 default, 11-29 high, 11-30 high, 12-01 default**, then default. Way back:
+  edit that file, or `SCOQ_QOS=off`. Check after a day: `qos: ...` line in `logs/planet-store.log`, and
+  `processes ... failed 0`. The task already runs BELOW_NORMAL (no `<Priority>`), so `high` changes the throttling
+  flag only. Probe on a real engine passed; untried inside a scheduled run until 14:45 today.
+  [design/topics/the-world-day-off-power-throttling.md](design/topics/the-world-day-off-power-throttling.md)
 - **The world day is resumable (as of 11-27; built c3b998fd1, proven on 11-26).** A stopped finish resumes from what it
   left done behind markers (about 18 min late in the day, not 2.8 h); PAUSE stops a running day at its next step.
   `design/topics/the-world-day-resumable.md` (what is proven, what only mocked).
@@ -65,7 +75,7 @@ every quest, never an easier subset (DESIGN.md, "Don't").
    kept, and the old window held it 2.4 h (window removed: 7c2ee1f7f); nor 11-26: 11-26's finish ran in the proof, its lines are in
    `.scratch/resume-proof/R2.log`, not `logs/planet-store.log`, and a resumed day writes no steps.json):** check it with the list "To check on the first world day after the HOLD
    is lifted" (the four speed-ups installed 11-26: engine room waits, `points` seconds, timers, the day's wall against
-   11-25's 12,643 s), then `rename_places.py check` (as of 11-26).
+   11-25's 12,643 s), then `rename_places.py check` (as of 11-26). 11-28 runs with the qos watcher observing only (`default`, as of 11-28).
    [journal/2026-11-26-performance-review-of-the-traces-and-logs.md](journal/2026-11-26-performance-review-of-the-traces-and-logs.md)
 3. **The 12-01 cutover to Overture 11-18.0: on 12-01, after the loop's 12-01 publish line (about 18:35), at D = 12-01,
    watched by the owner (owner, 11-27 10:45).** From the main checkout, detached (background jobs die at 2 h; start it
@@ -91,24 +101,29 @@ every quest, never an easier subset (DESIGN.md, "Don't").
    world-2026-11-18.0 seeded at 12-01 ends 2027-02-03. 29 tests; full suite 471 passed, 3 skipped in the worktree; merges
    cleanly onto main at 11-27. Open: days joined from the old world after a late switch are judged by the new seed.
    [journal/2026-11-27-the-horizon-guard.md](journal/2026-11-27-the-horizon-guard.md) (on the branch)
-5. **Release day (12-01 at the earliest):** redraw the share card (`python design/project_card.py && python
+5. **Judge the power-throttling trial on 12-02 (as of 11-28):** per engine key (`engines.json` "cpu s", "total s")
+   and per step (`steps.json`) for 11-29/11-30 (`high`) against 11-28/12-01 (`default`), plus the slow cores'
+   share in each day's `cores.csv`; the compare script is not written yet. Then leave the result in
+   osmium-windows-fast's README "Cause 3", "who is affected" (a scheduled headless pipeline), and decide the bare
+   line of `data/qos.txt`.
+6. **Release day (12-01 at the earliest):** redraw the share card (`python design/project_card.py && python
    design/render_share_card.py`, in a loop gap), look at `docs/img/share-card.png`, commit; from then on `run.py site(card=True)`
    (inputs' 11:15 run only) redraws it when the world has a day in a later month (merged 11-27; first automatic
    redraw 12-02, headless Edge under Task Scheduler unchecked). `share-previews` itself was merged 11-26 (as of 11-26).
    [journal/2026-11-10-idea-share-previews-for-links.md](journal/2026-11-10-idea-share-previews-for-links.md)
-6. **Share previews, after the 12-01 switch (as of 11-27 20:20):** rerun `node cloudflare/test/parity.mjs docs
+7. **Share previews, after the 12-01 switch (as of 11-27 20:20):** rerun `node cloudflare/test/parity.mjs docs
    https://sc-data.comentality.com/` (4,091 of 4,091 on 11-27). Live since 11-27; the daily `site` run deploys the
    Worker (`wrangler.jsonc`), the way back is `wrangler.static.jsonc` (`cloudflare/README.md`, "Share previews").
-7. **The city run's clean-up**, not before the HOLD is lifted and a few world days publish cleanly ("docs/ and config/ are
+8. **The city run's clean-up**, not before the HOLD is lifted and a few world days publish cleanly ("docs/ and config/ are
    as deployed; nothing to do", no data commit): `run.py`'s `update`/`download`/`count`/`backfill`, their tests,
    `schedule-add.ps1`, README's Scheduling part; decide `kk-SCOpenQuests-planet` on the way (as of 11-26; owner: "handoff
    the further cleanup").
    [journal/2026-11-26-the-city-runs-clean-up-after-the-world-dailies-run-well.md](journal/2026-11-26-the-city-runs-clean-up-after-the-world-dailies-run-well.md)
-8. **Overture 12-16.0, the first unattended monthly release:** the watcher prepares it (`narrow`, `propose`, `auto`, the
+9. **Overture 12-16.0, the first unattended monthly release:** the watcher prepares it (`narrow`, `propose`, `auto`, the
    judge: `claude-opus-5-5` at high effort), the operator gets only exceptions; switch on 2027-01-01 (as of 11-26; owner,
    about 12:05: "on first of the month we switch it").
    [journal/2026-11-26-the-overture-release-tool.md](journal/2026-11-26-the-overture-release-tool.md)
-9. **The Map tab as a navigation tool, after the 12-01 switch** (as of 11-27; owner chose it 10:45): Overture outlines
+10. **The Map tab as a navigation tool, after the 12-01 switch** (as of 11-27; owner chose it 10:45): Overture outlines
    down to cities as one PMTiles file on sc-data, MapLibre, a tap gives the chain of places. Its sentence ("the rest of
    the world is not counted yet") stays until then (owner). Design:
    [design/topics/the-map-tab-a-navigation-tool.md](design/topics/the-map-tab-a-navigation-tool.md)

@@ -129,3 +129,4 @@ code comment citing `DESIGN.md, "<heading>"` still finds its topic here. A cited
 - Share previews: a Worker's text for every place (2026-11-23; owner: "build it", text only, $5 a month agreed) → [design/topics/share-previews-a-workers-text-for-every-place.md](design/topics/share-previews-a-workers-text-for-every-place.md)
 - The world day resumable (2026-11-27) → [design/topics/the-world-day-resumable.md](design/topics/the-world-day-resumable.md)
 - The Map tab: a navigation tool (2026-11-27; owner: "map should be a tool to find a region down to some level of accuracy") → [design/topics/the-map-tab-a-navigation-tool.md](design/topics/the-map-tab-a-navigation-tool.md)
+- The world day off power throttling: a switch and its readings (2026-11-28; a trial, owner via osmium-windows-fast) → [design/topics/the-world-day-off-power-throttling.md](design/topics/the-world-day-off-power-throttling.md)
