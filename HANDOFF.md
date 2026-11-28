@@ -51,12 +51,15 @@ every quest, never an easier subset (DESIGN.md, "Don't").
 - **Four tasks done 11-27 evening (owner chose them, 20:45):** the share card redraws monthly (merged); the Overture
   tool's same-name gap (merged, class `same-name-kept`); the horizon guard (branch `horizon-guard`, Next 4); the history
   cut rehearsed on Berlin (merged; findings in BACKLOG's release-2 entry).
-- **Rust port, first two steps built and proven equal (as of 11-28 01:20):** branch `rust-world-day` (head 90448855f),
-  worktree `../sc-open-quests-rust-day`, not merged. `stream.read_diff` by `tilestore diffcols` (diff 5189: 104 s to
-  23 s, dicts equal in order on 5189 and 5185) and tier 1's small PBF by `tilestore smallpbf` (5185, 5187, 5189: 0 of
-  5-6M objects differ; 28-72 s to 12-18 s), switches `SCOQ_RUST_DIFF=0` / `SCOQ_RUST_SMALLPBF=0` the way back. Full
-  suite in the worktree 476 passed, 1 skipped. About 2-3 min a day; nothing run inside a real world day yet. Next:
-  merge after the 12-01 cutover (owner's call), then 11-28's `steps.json` picks the next step.
+- **Rust port, first two steps built and proven equal (as of 11-28 01:50):** branch `rust-world-day` (head 1fb824a19),
+  worktree `../sc-open-quests-rust-day`, not merged. `stream.read_diff` by `tilestore diffcols` (104-158 s to 23-24 s,
+  dicts equal in order on 5189 and 5185) and tier 1's small PBF by `tilestore smallpbf` (six diffs, 0 of 5-6.5M objects
+  differ; the engine's rows on both PBFs equal, f4 and f37; cold and Rust first 18 s against Python's 32-39 s warm).
+  Switches `SCOQ_RUST_DIFF=0` / `SCOQ_RUST_SMALLPBF=0`; a binary without the commands falls back to Python with a log
+  line. Full suite in the worktree 477 passed, 1 skipped. About 2-3 min of a 3.5 h day; never run inside a real world
+  day. **To merge (after the 12-01 cutover, owner's call): `cargo build --release` in main's `tilestore/` in a loop
+  gap, then the day after shows "(tilestore diffcols)" on its read-diff line.** Then 11-28's `steps.json` picks the
+  next step.
   [design/topics/rust-for-the-world-days-python.md](design/topics/rust-for-the-world-days-python.md)
 - **Worktrees (as of 11-27):** `.claude/worktrees/agent-a9b152efd4c2e1246` (P3's 28.6 GB rehearsal data, kept for three
   traces) and `../sc-open-quests-place-ids` (branch `place-ids`, merged). Leave both.

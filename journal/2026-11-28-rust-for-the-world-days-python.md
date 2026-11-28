@@ -80,3 +80,20 @@ autonomously thorugh the night pls". Chosen: the small PBF, then the diff reader
 - Tests: `tests/test_rust_day.py` (3: the read, the PBF, the fallback). Affected tests 143 passed, full suite 476
   passed, 1 skipped (01:18). **Not yet run inside a real world day**; the saving is about 2-3 min of a 3.5 h day,
   as the survey expected for this step: the larger costs wait for 11-28's `steps.json`.
+
+**Reviewed and closed out (01:20-01:50).** A review asked for four things before a merge; done:
+- **The engine as the reader.** One tier 1 engine (main's install, world-1101's plan files f4 and f37, read only) on the
+  Python and the Rust small PBF of 5189: the snapshots differ only in the source file's name, hash and run seconds; the
+  dumps' bytes differ, but their rows with each place set spelled as part ids are equal (19,732 rows on f4, 7,675 on
+  f37). The run-local set numbering is what differs; `placesets.ingest` remaps it by part id.
+- **A merge without a rebuild** would leave the loop's daily binary without `diffcols` and `smallpbf`: both callers
+  now log why and take the Python way (test with a stand-in binary that knows neither command).
+- **Which reader ran** is on the day's read-diff line ("(tilestore diffcols)" or "(pyosmium, as ...)");
+  day_metrics' patterns (`^tilestore read:` and the rest) match none of the new lines.
+- **The small PBF's timings were order-biased:** with Rust first on diffs nothing had read (5188, 5186) Rust took
+  55-64 s, Python after it 36-39 s on the warmed pages. The cost was the 115 GB node file's random page faults, one
+  ref at a time. Now every ref the diff does not place is read once, sorted, on all threads: 5184 cold and Rust first
+  17.9 s (node file 2.6 s for 2,309,544 refs), Python after it 32.3 s; equal, 1,258 ways unplaced both. Earlier
+  "12-18 s" figures were Rust second (warm).
+- Six diffs equal in all (5184-5189); full suite 477 passed, 1 skipped (01:40). The test PBFs deleted (the reports
+  kept in the worktree's `.scratch/`).
