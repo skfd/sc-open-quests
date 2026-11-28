@@ -207,3 +207,6 @@ reach about 18,060 of 20,000), and about 1M world places can never be static pag
   `city-parts/` 294 KiB (halifax, 619 parts), far under the Worker's 4 MiB cap; a Halifax part reads 11-27.
   `cloud_publish.py` deploys with a plain `wrangler deploy` from `cloudflare/`, so it takes the new `wrangler.jsonc`.
   Full suite 444 passed, 1 skipped.
+- **Owner, 20:35: sent `?city=toronto&part=d99e33025010` on Telegram** (screenshot): "3,398 open StreetComplete quests in
+  Agincourt North, Toronto", "Down 35 since Nov 1 ... As of Nov 27, 2026.", and the site card (the world on 24 Nov,
+  577M; redrawn on release day). Step 5 done for one network. Main pushed 20:40.

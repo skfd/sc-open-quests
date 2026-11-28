@@ -40,11 +40,9 @@ every quest, never an easier subset (DESIGN.md, "Don't").
 
 ## Waiting on the owner
 
-- **Paste a share link into a network's preview checker (as of 11-27 20:20)**, e.g.
-  `https://street-complete-statistics.comentality.com/?city=toronto&part=d99e33025010` into Facebook's Sharing Debugger,
-  LinkedIn's Post Inspector or a message to yourself; and glance at the Worker's requests and CPU in the Cloudflare
-  dashboard over the first days ($5 limit; past it the home page fails with error 1103). Crawler user agents
-  (Facebook, Twitter, Slack, LinkedIn, Discord, Telegram, WhatsApp) all get 200 and the number by curl.
+- **Glance at the share-preview Worker's requests and CPU** in the Cloudflare dashboard over the first days (as of
+  11-27 20:40; $5 limit, past it the home page fails with error 1103). Telegram showed a neighbourhood link right
+  (owner, 20:35): its number, "As of Nov 27", and the site card.
 - **Be at the machine on 12-01 from about 18:30 (as of 11-27 10:45)** to watch the cutover (Next 3) and lift the HOLD
   after `adopt`.
 
