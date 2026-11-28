@@ -5,6 +5,13 @@ it moves to HANDOFF.md's Next and leaves here.
 
 - **The world's monthly backfill (release 2):** monthly points for the world from 2017-01, as the cities have
   (owner, 11-16). [journal/2026-11-16-release-goals.md](journal/2026-11-16-release-goals.md)
+  **History cut rehearsed on Berlin (11-27):** cut-then-slice equals slice-then-cut, every number, at 2017-01, 2020-01,
+  2026-09; `complete_ways` drops a few border-crossing multipolygon members that carried no quest there (check on a
+  planet canary: lakes and forests across file borders). Planet: cut about 8-10 h, out about 175 GB, **disk peak about
+  345 GB** (does not fit beside the world; the history file elsewhere or freed after 12-01), a month about 2.5-3.5 h,
+  118 months 12-17 days of this machine. Also found: the cities' monthly points before 11-02 were counted before the
+  64.1 repin, a seam of about +0.27% on Berlin. `tools/history_cut_rehearsal.py`;
+  [journal/2026-11-27-rehearsing-the-history-cut-on-berlin.md](journal/2026-11-27-rehearsing-the-history-cut-on-berlin.md)
 - **That backfill on several machines** (owner, 11-24: "parking this idea for now, will return when less busy"): months and
   plan files share no state, about 15,100 independent jobs.
   [journal/2026-11-24-parked-the-worlds-monthly-backfill-on-several-machines.md](journal/2026-11-24-parked-the-worlds-monthly-backfill-on-several-machines.md)
