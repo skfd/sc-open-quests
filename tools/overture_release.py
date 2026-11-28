@@ -42,11 +42,17 @@ column). `contested` rows (two lost places propose the same new GERS id) are nev
     same-osm-far      lost; the same OSM object, name or subtype changed, boxes overlap less     -> same <gers>
     same-name-near    lost; no OSM match; one new place of the same name and country within 2 km   -> same <gers>
     contested         lost; its new GERS id is also proposed for another lost place                 -> same <gers> (judge)
+    same-name-kept    lost; no OSM or new same-name match; a kept place of the same name and       -> ended <that place>
+                      country within 2 km (a duplicate that merged into it: never `same`, its GERS id is ours already)
     overlap           lost; places of the release overlap it (bbox IoU 0.2+): the best up to three -> ended <successors>
     ended-parent      lost; nothing overlaps, its parent lives on                                   -> ended <parent>
     ended-none        lost; nothing to suggest                                                      -> ended
     back              an ended place's GERS id is in the release again                              -> revive
     new               a new GERS id no lost row proposes to take                                    -> new
+
+Kept places of the same name and country within 2 km are also listed (with a note) in the candidates of every lost row that a
+single OSM match does not decide (same-name-near, contested, overlap, ended-*): the judge may end the place into one. Several
+lost places may end into one kept place; a successor is not taken the way a new GERS id is.
 
 A new GERS id whose `same` proposal the operator turns down is minted by `apply` (and listed there): every place of the release
 has an id, or places.py stops.
@@ -80,8 +86,8 @@ RELEASES = ROOT / "data" / "place-ids" / "releases"
 FORMER = ROOT / "data" / "place-ids" / "former-names.tsv"
 S3 = "s3://overturemaps-us-west-2/release"
 GERS = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
-CLASSES = ("same-osm", "same-osm-changed", "same-osm-far", "same-name-near", "contested", "overlap", "ended-parent",
-           "ended-none", "back", "new")
+CLASSES = ("same-osm", "same-osm-changed", "same-osm-far", "same-name-near", "contested", "same-name-kept", "overlap",
+           "ended-parent", "ended-none", "back", "new")
 NO_BULK = {"contested"}
 # the clear cases the algorithm decides alone (owner, 2026-11-26); every other row goes to the judge
 AUTO = ("same-osm", "same-osm-changed", "back", "new")
@@ -232,6 +238,18 @@ def propose(release: str, old: str, registry: Path = place_ids.REGISTRY, root: P
         c["km"] = _km(c.pop("llx"), c.pop("lly"), c["lx"], c["ly"])
         if c["km"] <= NEAR_KM:
             near[c.pop("lid")].append(c)
+    # kept places of the same name nearby: successors (a duplicate merged into one that lives on), never `same` targets,
+    # since their GERS id is a place of ours already. Kept = live in the registry and in the release (not one that is back).
+    kept_near = defaultdict(list)
+    for c in rows(f"""SELECT l.id AS lid, l.lx AS llx, l.ly AS lly, l.subtype AS lst, n.* FROM lost l JOIN n
+                     ON n.name = l.name AND n.country = l.country AND l.name <> ''
+                     AND abs(n.ly - l.ly) < {NEAR_KM / 111.2 * 1.5} AND abs(n.lx - l.lx) < {NEAR_KM / 111.2 * 6}"""):
+        c["km"] = _km(c.pop("llx"), c.pop("lly"), c["lx"], c["ly"])
+        other_subtype = c.pop("lst") != c["subtype"]
+        if c["gers"] in live_id and c["km"] <= NEAR_KM:
+            c["id"] = live_id[c["gers"]]
+            kept_near[c.pop("lid")].append((other_subtype, c["km"], c["gers"], c))
+    kept_near = {k: [c for *_, c in sorted(cs, key=lambda t: t[:3])] for k, cs in kept_near.items()}   # same subtype first
     over = defaultdict(list)
     for c in rows(f"""SELECT l.id AS lid, n.*,
             greatest(0, least(l.x1, n.x1) - greatest(l.x0, n.x0)) * greatest(0, least(l.y1, n.y1) - greatest(l.y0, n.y0)) AS i,
@@ -263,18 +281,33 @@ def propose(release: str, old: str, registry: Path = place_ids.REGISTRY, root: P
             taken[p["_target"]] += 1
     for p in lost:
         note = ""
+        # a kept namesake is offered wherever no single OSM match decides the row
+        kept = kept_near.get(p["id"], []) if len(by_osm.get(p["id"], [])) != 1 else []
+        kept_note = ""
+        if kept:
+            kept_note = (f"{len(kept)} kept place{'s' if len(kept) > 1 else ''} of the same name within {NEAR_KM:g} km "
+                         f"({', '.join(c['id'] for c in kept)}): a duplicate that merged into it ends with it as successor "
+                         f"(never `same`: its GERS id is ours already)")
         if p["_target"]:
             cls = "contested" if taken[p["_target"]] > 1 else p["_cls"]
             proposal = f"same {p['_target']}"
-            cands = p["_c"]
+            cands = p["_c"] + kept
             if cls == "contested":
                 note = "another lost place proposes the same new GERS id"
+            if kept:
+                note = (note + "; " if note else "") + kept_note
+        elif kept and not p["_c"]:   # no OSM or new same-name match, but a namesake lives on nearby
+            succ = sorted(over.get(p["id"], []), key=lambda c: -c["iou"])[:MAX_SUCCESSORS]
+            cls, cands, proposal, note = "same-name-kept", kept + succ, f"ended {kept[0]['id']}", kept_note
         else:
             ov = sorted(over.get(p["id"], []), key=lambda c: -c["iou"])
             succ = ov[:MAX_SUCCESSORS]
             parent = live_id.get(p.get("parent") or "")
             if p["_c"]:   # several OSM or name matches: none proposed alone, all shown
                 note = f"{len(p['_c'])} same-object or same-name candidates: judge"
+            if kept:
+                p["_c"] = p["_c"] + kept
+                note = (note + "; " if note else "") + kept_note
             if succ:
                 cls, cands = "overlap", p["_c"] + succ
                 proposal = "ended " + ",".join(c["id"] or c["gers"] for c in succ)
@@ -285,6 +318,9 @@ def propose(release: str, old: str, registry: Path = place_ids.REGISTRY, root: P
                 cls, cands, proposal = "ended-none", p["_c"], "ended"
             if p["lx"] is None:
                 note = (note + "; " if note else "") + f"not in {old}: no location"
+        if kept:   # a kept namesake may also overlap it: listed once
+            seen = set()
+            cands = [c for c in cands if not (c["gers"] in seen or seen.add(c["gers"]))]
         out_rows.append({"key": p["id"], "class": cls, "proposal": proposal, "verdict": "", "judged": "", "id": p["id"],
                          "gers_old": p["gers"], "name": p["name"], "subtype": p["subtype"], "country": p["country"],
                          "osm": p["osm"], "candidates": " | ".join(_cand(c) for c in cands), "note": note})
@@ -728,7 +764,8 @@ Each row below is one place of ours (or one new GERS id). Give each a verdict:
   GERS id can be taken by one place only);
 - `ended` or `ended <s1>,<s2>`: the place ends; successors are where a visitor of its page should go: the parts it split
   into, the place it merged into, else the place that now covers it. Successors are our ids (12 hex, places that live on)
-  or new GERS ids of {release};
+  or new GERS ids of {release}. A place of ours that lives on with the same name nearby ("kept place of the same name" in
+  the note) is often the duplicate it merged into: then `ended <that id>`, never `same` (its GERS id is ours already);
 - for a row of class `back` (an ended place of ours whose GERS id returned): `revive` or `new`.
 
 Confidence: "high" only when you would bet on it; "low" sends the row to a human operator, which is fine for real doubt.

@@ -104,3 +104,34 @@
   HOLD, `schtasks /Run /TN kk-SCOpenQuests-planetstore`; 11-26 resumes from `day.pkl` (store at D: `finish` again, about 2.5 h)
   or redoes the day, then takes 11-27 if its inputs are there. Then the first-day checks above and `rename_places.py check`.
   The 09:30 Overture watcher and the 11:15 inputs run are due again tomorrow if the laptop is on.
+- **The same-name gap closed (11-27, about 20:40-21:10, a worktree agent; branch `worktree-agent-a279920b917c3369e`,
+  ad66579b0).** A kept place (its GERS id in both releases) can never be a `same` target: `apply` and the judge refuse a GERS
+  id that is not new, and two of our places would share one id. So a kept namesake is a **successor**: a lost place with no
+  OSM match and no new same-name match, but a kept place of the same name and country within 2 km, is the new class
+  **`same-name-kept`** -> `ended <that id>` (same subtype first, then the nearest; not AUTO, so the judge sees it; bulk accept
+  allowed; several lost places may end into one kept place, nothing is contested). Where no single OSM match decides a row
+  (same-name-near, contested, the ambiguous fall-through), the kept namesake is only added to the candidates with a note; AUTO
+  rows, targets and `contested` are untouched. `settle_successors` falls back on the namesake as on the parent; the judge's
+  prompt names the case. Tests: 6 in `KeptNamesakes` (the shared fixture's tests unchanged); full suite 448 passed, 3 skipped
+  (two tilestore tests skip in a worktree: the Rust binary is built only in the main checkout).
+- **What it would have changed on 11-18.0 (measured; nothing in data/ or main's .scratch written):** `propose` rerun with HEAD
+  and with the change into the agent's scratchpad (copies of both `places.parquet`, the live registry read only, hash
+  b3d75207 as on 11-26). HEAD reproduces the judged `proposals.tsv` (key, class, proposal, candidates) except 5 rows whose
+  equal-IoU successors come out in another order (ties, not a change). With the change: **48 lost places gain a kept
+  candidate**: 47 become `same-name-kept` (from overlap 32, ended-parent 15), 1 contested row (El Túnel, NI) shows it; 25 of
+  the 47 get a different proposal (22 already proposed exactly that place as the best overlap). **47 of the 48 judged verdicts
+  already name the kept place** (the judge found it through `look`'s "same name within about 30 km"); the one that does not
+  is a generic Japanese 1丁目 whose kept namesakes are other chōme, and the judge was right. So the staged 11-18.0 registry
+  needs no rejudging; the change makes the proposals say what the judge had to look up.
+- **Corrections to the two lines above (11-27, about 21:20, af0ee9556).** (1) **16, not 48, lost places gain a candidate they
+  did not have** (15 ex-ended-parent, the 1 contested): the 32 ex-overlap rows already listed the kept namesake as an overlap
+  successor; 22 of them change only class and note, 10 get the proposal narrowed to it alone. 48 is the rows with a kept
+  namesake within 2 km. (2) "Already name it" was any mention; **by exact verdict (successors as a set), 43 of the 47
+  `same-name-kept` verdicts equal the new proposal, 25 the old** (22 where both are the same). Of the 10 changed ex-overlap rows
+  the judge gave the new proposal 7 times, the old 2 (Pacayita, Barra da Lagoa: both successors kept), neither once
+  (Ratones: two of the old three); among the ex-ended-parent rows 14 new, 1 old (the 1丁目). So the class keeps its precedence
+  over overlap; as a judge row, a bulk `accept --class same-name-kept` would have taken 43 of 47 as the judge did. (3)
+  **`settle_successors` is not extended:** a namesake is a heuristic (the 1丁目), not the parent that always covers the place,
+  so the rule that settles a doubted successor keeps falling back on the parent only (owner's rule of 11-26 unchanged). (4) The
+  fall-through with several new namesakes and a kept one (no 11-18.0 row) got a test. Suite: 448 passed, 3 skipped; without the
+  6 new tests (`KeptNamesakes` deselected), 442 passed, 3 skipped (in this worktree).

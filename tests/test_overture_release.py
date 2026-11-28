@@ -233,3 +233,101 @@ class Judges(Base):
         self.assertIn("Hotel", text)
         self.assertIn("Alpha Stadt", text)   # what overlaps it in the release
         self.assertIn(f"our {self.id[g(1)]}", text)
+
+
+# the same-name gap (BACKLOG, 11-26): a kept place of the same name nearby is offered as a successor, never as `same`
+K_OLD = [
+    (g(201), "r201", "Papa", "locality", "DE", None, (20.0, 60.0, 20.01, 60.01)),         # kept
+    (g(202), "r202", "Papa", "neighborhood", "DE", None, (20.02, 60.0, 20.03, 60.01)),    # kept, 1.1 km east
+    (g(211), "r211", "Papa", "neighborhood", "DE", None, (20.003, 60.0, 20.013, 60.01)),  # lost; overlaps 201, near 202
+    (g(212), "r212", "Papa", "locality", "DE", None, (20.0, 60.0, 20.01, 60.01)),         # lost; on 201
+    (g(214), "r214", "Papa", "locality", "DE", None, (20.0, 60.012, 20.01, 60.022)),      # lost; 1.3 km north of 201
+    (g(215), "r215", "Papa", "locality", "DE", None, (20.0, 60.05, 20.01, 60.06)),        # lost; 5 km away: nothing
+    (g(216), "r216", "Papa", "locality", "SE", None, (20.0, 60.0, 20.01, 60.01)),         # lost; another country
+    (g(203), "r203", "Romeo", "neighborhood", "DE", None, (21.015, 61.0, 21.025, 61.01)),  # kept
+    (g(217), "w217", "Romeo", "neighborhood", "DE", None, (21.0, 61.0, 21.004, 61.004)),  # lost; a new and a kept Romeo
+    (g(204), "r204", "Sierra", "neighborhood", "DE", None, (22.015, 62.0, 22.025, 62.01)),  # kept
+    (g(218), "r218", "Sierra", "neighborhood", "DE", None, (22.0, 62.0, 22.004, 62.004)),   # lost; same OSM object
+    (g(209), "r209", "Tango", "locality", "DE", None, (23.015, 63.0, 23.025, 63.01)),     # ended in the registry, back
+    (g(219), "w219", "Tango", "locality", "DE", None, (23.0, 63.0, 23.004, 63.004)),      # lost; only an ended namesake
+    (g(205), "r205", "Uniform", "neighborhood", "DE", None, (24.022, 64.0, 24.026, 64.004)),  # kept, 1.1 km
+    (g(220), "w220", "Uniform", "neighborhood", "DE", None, (24.0, 64.0, 24.004, 64.004)),  # lost; two new namesakes too
+]
+K_NEW = [r for r in K_OLD if r[0] in (g(201), g(202), g(203), g(204), g(205), g(209))] + [
+    (g(307), "r307", "Romeo", "neighborhood", "DE", None, (21.005, 61.0, 21.009, 61.004)),  # new, 0.3 km
+    (g(308), "r218", "Sierra", "neighborhood", "DE", None, (22.0, 62.0, 22.004, 62.004)),
+    (g(320), "r320", "Uniform", "neighborhood", "DE", None, (24.006, 64.0, 24.010, 64.004)),  # new, 0.3 km
+    (g(321), "r321", "Uniform", "neighborhood", "DE", None, (24.012, 64.0, 24.016, 64.004)),  # new, 0.6 km
+]
+
+
+class KeptNamesakes(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        t = Path(self.tmp.name)
+        self.root, self.registry, self.former = t / "releases", t / "registry.tsv.gz", t / "former-names.tsv"
+        write_places(self.root / OLD / "places.parquet", K_OLD)
+        write_places(self.root / NEW / "places.parquet", K_NEW)
+        reg = place_ids.mint([(r[0], r[1], r[2], r[3], r[4]) for r in K_OLD], OLD)
+        tango = reg.places[reg.id_of(g(209))]
+        del reg.by_gers[g(209)]
+        tango.state = "ended"
+        reg.save(self.registry)
+        self.id = {p.gers: p.id for p in place_ids.load(self.registry).places.values()}
+        orl.propose(NEW, OLD, self.registry, self.root)
+        self.rows = {r["key"]: r for r in orl.read_rows(self.root / NEW / "proposals.tsv")}
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def row(self, n: int) -> dict:
+        return self.rows[self.id[g(n)]]
+
+    def test_a_kept_namesake_nearby_is_proposed_as_successor(self):
+        i = self.id
+        for n in (212, 214):   # two lost places end into one kept place: no contest, a successor is not taken
+            self.assertEqual(("same-name-kept", f"ended {i[g(201)]}"), (self.row(n)["class"], self.row(n)["proposal"]))
+            self.assertIn("never `same`", self.row(n)["note"])
+        # the same subtype first, though farther; the kept place it overlaps is listed once
+        r = self.row(211)
+        self.assertEqual(("same-name-kept", f"ended {i[g(202)]}"), (r["class"], r["proposal"]))
+        self.assertEqual(1, r["candidates"].count(i[g(201)]))
+        self.assertTrue(r["candidates"].startswith(i[g(202)]))
+        self.assertNotIn("same-name-kept", orl.AUTO)
+
+    def test_too_far_another_country_or_an_ended_namesake_is_not_offered(self):
+        self.assertEqual(("ended-none", "ended"), (self.row(215)["class"], self.row(215)["proposal"]))
+        self.assertEqual("overlap", self.row(216)["class"])   # overlaps 201 by its box, but 201 is in DE
+        self.assertNotIn("kept place", self.row(216)["note"])
+        self.assertEqual(("ended-none", ""), (self.row(219)["class"], self.row(219)["candidates"]))
+        self.assertEqual("back", self.rows[self.id[g(209)]]["class"])
+
+    def test_a_new_namesake_stays_the_proposal_and_the_kept_one_is_shown_beside_it(self):
+        r = self.row(217)
+        self.assertEqual(("same-name-near", f"same {g(307)}"), (r["class"], r["proposal"]))
+        self.assertIn(self.id[g(203)], r["candidates"])
+        self.assertIn("kept place", r["note"])
+
+    def test_an_osm_match_is_not_touched(self):
+        r = self.row(218)
+        self.assertEqual(("same-osm", f"same {g(308)}", ""), (r["class"], r["proposal"], r["note"]))
+        self.assertNotIn(self.id[g(204)], r["candidates"])
+
+    def test_accepted_the_lost_places_end_into_the_kept_one(self):
+        orl.accept(NEW, [c for c in orl.CLASSES if c not in orl.NO_BULK], self.root)
+        orl.apply(NEW, self.registry, self.former, self.root)
+        out = place_ids.load(self.root / NEW / "registry.tsv.gz")
+        self.assertEqual([], out.check())
+        i = self.id
+        for n in (212, 214):
+            self.assertEqual(("ended", (i[g(201)],)), (out.places[i[g(n)]].state, out.places[i[g(n)]].successors))
+        self.assertEqual(("live", g(201)), (out.places[i[g(201)]].state, out.places[i[g(201)]].gers))
+        self.assertEqual(g(307), out.places[i[g(217)]].gers)
+
+    def test_several_new_namesakes_keep_their_class_and_the_kept_one_is_shown_once(self):
+        r = self.row(220)
+        self.assertEqual(("ended-none", "ended"), (r["class"], r["proposal"]))   # as without the kept namesake
+        self.assertEqual(1, r["candidates"].count(self.id[g(205)]))
+        self.assertTrue(g(320) in r["candidates"] and g(321) in r["candidates"])
+        self.assertIn("2 same-object or same-name candidates", r["note"])
+        self.assertIn("kept place", r["note"])
