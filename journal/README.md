@@ -59,3 +59,4 @@ section, named by the date in its heading. Code comments citing `HANDOFF, "<head
 - [2026-11-26-the-world-day-resumable.md](2026-11-26-the-world-day-resumable.md): The world day resumable (owner, 11-26, 18:05: "build a resumability please"; the laptop stays on, only the owner is offline)
 - [2026-11-27-the-map-tab-redesign.md](2026-11-27-the-map-tab-redesign.md): The Map tab redesign (2026-11-27, morning; owner: "i think map page is not up to date anymore. how do we redesign it")
 - [2026-11-28-the-world-day-off-power-throttling.md](2026-11-28-the-world-day-off-power-throttling.md): The world day off power throttling (2026-11-28; owner via osmium-windows-fast: "go ahead and set it up")
+- [2026-11-28-rust-for-the-world-days-python.md](2026-11-28-rust-for-the-world-days-python.md): Rust for the world day's Python: surveyed, the owner chose "world day only, later" (2026-11-28, 00:00-00:35)

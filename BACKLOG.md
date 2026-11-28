@@ -21,6 +21,11 @@ it moves to HANDOFF.md's Next and leaves here.
 - **Retire the Python tile store** (owner, 11-16: "write down to return to this cleanup at some point"):
   `tools/stream/tilestore.py` and `tiles.py`, replaced by the Rust `tilestore/`; early December at the earliest.
   [journal/2026-11-16-parked-retire-the-python-tile-store.md](journal/2026-11-16-parked-retire-the-python-tile-store.md)
+- **Port the world day's Python steps to Rust** (owner, 11-28: "World day only, later"): the ~8.8k lines of daily
+  data work (`world_day`, `world_tier2`, `world_state`, `tier2`, `stream.py`'s pyosmium...) into the `tilestore` binary,
+  one step at a time, each proven equal over real days; only steps 11-28's `steps.json` shows still cost after the
+  11-26 pools. Glue and the Kotlin engine stay. After the 12-01 cutover and release 1.
+  [design/topics/rust-for-the-world-days-python.md](design/topics/rust-for-the-world-days-python.md)
 - **Benchmark a native Windows osmium** (owner, 11-16: "lets put benchmarking it into todo"): conda-forge's `osmium-tool`
   for win-64 against the Docker one.
   [journal/2026-11-16-parked-benchmark-a-native-windows-osmium.md](journal/2026-11-16-parked-benchmark-a-native-windows-osmium.md)

@@ -131,7 +131,7 @@ every quest, never an easier subset (DESIGN.md, "Don't").
 ## Parked
 
 One line each in [BACKLOG.md](BACKLOG.md): the world's monthly backfill (release 2) and doing it on several machines,
-retiring the Python tile store, a native Windows osmium, other validators' backlogs, the blog, ended-place pages and
+retiring the Python tile store, porting the world day's Python steps to Rust, a native Windows osmium, other validators' backlogs, the blog, ended-place pages and
 successor links, the performance review's leftovers, and statistics on a map.
 
 ## Where things are

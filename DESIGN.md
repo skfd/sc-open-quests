@@ -130,3 +130,4 @@ code comment citing `DESIGN.md, "<heading>"` still finds its topic here. A cited
 - The world day resumable (2026-11-27) → [design/topics/the-world-day-resumable.md](design/topics/the-world-day-resumable.md)
 - The Map tab: a navigation tool (2026-11-27; owner: "map should be a tool to find a region down to some level of accuracy") → [design/topics/the-map-tab-a-navigation-tool.md](design/topics/the-map-tab-a-navigation-tool.md)
 - The world day off power throttling: a switch and its readings (2026-11-28; a trial, owner via osmium-windows-fast) → [design/topics/the-world-day-off-power-throttling.md](design/topics/the-world-day-off-power-throttling.md)
+- Rust for the world day's Python: the world day only, later (2026-11-28; owner: "World day only, later") → [design/topics/rust-for-the-world-days-python.md](design/topics/rust-for-the-world-days-python.md)
