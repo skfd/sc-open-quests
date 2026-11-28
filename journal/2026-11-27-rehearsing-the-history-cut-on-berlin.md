@@ -65,6 +65,8 @@ python tools/history_cut_rehearsal.py objdiff --out ... --at 2026-09-01T12:00:00
   and Y: the osm-berlin outline against the city's boundary file, a cells matter under the owner's 0.1% bar, not the
   cut's.
 - Notes: the published points used the 261022 dump, this run 261125; OsmNoteQuestType does not differ.
+- `docs/data/history/berlin.json` holds the archive's points exactly at all three dates (948,769; 1,102,306;
+  1,112,615 open, no quest different).
 
 ### What the cut drops and adds (osmium diff of X against Y, per file)
 
@@ -82,17 +84,25 @@ python tools/history_cut_rehearsal.py objdiff --out ... --at 2026-09-01T12:00:00
   whose box ends at 13.7305; 13.667 E for f113, whose box starts at 13.6695): r5816560 natural=wood, r7601587 and
   r3109373 (Köpenicker Werder) landuse=forest, r7987483 and r7999432 wetland, r5441080 (Schwarze Berge) forest,
   r12415631 landuse=railway, r13855701 (Schmöckwitzer Werder) forest, missing an **outer** in f113. `smart`
-  completes these relations; `complete_ways` cannot. None reached a count: such a relation's centre lies in the file
-  where it is whole, and the members' own tags (forest, wetland, parking) are counted in the file holding them.
+  completes these relations; `complete_ways` cannot. (2017-01 adds r2218270, boundary=physiogeographical.)
+  **Why none reached a count, checked with the engine's dump** (`history_cut_rehearsal.py dump`: the ways only X
+  holds and their parent relations in X as `--dump-ids`, `--dump-matches` from X's and Y's counts of both files):
+  **none of these relations matches any quest, in X or in Y, in either file**, at any of the three dates (2026-09:
+  8 relations, 9 ways; 2017-01: 4 and 7; 2020-01: 6 and 7). The only matches are the dropped ways' own quests
+  (AddForestLeafType on two wetland/wood inners, AddParkingAccess and AddParkingType on a parking way), counted
+  in the file whose cells hold them, identical in X and Y. So the guarantee here is that the broken relations carried
+  nothing to count, not that a broken relation counts the same: a multipolygon with a quest of its own (an unleafed
+  forest, say) or one another quest's area check leans on was not met.
 - **Added: what the history file knows about the box at other times.** Relations with a member in the box at any
   version, ways that touched it at some version, and every node any version of those ways used. The slice at T
   keeps the versions alive at T, wherever they are then: Y's f113 holds nodes near Leeds (x -1.40), moved or once
   wrongly joined to a Berlin way (the clip itself carries them: it is a `complete_ways` history clip). They lie
   outside the file's cells, so no cell counts them. In bytes: Y's slices are 1.2-1.5% larger than X's for f4 and 38-45%
   for the small f113 (2.78 against 1.92 MB at 2026-09).
-- So **the cut is safe where Germany's snapshot rehearsal and this one look**. Still unseen: a large multipolygon
-  whose centre lies in one file and whose missing outer lies more than 2 km beyond (big lakes, forests and
-  wetlands across a file border: Finland, Canada, Siberia), and the polar and antimeridian files.
+- So **the cut is safe where Germany's snapshot rehearsal and this one look**. Still unseen: a multipolygon that
+  carries a quest, or that an area check reads, and is broken by the cut (a large one whose centre lies in one file
+  and whose members lie more than 2 km beyond: lakes, forests and wetlands across a file border in Finland, Canada,
+  Siberia), and the polar and antimeridian files.
 
 ### Timings and sizes (through Docker's bind mount, the clip on C:)
 
@@ -113,15 +123,21 @@ python tools/history_cut_rehearsal.py objdiff --out ... --at 2026-09-01T12:00:00
   remains). Stage 1: 16 regions at 8 outputs a pass = 2 reads of 171 GB and about 172 GB written; stage 2: 16 region
   passes, about 172 GB read and about 176 GB written (Berlin's +2.6% is a border through a dense city; the world's
   borders mostly run through emptier land).
-  - read 54 MB/s + write 20 MB/s: stage 1 1.8 h + 2.4 h, stage 2 0.9 h + 2.4 h: **about 7.5 h**.
+  - read 54 MB/s + write 20 MB/s: stage 1 1.8 h + 2.4 h, stage 2 0.9 h + 2.4 h: **about 7.5 h**. This low end
+    borrows its read rate from the Ontario clip; the write rate at 8 history outputs, and their memory, are not
+    measured.
   - Berlin's flat 14-15 MB/s on every byte in: stage 1 2 x 3.1 h, stage 2 3.4 h: **about 9.7 h**.
   - So the design's 8-10 h holds, with the cut through the bind mount; off the mount (native osmium or the WSL disk)
     the design measured passes 1.85 times faster. **Out: about 172-176 GB, not 160 GB.**
   - Not learnable from 413 MB: osmium's memory for 8 history outputs over 14.3 billion node ids (smart on a snapshot
     holds about 4.2 GB an output); the first stage-1 pass should be watched, or run at fewer outputs.
-- **Disk:** the planet file (171 GB, to download again or bring back with osm-extracts) plus stage 1's regions (172 GB)
-  peaks at about 345 GB with the planet kept, about 190 GB if it goes after stage 1. C: had 166 GB free tonight,
-  with the 12-01 switch still to peak +80 GB: the cut does not fit beside the world today.
+- **Disk:** both stage-1 passes read the planet, and `cut()` writes every region before any file, so at the end of
+  stage 1 the planet file (171 GB, to download again or bring back with osm-extracts) and all 16 regions (about
+  172 GB) are on disk together: **a peak of about 345 GB**, whether or not the planet goes afterwards (stage 2 alone
+  holds about 172-190 GB, the regions giving way to files). Interleaving regions and files does not lower it on one
+  disk. C: had 166 GB free tonight, with the 12-01 switch still to peak +80 GB: the cut does not fit beside the
+  world, even after the switch frees the old world's files, unless the planet file sits on another drive or about
+  180 GB more is freed.
 - **A month after the cut:** the time-filters are read-bound (Berlin ~50-60 MB/s of history in), so a month's 128
   slices read all ~175 GB: about 55 min serially through the mount, less with several at once, against today's
   74 min slice + 262 min smart cut. The counts cost the same either way (Y's slices are about 2% larger than X's). With the
@@ -129,8 +145,9 @@ python tools/history_cut_rehearsal.py objdiff --out ... --at 2026-09-01T12:00:00
 
 ### Next for release 2
 
-1. A planet history file and the disk for it: about 171 GB for the file plus about 176 GB for the cut (or delete the
-   planet after stage 1), after the 12-01 switch has freed the old world (about 65 GB).
+1. A planet history file and the disk for it: about 345 GB at the end of stage 1 (the 171 GB file and about 172 GB
+   of regions together), about 176 GB kept after: the planet file on another drive, or that much freed on C: after
+   the 12-01 switch.
 2. The cut itself (`world_cells.cut` with `--with-history`, `osh.pbf` outputs and `complete_ways` instead of `smart`:
    `tools/history_cut_rehearsal.py cut` is that change in small), detached, watching stage 1's first pass for memory.
 3. A planet-scale canary before counting 118 months: at one month, a few files cut both ways (X and Y as here),

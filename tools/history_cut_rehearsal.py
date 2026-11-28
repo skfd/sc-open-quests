@@ -17,6 +17,7 @@ a history clip already on disk and counts them with the same cells, parts, notes
   python tools/history_cut_rehearsal.py count   --out DIR --at ... --city berlin --notes NOTES.jsonl [--quests v64.0]
   python tools/history_cut_rehearsal.py compare --out DIR --at ... [--published SNAPSHOT.json]
   python tools/history_cut_rehearsal.py objdiff --out DIR --at ...
+  python tools/history_cut_rehearsal.py dump    --out DIR --at ... --notes NOTES.jsonl
 
 MAIN is the main checkout: the plan's cell boundaries and place outlines are copied from it (relative to MAIN), never
 linked, and the engine is MAIN's installed one, run by absolute path (no build, no notes re-clip). Docker mounts the
@@ -239,6 +240,50 @@ def count(out: Path, main: Path, at: str, city: str, notes: Path, quests: str | 
             record(out, f"{d} count {kind} {f['id']}", secs)
 
 
+def dump(out: Path, main: Path, at: str, notes: Path) -> None:
+    """The quests the engine matches on what the history cut breaks: the ways only X holds (objdiff's '-w' lines) and
+    their parent relations in X (osmium getparents), dumped from X's and Y's counts of every file (--dump-matches)
+    and compared line by line. Run objdiff first."""
+    d = tag(at)
+    p = rj(out / "plan.json")
+    qs = rel(ROOT / "data" / "quests" / f"{newest_quests()}.json")
+    ids = set()
+    for f in p["files"]:
+        ways = [ln.split()[0][1:] for ln in (out / d / f"diff-{f['id']}.opl").read_text(encoding="utf-8").splitlines()
+                if ln.startswith("-w")]
+        ids |= {("way", w[1:]) for w in ways}
+        if ways:
+            r = subprocess.run(["docker", "run", "--rm", "-v", f"{out.resolve()}:/out", "--entrypoint", "osmium", IMAGE,
+                                "getparents", f"/out/{d}/X/{f['id']}.osm.pbf", *ways, "-f", "opl"],
+                               capture_output=True, text=True, check=True, env={**os.environ, "MSYS_NO_PATHCONV": "1"})
+            for ln in r.stdout.splitlines():
+                if ln.startswith("r"):
+                    ids.add(("relation", ln.split()[0][1:]))
+                    print(f"   {ln[:160]}")
+    idfile = out / d / "dump-ids.tsv"
+    idfile.write_text("".join(f"{t}\t{i}\n" for t, i in sorted(ids)), encoding="utf-8", newline="\n")
+    print(f"== {d}: {sum(t == 'relation' for t, _ in ids)} relations and {sum(t == 'way' for t, _ in ids)} ways")
+    got = {}
+    for kind in ("X", "Y"):
+        lines = []
+        for f in p["files"]:
+            fo = out / d / f"dump-{kind}" / f["id"]
+            shutil.rmtree(fo, ignore_errors=True)
+            fo.mkdir(parents=True)
+            fd = out / "files" / f["id"]
+            tsv = fo / "matches.tsv"
+            engine(main, ["count", "--pbf", rel(out / d / kind / f"{f['id']}.osm.pbf"), "--quests", qs,
+                          "--cities", rel(fd / "cities.json"), "--out", rel(fo), "--notes", str(notes),
+                          "--parts", rel(fd / "parts"), "--dump-matches", rel(tsv), "--dump-ids", rel(idfile)],
+                   p["timeZone"], fo / "log.txt")
+            lines += [f"{f['id']}\t{ln}" for ln in tsv.read_text(encoding="utf-8").splitlines()]
+        got[kind] = sorted(lines)
+    print(f"== {d}: matches of these elements: X {len(got['X'])}, Y {len(got['Y'])}")
+    for ln in sorted(set(got["X"]) | set(got["Y"])):
+        side = "both" if ln in got["X"] and ln in got["Y"] else ("X only" if ln in got["X"] else "Y only")
+        print(f"   {side:6} {ln}")
+
+
 def newest_quests() -> str:
     sys.path.insert(0, str(ROOT))
     import run
@@ -338,7 +383,7 @@ def objdiff(out: Path, at: str) -> None:
 
 def main(argv=None) -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("cmd", choices=["setup", "cut", "slice", "count", "compare", "objdiff"])
+    ap.add_argument("cmd", choices=["setup", "cut", "slice", "count", "compare", "objdiff", "dump"])
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--plan", type=Path)
     ap.add_argument("--main", type=Path, default=Path.home() / "Code" / "sc-open-quests")
@@ -362,8 +407,10 @@ def main(argv=None) -> None:
         count(a.out, a.main, a.at, a.city, a.notes, a.quests)
     elif a.cmd == "compare":
         compare(a.out, a.at, a.published, a.city)
-    else:
+    elif a.cmd == "objdiff":
         objdiff(a.out, a.at)
+    else:
+        dump(a.out, a.main, a.at, a.notes)
 
 
 if __name__ == "__main__":
