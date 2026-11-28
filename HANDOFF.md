@@ -59,7 +59,7 @@ every quest, never an easier subset (DESIGN.md, "Don't").
    Publish: the name layer changes 729 place files and at most 563 children files; 630 published places end (kept
    frozen); with ~1.6% of places moving, the first day after the switch is about 16k files above a normal day's ~60k,
    under DAY_CAP 200k (estimate from one file of 128, which has no cities; the events cache rebuilds once, the release
-   stamp changes). Full suite 443 passed, 1 skipped (11-27 10:42).
+   stamp changes). Full suite 460 passed, 1 skipped (11-27 22:00, after the evening merges).
    [journal/2026-11-26-the-12-01-switch-to-overture-11-18-0-mapped-not-built.md](journal/2026-11-26-the-12-01-switch-to-overture-11-18-0-mapped-not-built.md)
 2. **The first world day after the HOLD is lifted (take 11-28, not 11-27: 11-27 resumed after a stop, its timers part
    kept, and the old window held it 2.4 h (window removed: 7c2ee1f7f); nor 11-26: 11-26's finish ran in the proof, its lines are in
