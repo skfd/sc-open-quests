@@ -37,7 +37,7 @@ every quest, never an easier subset (DESIGN.md, "Don't").
   [journal/2026-11-26-the-city-runs-clean-up-after-the-world-dailies-run-well.md](journal/2026-11-26-the-city-runs-clean-up-after-the-world-dailies-run-well.md)
 - **Four agents in worktrees, started 11-27 20:45 (owner chose all four):** the history cut rehearsed on Berlin's
   history clip (release 2's first step); the share card redrawn monthly (merged bb5b57c20); the Overture tool's
-  same-name gap; the area-date horizon guard (stays on its branch until after 12-01). Each reports back; merging is
+  same-name gap; the area-date horizon guard (done: branch `horizon-guard`, Next 4). Each reports back; merging is
   mine. If a session ends first: their branches are under `.claude/worktrees/agent-*`; heavy work must end by 11-28
   13:30.
 - **Worktrees (as of 11-27):** `.claude/worktrees/agent-a9b152efd4c2e1246` (P3's 28.6 GB rehearsal data, kept for three
@@ -86,24 +86,31 @@ every quest, never an easier subset (DESIGN.md, "Don't").
    leave the HOLD, `adopt` not run, so the old world stays live; a rerun resumes at the markers (`status`). If the store
    moved meanwhile, the seed-day check stops it: clear the switch markers from `seed-day` on and `cut/storecut.json`, then rerun.
    [journal/2026-11-26-the-12-01-switch-to-overture-11-18-0-mapped-not-built.md](journal/2026-11-26-the-12-01-switch-to-overture-11-18-0-mapped-not-built.md)
-4. **Release day (12-01 at the earliest):** redraw the share card (`python design/project_card.py && python
+4. **Merge branch `horizon-guard` after the 12-01 switch, and before 12-28 whatever happens (as of 11-27 21:30).**
+   `tools/stream/area_horizon.py`: seed day from `data/world.json` `seeded`; `world_publish.daily` publishes no day past
+   seed + 64 (seed + 64 itself still complete) and exits 1, `--past-horizon` overrides; the loop's publish logs a warning
+   from 7 days before. world-1101 ends 2027-01-04 (warns from 12-28), so if the cutover aborts it is needed by then;
+   world-2026-11-18.0 seeded at 12-01 ends 2027-02-03. 29 tests; full suite 471 passed, 3 skipped in the worktree; merges
+   cleanly onto main at 11-27. Open: days joined from the old world after a late switch are judged by the new seed.
+   [journal/2026-11-27-the-horizon-guard.md](journal/2026-11-27-the-horizon-guard.md) (on the branch)
+5. **Release day (12-01 at the earliest):** redraw the share card (`python design/project_card.py && python
    design/render_share_card.py`, in a loop gap), look at `docs/img/share-card.png`, commit; from then on `run.py site(card=True)`
    (inputs' 11:15 run only) redraws it when the world has a day in a later month (merged 11-27; first automatic
    redraw 12-02, headless Edge under Task Scheduler unchecked). `share-previews` itself was merged 11-26 (as of 11-26).
    [journal/2026-11-10-idea-share-previews-for-links.md](journal/2026-11-10-idea-share-previews-for-links.md)
-5. **Share previews, after the 12-01 switch (as of 11-27 20:20):** rerun `node cloudflare/test/parity.mjs docs
+6. **Share previews, after the 12-01 switch (as of 11-27 20:20):** rerun `node cloudflare/test/parity.mjs docs
    https://sc-data.comentality.com/` (4,091 of 4,091 on 11-27). Live since 11-27; the daily `site` run deploys the
    Worker (`wrangler.jsonc`), the way back is `wrangler.static.jsonc` (`cloudflare/README.md`, "Share previews").
-6. **The city run's clean-up**, not before the HOLD is lifted and a few world days publish cleanly ("docs/ and config/ are
+7. **The city run's clean-up**, not before the HOLD is lifted and a few world days publish cleanly ("docs/ and config/ are
    as deployed; nothing to do", no data commit): `run.py`'s `update`/`download`/`count`/`backfill`, their tests,
    `schedule-add.ps1`, README's Scheduling part; decide `kk-SCOpenQuests-planet` on the way (as of 11-26; owner: "handoff
    the further cleanup").
    [journal/2026-11-26-the-city-runs-clean-up-after-the-world-dailies-run-well.md](journal/2026-11-26-the-city-runs-clean-up-after-the-world-dailies-run-well.md)
-7. **Overture 12-16.0, the first unattended monthly release:** the watcher prepares it (`narrow`, `propose`, `auto`, the
+8. **Overture 12-16.0, the first unattended monthly release:** the watcher prepares it (`narrow`, `propose`, `auto`, the
    judge: `claude-opus-5-5` at high effort), the operator gets only exceptions; switch on 2027-01-01 (as of 11-26; owner,
    about 12:05: "on first of the month we switch it").
    [journal/2026-11-26-the-overture-release-tool.md](journal/2026-11-26-the-overture-release-tool.md)
-8. **The Map tab as a navigation tool, after the 12-01 switch** (as of 11-27; owner chose it 10:45): Overture outlines
+9. **The Map tab as a navigation tool, after the 12-01 switch** (as of 11-27; owner chose it 10:45): Overture outlines
    down to cities as one PMTiles file on sc-data, MapLibre, a tap gives the chain of places. Its sentence ("the rest of
    the world is not counted yet") stays until then (owner). Design:
    [design/topics/the-map-tab-a-navigation-tool.md](design/topics/the-map-tab-a-navigation-tool.md)

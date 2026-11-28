@@ -8,9 +8,6 @@ it moves to HANDOFF.md's Next and leaves here.
 - **That backfill on several machines** (owner, 11-24: "parking this idea for now, will return when less busy"): months and
   plan files share no state, about 15,100 independent jobs.
   [journal/2026-11-24-parked-the-worlds-monthly-backfill-on-several-machines.md](journal/2026-11-24-parked-the-worlds-monthly-backfill-on-several-machines.md)
-- **A guard for the area-date horizon** (owner, 11-27: "agree"): the world's area-quest dates on untouched ground end
-  at seed day + 64 (`AREA_DUE_DAYS`) and nothing checks it. Warn about 7 days before, refuse to publish past it. After
-  the 12-01 switch. [journal/2026-11-27-the-64-day-horizon.md](journal/2026-11-27-the-64-day-horizon.md)
 - **64 or 128 days for the horizon** (owner, 11-27): decide after two or three monthly switches; 128 if a switch has
   slipped or been skipped. Costs one halving more, a rebuilt engine and the europe-west date check again.
   [journal/2026-11-27-the-64-day-horizon.md](journal/2026-11-27-the-64-day-horizon.md)
