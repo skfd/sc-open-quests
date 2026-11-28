@@ -26,3 +26,13 @@
   once a day per widget. Candidates: the first fetches on a widget run taking long enough that iOS ends it (the two
   "timed out" tiles point there), or memory. Test asked: preview each widget's Parameter in the app, then Edit Widget
   so a run needs no network.
+- **The owner, about 02:00:** the Parameters are Kyiv and Guelph (both draw here: Kyiv 188,295, +1,073 in 4 wk;
+  Guelph 38,337, +165). After previewing both in the app and Edit Widget: "Still black". With every file saved a
+  widget run needs no network, so neither time spent on the network nor our files explain it; the sparkline is a
+  340-pt image, far under WidgetKit's image limit. A web search found the same on iOS 26: Scriptable widgets blank
+  on the home screen while the in-app preview works, other apps' widgets too (Home Assistant); the fixes reported are
+  re-adding the widget, a restart, reinstalling the app. Passed to the owner.
+- **Built anyway, owner's "Yes, build it":** a widget run shares 10 s of network (`timeoutFor`, `setDeadline` in
+  `ios/open-quests.js`); once spent a fetch fails at once and the saved copy is drawn, so a slow network gives the
+  saved numbers or "Couldn't reach the site" instead of a run iOS ends. Widget repo 96ef164 (22 Scriptable tests,
+  `check.js --no-gradle` all ok), apps page 4807719f0, deployed by the 11:15 `site` run.

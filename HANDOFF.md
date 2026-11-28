@@ -63,12 +63,12 @@ every quest, never an easier subset (DESIGN.md, "Don't").
 
 ## Waiting on the owner
 
-- **The iPhone widgets: two black, two "request timed out" (as of 11-28 01:55).** Every published script copy draws
-  from here on the live files, and every URL answers fast. The owner, 01:50: run inside Scriptable it previews fine,
-  the widgets stay black, so the widget run itself is cut short (time or memory), not the data. Next test: preview
-  each widget's own Parameter in the app (fills its saved copies), then long-press › Edit Widget to force a run that
-  needs no network. Draws: slow first fetches were killing the run, fix is a time cap in the script. Still black:
-  memory. Also the four Parameters, and whether line 26 of the phone's copy reads `WORLD = "https://sc-data..."`.
+- **The iPhone widgets (Kyiv, Guelph) stay black on the home screen, preview fine in Scriptable (as of 11-28 02:15).**
+  Still black with every file saved, so not the network, not our data. Others report the same on iOS 26 (Scriptable
+  and other apps). On the phone, in order: remove a widget and add it again; restart the phone; update Scriptable
+  (or delete and reinstall it, then re-download the script). The time cap the owner approved is built (widget
+  96ef164) and on the apps page (4807719f0, deploys with the 11:15 `site` run): it stops "request timed out" tiles,
+  not black ones; the phone needs the script downloaded again after that run.
   [journal/2026-11-28-iphone-widgets-blank-or-timing-out.md](journal/2026-11-28-iphone-widgets-blank-or-timing-out.md)
 - **Glance at the share-preview Worker's requests and CPU** in the Cloudflare dashboard over the first days (as of
   11-27 20:40; $5 limit, past it the home page fails with error 1103). Telegram showed a neighbourhood link right
