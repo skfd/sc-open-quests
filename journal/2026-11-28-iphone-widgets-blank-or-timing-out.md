@@ -20,3 +20,9 @@
   parameter, or the 11-25 script's new `world-*` files) and the request did not answer in 20 s. Black tiles in
   Scriptable are usually a widget run iOS ended before it finished. Not settled: needs the phone (HANDOFF, Waiting
   on the owner).
+- **The owner, 01:50:** "running script from scriptable itself showed widget preview but for some reason actual widget
+  show black fill". So the code, data and network work in the app; the widget run is what fails. Not memory from
+  icons (184 PNGs, 96 px, at most 11 KB); quests.json (742 KB) was parsed the same way by every copy since 11-14,
+  once a day per widget. Candidates: the first fetches on a widget run taking long enough that iOS ends it (the two
+  "timed out" tiles point there), or memory. Test asked: preview each widget's Parameter in the app, then Edit Widget
+  so a run needs no network.
