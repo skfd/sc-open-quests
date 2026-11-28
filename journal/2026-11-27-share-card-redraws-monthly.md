@@ -17,6 +17,8 @@
   files: design/project-card.svg and .png, docs/img/share-card.png, docs/index.html), then `deploy_site`, which sees
   docs/ changed and deploys and pushes as usual. A failure logs "card: redraw FAILED", checks the four files out again,
   and the site run goes on.
-- Tests: `tests/test_site_run.py` (CardStaleTest, RedrawCardTest, the gate in SiteTest; scripts and git mocked, nothing
-  drawn). Full suite in the worktree: 450 passed, 3 skipped (two of them the unbuilt tilestore in a worktree).
+- Tests: `tests/test_site_run.py` (CardStaleTest, RedrawCardTest with scripts and git mocked, RedrawCardGitTest with
+  real git in a throwaway repo for the commit and the putting back, the gate in SiteTest; nothing drawn). Full suite
+  in the worktree: 452 passed, 3 skipped (two of them the unbuilt tilestore in a worktree). The inputs task runs
+  `python` from PATH, which has Pillow 12.3.0; headless Edge under Task Scheduler has never run.
   First real run: 12-02's inputs run, after 12-01's world day is published (unchecked until then).

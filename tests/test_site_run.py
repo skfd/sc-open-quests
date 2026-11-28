@@ -228,6 +228,67 @@ class RedrawCardTest(unittest.TestCase):
         self.assertIn("not redrawn", self.logged[0])
 
 
+class RedrawCardGitTest(unittest.TestCase):
+    """The commit and the putting back, in a throwaway repo with real git; only the two scripts are faked."""
+
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
+        self.addCleanup(tmp.cleanup)
+        self.repo = Path(tmp.name)
+        self.page = self.repo / "docs" / "index.html"
+        for f in run.CARD_FILES:
+            (self.repo / f).parent.mkdir(parents=True, exist_ok=True)
+            (self.repo / f).write_text("old\n", encoding="utf-8")
+        self.page.write_text(PAGE.format("2026-11-24"), encoding="utf-8")
+        g = ["git", "-c", "user.name=t", "-c", "user.email=t@t", "-c", "commit.gpgsign=false"]
+        self.g = g
+        for args in (["init", "-q", "-b", "main"], ["add", "-A"], ["commit", "-q", "-m", "start"]):
+            subprocess.run(g + args, cwd=self.repo, check=True, capture_output=True)
+        self.fail_render = False
+        real_run = subprocess.run
+
+        def script(cmd, **kw):
+            if cmd[0] == "git":
+                return real_run(g + list(cmd[1:]), **kw)
+            if Path(cmd[-1]).name == "render_share_card.py":
+                (self.repo / "design" / "project-card.png").unlink()
+                self.page.write_text(PAGE.format("2026-12-01"), encoding="utf-8")
+                (self.repo / "docs" / "img" / "share-card.png").write_text("new\n", encoding="utf-8")
+                if self.fail_render:
+                    return subprocess.CompletedProcess(cmd, 1, "", "boom")
+                (self.repo / "design" / "project-card.png").write_text("new\n", encoding="utf-8")
+            else:
+                (self.repo / "design" / "project-card.svg").write_text("new\n", encoding="utf-8")
+            return subprocess.CompletedProcess(cmd, 0, "", "")
+        for name, value in [("ROOT", self.repo), ("CARD_PAGE", self.page), ("LOOP_RUNNING", self.repo / "RUNNING"),
+                            ("log", lambda m: None)]:
+            p = mock.patch.object(run, name, value)
+            p.start()
+            self.addCleanup(p.stop)
+        p = mock.patch.object(run.subprocess, "run", script)
+        p.start()
+        self.addCleanup(p.stop)
+
+    def git_out(self, *args):
+        return subprocess.run(self.g + list(args), cwd=self.repo, check=True, capture_output=True,
+                              text=True).stdout.strip()
+
+    def test_committed_so_the_deploy_sees_docs_changed(self):
+        before = self.git_out("rev-parse", "HEAD:docs")
+        self.assertTrue(run.redraw_card("2026-12-01"))
+        self.assertNotEqual(self.git_out("rev-parse", "HEAD:docs"), before)
+        self.assertEqual(self.git_out("status", "--porcelain"), "")
+        self.assertEqual(self.git_out("log", "-1", "--format=%s"), "Share card: 2026-12-01")
+
+    def test_a_failed_render_leaves_the_checkout_as_it_was(self):
+        self.fail_render = True
+        head = self.git_out("rev-parse", "HEAD")
+        self.assertFalse(run.redraw_card("2026-12-01"))
+        self.assertEqual(self.git_out("rev-parse", "HEAD"), head)
+        self.assertEqual(self.git_out("status", "--porcelain"), "")
+        self.assertIn("?v=2026-11-24", self.page.read_text(encoding="utf-8"))
+
+
 class PushTest(unittest.TestCase):
     def test_unchanged_data_still_pushes_main(self):
         calls = []
