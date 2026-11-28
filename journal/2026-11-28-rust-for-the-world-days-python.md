@@ -45,3 +45,8 @@ mostly the agents' reading of the code, so estimates):
 binary one at a time, each proven equal over real days; the glue stays Python. The other options were "measure first,
 decide then", "everything, after release 1" and "not now". This folds in the earlier offer of a BACKLOG line for
 `stream.py`'s pyosmium parts.
+
+**Brought forward (00:40).** Owner: "I think I would like to start building now in work tree please". Asked which
+step first (diff reader + small PBF, the row-file rewrites, or a scaffold until 19:00), the owner answered "work
+autonomously thorugh the night pls". Chosen: the small PBF, then the diff reader; branch `rust-world-day`, worktree
+`../sc-open-quests-rust-day`. Loop idle (no RUNNING, 11-27 done 17:27), 185 GB free.

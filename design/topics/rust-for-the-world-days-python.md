@@ -19,5 +19,11 @@ only, later". The survey and its numbers: journal/2026-11-28-rust-for-the-world-
   shows it costs, after the 11-26 pools. What Rust may buy: speed on Python loops (tier 1's rewrite, tier 2's delta,
   the diff read, node lookups) and less of the commit the loop's own process takes from the engines (17 GB on 11-24;
   unmeasured). Little for the 558,000 small engine files, which are bound by the file count.
-- **When:** after the 12-01 cutover and release 1; builds and equal-output runs in loop gaps or under a HOLD, never
-  beside a running world day.
+- **When:** building brought forward (owner, 11-28 about 00:40: "I think I would like to start building now in work
+  tree please", then "work autonomously thorugh the night pls"): code on branch `rust-world-day` (worktree
+  `../sc-open-quests-rust-day`) from 11-28; nothing of it merged into the live loop before the 12-01 cutover and
+  release 1. Builds and equal-output runs in loop gaps or under a HOLD, never beside a running world day.
+- **The first step, chosen by the agent overnight (the owner left it to it):** tier 1's small PBF
+  (`stream.write_small_pbf`) as `tilestore smallpbf`, then the diff reader (`stream.read_diff`) if a Rust read plus
+  the Python load beats pyosmium. Self-contained, provable equal on real diffs without the world's files, and it
+  takes pyosmium off the daily path; the larger costs wait for 11-28's `steps.json`.
