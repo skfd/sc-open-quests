@@ -405,6 +405,20 @@ function placeUrl(cityId, quest, part = null) {
 
 const HOUR = 3600 * 1000;
 
+// A home-screen run gets far less time than the app, and iOS leaves a widget it stops black. So a widget run
+// shares one budget for the network: each request may wait only for what is left of it, and once it is spent a
+// fetch fails at once and the saved copy is drawn. The app's preview waits as long as a request takes.
+const WIDGET_NETWORK_MS = 10 * 1000;
+let deadline = Infinity;
+function setDeadline(ms) { deadline = ms; }
+
+/** Seconds a request may wait: [max], or less when the run's budget is nearly spent; throws once it is. */
+function timeoutFor(max, now = Date.now()) {
+  const left = (deadline - now) / 1000;
+  if (left < 1) throw new Error("The network was too slow for a widget refresh");
+  return Math.min(max, left);
+}
+
 async function cached(fm, dir, key, url, maxAgeMs, derive) {
   const body = fm.joinPath(dir, key + ".json");
   const meta = fm.joinPath(dir, key + ".meta.json");
@@ -413,7 +427,7 @@ async function cached(fm, dir, key, url, maxAgeMs, derive) {
   if (info && Date.now() - info.fetched < maxAgeMs) return JSON.parse(fm.readString(body));
   try {
     const req = new Request(url);
-    req.timeoutInterval = 20;
+    req.timeoutInterval = timeoutFor(20);
     if (info && info.etag) req.headers = { "If-None-Match": info.etag };
     const text = await req.loadString();
     const status = req.response.statusCode;
@@ -445,7 +459,7 @@ async function worldFile(fm, dir, key, latest, name) {
   if (have && have.latest.v === latest.v) return have;
   try {
     const req = new Request(`${WORLD}/${name}?v=${encodeURIComponent(latest.v)}`);
-    req.timeoutInterval = 20;
+    req.timeoutInterval = timeoutFor(20);
     const text = await req.loadString();
     if (req.response.statusCode !== 200) throw new Error(`HTTP ${req.response.statusCode}`);
     const value = { latest, file: JSON.parse(text) };
@@ -551,7 +565,7 @@ async function loadIcons(fm, dir, quests) {
     try {
       if (!fm.fileExists(file)) {
         const req = new Request(`${BASE}/icons/png/${encodeURIComponent(stem)}.png`);
-        req.timeoutInterval = 15;
+        req.timeoutInterval = timeoutFor(15);
         const img = await req.loadImage();
         if (req.response.statusCode !== 200) return;
         fm.writeImage(file, img);
@@ -874,6 +888,7 @@ async function runInApp() {
 // Entry. The tests and the preview cut the file here (ios/test/load.js) and run everything above.
 
 if (config.runsInWidget) {
+  setDeadline(Date.now() + WIDGET_NETWORK_MS);
   Script.setWidget(await makeWidget(args.widgetParameter, config.widgetFamily));
 } else {
   await runInApp();
