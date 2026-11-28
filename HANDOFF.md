@@ -36,7 +36,7 @@ every quest, never an easier subset (DESIGN.md, "Don't").
   stood still 11:54-14:15 in it. The marker skips that wait; the wait's code goes with the city run's clean-up.
   [journal/2026-11-26-the-city-runs-clean-up-after-the-world-dailies-run-well.md](journal/2026-11-26-the-city-runs-clean-up-after-the-world-dailies-run-well.md)
 - **Four agents in worktrees, started 11-27 20:45 (owner chose all four):** the history cut rehearsed on Berlin's
-  history clip (release 2's first step); the share card redrawn monthly from `run.py site`; the Overture tool's
+  history clip (release 2's first step); the share card redrawn monthly (merged bb5b57c20); the Overture tool's
   same-name gap; the area-date horizon guard (stays on its branch until after 12-01). Each reports back; merging is
   mine. If a session ends first: their branches are under `.claude/worktrees/agent-*`; heavy work must end by 11-28
   13:30.
@@ -87,8 +87,9 @@ every quest, never an easier subset (DESIGN.md, "Don't").
    moved meanwhile, the seed-day check stops it: clear the switch markers from `seed-day` on and `cut/storecut.json`, then rerun.
    [journal/2026-11-26-the-12-01-switch-to-overture-11-18-0-mapped-not-built.md](journal/2026-11-26-the-12-01-switch-to-overture-11-18-0-mapped-not-built.md)
 4. **Release day (12-01 at the earliest):** redraw the share card (`python design/project_card.py && python
-   design/render_share_card.py`, in a loop gap), look at `docs/img/share-card.png`, commit; then write what redraws it
-   monthly (nothing does). `share-previews` itself was merged 11-26 (as of 11-26).
+   design/render_share_card.py`, in a loop gap), look at `docs/img/share-card.png`, commit; from then on `run.py site(card=True)`
+   (inputs' 11:15 run only) redraws it when the world has a day in a later month (merged 11-27; first automatic
+   redraw 12-02, headless Edge under Task Scheduler unchecked). `share-previews` itself was merged 11-26 (as of 11-26).
    [journal/2026-11-10-idea-share-previews-for-links.md](journal/2026-11-10-idea-share-previews-for-links.md)
 5. **Share previews, after the 12-01 switch (as of 11-27 20:20):** rerun `node cloudflare/test/parity.mjs docs
    https://sc-data.comentality.com/` (4,091 of 4,091 on 11-27). Live since 11-27; the daily `site` run deploys the
