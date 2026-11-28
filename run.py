@@ -1215,15 +1215,16 @@ def site_due(state: dict, trees: dict) -> str | None:
     return f"{' and '.join(changed)} changed since the last deploy" if changed else None
 
 
-def site(force: bool = False, push: bool = True) -> None:
+def site(force: bool = False, push: bool = True, card: bool = False) -> None:
     """Publish what the world's gated days and docs/ have and the readers don't: the place files, then the site,
     which a new day alone does not change.
     The world loop's last step (tools/stream/planet_store_day.py), and inputs', which makes up for a failure. A run
-    that can't do it now leaves it to the next one."""
+    that can't do it now leaves it to the next one. card (inputs' only, at 11:15, a gap of the world loop): redraw
+    the share card first if the world has a day in a later month than it (redraw_card)."""
     sys.path.insert(0, str(TOOLS_DIR))
     import world_publish  # noqa: E402  (it imports this module)
     try:
-        world_publish.gated_days(world_publish.WORLD)
+        days = world_publish.gated_days(world_publish.WORLD)
     except SystemExit as e:
         raise RuntimeError(str(e)) from None
     memory = memory_status()
@@ -1231,9 +1232,81 @@ def site(force: bool = False, push: bool = True) -> None:
         log(f"site: {memory[1]:.1f} GB of commit left; the next run")
         return
     world_ok = publish_world() if push else True
+    if card and push:
+        redraw_card(days[-1])
     deploy_site(force, push)
     if not world_ok:
         raise RuntimeError("site: the place files were not published; the next run tries again")
+
+
+# --- the share card: redrawn once a month (design/project_card.py, design/render_share_card.py) -------------------
+
+CARD_PAGE = ROOT / "docs" / "index.html"   # render_share_card writes the card's day there as share-card.png?v=
+CARD_FILES = ["design/project-card.svg", "design/project-card.png", "docs/img/share-card.png", "docs/index.html"]
+CARD_SCRIPTS = ["design/project_card.py", "design/render_share_card.py"]
+LOOP_RUNNING = ROOT / ".scratch" / "planet-cut" / "RUNNING"   # the world loop is moving the store
+CARD_TIMEOUT_S = 900
+
+
+def card_day(html: str) -> date | None:
+    """The day the share card shows, from the page's og:image ?v=, or None if it has none."""
+    found = re.search(r"img/share-card\.png\?v=(\d{4}-\d{2}-\d{2})\"", html)
+    try:
+        return date.fromisoformat(found.group(1)) if found else None
+    except ValueError:
+        return None
+
+
+def card_stale(shown: date | None, newest: str) -> bool:
+    """The card is redrawn when the world's newest gated day is in a later month than the day it shows: once a
+    month, on the first inputs run after the month's first day is published (the card shows the data's day, not
+    the run's). A card without a day is left alone: the render could not write one into that page either."""
+    if shown is None:
+        return False
+    return (date.fromisoformat(newest).year, date.fromisoformat(newest).month) > (shown.year, shown.month)
+
+
+def redraw_card(newest: str) -> bool:
+    """Redraw the share card and commit it, if stale; the deploy that follows (docs/ changed) puts it up. Logged,
+    never raised: a failed redraw puts its files back and the site goes up as it was. Returns True if committed."""
+    try:
+        old = card_day(CARD_PAGE.read_text(encoding="utf-8"))
+        if old is None:
+            log(f"card: no share-card.png?v=<day> in {CARD_PAGE.name}; not redrawn")
+        if not card_stale(old, newest):
+            return False
+        if LOOP_RUNNING.exists():
+            log(f"card: shows {old}, the world has {newest}, but the world loop is running; the next run")
+            return False
+        if git("rev-parse", "--abbrev-ref", "HEAD").stdout.strip() != "main":
+            log("card: not on main; not redrawn")
+            return False
+        if git("status", "--porcelain", "--", *CARD_FILES).stdout.strip():
+            log(f"card: uncommitted changes in {', '.join(CARD_FILES)}; not redrawn")
+            return False
+        log(f"card: shows {old}, the world has {newest}; redrawing")
+        try:
+            for script in CARD_SCRIPTS:
+                r = subprocess.run([sys.executable, str(ROOT / script)], cwd=ROOT, capture_output=True, text=True,
+                                   encoding="utf-8", errors="replace", timeout=CARD_TIMEOUT_S)
+                for line in (r.stdout + r.stderr).splitlines():
+                    if line.strip():
+                        log(f"[card] {line}")
+                if r.returncode != 0:
+                    raise RuntimeError(f"{script} exit {r.returncode}")
+            new = card_day(CARD_PAGE.read_text(encoding="utf-8"))
+            if new is None or not card_stale(old, new.isoformat()):
+                raise RuntimeError(f"drawn for {new}, not a later month than {old} (sc-data behind the world?)")
+            git("add", "--", *CARD_FILES)
+            git("commit", "-m", f"Share card: {new}", "--", *CARD_FILES)
+        except Exception:
+            git("checkout", "HEAD", "--", *CARD_FILES, check=False)
+            raise
+        log(f"card: committed, {new}")
+        return True
+    except Exception as e:
+        log(f"card: redraw FAILED ({e}); the site goes up with the old card, the next run tries again")
+        return False
 
 
 def deploy_site(force: bool, push: bool) -> None:
@@ -1331,7 +1404,7 @@ def inputs(sleep=time.sleep) -> None:
     except Exception as e:  # a GitHub hiccup fails nothing
         log(f"check-release failed (ignored): {e}")
     try:
-        site()
+        site(card=True)   # 11:15 is a gap of the world loop; the loop's own call (about 17:45) is not
     except Exception as e:
         log(f"{e}")
         failed.append("site")
