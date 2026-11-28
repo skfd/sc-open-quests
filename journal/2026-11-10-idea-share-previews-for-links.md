@@ -200,3 +200,10 @@ reach about 18,060 of 20,000), and about 1M world places can never be static pag
   8,926 equal. **Step 4 done:** `wrangler.previews.jsonc` is now `wrangler.jsonc` (what `cloud_publish.py`'s plain
   `wrangler deploy` deploys), the script-less one `wrangler.static.jsonc`; deployed with the plain command
   (a823b8d4): Berlin 221,268, the world's 11-27 number. README's section and two design topics say so.
+- **More live checks (20:10):** seven crawler user agents (facebookexternalhit, Twitterbot, Slackbot-LinkExpanding,
+  LinkedInBot, Discordbot, TelegramBot, WhatsApp) all 200 with Toronto's number (a spoofed agent proves nothing either
+  way about the zone's bot rules; the network checker is the real test, the owner's). All 147 `?city=` links live with
+  a browser agent end "As of Nov 27, 2026." (slowest 0.37 s). Largest world city file 30 KiB (london-gb), the largest
+  `city-parts/` 294 KiB (halifax, 619 parts), far under the Worker's 4 MiB cap; a Halifax part reads 11-27.
+  `cloud_publish.py` deploys with a plain `wrangler deploy` from `cloudflare/`, so it takes the new `wrangler.jsonc`.
+  Full suite 444 passed, 1 skipped.

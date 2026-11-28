@@ -40,6 +40,11 @@ every quest, never an easier subset (DESIGN.md, "Don't").
 
 ## Waiting on the owner
 
+- **Paste a share link into a network's preview checker (as of 11-27 20:20)**, e.g.
+  `https://street-complete-statistics.comentality.com/?city=toronto&part=d99e33025010` into Facebook's Sharing Debugger,
+  LinkedIn's Post Inspector or a message to yourself; and glance at the Worker's requests and CPU in the Cloudflare
+  dashboard over the first days ($5 limit; past it the home page fails with error 1103). Crawler user agents
+  (Facebook, Twitter, Slack, LinkedIn, Discord, Telegram, WhatsApp) all get 200 and the number by curl.
 - **Be at the machine on 12-01 from about 18:30 (as of 11-27 10:45)** to watch the cutover (Next 3) and lift the HOLD
   after `adopt`.
 
@@ -82,14 +87,9 @@ every quest, never an easier subset (DESIGN.md, "Don't").
    design/render_share_card.py`, in a loop gap), look at `docs/img/share-card.png`, commit; then write what redraws it
    monthly (nothing does). `share-previews` itself was merged 11-26 (as of 11-26).
    [journal/2026-11-10-idea-share-previews-for-links.md](journal/2026-11-10-idea-share-previews-for-links.md)
-5. **Share previews are live (as of 11-27 20:00):** the Worker went out at 18:45, was rolled back at 19:05 (city
-   previews stuck at 11-25), fixed (a city joins the world's days, a part reads its world file, as the page does), and
-   went out again. `wrangler.jsonc` now carries the script, so the daily `site` run deploys it; the way back is
-   `wrangler.static.jsonc` (`cloudflare/README.md`, "Share previews"). Live: browser parity 7 of 7, `parity.mjs`
-   4,091 of 4,091 against the world, byte check 8,926 equal. **Left:** the owner pastes a link into a network's preview
-   checker (step 5); watch the Worker's requests and CPU in the dashboard for the first days ($5 limit, error 1103
-   past it); after the 12-01 switch, rerun `parity.mjs docs https://sc-data.comentality.com/`.
-   [journal/2026-11-10-idea-share-previews-for-links.md](journal/2026-11-10-idea-share-previews-for-links.md)
+5. **Share previews, after the 12-01 switch (as of 11-27 20:20):** rerun `node cloudflare/test/parity.mjs docs
+   https://sc-data.comentality.com/` (4,091 of 4,091 on 11-27). Live since 11-27; the daily `site` run deploys the
+   Worker (`wrangler.jsonc`), the way back is `wrangler.static.jsonc` (`cloudflare/README.md`, "Share previews").
 6. **The city run's clean-up**, not before the HOLD is lifted and a few world days publish cleanly ("docs/ and config/ are
    as deployed; nothing to do", no data commit): `run.py`'s `update`/`download`/`count`/`backfill`, their tests,
    `schedule-add.ps1`, README's Scheduling part; decide `kk-SCOpenQuests-planet` on the way (as of 11-26; owner: "handoff
