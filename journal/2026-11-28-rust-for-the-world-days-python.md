@@ -50,3 +50,33 @@ decide then", "everything, after release 1" and "not now". This folds in the ear
 step first (diff reader + small PBF, the row-file rewrites, or a scaffold until 19:00), the owner answered "work
 autonomously thorugh the night pls". Chosen: the small PBF, then the diff reader; branch `rust-world-day`, worktree
 `../sc-open-quests-rust-day`. Loop idle (no RUNNING, 11-27 done 17:27), 185 GB free.
+
+**The first two steps, built and proven (00:45-01:20, branch `rust-world-day`, loop idle, nothing of ours beside).**
+- `tilestore smallpbf --diff --loc --stamp --out` (`tilestore/src/smallpbf.rs`): `stream.write_small_pbf` rule for
+  rule from the diff (`osc.rs`) and the planet's node file, read only. Kept on purpose: the synthetic nodes a way's
+  earlier refs got stay when a later ref has no place (as the Python loop leaves them); a repeated tag key keeps its
+  first place and last value; the counter's keys in the Python order, present only when non-zero.
+- `tilestore diffcols --diff --out` (`diffcols.rs`, `osc::parse` split out of `osc::read`) and `stream.load_diffcols`:
+  per kind the last version of each id at its first version's place, deleted ones too, as .npy columns and one tag
+  file per kind; Python builds read_diff_osmium's dicts from them (UTC datetimes cached per second, places / 1e7).
+  The first build shared one tag blob with per-kind offsets from 0, so ways read the nodes' tags; the unit test
+  caught it before any real run counted.
+- **Equal on real diffs** (`tools/stream/tilecheck/diffcmp.py`, `smallcmp.py`; node file `.scratch/planet-day/planet.loc`
+  at 11-27, both sides reading the same file, so the check is valid whichever day the diff is):
+
+| | Python | Rust | result |
+|---|---:|---:|---|
+| read diff 5189 (4,496,007 nodes, 691,583 ways, 35,604 relations) | 103.8 s | 22.7 s with the load | same keys in order, 0 values differ, 46,239 relation versions both |
+| read diff 5185 (4,277,047 / 827,128 / 56,783) | 157.5 s | 23.9 s | equal |
+| small PBF 5189 | 71.6 s | 12.1 s (8.7 of it reading the diff) | 5,059,037 objects, 0 differ, 0 ways unplaced |
+| small PBF 5185 | 40.7 s | 18.2 s | 6,025,839 objects, 0 differ, 945 ways unplaced both |
+| small PBF 5187 | 27.6 s | 17.0 s | 5,460,292 objects, 0 differ, 694 unplaced both |
+
+- Wiring: `stream.read_diff` takes the Rust read for .osc/.osc.gz when the binary exists (`SCOQ_RUST_DIFF=0`: pyosmium);
+  `world_day.finish` writes tier 1's PBF by `small_pbf_rust` on the planet's node file (`SCOQ_RUST_SMALLPBF=0`: Python),
+  falling back to Python when the diff it read is not the day's (a rehearsal's `keep` narrowed it) and building the
+  node overlay only when the Python writer needs it. `planet_store_day` pins `stream.TILESTORE` to the loop's daily
+  copy, as it pins `WD.EXE`.
+- Tests: `tests/test_rust_day.py` (3: the read, the PBF, the fallback). Affected tests 143 passed, full suite 476
+  passed, 1 skipped (01:18). **Not yet run inside a real world day**; the saving is about 2-3 min of a 3.5 h day,
+  as the survey expected for this step: the larger costs wait for 11-28's `steps.json`.

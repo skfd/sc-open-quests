@@ -51,9 +51,12 @@ every quest, never an easier subset (DESIGN.md, "Don't").
 - **Four tasks done 11-27 evening (owner chose them, 20:45):** the share card redraws monthly (merged); the Overture
   tool's same-name gap (merged, class `same-name-kept`); the horizon guard (branch `horizon-guard`, Next 4); the history
   cut rehearsed on Berlin (merged; findings in BACKLOG's release-2 entry).
-- **Rust port of the world day's Python, building overnight (as of 11-28 00:45):** branch `rust-world-day`, worktree
-  `../sc-open-quests-rust-day`; first tier 1's small PBF as `tilestore smallpbf`, then the diff reader. Not merged
-  before the 12-01 cutover; builds only in loop gaps (the day starts 14:45).
+- **Rust port, first two steps built and proven equal (as of 11-28 01:20):** branch `rust-world-day` (head 90448855f),
+  worktree `../sc-open-quests-rust-day`, not merged. `stream.read_diff` by `tilestore diffcols` (diff 5189: 104 s to
+  23 s, dicts equal in order on 5189 and 5185) and tier 1's small PBF by `tilestore smallpbf` (5185, 5187, 5189: 0 of
+  5-6M objects differ; 28-72 s to 12-18 s), switches `SCOQ_RUST_DIFF=0` / `SCOQ_RUST_SMALLPBF=0` the way back. Full
+  suite in the worktree 476 passed, 1 skipped. About 2-3 min a day; nothing run inside a real world day yet. Next:
+  merge after the 12-01 cutover (owner's call), then 11-28's `steps.json` picks the next step.
   [design/topics/rust-for-the-world-days-python.md](design/topics/rust-for-the-world-days-python.md)
 - **Worktrees (as of 11-27):** `.claude/worktrees/agent-a9b152efd4c2e1246` (P3's 28.6 GB rehearsal data, kept for three
   traces) and `../sc-open-quests-place-ids` (branch `place-ids`, merged). Leave both.
