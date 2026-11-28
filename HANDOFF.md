@@ -63,6 +63,13 @@ every quest, never an easier subset (DESIGN.md, "Don't").
 
 ## Waiting on the owner
 
+- **The iPhone widgets: two black, two "request timed out" (as of 11-28 01:45).** Every published script copy draws
+  from here on the live files, and every URL answers fast, so nothing found broken on our side. On the phone: run
+  `open-quests` inside Scriptable (Medium, a widget's Parameter); if it draws, the widget runs are being cut short; if
+  it times out, open `https://sc-data.comentality.com/latest.json` in Safari on the same network (VPN, Private Relay,
+  DNS filter?). Also the four Parameters, when they last showed numbers, and whether line 26 of the phone's copy
+  reads `WORLD = "https://sc-data..."` (the 11-25 copy).
+  [journal/2026-11-28-iphone-widgets-blank-or-timing-out.md](journal/2026-11-28-iphone-widgets-blank-or-timing-out.md)
 - **Glance at the share-preview Worker's requests and CPU** in the Cloudflare dashboard over the first days (as of
   11-27 20:40; $5 limit, past it the home page fails with error 1103). Telegram showed a neighbourhood link right
   (owner, 20:35): its number, "As of Nov 27", and the site card.
