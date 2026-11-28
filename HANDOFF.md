@@ -35,6 +35,11 @@ every quest, never an easier subset (DESIGN.md, "Don't").
   the store's update still waited out the deleted city run's window (`backfill_history.QUIET`, 11:55-14:15 local); 11-27
   stood still 11:54-14:15 in it. The marker skips that wait; the wait's code goes with the city run's clean-up.
   [journal/2026-11-26-the-city-runs-clean-up-after-the-world-dailies-run-well.md](journal/2026-11-26-the-city-runs-clean-up-after-the-world-dailies-run-well.md)
+- **Four agents in worktrees, started 11-27 20:45 (owner chose all four):** the history cut rehearsed on Berlin's
+  history clip (release 2's first step); the share card redrawn monthly from `run.py site`; the Overture tool's
+  same-name gap; the area-date horizon guard (stays on its branch until after 12-01). Each reports back; merging is
+  mine. If a session ends first: their branches are under `.claude/worktrees/agent-*`; heavy work must end by 11-28
+  13:30.
 - **Worktrees (as of 11-27):** `.claude/worktrees/agent-a9b152efd4c2e1246` (P3's 28.6 GB rehearsal data, kept for three
   traces) and `../sc-open-quests-place-ids` (branch `place-ids`, merged). Leave both.
 
