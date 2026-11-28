@@ -310,7 +310,8 @@ def engine(pbf: Path, out: Path, today: str, cities: Path, zone: str, notes: Pat
         returncode = run_started(args, on_start, cwd=base, env=env, stdout=f, stderr=subprocess.STDOUT)
     if returncode:
         sys.exit(f"engine failed ({returncode}), see {out / 'engine.log'}")
-    log(f"engine over {pbf.name} in {time.time() - t:.1f} s")
+    # the engine's id (its out folder's last two parts: t1/f12, f12/old) pairs the same group across days
+    log(f"engine over {pbf.name} in {time.time() - t:.1f} s ({out.parent.name}/{out.name})")
     return dump
 
 

@@ -118,6 +118,16 @@ def given(folder: Path) -> dict:
         return {}
 
 
+def cpu(folder: Path) -> dict:
+    """the CPU seconds of the engine's process tree (qos.note_engine_cpu leaves cpu.json beside its log): "cpu s",
+    and "qos", the mode it ran under; {} for a day run before 2026-11-28 or with no watcher"""
+    try:
+        c = json.loads((folder / "cpu.json").read_text(encoding="utf-8"))
+        return {"cpu s": float(c["cpu s"]), "qos": str(c.get("qos", ""))}
+    except (OSError, ValueError, TypeError, KeyError, AttributeError):
+        return {}
+
+
 def harvest(work: Path) -> dict:
     engines, unfinished = {}, []
     for log in sorted(work.rglob("engine.log")):
@@ -127,6 +137,7 @@ def harvest(work: Path) -> dict:
             unfinished.append(rel)
         else:
             e.update(given(log.parent))
+            e.update(cpu(log.parent))
             engines[rel] = e
     phases: dict[str, dict] = {}
     watch: list[str] = []
@@ -141,6 +152,10 @@ def harvest(work: Path) -> dict:
                       "map data s": round(sum(e["map data s"] for e in es.values()), 1),
                       "quests s": round(sum(e["quests s"] for e in es.values()), 1),
                       "main s": round(sum(sum(e["main"].values()) for e in es.values()), 1)}
+        with_cpu = [e for e in es.values() if "cpu s" in e]
+        if with_cpu:   # slow cores show as more CPU seconds for the same work
+            phases[ph]["cpu s"] = round(sum(e["cpu s"] for e in with_cpu), 1)
+            phases[ph]["with cpu"] = len(with_cpu)
         for r in top:
             e = es[r]
             if e["total s"] < WATCH_SECONDS:
@@ -198,7 +213,8 @@ def write(world: Path, day: str, work: Path, log=None) -> Path:
         for ph, p in rec["phases"].items():
             log(f"engines, {ph}: {p['engines']} in {p['sum s']:,.0f} s summed (median {p['median s']:.0f} s, longest "
                 f"{p['max s']:.0f} s, the five longest {p['top 5 share']:.0%}); map data {p['map data s']:,.0f} s, "
-                f"quests {p['quests s']:,.0f} s, main pass {p['main s']:,.0f} s; heap up to {p['max heap MB']:,} MB")
+                f"quests {p['quests s']:,.0f} s, main pass {p['main s']:,.0f} s; heap up to {p['max heap MB']:,} MB"
+                + (f"; CPU {p['cpu s']:,.0f} s ({p['with cpu']} engines)" if "cpu s" in p else ""))
         for w in rec["watch"]:
             log(f"watch: {w}")
     return out

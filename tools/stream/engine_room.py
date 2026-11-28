@@ -407,7 +407,10 @@ def in_room(run, out: Path, key: str, heap_gb: int, day_heap_gb: int, say=_print
     try:
         with room.engine(heap_gb, key, say) as slot:
             t0 = time.time()   # an hs_err file from here on can be this engine's (not one of its wait's)
-            return run(heap_gb, slot.started, SIZED_OPTS if heap_gb < day_heap_gb else "")
+            try:
+                return run(heap_gb, _started(slot), SIZED_OPTS if heap_gb < day_heap_gb else "")
+            finally:
+                _cpu(out, slot)
     except SystemExit as e:
         if heap_gb >= day_heap_gb or not str(e).startswith("engine failed ("):
             raise
@@ -419,4 +422,29 @@ def in_room(run, out: Path, key: str, heap_gb: int, day_heap_gb: int, say=_print
     clear_failed(out)
     note_given(out, day_heap_gb, heap_gb)
     with room.engine(day_heap_gb, key, say) as slot:
-        return run(day_heap_gb, slot.started, "")
+        try:
+            return run(day_heap_gb, _started(slot), "")
+        finally:
+            _cpu(out, slot)
+
+
+def _started(slot: Slot):
+    """slot.started, and the engine's launcher shown to the qos watcher (qos.py: its process tree is set when the
+    switch says so, and its CPU seconds kept)"""
+    def started(process):
+        slot.started(process)
+        try:
+            import qos
+            qos.engine_started(getattr(process, "pid", None))
+        except Exception:  # noqa: BLE001  a reading, never the engine's failure
+            pass
+    return started
+
+
+def _cpu(out: Path, slot: Slot) -> None:
+    """the engine's tree's CPU seconds beside its log (cpu.json), when a qos watcher runs"""
+    try:
+        import qos
+        qos.note_engine_cpu(out, slot.pid)
+    except Exception:  # noqa: BLE001
+        pass

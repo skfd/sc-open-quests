@@ -80,6 +80,14 @@ import day_metrics as DM  # noqa: E402
 import world_day as WD  # noqa: E402
 import world_gate as WG  # noqa: E402
 import world_state as WS  # noqa: E402
+try:  # the power-throttling switch and its readings (qos.py): never what stops a day
+    import qos  # noqa: E402
+except Exception as _e:  # noqa: BLE001
+    _QOS_WHY = f"qos: not loaded ({type(_e).__name__}: {_e})"
+
+    class qos:  # noqa: N801  the same calls, doing nothing
+        start = staticmethod(lambda log: log(_QOS_WHY))
+        day_done = staticmethod(lambda keep, log=None: None)
 
 WD.EXE = EXE  # the world day's store reads and lookups by the run's own copy of the binary
 
@@ -526,6 +534,7 @@ def one_day():
         DM.write_steps(WORLD, nxt, LOG, log)
     except Exception as e:  # noqa: BLE001
         log(f"steps: not recorded ({type(e).__name__}: {e})")
+    qos.day_done(WORLD / "days" / nxt, log)   # the day's mode and core load (qos.py); never raises
     write_facts()
     return True
 
@@ -690,6 +699,7 @@ def main():
         end_orphans(pid)
     shutil.copy2(EXE_SRC, EXE)  # a rebuild of tilestore/ while this runs does not touch the binary in use
     log(f"planet store run started; binary {EXE_SRC} copied")
+    qos.start(log)  # the switch SCOQ_QOS / data/qos.txt: this run's processes off power throttling (qos.py); never raises
     n = 0
     RUNNING.write_text(f"{dt.datetime.now().isoformat(timespec='seconds')} {os.getpid()}\n", encoding="utf-8")
     try:
