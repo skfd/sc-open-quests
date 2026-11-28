@@ -42,12 +42,6 @@ every quest, never an easier subset (DESIGN.md, "Don't").
 
 - **Be at the machine on 12-01 from about 18:30 (as of 11-27 10:45)** to watch the cutover (Next 3) and lift the HOLD
   after `adopt`.
-- **The share-preview Worker's deploy** (`cloudflare/wrangler.previews.jsonc`, deployed by nothing scheduled) needs the
-  owner's go and the $5 Workers limit question (past it the home page fails with error 1103) (as of 11-26).
-  [journal/2026-11-10-idea-share-previews-for-links.md](journal/2026-11-10-idea-share-previews-for-links.md)
-- **The crash files in the repo root** (`hs_err_pid*.log`, `replay_pid*.log`, untracked, 11-23's engines, diagnosed) may go
-  when the owner says (as of 11-26).
-  [journal/2026-11-26-performance-review-of-the-traces-and-logs.md](journal/2026-11-26-performance-review-of-the-traces-and-logs.md)
 
 ## Next, in order
 
@@ -88,16 +82,24 @@ every quest, never an easier subset (DESIGN.md, "Don't").
    design/render_share_card.py`, in a loop gap), look at `docs/img/share-card.png`, commit; then write what redraws it
    monthly (nothing does). `share-previews` itself was merged 11-26 (as of 11-26).
    [journal/2026-11-10-idea-share-previews-for-links.md](journal/2026-11-10-idea-share-previews-for-links.md)
-5. **The city run's clean-up**, not before the HOLD is lifted and a few world days publish cleanly ("docs/ and config/ are
+5. **The share-preview Worker: the owner's go given (11-27, 18:35, "now, tonight"); deployed 18:45, rolled back 19:05
+   (as of 11-27 19:10).** Live checks passed except 2 of 7 browser links: the Worker reads a city's numbers from
+   `docs/data/history/` (frozen at 11-25 since the city run went), the page joins the world's days on top
+   (`app.js` `worldCity`/`worldPart`), so every city preview would stay at 11-25. Fix: the Worker joins the world's
+   city and part files as the page does (world places already right), the parity test against the world's numbers,
+   then redeploy and steps 2 to 5 of `cloudflare/README.md`, "Share previews". Live checks: the zone answers 403 to
+   Python's user agent; run `browser_parity.py` with a browser one.
+   [journal/2026-11-10-idea-share-previews-for-links.md](journal/2026-11-10-idea-share-previews-for-links.md)
+6. **The city run's clean-up**, not before the HOLD is lifted and a few world days publish cleanly ("docs/ and config/ are
    as deployed; nothing to do", no data commit): `run.py`'s `update`/`download`/`count`/`backfill`, their tests,
    `schedule-add.ps1`, README's Scheduling part; decide `kk-SCOpenQuests-planet` on the way (as of 11-26; owner: "handoff
    the further cleanup").
    [journal/2026-11-26-the-city-runs-clean-up-after-the-world-dailies-run-well.md](journal/2026-11-26-the-city-runs-clean-up-after-the-world-dailies-run-well.md)
-6. **Overture 12-16.0, the first unattended monthly release:** the watcher prepares it (`narrow`, `propose`, `auto`, the
+7. **Overture 12-16.0, the first unattended monthly release:** the watcher prepares it (`narrow`, `propose`, `auto`, the
    judge: `claude-opus-5-5` at high effort), the operator gets only exceptions; switch on 2027-01-01 (as of 11-26; owner,
    about 12:05: "on first of the month we switch it").
    [journal/2026-11-26-the-overture-release-tool.md](journal/2026-11-26-the-overture-release-tool.md)
-7. **The Map tab as a navigation tool, after the 12-01 switch** (as of 11-27; owner chose it 10:45): Overture outlines
+8. **The Map tab as a navigation tool, after the 12-01 switch** (as of 11-27; owner chose it 10:45): Overture outlines
    down to cities as one PMTiles file on sc-data, MapLibre, a tap gives the chain of places. Its sentence ("the rest of
    the world is not counted yet") stays until then (owner). Design:
    [design/topics/the-map-tab-a-navigation-tool.md](design/topics/the-map-tab-a-navigation-tool.md)

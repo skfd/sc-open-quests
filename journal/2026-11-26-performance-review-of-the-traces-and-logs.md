@@ -227,3 +227,9 @@ measured: 12,643 s, then the publish 1,155 s.
   - **Checkpoint DONE 11:13:21** (10:50-11:13, before the 11:15 inputs run): `2026-11-25: whole` in R2 (new ids), local links
     removed. `2026-11-14` (old ids) is still there; `prune --keep 1` would drop it, not run. **Left before the lift: the 13:20 check
     of today's runs, then the owner removes HOLD** (the 14:45 task takes the day if HOLD is gone by then; else start the loop by hand).
+
+- **The crash files (2026-11-27, 18:40):** the owner asked how old and whether analysed. They were 11-23's four tier 2
+  engines at a fixed `-Xmx8g` ("G1 virtual space", about 67 s in; out of commit, not heap), diagnosed above and in
+  `journal/2026-11-21-storage-redesign-facts-serving-working-state.md`; the engine memory rule came of it. **They were
+  already gone from the repo root** (no `hs_err*`/`replay_pid*` anywhere outside `.scratch`); who removed them and when is
+  not recorded. The handoff's item is dropped.

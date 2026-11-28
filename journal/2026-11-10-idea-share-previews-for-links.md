@@ -165,3 +165,26 @@ reach about 18,060 of 20,000), and about 1M world places can never be static pag
   the zone's folder rewrite rule and `html_handling: none` do with a Worker in front (`wrangler dev` does not
   reproduce the rule; that interplay broke the home page once); it goes live with or after the world
   publish merge, since it reads the same place files.
+
+### The Worker deployed and rolled back (2026-11-27, evening)
+
+- **Owner, 18:35:** the deploy "is decided"; asked when (wizard): "Now, tonight". Before it: `preview.test.mjs` 19 of 19,
+  `parity.mjs` 293 of 293 links say `cities.json`'s number.
+- **18:45 deployed** `wrangler.previews.jsonc` (version c1d8eee9). Live, all as the README asks: Toronto's `og:title` on `/`
+  and `/index.html` (371,884), Blind River from `sc-data` (1,712, "As of Nov 27, 2026"), plain `/` the site's own title,
+  `Cache-Control: public, max-age=0, must-revalidate`, `/data/nothing.json` 404, `cloud_publish.py --check` 8,926 of
+  8,926 equal.
+- **`browser_parity.py` on the live site: 5 of 7.** MISS `?city=toronto&off=AddHousenumber,AddPathSurface` (page 304,526,
+  card 304,518) and `?city=berlin&base=all` (page 1,116,040, card 1,115,886). Cause, recomputed by hand: the card sums
+  `docs/data/history/<city>.json`'s last day, 11-25 (the city run's files end there, it was deleted 11-26); the page joins
+  the world's days onto that file (`app.js` `worldCity`, `joinWorld`) and shows 11-27: the world's `city/<id>.json` at
+  day 26 gives exactly the page's numbers, at day 24 exactly the card's. Toronto's default selection happens not to have
+  moved between 11-25 and 11-27, so that link matched. Berlin's description said "As of Nov 25, 2026". Every city and part
+  preview would have stayed at 11-25 and drifted daily; the local check of 11-23 could not see it (the world join came later).
+- **19:05 rolled back** with plain `npx wrangler deploy` (version c7d9d6ea), as the README's rule says: `og:title` is the
+  site's own again, 404 still 404. Step 4 was not done, so nothing scheduled deploys the Worker.
+- **Found on the way:** the zone answers 403 to Python's `urllib` user agent on every path (static files too), so
+  `browser_parity.py` against the live site needs a browser user agent (run here through a wrapper that installs one);
+  and its output needs `PYTHONIOENCODING=utf-8` on Windows (a U+2212 minus).
+- **To do (HANDOFF Next 5):** the Worker joins the world's city and part files as the page does; the parity test checks
+  against the world's numbers, not `cities.json`; then deploy again.
