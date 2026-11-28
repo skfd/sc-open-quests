@@ -166,7 +166,7 @@ export function namesFromRow({ row, rows }) {
 }
 
 // The preview of a link, or null when the link names no place the site has numbers for (the page then
-// keeps its own head). load: registry() -> [{name, defaultDisabled}]; site(path) and world(path) -> the
+// keeps its own head). load: registry() -> [{name, defaultDisabled, status}]; site(path) and world(path) -> the
 // JSON at that path of the site and of the world host, null when it is not there.
 export async function previewFor(ask, params, load) {
   if (!ask) return null;
@@ -195,15 +195,75 @@ export async function previewFor(ask, params, load) {
   return texts({ name: found.name, where: found.where, open, change, since: found.series.since, top, date: found.series.date });
 }
 
-async function cityPlace(city, part, load) {
-  if (!part) {
-    const h = await load.site(`data/history/${city}.json`);
-    return h && { name: h.name, where: "", series: seriesPairs(h) };
+// A world file's days in the shape of a city's series (app.js worldSeries), over `names`: the days from the
+// file's `from` through latest.date, a quest null before latest.questsFrom's day for it. Null when the
+// place was first counted after latest.date.
+export function worldSeries(latest, pf, names) {
+  const last = Math.round((dayTs(latest.date) - dayTs(latest.first)) / 86400);
+  const from = Number.isInteger(pf.from) && pf.from > 0 ? pf.from : 0;
+  if (!(last >= from)) return null;
+  const days = Array.from({ length: last - from + 1 }, (_, k) => from + k);
+  const quests = {};
+  for (const q of new Set(names)) {
+    const since = (latest.questsFrom || {})[q] || 0;
+    const at = days.map((k) => (k < since ? [null, null] : pointAt((pf.quests || {})[q], k)));
+    quests[q] = { open: at.map((v) => v[0]), agedOnly: at.map((v) => v[1]) };
   }
-  const [p, cities] = await Promise.all([load.site(`data/history/${city}/${part}.json`), load.site("data/cities.json")]);
-  if (!p) return null;
+  return { dates: days.map((k) => addDays(latest.first, k)), quests };
+}
+
+// A city's file before the world's first day, the world's days from it on (app.js joinWorld); a quest only
+// one of them counts is null on the other's days.
+export function joinWorld(h, w) {
+  const k = h.dates.findIndex((d) => d >= w.dates[0]), n = k < 0 ? h.dates.length : k;
+  const none = (len) => Array(len).fill(null);
+  const join = (a, b) => [...(a ? a.slice(0, n) : none(n)), ...(b || none(w.dates.length))];
+  const quests = {};
+  for (const q of new Set([...Object.keys(h.quests || {}), ...Object.keys(w.quests)])) {
+    const a = (h.quests || {})[q] || {}, b = w.quests[q] || {};
+    const s = { open: join(a.open, b.open), agedOnly: join(a.agedOnly, b.agedOnly) };
+    if (!s.open.every((v) => v == null)) quests[q] = s;
+  }
+  return { ...h, dates: join(h.dates, w.dates), quests };
+}
+
+// The quests the site counts in a city (app.js countedIn): quests.json's status per city.
+const countedIn = (registry, city) => registry.filter((q) => q.status && q.status[city] === "counted").map((q) => q.name);
+
+async function worldLatest(load) {
+  const latest = await load.world("latest.json");
+  return worldLatestOk(latest) ? latest : null;
+}
+
+// A city: its history file joined with the world's days of it (app.js cityHistory); a part: the world's
+// file of it (app.js worldPart), else its own history file (partHistory). Without the world host, the
+// files alone.
+async function cityPlace(city, part, load) {
+  const [registry, latest] = await Promise.all([load.registry(), worldLatest(load).catch(() => null)]);
+  if (!part) {
+    const [h, wf] = await Promise.all([load.site(`data/history/${city}.json`),
+      latest && latest.city ? load.world(`${latest.city}${city}.json?v=${encodeURIComponent(latest.v)}`).catch(() => null) : null]);
+    if (!h || !Array.isArray(h.dates)) return null;
+    const w = wf && wf.quests ? worldSeries(latest, wf, countedIn(registry, city)) : null;
+    return { name: h.name, where: "", series: seriesPairs(w ? joinWorld(h, w) : h) };
+  }
+  const cities = await load.site("data/cities.json");
   const c = cities && (cities.cities || []).find((x) => x.id === city);
-  return { name: p.en || p.name, where: c ? c.name : "", series: seriesPairs(p) };
+  const where = c ? c.name : "";
+  if (latest && latest.cityParts) {
+    const v = encodeURIComponent(latest.v);
+    const [pf, kids, partNames] = await Promise.all([
+      load.world(`${latest.place}${part.slice(0, 2)}/${part}.json?v=${v}`).catch(() => null),
+      load.world(`${latest.cityParts}${city}.json?v=${v}`).catch(() => null),
+      load.site(`data/parts/${city}.json`)]);
+    const p = partNames && (partNames.parts || []).find((x) => x.id === part);
+    const f = pf || (kids && (kids.noFile || []).includes(part) ? { quests: {} } : null);
+    const s = p && f && c ? worldSeries(latest, f, countedIn(registry, city)) : null;
+    if (s) return { name: p.en || p.name, where, series: seriesPairs(s) };
+  }
+  const p = await load.site(`data/history/${city}/${part}.json`);
+  if (!p) return null;
+  return { name: p.en || p.name, where, series: seriesPairs(p) };
 }
 
 async function worldPlace(ask, at, load) {

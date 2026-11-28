@@ -179,7 +179,47 @@ test("a counted place under its place id says the daily count, with or without ?
   assert.equal((await preview("place=9fc3a6b4bdda", load)).title, "80 open StreetComplete quests in Toronto");
   assert.equal((await preview("place=dbb37f753302&in=ca/eb1eed766420", load)).title,
     "Almost done: 20 StreetComplete quests left in Agincourt North, Toronto");
-  assert.ok(!load.asked.some((p) => p.startsWith("world:")), "the world host is not asked for a counted place");
+  assert.deepEqual([...new Set(load.asked.filter((p) => p.startsWith("world:")))], ["world:latest.json"],
+    "a counted place reads no world place file (this latest.json has no city files)");
+});
+
+// The world's days of a city and its parts (latest.city, latest.cityParts): the page shows them on top of
+// the city's history file, whose days end where the city run stopped.
+const LATEST_C = { ...LATEST, date: "2026-11-27", city: "city/", cityParts: "city-parts/" };
+const REG_C = REG.map((x) => ({ ...x, status: x.name === "AddB" ? {} : { toronto: "counted" } }));
+const WORLD_C = {
+  "latest.json": LATEST_C,
+  "city/toronto.json?v=abc": { quests: { AddA: [[0, 80, 0], [20, 70, 5]], AddOff: [[0, 9, 0]], AddB: [[0, 500, 0]] } },
+  "place/db/dbb37f753302.json?v=abc": { quests: { AddA: [[0, 25, 0], [10, 15, 0]] } },
+  "city-parts/toronto.json?v=abc": { noFile: ["d00000000001"] },
+};
+const PARTS_C = { "data/parts/toronto.json": { parts: [{ id: "dbb37f753302", name: "Agincourt North", en: null }, { id: "d00000000001", name: "Empty Park", en: null }] } };
+const loadersC = (world = WORLD_C) => ({ ...loaders({ site: PARTS_C, world }), registry: async () => REG_C });
+
+test("a city's history file joined with the world's days, over the quests counted there", async () => {
+  const city = await preview("city=toronto", loadersC());
+  assert.equal(city.title, "70 open StreetComplete quests in Toronto");
+  // 4 weeks before 11-27 is 10-30: the file's 10-01, its 11-22 replaced by the world's days
+  assert.equal(city.description, "Down 30 in the last 4 weeks. Most open: a 70. As of Nov 27, 2026.");
+  // AddB is in the world's file but not counted in Toronto
+  assert.equal((await preview("city=toronto&base=all", loadersC())).title, "79 open StreetComplete quests in Toronto");
+  assert.equal((await preview("place=9fc3a6b4bdda", loadersC())).title, "70 open StreetComplete quests in Toronto");
+});
+
+test("a part from the world's file, a part with no file says nothing open, else its history file", async () => {
+  const part = await preview("city=toronto&part=dbb37f753302", loadersC());
+  assert.equal(part.title, "Almost done: 15 StreetComplete quests left in Agincourt North, Toronto");
+  assert.equal(part.description, "Down 10 since Nov 1. Most open: a 15. As of Nov 27, 2026.");
+  assert.equal((await preview("city=toronto&part=d00000000001", loadersC())).title, "No open StreetComplete quests in Empty Park, Toronto");
+  const { "place/db/dbb37f753302.json?v=abc": _, ...noPartFile } = WORLD_C;
+  assert.equal((await preview("city=toronto&part=dbb37f753302", loadersC(noPartFile))).title,
+    "Almost done: 20 StreetComplete quests left in Agincourt North, Toronto");
+});
+
+test("without the world host a city and a part are their files alone", async () => {
+  const load = { ...loadersC(), world: async () => { throw new Error("down"); } };
+  assert.equal((await preview("city=toronto", load)).title, "80 open StreetComplete quests in Toronto");
+  assert.equal((await preview("city=toronto&part=dbb37f753302", load)).title, "Almost done: 20 StreetComplete quests left in Agincourt North, Toronto");
 });
 
 test("a world place takes the name layer's English name and its parent, else its own name and the country", async () => {

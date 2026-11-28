@@ -33,10 +33,10 @@ function loaders(env, origin, signal) {
   const site = async (path) => jsonOf(await env.ASSETS.fetch(new Request(new URL("/" + path, origin)), { signal }));
   const world = async (path) => (env.WORLD_HOST ? jsonOf(await fetch(env.WORLD_HOST + path, { signal })) : null);
   return {
-    // quests.json carries every city's status per quest; the preview needs two fields of each
+    // quests.json carries every city's status per quest; the preview needs three fields of each
     registry: () => memoized("registry", async () => {
       const q = await site("data/quests.json");
-      return q && q.quests.map((x) => ({ name: x.name, defaultDisabled: !!x.defaultDisabled }));
+      return q && q.quests.map((x) => ({ name: x.name, defaultDisabled: !!x.defaultDisabled, status: x.status || {} }));
     }),
     site: (path) => (path === "data/cities.json" ? memoized(path, () => site(path)) : site(path)),
     world,
