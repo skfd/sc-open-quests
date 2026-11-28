@@ -37,7 +37,7 @@ every quest, never an easier subset (DESIGN.md, "Don't").
   [journal/2026-11-26-the-city-runs-clean-up-after-the-world-dailies-run-well.md](journal/2026-11-26-the-city-runs-clean-up-after-the-world-dailies-run-well.md)
 - **Four agents in worktrees, started 11-27 20:45 (owner chose all four):** the history cut rehearsed on Berlin's
   history clip (release 2's first step); the share card redrawn monthly (merged bb5b57c20); the Overture tool's
-  same-name gap; the area-date horizon guard (done: branch `horizon-guard`, Next 4). Each reports back; merging is
+  same-name gap (merged: class `same-name-kept`); the area-date horizon guard (done: branch `horizon-guard`, Next 4). Each reports back; merging is
   mine. If a session ends first: their branches are under `.claude/worktrees/agent-*`; heavy work must end by 11-28
   13:30.
 - **Worktrees (as of 11-27):** `.claude/worktrees/agent-a9b152efd4c2e1246` (P3's 28.6 GB rehearsal data, kept for three
@@ -119,7 +119,7 @@ every quest, never an easier subset (DESIGN.md, "Don't").
 
 One line each in [BACKLOG.md](BACKLOG.md): the world's monthly backfill (release 2) and doing it on several machines,
 retiring the Python tile store, a native Windows osmium, other validators' backlogs, the blog, ended-place pages and
-successor links, the Overture tool's same-name gap, the performance review's leftovers, and statistics on a map.
+successor links, the performance review's leftovers, and statistics on a map.
 
 ## Where things are
 

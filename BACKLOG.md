@@ -26,9 +26,6 @@ it moves to HANDOFF.md's Next and leaves here.
   names; for now their files stay frozen (owner, 11-26).
   [journal/2026-11-26-the-overture-release-tool.md](journal/2026-11-26-the-overture-release-tool.md),
   [journal/2026-11-26-the-12-01-switch-to-overture-11-18-0-mapped-not-built.md](journal/2026-11-26-the-12-01-switch-to-overture-11-18-0-mapped-not-built.md)
-- **The Overture tool's same-name gap:** same-name matching looks only at new GERS ids, so a kept place of the same name is
-  never offered as a successor (known 11-26).
-  [journal/2026-11-26-the-overture-release-tool.md](journal/2026-11-26-the-overture-release-tool.md)
 - **`config/parts` after the switch:** not rebuilt for 11-18.0 (ids are stable; ended parts show as `noFile`); rebuilding
   needs another extract source once the regional fetches stop.
   [journal/2026-11-26-the-12-01-switch-to-overture-11-18-0-mapped-not-built.md](journal/2026-11-26-the-12-01-switch-to-overture-11-18-0-mapped-not-built.md)
