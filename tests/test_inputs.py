@@ -31,7 +31,8 @@ class InputsTest(unittest.TestCase):
         p.start()
         self.addCleanup(p.stop)
 
-    def site(self):
+    def site(self, card=False):
+        self.assertTrue(card)   # inputs' site, at 11:15, is the one that may redraw the share card
         self.assertFalse(self.lock.exists())
         self.assertEqual(self.backed, ["facts", "world"])
         if self.site_fails:
