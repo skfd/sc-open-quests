@@ -188,3 +188,15 @@ reach about 18,060 of 20,000), and about 1M world places can never be static pag
   and its output needs `PYTHONIOENCODING=utf-8` on Windows (a U+2212 minus).
 - **To do (HANDOFF Next 5):** the Worker joins the world's city and part files as the page does; the parity test checks
   against the world's numbers, not `cities.json`; then deploy again.
+- **Owner, 19:15: "build it now?"** Built (b/c of the above): `preview.js` ports `app.js` `worldSeries` and `joinWorld`;
+  a city is its history file joined with the world's `city/<id>.json` over `quests.json`'s counted quests for it; a
+  part is the world's `place/<sh>/<id>.json` (a part in `city-parts/<city>.json`'s `noFile` is all 0), named from
+  `data/parts/<city>.json`, else its history file as before. The registry now carries each quest's `status`.
+  `preview.test.mjs` 22 of 22 (three new tests). `parity.mjs` takes the world host as a second argument and checks
+  every city link against `city-quests.json` and every part link against `city-parts/`: **4,091 of 4,091 on 11-27**
+  (293 city, 3,798 part); the old code against the same check 3,162 (929 misses), so the check sees the bug.
+- **Deployed again** (be3c3f21): browser parity on the live site 7 of 7 (both earlier misses now say the page's
+  1,116,040 and 304,526), previews in 0.19-0.39 s, cache header and 404 as before, `cloud_publish.py --check` 8,926 of
+  8,926 equal. **Step 4 done:** `wrangler.previews.jsonc` is now `wrangler.jsonc` (what `cloud_publish.py`'s plain
+  `wrangler deploy` deploys), the script-less one `wrangler.static.jsonc`; deployed with the plain command
+  (a823b8d4): Berlin 221,268, the world's 11-27 number. README's section and two design topics say so.

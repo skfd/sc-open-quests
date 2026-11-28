@@ -37,7 +37,9 @@ The owner wants the site to survive being posted somewhere busy; so far it has n
 Worker reading R2, every request was an invocation: about 71 for a first city view, so Workers Free's
 100,000 a day ran out after about 1,400 of them, and past it readers get an error until midnight UTC.
 
-- **Shape:** `cloudflare/wrangler.jsonc` deploys `docs/` as Workers static assets with no `main`.
+- **Shape:** `cloudflare/wrangler.jsonc` deploys `docs/` as Workers static assets with no `main` (until
+  2026-11-27; since then it carries the share-preview script for `/` and `/index.html` only, on Workers Paid,
+  and this shape is `wrangler.static.jsonc`).
   A path that matches a file is served without running code, and Cloudflare bills no asset request,
   so nothing a reader does counts against the cap. There is no script on purpose: with one, a path
   that matches nothing (a favicon, a scanner's `/wp-login.php`) would still run it. Without one such

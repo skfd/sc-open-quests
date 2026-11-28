@@ -82,13 +82,13 @@ every quest, never an easier subset (DESIGN.md, "Don't").
    design/render_share_card.py`, in a loop gap), look at `docs/img/share-card.png`, commit; then write what redraws it
    monthly (nothing does). `share-previews` itself was merged 11-26 (as of 11-26).
    [journal/2026-11-10-idea-share-previews-for-links.md](journal/2026-11-10-idea-share-previews-for-links.md)
-5. **The share-preview Worker: the owner's go given (11-27, 18:35, "now, tonight"); deployed 18:45, rolled back 19:05
-   (as of 11-27 19:10).** Live checks passed except 2 of 7 browser links: the Worker reads a city's numbers from
-   `docs/data/history/` (frozen at 11-25 since the city run went), the page joins the world's days on top
-   (`app.js` `worldCity`/`worldPart`), so every city preview would stay at 11-25. Fix: the Worker joins the world's
-   city and part files as the page does (world places already right), the parity test against the world's numbers,
-   then redeploy and steps 2 to 5 of `cloudflare/README.md`, "Share previews". Live checks: the zone answers 403 to
-   Python's user agent; run `browser_parity.py` with a browser one.
+5. **Share previews are live (as of 11-27 20:00):** the Worker went out at 18:45, was rolled back at 19:05 (city
+   previews stuck at 11-25), fixed (a city joins the world's days, a part reads its world file, as the page does), and
+   went out again. `wrangler.jsonc` now carries the script, so the daily `site` run deploys it; the way back is
+   `wrangler.static.jsonc` (`cloudflare/README.md`, "Share previews"). Live: browser parity 7 of 7, `parity.mjs`
+   4,091 of 4,091 against the world, byte check 8,926 equal. **Left:** the owner pastes a link into a network's preview
+   checker (step 5); watch the Worker's requests and CPU in the dashboard for the first days ($5 limit, error 1103
+   past it); after the 12-01 switch, rerun `parity.mjs docs https://sc-data.comentality.com/`.
    [journal/2026-11-10-idea-share-previews-for-links.md](journal/2026-11-10-idea-share-previews-for-links.md)
 6. **The city run's clean-up**, not before the HOLD is lifted and a few world days publish cleanly ("docs/ and config/ are
    as deployed; nothing to do", no data commit): `run.py`'s `update`/`download`/`count`/`backfill`, their tests,

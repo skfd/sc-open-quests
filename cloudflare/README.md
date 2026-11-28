@@ -1,9 +1,9 @@
 # The site on Cloudflare
 
 `https://street-complete-statistics.comentality.com` is `docs/` deployed as Workers static assets
-(`wrangler.jsonc`), with no Worker script. Cloudflare serves a file that matches the path without
-running any code, and asset requests are free and unlimited, so no request to the site counts
-against Workers Free's 100,000 a day. DESIGN.md, "Hosting on Cloudflare", says why and how.
+(`wrangler.jsonc`). Cloudflare serves a file that matches the path without running any code, and
+asset requests are free and unlimited; the one script (share previews, below) runs for the page
+itself only. DESIGN.md, "Hosting on Cloudflare", says why and how.
 
 - **Token:** `~/.config/sc-open-quests/cloudflare.env`, outside the repo, holding
   `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`. It's a user token named "sc-open-quests deploy":
@@ -37,41 +37,40 @@ against Workers Free's 100,000 a day. DESIGN.md, "Hosting on Cloudflare", says w
   In that shape every request is a Worker invocation, about 71 for a first city view, so the daily
   cap is spent after about 1,400 of them.
 
-## Share previews (built, not live)
+## Share previews (live since 2026-11-27)
 
-`wrangler.previews.jsonc` is the same site plus one script, `src/site.js`, that runs for `/` and
-`/index.html` only and writes a place's `og:title` and `og:description` into the page's head, so a pasted link
-shows the place's number (DESIGN.md, "Share previews: a Worker's text for every place"). Every other
-path is still a static asset served without it. Tests: `node --test cloudflare/test/preview.test.mjs`,
-`node cloudflare/test/parity.mjs` (every city against `docs/data/cities.json`), and locally
-`npx wrangler dev --config wrangler.previews.jsonc --port 8791` with
-`python cloudflare/test/browser_parity.py` (the page's number against the card's, in a browser).
+`wrangler.jsonc` deploys the site plus one script, `src/site.js`, that runs for `/` and `/index.html`
+only and writes a place's `og:title` and `og:description` into the page's head, so a pasted link shows
+the place's number (DESIGN.md, "Share previews: a Worker's text for every place"). Every other path is
+still a static asset served without it. It needs **Workers Paid** (the script is past Free's 10 ms of
+CPU); the account's Workers spending limit is $5 a billing period, and past it every Worker on the
+account stops, so the home page fails (error 1103) until the period ends.
 
-**To go live, in this order:**
+A city's numbers are its history file joined with the world's days of it, a part's the world's file of
+it, as the page does (`app.js` `cityHistory`, `worldPart`): the history files ended on 11-25 with the
+city run, and a preview that read them alone stayed there.
 
-1. **Workers Paid on the account** (the owner; $5 a month). Not before: the script is past Workers
-   Free's 10 ms of CPU, and on Free a page view that fails is a broken page.
-2. Deploy by hand, Git Bash, from `cloudflare/`:
-   `set -a && . ~/.config/sc-open-quests/cloudflare.env && set +a && npx wrangler deploy --config wrangler.previews.jsonc`
-3. Check the live site at once; the zone's rewrite rule ("Serve index.html for folder paths") sits in
-   front of the script and no local run includes it:
-   - `python tools/cloud_publish.py --check` (the home page and every file byte-equal);
-   - `curl -s 'https://street-complete-statistics.comentality.com/?city=toronto' | grep og:title` names
-     Toronto's number, and so does the same link with `/index.html?city=toronto`;
-   - `curl -s 'https://street-complete-statistics.comentality.com/?place=3550b7b198a7&in=ca/ec52fcb974ff' | grep og:title`
-     names Blind River's number: the fetch from Cloudflare to `sc-data` is the one path no local run
-     took, and it fails quietly into the site's own title;
-   - `curl -sI 'https://street-complete-statistics.comentality.com/?city=toronto' | grep -i cache-control`
-     is `max-age=0, must-revalidate`, as for `/` (the zone must not have raised it);
-   - `curl -s -o /dev/null -w '%{http_code}' https://street-complete-statistics.comentality.com/data/nothing.json` is 404;
-   - open the site in a browser: a city, a neighbourhood, a world place.
-   **If anything is off, put the script-less site back at once:** `npx wrangler deploy` (plain
-   `wrangler.jsonc`).
-4. Only then make it what the daily run deploys (**until this step the 13:15 run deploys plain
-   `wrangler.jsonc` and takes the script off again**, so do steps 2 to 4 in one sitting): copy `wrangler.previews.jsonc` over `wrangler.jsonc`
-   (keep the old one as `wrangler.static.jsonc`, the way back), fix the comments, commit.
-5. Paste a link into a network's preview checker (Facebook's Sharing Debugger, LinkedIn's Post
-   Inspector, or a message to yourself in Slack or Signal).
+- **Tests:** `node --test cloudflare/test/preview.test.mjs`; `node cloudflare/test/parity.mjs docs
+  https://sc-data.comentality.com/` holds every city and part link to the world's own summaries
+  (`city-quests.json`, `city-parts/`; 4,091 links on 11-27); without the world host it checks
+  `cities.json` (the fixtures). Locally `npx wrangler dev --port 8791` with
+  `python cloudflare/test/browser_parity.py` (the page's number against the card's, in a browser).
+- **Checking the live site** (after a change to the script; the zone's rewrite rule "Serve index.html
+  for folder paths" sits in front of it and no local run includes it):
+  - `python tools/cloud_publish.py --check` (the home page and every file byte-equal);
+  - `curl -s 'https://street-complete-statistics.comentality.com/?city=toronto' | grep og:title` names
+    Toronto's number, and so does the same link with `/index.html?city=toronto`;
+  - `curl -s 'https://street-complete-statistics.comentality.com/?place=3550b7b198a7&in=ca/ec52fcb974ff' | grep og:title`
+    names Blind River's number (the fetch from Cloudflare to `sc-data` fails quietly into the site's own title);
+  - `curl -sI 'https://street-complete-statistics.comentality.com/?city=toronto' | grep -i cache-control`
+    is `max-age=0, must-revalidate`;
+  - `curl -s -o /dev/null -w '%{http_code}' https://street-complete-statistics.comentality.com/data/nothing.json` is 404;
+  - `browser_parity.py https://street-complete-statistics.comentality.com`: **the zone answers 403 to
+    Python's `urllib` user agent** on every path, so give it a browser one, and `PYTHONIOENCODING=utf-8`
+    on Windows.
+- **The way back, at once:** `npx wrangler deploy --config wrangler.static.jsonc` (the same site, no
+  script). The daily run deploys `wrangler.jsonc` again, so to stay back copy `wrangler.static.jsonc`
+  over it and commit.
 
 The preview's cost is Workers', not R2's, so `tools/spend_breaker.py` does not count it: watch the
 Worker's requests and CPU time in the dashboard for the first days.

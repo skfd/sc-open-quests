@@ -20,7 +20,10 @@ selection `base`/`on`/`off`), so the choice between `/toronto/agincourt-north/` 
 that reads `og:url` files the link under the address it names.
 
 **The script** is `cloudflare/src/site.js` with the arithmetic in `cloudflare/src/preview.js`
-(`cloudflare/wrangler.previews.jsonc`; `wrangler.jsonc`, which the daily run deploys, is unchanged).
+(`cloudflare/wrangler.jsonc`, which the daily run deploys; live since 2026-11-27, the script-less site kept as
+`wrangler.static.jsonc`, the way back). A city's numbers are its history file joined with the world's days of it,
+a part's the world's file first, as the page reads them (`app.js` `cityHistory`, `worldPart`): the history files
+ended on 2026-11-25 with the city run, and the first deploy, which read them alone, said 11-25 (rolled back).
 `run_worker_first` names `/` and `/index.html` only, so every data file, icon and script is still a
 static asset served without it. A path that matches no file reaches the script, which hands it to the
 assets for their 404.

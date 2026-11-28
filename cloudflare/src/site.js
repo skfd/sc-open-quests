@@ -1,4 +1,4 @@
-// The site's one script (wrangler.previews.jsonc): it runs for the page itself, "/" and "/index.html",
+// The site's one script (wrangler.jsonc): it runs for the page itself, "/" and "/index.html",
 // and for nothing else. A link to a place gets that place's og:title and og:description written into
 // the head, so a network's crawler, which never runs app.js, shows "1,284 open StreetComplete quests in
 // Agincourt North, Toronto" instead of the site's name. Every other path is a static asset served
