@@ -413,6 +413,8 @@ def store_tail(dd: Path, nxt: str, seq: int, osc: Path, oracle: Path, g: int) ->
     else:
         log(f"punch skipped: {free_gb:.0f} GiB free (it runs under {PUNCH_BELOW_GB})")
     log(f"== day {nxt} done: generation {g}; the world at {world_clock()}")
+    # the day's mode and core load (qos.py), here so a resumed day has them too; never raises
+    qos.day_done(WORLD / "days" / nxt, log)
 
 
 def one_day():
@@ -534,7 +536,6 @@ def one_day():
         DM.write_steps(WORLD, nxt, LOG, log)
     except Exception as e:  # noqa: BLE001
         log(f"steps: not recorded ({type(e).__name__}: {e})")
-    qos.day_done(WORLD / "days" / nxt, log)   # the day's mode and core load (qos.py); never raises
     write_facts()
     return True
 

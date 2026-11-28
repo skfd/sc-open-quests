@@ -25,8 +25,11 @@ every quest, never an easier subset (DESIGN.md, "Don't").
   (`W/days/<D>/cores.csv`, `qos.json`) and each engine's CPU seconds (`engines.json` "cpu s"). Days in
   `data/qos.txt` (gitignored): **11-28 default, 11-29 high, 11-30 high, 12-01 default**, then default. Way back:
   edit that file, or `SCOQ_QOS=off`. Check after a day: `qos: ...` line in `logs/planet-store.log`, and
-  `processes ... failed 0`. The task already runs BELOW_NORMAL (no `<Priority>`), so `high` changes the throttling
-  flag only. Probe on a real engine passed; untried inside a scheduled run until 14:45 today.
+  `processes ... failed 0`, and that the first row (python.exe) of 11-28's `logs/qos/*-procs.csv` reads `below
+  normal`: the task has no `<Priority>`, so Task Scheduler's default 7 (BELOW_NORMAL) is expected, not yet seen. If it
+  reads `normal`, `high` on 11-29/11-30 changes priority as well as throttling: say so when judging (Next 5).
+  `qos.json`/`cores.csv` are written after the day's done line (resumed days too). Probe on a real engine passed;
+  untried inside a scheduled run until 14:45 today.
   [design/topics/the-world-day-off-power-throttling.md](design/topics/the-world-day-off-power-throttling.md)
 - **The world day is resumable (as of 11-27; built c3b998fd1, proven on 11-26).** A stopped finish resumes from what it
   left done behind markers (about 18 min late in the day, not 2.8 h); PAUSE stops a running day at its next step.

@@ -18,3 +18,8 @@ must not be able to stop a day, nothing may need the owner 00:00-07:00, ready fo
   speed-ups, and the trial needs baseline days with CPU seconds anyway), 11-29 and 11-30 `high`, 12-01 `default`
   (the cutover day as usual), bare `default` after.
 - Full suite 473 passed, 1 skipped (00:25).
+- Second review (00:40): the BELOW_NORMAL above is inferred from the missing `<Priority>`, not seen; 11-28's
+  procs.csv settles it. `qos.day_done` moved from beside `write_steps` (which a resumed day skips) to after the
+  `== day D done` line in `store_tail`. No code reads the "engine over" lines; facts, world_publish and
+  archive_backup read `W/days/<D>/` by fixed names, so qos.json and cores.csv there change nothing they do (the
+  cutover's `join_days` hard-links them along). The probe's CSVs deleted from `logs/qos/`. Suite 473 passed, 1 skipped.

@@ -9,9 +9,10 @@ not inherited).
   started that local date, a bare `<mode>` otherwise; no file is `default`. `high` = every process of the day
   opted out of throttling (`SetProcessInformation(ProcessPowerThrottling, Control 1, State 0)`) and BELOW_NORMAL;
   `default` = nothing set, everything still recorded; `off` = no watcher. The way back is a word in that file.
-- **Priority is not part of the trial:** the task has no `<Priority>`, so Task Scheduler's default (7, BELOW_NORMAL)
-  already applies to the day and its children. `high` changes the throttling flag only; "below normal" in a
-  `default` day's rows is expected.
+- **Priority is meant not to be part of the trial:** the task has no `<Priority>`, so Task Scheduler's default (7,
+  BELOW_NORMAL) is expected to apply to the day and its children, and `high` then changes the throttling flag only.
+  Expected, not yet observed: 11-28's procs.csv settles it (python.exe's row). If it reads `normal`, the `high` days
+  change priority too, and the judging has to say so.
 - **How:** one daemon thread (`tools/stream/qos.py`, started by `planet_store_day.main`) walks this process's
   descendants every 3 s, every 0.1 s for 6 s after an engine's launcher starts (`engine_room.in_room` tells it);
   sets each the first time it sees it, after checking it was made no earlier than its parent (a reused parent pid
@@ -19,7 +20,7 @@ not inherited).
   A real notes engine's java.exe was set 109 ms after it started (probe of 11-28, 0.1 s poll; 260 ms at 0.25 s).
 - **Readings:** `logs/qos/<run>-procs.csv` (a row per process: ControlMask, StateMask, priority, error, ms after
   start), `logs/qos/<run>-cores.csv` and `W/days/<D>/cores.csv` (every 15 s: fast mean, slow mean, each CPU),
-  `W/days/<D>/qos.json` (mode, processes seen/set/failed for the day, core means), each engine's tree CPU seconds
+  `W/days/<D>/qos.json` (written after the day's `== day D done` line in `store_tail`, so a resumed day has it; mode, processes seen/set/failed for the day, core means), each engine's tree CPU seconds
   in `cpu.json` beside its log, read into `engines.json` as `"cpu s"`, `"qos"`, and per phase `"cpu s"`. The
   "engine over ... in N s" line names the engine (`(t1/f12)`, `(f12/old)`).
 - **Never a stop:** every call caught; a failed set is a row with its error; the import itself is guarded in
